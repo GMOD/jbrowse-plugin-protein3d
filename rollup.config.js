@@ -3,16 +3,7 @@ import { createRollupConfig } from '@jbrowse/development-tools'
 import replace from '@rollup/plugin-replace'
 
 function stringToBoolean(string) {
-  if (string === undefined) {
-    return undefined
-  }
-  if (string === 'true') {
-    return true
-  }
-  if (string === 'false') {
-    return false
-  }
-  throw new Error('unknown boolean string')
+  return string === undefined ? string : JSON.parse(string)
 }
 
 const includeUMD = stringToBoolean(process.env.JB_UMD)
@@ -20,7 +11,7 @@ const includeCJS = stringToBoolean(process.env.JB_CJS)
 const includeESMBundle = stringToBoolean(process.env.JB_ESM_BUNDLE)
 const includeNPM = stringToBoolean(process.env.JB_NPM)
 
-const r = createRollupConfig(globals, {
+const r = createRollupConfig(globals.default, {
   includeUMD,
   includeCJS,
   includeESMBundle,
@@ -29,10 +20,14 @@ const r = createRollupConfig(globals, {
 
 const config = {
   ...r,
+  output: r.output[0],
   plugins: [
     ...r.plugins,
     replace({
-      'process.env.NODE_ENV': JSON.stringify('production'),
+      preventAssignment: true,
+      values: {
+        'process.env.NODE_ENV': JSON.stringify('production'),
+      },
     }),
   ],
 }
