@@ -17,11 +17,13 @@ const stateModel = types
     type: types.literal('ProteinView'),
     structures: types.array(StructureModel),
     selection: types.optional(types.string, ''),
+    mouseCol: types.optional(types.number, 0),
   })
   .actions(() => ({
     // unused but required by your view
     setWidth() {},
-    setMouseoveredColumn() {},
+
+    setMouseoveredColumn(n: number, chain: string, file: string) {},
   }))
 
 export default stateModel

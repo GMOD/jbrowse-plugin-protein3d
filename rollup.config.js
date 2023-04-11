@@ -1,5 +1,6 @@
 import globals from '@jbrowse/core/ReExports/list'
 import { createRollupConfig } from '@jbrowse/development-tools'
+import replace from '@rollup/plugin-replace'
 
 function stringToBoolean(string) {
   if (string === undefined) {
@@ -19,9 +20,21 @@ const includeCJS = stringToBoolean(process.env.JB_CJS)
 const includeESMBundle = stringToBoolean(process.env.JB_ESM_BUNDLE)
 const includeNPM = stringToBoolean(process.env.JB_NPM)
 
-export default createRollupConfig(globals, {
+const r = createRollupConfig(globals, {
   includeUMD,
   includeCJS,
   includeESMBundle,
   includeNPM,
-})
+})[0]
+
+const config = {
+  ...r,
+  plugins: [
+    ...r.plugins,
+    replace({
+      'process.env.NODE_ENV': JSON.stringify('production'),
+    }),
+  ],
+}
+
+export default config

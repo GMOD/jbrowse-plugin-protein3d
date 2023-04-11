@@ -1,155 +1,165 @@
-import React, { useCallback, useState, useEffect, useRef } from 'react'
-import { Stage, StaticDatasource, DatasourceRegistry, Component } from 'ngl'
-import { ProteinViewModel } from '../stateModel'
+//@ts-nocheck
+import React, { useEffect, useRef } from 'react'
+import PropTypes from 'prop-types'
+import { DefaultPluginSpec } from 'molstar/lib/mol-plugin/spec'
+import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { ParamDefinition } from 'molstar/lib/mol-util/param-definition'
+import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helper'
 
-DatasourceRegistry.add(
-  'data',
-  new StaticDatasource('https://files.rcsb.org/download/'),
-)
+window.process = {}
 
-export default function ProteinPanel({ model }: { model: ProteinViewModel }) {
-  const { mouseCol, structures, nglSelection, type = 'cartoon' } = model
-  const annotations = useRef([])
-  const [res, setRes] = useState<any[]>([])
-  const [stage, setStage] = useState<Stage>()
-  const [isMouseHovering, setMouseHovering] = useState(false)
+const Molstar = (props) => {
+  const {
+    useInterface,
+    pdbId,
+    url,
+    file,
+    dimensions,
+    className,
+    showControls,
+    showAxes,
+  } = props
+  const parentRef = useRef(null)
+  const canvasRef = useRef(null)
+  const plugin = useRef(null)
 
-  const stageElementRef = useCallback((element) => {
-    if (element) {
-      const currentStage = new Stage(element)
-      setStage(currentStage)
-    }
+  useEffect(() => {
+    ;(async () => {
+      if (useInterface) {
+        const spec = DefaultPluginUISpec()
+        spec.layout = {
+          initial: {
+            isExpanded: false,
+            controlsDisplay: 'reactive',
+            showControls,
+          },
+        }
+        // plugin.current = await createPluginAsync(parentRef.current, spec)
+      } else {
+        plugin.current = new PluginContext(DefaultPluginSpec())
+        plugin.current.initViewer(canvasRef.current, parentRef.current)
+        await plugin.current.init()
+      }
+      if (!showAxes) {
+        plugin.current.canvas3d?.setProps({
+          camera: {
+            helper: {
+              axes: {
+                name: 'off',
+                params: {},
+              },
+            },
+          },
+        })
+      }
+      await loadStructure(pdbId, url, file, plugin.current)
+    })()
+    return () => (plugin.current = null)
   }, [])
 
   useEffect(() => {
-    return () => stage?.dispose()
-  }, [stage])
+    loadStructure(pdbId, url, file, plugin.current)
+  }, [pdbId, url, file])
 
   useEffect(() => {
-    if (!structures.length || !stage) {
-      return
-    }
-
-    function handleResize() {
-      if (stage) {
-        stage.handleResize()
+    if (plugin.current) {
+      if (!showAxes) {
+        plugin.current.canvas3d?.setProps({
+          camera: {
+            helper: {
+              axes: {
+                name: 'off',
+                params: {},
+              },
+            },
+          },
+        })
+      } else {
+        plugin.current.canvas3d?.setProps({
+          camera: {
+            helper: {
+              axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
+            },
+          },
+        })
       }
     }
-    window.addEventListener('resize', handleResize)
+  }, [showAxes])
 
-    return () => {
-      window.removeEventListener('resize', handleResize)
-    }
-  }, [structures, stage])
-
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      // Handle window resizing
-
-      if (!stage) {
-        return
-      }
-      setRes(
-        (
-          await Promise.all(
-            structures.map((s) =>
-              stage.loadFile(`data://${s.structure.pdb}.pdb`),
-            ),
-          )
-        ).filter((f): f is Component => !!f),
-      )
-
-      stage.signals.hovered.add(
-        (pickingProxy: {
-          atom: { resno: number; chainname: string }
-          bond?: string
-          closestBondAtom?: string
-          picker: { structure: { name: string } }
-        }) => {
-          if (pickingProxy && (pickingProxy.atom || pickingProxy.bond)) {
-            const atom = pickingProxy.atom || pickingProxy.closestBondAtom
-            model.setMouseoveredColumn(
-              atom.resno - structures[0]?.structure.startPos,
-              atom.chainname,
-              pickingProxy.picker.structure.name,
-            )
-          }
-        },
-      )
-    })()
-  })
-
-  useEffect(() => {
-    if (stage) {
-      res.forEach((elt) => {
-        elt.removeAllRepresentations()
-        elt.addRepresentation(type, { sele: nglSelection })
-      })
-      stage.autoView()
-    }
-  }, [type, res, stage, nglSelection])
-
-  const viewer = stage?.viewer
-  useEffect(() => {
-    if (!viewer) {
-      return
-    }
-    if (!(structures.length && !isMouseHovering)) {
-      return
-    }
-    res.forEach((elt, index) => {
-      if (annotations.current.length) {
-        elt.removeAnnotation(annotations.current[index])
-      }
-      annotations.current = []
-      if (mouseCol !== undefined) {
-        const offset = getOffset(
-          structures[index].id,
-          elt.structure,
-          mouseCol,
-          structures[0].structure.startPos,
-          // @ts-expect-error
-          () => {},
+  const loadStructure = async (pdbId, url, file, plugin) => {
+    if (plugin) {
+      plugin.clear()
+      if (file) {
+        const data = await plugin.builders.data.rawData({
+          data: file.filestring,
+        })
+        const traj = await plugin.builders.structure.parseTrajectory(
+          data,
+          file.type,
         )
-        if (offset) {
-          const ap = elt.structure.getAtomProxy()
-          ap.index = offset.atomOffset
-
-          annotations.current.push(
-            // @ts-expect-error
-            elt.addAnnotation(ap.positionToVector3(), offset.qualifiedName()),
-          )
-        }
+        await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
+      } else {
+        const structureUrl = url
+          ? url
+          : pdbId
+          ? `https://files.rcsb.org/view/${pdbId}.cif`
+          : null
+        if (!structureUrl) return
+        const data = await plugin.builders.data.download(
+          { url: structureUrl },
+          { state: { isGhost: true } },
+        )
+        let extension = structureUrl.split('.').pop().replace('cif', 'mmcif')
+        if (extension.includes('?'))
+          extension = extension.substring(0, extension.indexOf('?'))
+        const traj = await plugin.builders.structure.parseTrajectory(
+          data,
+          extension,
+        )
+        await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
       }
-      viewer.requestRender()
-    })
-  }, [mouseCol, structures, viewer, res, isMouseHovering])
+    }
+  }
+
+  const width = 800 //dimensions ? dimensions[0] : '100%'
+  const height = 600 //dimensions ? dimensions[1] : '100%'
+  console.log({ dimensions, width, height })
+
+  if (useInterface) {
+    return (
+      <div style={{ position: 'absolute', width, height, overflow: 'hidden' }}>
+        <div
+          ref={parentRef}
+          style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}
+        />
+      </div>
+    )
+  }
 
   return (
     <div
-      ref={stageElementRef}
-      style={{ width: 600, height: 400 }}
-      onMouseEnter={() => setMouseHovering(true)}
-      onMouseLeave={() => setMouseHovering(false)}
-    />
+      ref={parentRef}
+      style={{ position: 'relative', width, height }}
+      className={className || ''}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+      />
+    </div>
   )
 }
 
-function getOffset(
-  rowName: string,
-  structure: any,
-  mouseCol: number,
-  startPos: number,
-  relativePxToBp: (arg: string, col: number) => number,
-) {
-  const rn = structure.residueStore.count
-  const rp = structure.getResidueProxy()
-  const pos = relativePxToBp(rowName, mouseCol)
-  for (let i = 0; i < rn; ++i) {
-    rp.index = i
-    if (rp.resno === pos + startPos - 1) {
-      return rp
-    }
-  }
+Molstar.propTypes = {
+  useInterface: PropTypes.bool,
+  pdbId: PropTypes.string,
+  url: PropTypes.string,
+  file: PropTypes.object,
+  dimensions: PropTypes.array,
+  showControls: PropTypes.bool,
+  showAxes: PropTypes.bool,
+  className: PropTypes.string,
 }
+
+export default Molstar
