@@ -1,0 +1,8 @@
+{
+  "plugins": [
+    {
+      "name": "ProteinViewer",
+      "url": "http://localhost:9000/dist/jbrowse-plugin-protein-viewer.umd.development.js"
+    }
+  ]
+}
