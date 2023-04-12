@@ -124,3 +124,4 @@ cypress/screenshots
 
 # Ignore code editor
 .vscode
+stats.html

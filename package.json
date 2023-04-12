@@ -1,6 +1,6 @@
 {
   "version": "0.0.1",
-  "name": "jbrowse-plugin-protein-viewer",
+  "name": "jbrowse-plugin-protein3d",
   "keywords": [
     "jbrowse",
     "jbrowse2"
@@ -23,9 +23,8 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean",
     "start": "npm-run-all --parallel start:*",
-    "start:watch": "JB_NPM=false rollup --config --watch --bundleConfigAsCjs",
+    "start:watch": "JB_NPM=false rollup --config --bundleConfigAsCjs --watch",
     "start:server": "serve --cors --listen 9000 .",
-    "prebuild": "npm run clean",
     "build": "rollup --config --bundleConfigAsCjs",
     "test": "jest",
     "lint": "eslint --ext .js,.ts,.jsx,.tsx src/",
@@ -41,9 +40,12 @@
     "trailingComma": "all"
   },
   "dependencies": {
+    "@types/pako": "^2.0.0",
     "molstar": "^3.33.0",
     "molstar-react": "^0.5.1",
+    "pako": "^2.1.0",
     "regenerator-runtime": "^0.13.11",
+    "rollup-plugin-visualizer": "^5.9.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
