@@ -21,7 +21,6 @@ const r = createRollupConfig(globals.default, {
 
 const config = {
   ...r,
-  output: r.output[0],
   plugins: [
     ...r.plugins,
     replace({

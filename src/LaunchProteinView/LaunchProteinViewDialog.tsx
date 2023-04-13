@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Dialog } from '@jbrowse/core/ui'
 import { Button, DialogActions, DialogContent, Tab, Tabs } from '@mui/material'
-import { Feature, getContainingView, getSession } from '@jbrowse/core/util'
+import { Feature, getSession } from '@jbrowse/core/util'
 
 // locals
 import ManualForm from './ManualForm'
@@ -73,6 +73,7 @@ https://github.com/mui/material-ui/issues/32749#issuecomment-1270738582 */}
           variant="contained"
           onClick={() => {
             const session = getSession(model)
+            console.log({ mapping })
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,

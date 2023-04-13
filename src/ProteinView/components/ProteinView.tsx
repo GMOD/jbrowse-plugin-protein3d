@@ -4,19 +4,19 @@ import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { ParamDefinition } from 'molstar/lib/mol-util/param-definition'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
-import { Structure } from 'molstar/lib/mol-model/structure/structure'
 import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helper'
-import { ProteinViewModel } from '../stateModel'
+import { ProteinViewModel } from '../model'
 
 import { loadStructure } from './util'
 import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
+import { doesIntersect2, getSession } from '@jbrowse/core/util'
 
 // based on https://github.com/samirelanduk/molstar-react v0.5.1
 // licensed ISC
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
-  const { url } = model
+  const { url, mapping } = model
   const {
     file,
     dimensions = { width: 800, height: 600 },
@@ -120,21 +120,62 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
 
   useEffect(() => {
     plugin.current?.state.data.events.changed.subscribe(() => {
-      setMouseover(
-        plugin.current?.state.getSnapshot().structureFocus?.current?.label,
-      )
+      const r =
+        plugin.current?.state.getSnapshot().structureFocus?.current?.label
+      setMouseover(r)
+      if (r) {
+        const [root, chain] = r.split('|')
+        if (root) {
+          const [letter, position] = root.trim().split(' ')
+          const pos = +position.trim()
+          console.log({ pos })
+          const overlap = mapping
+            ?.split('\n')
+            .map((parse) => {
+              const [r1, r2] = parse.split('\t')
+              const [refName, crange] = r1.trim().split(':')
+              const [cstart, cend] = crange.trim().split('-')
+              const [pdb, prange] = r2.trim().split(':')
+              const [pstart, pend] = prange.trim().split('-')
+              console.log({ cstart, cend })
+              return {
+                refName,
+                pdb,
+                cstart: +cstart.replaceAll(',', ''),
+                cend: +cend.replaceAll(',', ''),
+                pstart: +pstart.replaceAll(',', ''),
+                pend: +pend.replaceAll(',', ''),
+              }
+            })
+            .find((f) => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
+          if (overlap) {
+            const poffset = pos - overlap.pstart
+            const coffset = overlap.cstart + poffset * 3
+
+            // @ts-expect-error
+            getSession(model).views[0].setHighlight([
+              {
+                assemblyName: 'hg38',
+                refName: overlap.refName,
+                start: coffset,
+                end: coffset + 3,
+              },
+            ])
+          }
+          console.log({ overlap })
+        }
+      }
     })
     plugin.current?.canvas3d?.input.move.subscribe((obj) => {
-      const { x, y } = obj
-      const pickingId = plugin.current?.canvas3d?.identify(x, y)
-      const r =
-        plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
-          .obj?.data
-      if (r) {
-        const r2 = Structure.toStructureElementLoci(r)
-        console.log({ pickingId, r, r2 })
-      }
-
+      // const { x, y } = obj
+      // const pickingId = plugin.current?.canvas3d?.identify(x, y)
+      // const r =
+      //   plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
+      //     .obj?.data
+      // if (r) {
+      //   const r2 = Structure.toStructureElementLoci(r)
+      //   console.log({ pickingId, r, r2 })
+      // }
       //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
       // const getPickingSourceData = getPickingSourceData(pickingId)
       ////todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]

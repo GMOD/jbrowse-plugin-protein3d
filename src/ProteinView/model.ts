@@ -15,19 +15,15 @@ export const StructureModel = types.model({
 const root = 'https://files.rcsb.org/view/'
 
 function stateModelFactory() {
-  return types
-    .compose(
-      BaseViewModel,
-      types.model({
-        id: ElementId,
-        type: types.literal('ProteinView'),
-        url: types.optional(types.string, root + '1LOL.cif'),
-        mapping: types.maybe(types.string),
-      }),
-    )
-    .actions(() => ({
-      setMouseoveredColumn(n: number, chain: string, file: string) {},
-    }))
+  return types.compose(
+    BaseViewModel,
+    types.model({
+      id: ElementId,
+      type: types.literal('ProteinView'),
+      url: types.optional(types.string, root + '1LOL.cif'),
+      mapping: types.maybe(types.string),
+    }),
+  )
 }
 
 export default stateModelFactory

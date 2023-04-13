@@ -64,7 +64,7 @@ export default function AutoForm({
         subs
           .filter((f) => f.get('type') === 'CDS')
           .map((f) => {
-            const ref = f.get('refName')
+            const ref = f.get('refName').replace('chr', '')
             const s = f.get('start')
             const e = f.get('end')
             const len = e - s
@@ -104,11 +104,19 @@ export default function AutoForm({
           <div className={classes.section}>
             {found ? (
               <TextField
-                multiline
-                fullWidth
                 value={mapping}
                 onChange={(event) => setMapping(event.target.value)}
                 label="Genome to protein mapping"
+                variant="outlined"
+                multiline
+                minRows={10}
+                maxRows={15}
+                InputProps={{
+                  classes: {
+                    input: classes.textAreaFont,
+                  },
+                }}
+                fullWidth
               />
             ) : (
               <Typography color="error">

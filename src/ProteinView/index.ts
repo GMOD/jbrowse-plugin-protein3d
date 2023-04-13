@@ -1,7 +1,7 @@
 import PluginManager from '@jbrowse/core/PluginManager'
 import { ViewType } from '@jbrowse/core/pluggableElementTypes'
 
-import stateModelF from './stateModel'
+import stateModelF from './model'
 import ReactComponent from './components/ProteinView'
 
 export default function ProteinViewF(pluginManager: PluginManager) {
