@@ -1,16 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { observer } from 'mobx-react'
+import { ErrorMessage } from '@jbrowse/core/ui'
+import { doesIntersect2 } from '@jbrowse/core/util'
+// molstar
 import { DefaultPluginSpec } from 'molstar/lib/mol-plugin/spec'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { ParamDefinition } from 'molstar/lib/mol-util/param-definition'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helper'
-import { ProteinViewModel } from '../model'
 
+// locals
+import { ProteinViewModel } from '../model'
 import { loadStructure } from './util'
-import { observer } from 'mobx-react'
-import { ErrorMessage } from '@jbrowse/core/ui'
-import { doesIntersect2, getSession } from '@jbrowse/core/util'
 
 // based on https://github.com/samirelanduk/molstar-react v0.5.1
 // licensed ISC
@@ -128,7 +130,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         if (root) {
           const [letter, position] = root.trim().split(' ')
           const pos = +position.trim()
-          console.log({ pos })
+          // console.log({ pos })
           const overlap = mapping
             ?.split('\n')
             .map((parse) => {
@@ -137,7 +139,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
               const [cstart, cend] = crange.trim().split('-')
               const [pdb, prange] = r2.trim().split(':')
               const [pstart, pend] = prange.trim().split('-')
-              console.log({ cstart, cend })
+              // console.log({ cstart, cend })
               return {
                 refName,
                 pdb,
@@ -152,8 +154,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
             const poffset = pos - overlap.pstart
             const coffset = overlap.cstart + poffset * 3
 
-            // @ts-expect-error
-            getSession(model).views[0].setHighlight([
+            model.setHighlights([
               {
                 assemblyName: 'hg38',
                 refName: overlap.refName,

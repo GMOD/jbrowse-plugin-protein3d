@@ -25,7 +25,7 @@ export default observer(function Highlight({ model }: { model: LGV }) {
   const p = views.find((f) => f.type === 'ProteinView') as ProteinViewModel
   return (
     <>
-      {p?.highlight
+      {p?.highlights
         .map((r) => {
           const s = model.bpToPx({ refName: r.refName, coord: r.start })
           const e = model.bpToPx({ refName: r.refName, coord: r.end })

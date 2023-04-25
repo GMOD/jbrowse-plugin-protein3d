@@ -1,6 +1,7 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId, Region } from '@jbrowse/core/util/types/mst'
-import { Instance, types } from 'mobx-state-tree'
+import { Region as IRegion } from '@jbrowse/core/util/types'
+import { Instance, cast, types } from 'mobx-state-tree'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -15,16 +16,28 @@ export const StructureModel = types.model({
 const root = 'https://files.rcsb.org/view/'
 
 function stateModelFactory() {
-  return types.compose(
-    BaseViewModel,
-    types.model({
-      id: ElementId,
-      type: types.literal('ProteinView'),
-      url: types.optional(types.string, root + '1LOL.cif'),
-      mapping: types.maybe(types.string),
-      highlight: types.array(Region),
-    }),
-  )
+  return types
+    .compose(
+      BaseViewModel,
+      types.model({
+        id: ElementId,
+        type: types.literal('ProteinView'),
+        url: types.optional(types.string, root + '1LOL.cif'),
+        mapping: types.maybe(types.string),
+        highlights: types.array(Region),
+      }),
+    )
+    .actions((self) => ({
+      setHighlights(r: IRegion[]) {
+        self.highlights = cast(r)
+      },
+      addToHighlights(r: IRegion) {
+        self.highlights.push(r)
+      },
+      clearHighlights() {
+        self.highlights = cast([])
+      },
+    }))
 }
 
 export default stateModelFactory

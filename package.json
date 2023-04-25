@@ -23,9 +23,9 @@
     "clean": "rimraf dist",
     "prestart": "npm run clean",
     "start": "npm-run-all --parallel start:*",
-    "start:watch": "JB_NPM=false rollup --config --bundleConfigAsCjs --watch",
+    "start:watch": "NODE_ENV=development JB_NPM=false rollup --config --bundleConfigAsCjs --watch",
     "start:server": "serve --cors --listen 9000 .",
-    "build": "rollup --config --bundleConfigAsCjs",
+    "build": "NODE_ENV=production rollup --config --bundleConfigAsCjs",
     "lint": "eslint --ext .js,.ts,.jsx,.tsx src/",
     "prepack": "npm run build",
     "postversion": "git push --follow-tags"
