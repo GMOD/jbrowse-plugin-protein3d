@@ -6,6 +6,7 @@ module.exports = {
     },
   },
   rules: {
+    'import/no-anonymous-default-export': 0,
     '@typescript-eslint/no-unused-vars': [
       'warn',
       {

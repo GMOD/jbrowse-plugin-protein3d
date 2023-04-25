@@ -162,7 +162,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
               },
             ])
           }
-          console.log({ overlap })
         }
       }
     })
@@ -183,6 +182,8 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
       //const anotherPickingId = Structure.toStructureElementLoci(associatedData)
       //this.plugin.managers.camera.focusLoci(anotherPickingId)
     })
+    // needs review
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const width = dimensions.width

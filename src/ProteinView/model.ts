@@ -1,5 +1,5 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
-import { ElementId } from '@jbrowse/core/util/types/mst'
+import { ElementId, Region } from '@jbrowse/core/util/types/mst'
 import { Instance, types } from 'mobx-state-tree'
 
 export const StructureModel = types.model({
@@ -22,6 +22,7 @@ function stateModelFactory() {
       type: types.literal('ProteinView'),
       url: types.optional(types.string, root + '1LOL.cif'),
       mapping: types.maybe(types.string),
+      highlight: types.array(Region),
     }),
   )
 }
