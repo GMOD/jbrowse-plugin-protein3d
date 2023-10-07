@@ -133,7 +133,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
           // console.log({ pos })
           const overlap = mapping
             ?.split('\n')
-            .map((parse) => {
+            .map(parse => {
               const [r1, r2] = parse.split('\t')
               const [refName, crange] = r1.trim().split(':')
               const [cstart, cend] = crange.trim().split('-')
@@ -149,7 +149,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
                 pend: +pend.replaceAll(',', ''),
               }
             })
-            .find((f) => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
+            .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
           if (overlap) {
             const poffset = pos - overlap.pstart
             const coffset = overlap.cstart + poffset * 3
@@ -166,7 +166,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         }
       }
     })
-    plugin.current?.canvas3d?.input.move.subscribe((obj) => {
+    plugin.current?.canvas3d?.input.move.subscribe(obj => {
       // const { x, y } = obj
       // const pickingId = plugin.current?.canvas3d?.identify(x, y)
       // const r =

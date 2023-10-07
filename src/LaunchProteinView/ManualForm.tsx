@@ -9,7 +9,7 @@ import {
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(theme => ({
   textAreaFont: {
     fontFamily: 'Courier New',
   },
@@ -38,7 +38,7 @@ export default function ManualForm({
           <RadioGroup
             row
             value={choice}
-            onChange={(event) => setChoice(event.target.value)}
+            onChange={event => setChoice(event.target.value)}
           >
             <FormControlLabel value="file" control={<Radio />} label="File" />
             <FormControlLabel value="url" control={<Radio />} label="URL" />
@@ -53,7 +53,7 @@ export default function ManualForm({
             size="medium"
             value={url}
             fullWidth
-            onChange={(event) => setUrl(event.target.value)}
+            onChange={event => setUrl(event.target.value)}
             name="structure_url"
           />
         ) : (
@@ -68,7 +68,7 @@ export default function ManualForm({
           value={mapping}
           name="genome_mapping"
           label="Genome-to-protein coordinate mapping"
-          onChange={(event) => setMapping(event.target.value)}
+          onChange={event => setMapping(event.target.value)}
           variant="outlined"
           multiline
           minRows={10}

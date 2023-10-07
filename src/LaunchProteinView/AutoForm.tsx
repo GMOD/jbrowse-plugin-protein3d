@@ -7,7 +7,7 @@ import { Feature } from '@jbrowse/core/util'
 // locals
 import { check, getTranscriptFeatures, useBiomartMappings } from './util'
 
-const useStyles = makeStyles()((theme) => ({
+const useStyles = makeStyles()(theme => ({
   dialogContent: {
     width: '80em',
   },
@@ -41,18 +41,18 @@ export default function AutoForm({
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState(options[0]?.id())
-  const userSelectionFeat = options.find((f) => f.id() === userSelection)
+  const userSelectionFeat = options.find(f => f.id() === userSelection)
 
   const found =
     userSelectionFeat &&
     data?.find(
-      (row) =>
+      row =>
         check(row, userSelectionFeat.get('name')) ||
         check(row, userSelectionFeat.get('id')),
     )
   console.log(
     found,
-    options.map((f) => f.get('name') || f.get('id')),
+    options.map(f => f.get('name') || f.get('id')),
   )
 
   useEffect(() => {
@@ -62,8 +62,8 @@ export default function AutoForm({
       const subs = userSelectionFeat.get('subfeatures') || []
       setMapping(
         subs
-          .filter((f) => f.get('type') === 'CDS')
-          .map((f) => {
+          .filter(f => f.get('type') === 'CDS')
+          .map(f => {
             const ref = f.get('refName').replace('chr', '')
             const s = f.get('start')
             const e = f.get('end')
@@ -90,7 +90,7 @@ export default function AutoForm({
           <div className={classes.section}>
             <TextField
               value={userSelection}
-              onChange={(event) => setUserSelection(event.target.value)}
+              onChange={event => setUserSelection(event.target.value)}
               label="Choose isoform"
               select
             >
@@ -105,7 +105,7 @@ export default function AutoForm({
             {found ? (
               <TextField
                 value={mapping}
-                onChange={(event) => setMapping(event.target.value)}
+                onChange={event => setMapping(event.target.value)}
                 label="Genome to protein mapping"
                 variant="outlined"
                 multiline

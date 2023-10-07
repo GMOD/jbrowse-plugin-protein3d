@@ -29,8 +29,8 @@ export function useBiomartMappings(url: string) {
           .decode(ungzip(await myfetch(url)))
           .split('\n')
           .slice(1)
-          .filter((f) => !!f)
-          .map((f) => {
+          .filter(f => !!f)
+          .map(f => {
             const res = f.split('\t')
             const [
               gene_id,
@@ -74,7 +74,7 @@ export function getTranscriptFeatures(feature: Feature) {
   // finding exon/CDS subfeatures. we want to select from transcript names
   const subfeatures = feature.get('subfeatures') || []
   return subfeatures.some(
-    (f) => f.get('type') === 'CDS' || f.get('type') === 'exon',
+    f => f.get('type') === 'CDS' || f.get('type') === 'exon',
   )
     ? [feature]
     : subfeatures

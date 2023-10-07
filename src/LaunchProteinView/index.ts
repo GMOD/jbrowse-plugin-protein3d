@@ -15,7 +15,7 @@ function isDisplay(elt: { name: string }): elt is DisplayType {
 }
 
 function extendStateModel(stateModel: IAnyModelType) {
-  return stateModel.extend((self) => {
+  return stateModel.extend(self => {
     const superContextMenuItems = self.contextMenuItems
     return {
       views: {
@@ -30,7 +30,7 @@ function extendStateModel(stateModel: IAnyModelType) {
                     label: 'Launch protein view',
                     icon: AddIcon,
                     onClick: () => {
-                      getSession(track).queueDialog((handleClose) => [
+                      getSession(track).queueDialog(handleClose => [
                         LaunchProteinViewDialog,
                         { model: track, handleClose, feature },
                       ])

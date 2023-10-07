@@ -15,7 +15,7 @@
   "config": {
     "jbrowse": {
       "plugin": {
-        "name": "ProteinViewer"
+        "name": "Protein3d"
       }
     }
   },
@@ -31,20 +31,13 @@
     "postversion": "git push --follow-tags"
   },
   "jbrowse-plugin": {
-    "name": "ProteinViewer"
-  },
-  "prettier": {
-    "semi": false,
-    "singleQuote": true,
-    "trailingComma": "all"
+    "name": "Protein3d"
   },
   "dependencies": {
-    "@types/pako": "^2.0.0",
     "molstar": "^3.33.0",
     "molstar-react": "^0.5.1",
     "pako": "^2.1.0",
     "regenerator-runtime": "^0.14.0",
-    "rollup-plugin-visualizer": "^5.9.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
@@ -60,6 +53,7 @@
     "@rollup/plugin-replace": "^5.0.2",
     "@schemastore/package": "^0.0.10",
     "@types/node": "^20.8.3",
+    "@types/pako": "^2.0.0",
     "@types/react": "^18.2.25",
     "@typescript-eslint/eslint-plugin": "^6.7.4",
     "@typescript-eslint/parser": "^6.7.4",

@@ -22,11 +22,11 @@ const useStyles = makeStyles()({
 export default observer(function Highlight({ model }: { model: LGV }) {
   const { classes } = useStyles()
   const { views } = getSession(model)
-  const p = views.find((f) => f.type === 'ProteinView') as ProteinViewModel
+  const p = views.find(f => f.type === 'ProteinView') as ProteinViewModel
   return (
     <>
       {p?.highlights
-        .map((r) => {
+        .map(r => {
           const s = model.bpToPx({ refName: r.refName, coord: r.start })
           const e = model.bpToPx({ refName: r.refName, coord: r.end })
           return s && e

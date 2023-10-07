@@ -27,7 +27,7 @@ function stateModelFactory() {
         highlights: types.array(Region),
       }),
     )
-    .actions((self) => ({
+    .actions(self => ({
       setHighlights(r: IRegion[]) {
         self.highlights = cast(r)
       },
