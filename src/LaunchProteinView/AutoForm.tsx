@@ -5,7 +5,7 @@ import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { check, getTranscriptFeatures, useBiomartMappings } from './util'
+import { Row, check, getTranscriptFeatures, useBiomartMappings } from './util'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -18,14 +18,16 @@ const useStyles = makeStyles()(theme => ({
     marginTop: theme.spacing(6),
   },
 }))
+const z = (n: number) => n.toLocaleString('en-US')
 
 export default function AutoForm({
+  session,
   feature,
   mapping,
-  url,
   setMapping,
   setUrl,
 }: {
+  session: { proteinModel: { data: Row[]; error: unknown } }
   feature: Feature
   mapping: string
   url: string
@@ -33,9 +35,9 @@ export default function AutoForm({
   setMapping: (arg: string) => void
 }) {
   const { classes } = useStyles()
-  const [data, error] = useBiomartMappings(
-    'https://jbrowse.org/demos/protein3d/mart_export.txt.gz',
-  )
+  const { proteinModel } = session
+  const { data, error } = proteinModel
+  console.log({ data, error })
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -50,14 +52,9 @@ export default function AutoForm({
         check(row, userSelectionFeat.get('name')) ||
         check(row, userSelectionFeat.get('id')),
     )
-  console.log(
-    found,
-    options.map(f => f.get('name') || f.get('id')),
-  )
 
   useEffect(() => {
     if (found) {
-      const z = (n: number) => n.toLocaleString('en-US')
       let iter = 0
       const subs = userSelectionFeat.get('subfeatures') || []
       setMapping(
@@ -134,11 +131,11 @@ export default function AutoForm({
 
 function Intro() {
   return (
-    <Typography>
-      Find PDB structure associated with gene ID:{' '}
+    <div>
+      Find structure associated with gene ID:{' '}
       <Link href="http://useast.ensembl.org/biomart/martview/4b20effd49654183333b81e98757976f?VIRTUALSCHEMANAME=default&ATTRIBUTES=hsapiens_gene_ensembl.default.feature_page.ensembl_gene_id|hsapiens_gene_ensembl.default.feature_page.ensembl_gene_id_version|hsapiens_gene_ensembl.default.feature_page.ensembl_transcript_id|hsapiens_gene_ensembl.default.feature_page.ensembl_transcript_id_version|hsapiens_gene_ensembl.default.feature_page.pdb|hsapiens_gene_ensembl.default.feature_page.refseq_mrna|hsapiens_gene_ensembl.default.feature_page.refseq_mrna_predicted&FILTERS=&VISIBLEPANEL=attributepanel">
         Human mappings generated from BioMart (April 13, 2023)
       </Link>
-    </Typography>
+    </div>
   )
 }

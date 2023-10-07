@@ -25,10 +25,12 @@ export default function LaunchProteinViewDialog({
   model: any
 }) {
   const { classes } = useStyles()
+  const session = getSession(model)
   const [choice, setChoice] = useState(0)
   const [mapping, setMapping] = useState(
     'chr1:1-100\tA541.1:1-33\nchr1:201-300\tA541.1:34-66',
   )
+
   const [url, setUrl] = useState('')
   return (
     <Dialog
@@ -38,14 +40,7 @@ export default function LaunchProteinViewDialog({
       open
     >
       <DialogContent className={classes.dialogContent}>
-        {/* MUI produces an tabs related error on initial load because plugins
-receive suspense components from jbrowse reexports, example issue xref
-https://github.com/mui/material-ui/issues/32749#issuecomment-1270738582 */}
-        <Tabs
-          value={choice}
-          onChange={(_, val) => setChoice(val)}
-          aria-label="basic tabs example"
-        >
+        <Tabs value={choice} onChange={(_, val) => setChoice(val)}>
           <Tab value={0} label="Auto" />
           <Tab value={1} label="Manual" />
         </Tabs>
@@ -56,6 +51,8 @@ https://github.com/mui/material-ui/issues/32749#issuecomment-1270738582 */}
             url={url}
             setMapping={setMapping}
             setUrl={setUrl}
+            // @ts-expect-error
+            session={session}
           />
         </TabPanel>
         <TabPanel value={choice} index={1}>
@@ -72,9 +69,7 @@ https://github.com/mui/material-ui/issues/32749#issuecomment-1270738582 */}
           color="primary"
           variant="contained"
           onClick={() => {
-            const session = getSession(model)
-            console.log({ mapping })
-            session.addView('ProteinView', {
+            getSession(model).addView('ProteinView', {
               type: 'ProteinView',
               url,
               mapping,

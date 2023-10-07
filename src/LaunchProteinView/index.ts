@@ -49,10 +49,9 @@ export default function LaunchProteinViewF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
     'Core-extendPluggableElement',
     (elt: PluggableElementType) => {
-      if (!isDisplay(elt)) {
-        return elt
+      if (isDisplay(elt)) {
+        elt.stateModel = extendStateModel(elt.stateModel)
       }
-      elt.stateModel = extendStateModel(elt.stateModel)
       return elt
     },
   )
