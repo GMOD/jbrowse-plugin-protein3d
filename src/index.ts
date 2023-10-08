@@ -10,22 +10,24 @@ import { version } from '../package.json'
 import ProteinViewF from './ProteinView'
 import LaunchProteinViewF from './LaunchProteinView'
 import AddHighlightModelF from './AddHighlightModel'
+import { Row } from './LaunchProteinView/util'
 
 const ProteinModel = types
   .model({})
   .volatile(() => ({
-    data: undefined,
+    data: undefined as Row[] | undefined,
     error: undefined as unknown,
   }))
-  .actions((self: any) => ({
-    setData(a: any) {
+  .actions(self => ({
+    setData(a?: Row[]) {
       self.data = a
     },
     setError(e: unknown) {
       self.error = e
     },
   }))
-  .actions((self: any) => {
+  .actions(self => {
+    // @ts-expect-error
     const superAfter = self.afterAttach
     return {
       afterAttach() {
@@ -63,8 +65,8 @@ const ProteinModel = types
                 })
               console.log({ d })
               self.setData(d)
-            } catch (e) {
-              self.setError(e)
+            } catch (error) {
+              self.setError(error)
             }
           }),
         )

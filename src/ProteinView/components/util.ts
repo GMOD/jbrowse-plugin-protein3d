@@ -5,7 +5,11 @@ export async function loadStructure({
 }: {
   url?: string
   file?: { type: string; filestring: string }
-  plugin?: { clear: () => void; [key: string]: any }
+  plugin?: {
+    clear: () => void
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    [key: string]: any
+  }
 }) {
   if (!plugin) {
     return
@@ -29,7 +33,7 @@ export async function loadStructure({
     )
     let ext = structureUrl.split('.').pop()?.replace('cif', 'mmcif')
     if (ext?.includes('?')) {
-      ext = ext.substring(0, ext.indexOf('?'))
+      ext = ext.slice(0, Math.max(0, ext.indexOf('?')))
     }
     const traj = await plugin.builders.structure.parseTrajectory(data, ext)
     await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')

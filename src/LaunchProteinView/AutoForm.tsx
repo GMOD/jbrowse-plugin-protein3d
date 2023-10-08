@@ -81,7 +81,7 @@ export default function AutoForm({
     <div className={classes.section}>
       {error ? (
         <ErrorMessage error={error} />
-      ) : data ? (
+      ) : (data ? (
         <div>
           <Intro />
           <div className={classes.section}>
@@ -124,7 +124,7 @@ export default function AutoForm({
         </div>
       ) : (
         <LoadingEllipses />
-      )}
+      ))}
     </div>
   )
 }

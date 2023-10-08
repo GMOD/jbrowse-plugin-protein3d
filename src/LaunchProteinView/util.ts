@@ -52,8 +52,8 @@ export function useBiomartMappings(url: string) {
             }
           })
         setData(d)
-      } catch (e) {
-        setError(e)
+      } catch (error_) {
+        setError(error_)
       }
     })()
   }, [url])

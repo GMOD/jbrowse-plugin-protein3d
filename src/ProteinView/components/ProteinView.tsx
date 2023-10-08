@@ -42,6 +42,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const plugin = useRef<PluginContext>()
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
         if (showInterface) {
@@ -91,21 +92,24 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   }, [])
 
   useEffect(() => {
-    loadStructure({ url, file, plugin: plugin.current })
+    ;async () => {
+      try {
+        await loadStructure({ url, file, plugin: plugin.current })
+      } catch (e) {
+        setError(e)
+      }
+    }
   }, [url, file])
 
   useEffect(() => {
     if (!plugin.current) {
       return
     }
-    if (!showAxes) {
+    if (showAxes) {
       plugin.current.canvas3d?.setProps({
         camera: {
           helper: {
-            axes: {
-              name: 'off',
-              params: {},
-            },
+            axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
           },
         },
       })
@@ -113,7 +117,10 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
       plugin.current.canvas3d?.setProps({
         camera: {
           helper: {
-            axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
+            axes: {
+              name: 'off',
+              params: {},
+            },
           },
         },
       })
@@ -220,11 +227,14 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   }
 })
 
-export default observer(function ({ model }: { model: ProteinViewModel }) {
+const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {
+  const { url } = model
   return (
     <div>
-      <div>{model.url}</div>
+      <div>{url}</div>
       <ProteinView model={model} />
     </div>
   )
 })
+
+export default Wrapper
