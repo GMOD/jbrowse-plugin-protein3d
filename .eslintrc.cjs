@@ -30,6 +30,7 @@ module.exports = {
     'unicorn/filename-case': 'off',
     'unicorn/no-useless-undefined': 'off',
     'unicorn/catch-error-name': 'off',
+    'unicorn/no-nested-ternary': 'off',
 
     'react/prop-types': 'off',
     'react/react-in-jsx-scope': 'off',

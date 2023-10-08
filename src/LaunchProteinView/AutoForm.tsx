@@ -20,7 +20,7 @@ const useStyles = makeStyles()(theme => ({
 }))
 const z = (n: number) => n.toLocaleString('en-US')
 
-export default function AutoForm({
+const AutoForm = observer(function AutoForm({
   session,
   feature,
   mapping,
@@ -81,7 +81,7 @@ export default function AutoForm({
     <div className={classes.section}>
       {error ? (
         <ErrorMessage error={error} />
-      ) : (data ? (
+      ) : data ? (
         <div>
           <Intro />
           <div className={classes.section}>
@@ -124,10 +124,10 @@ export default function AutoForm({
         </div>
       ) : (
         <LoadingEllipses />
-      ))}
+      )}
     </div>
   )
-}
+})
 
 function Intro() {
   return (
@@ -139,3 +139,5 @@ function Intro() {
     </div>
   )
 }
+
+export default AutoForm

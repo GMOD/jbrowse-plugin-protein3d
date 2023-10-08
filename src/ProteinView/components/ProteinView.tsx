@@ -137,7 +137,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         if (root) {
           const [, position] = root.trim().split(' ')
           const pos = +position.trim()
-          // console.log({ pos })
           const overlap = mapping
             ?.split('\n')
             .map(parse => {
@@ -146,7 +145,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
               const [cstart, cend] = crange.trim().split('-')
               const [pdb, prange] = r2.trim().split(':')
               const [pstart, pend] = prange.trim().split('-')
-              // console.log({ cstart, cend })
               return {
                 refName,
                 pdb,

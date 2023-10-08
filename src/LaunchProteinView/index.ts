@@ -15,31 +15,30 @@ function isDisplay(elt: { name: string }): elt is DisplayType {
 }
 
 function extendStateModel(stateModel: IAnyModelType) {
-  return stateModel.extend(self => {
+  return stateModel.views(self => {
     const superContextMenuItems = self.contextMenuItems
+    console.log('test')
     return {
-      views: {
-        contextMenuItems() {
-          const feature = self.contextMenuFeature
-          const track = getContainingTrack(self)
-          return [
-            ...superContextMenuItems(),
-            ...(feature
-              ? [
-                  {
-                    label: 'Launch protein view',
-                    icon: AddIcon,
-                    onClick: () => {
-                      getSession(track).queueDialog(handleClose => [
-                        LaunchProteinViewDialog,
-                        { model: track, handleClose, feature },
-                      ])
-                    },
+      contextMenuItems() {
+        const feature = self.contextMenuFeature
+        const track = getContainingTrack(self)
+        return [
+          ...superContextMenuItems(),
+          ...(feature
+            ? [
+                {
+                  label: 'Launch protein view',
+                  icon: AddIcon,
+                  onClick: () => {
+                    getSession(track).queueDialog(handleClose => [
+                      LaunchProteinViewDialog,
+                      { model: track, handleClose, feature },
+                    ])
                   },
-                ]
-              : []),
-          ]
-        },
+                },
+              ]
+            : []),
+        ]
       },
     }
   })
