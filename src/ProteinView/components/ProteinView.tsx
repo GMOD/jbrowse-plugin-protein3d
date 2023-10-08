@@ -35,21 +35,24 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     file?: { type: string; filestring: string }
   }
 
+  const initializingRef = useRef(false)
   const [error, setError] = useState<unknown>()
-  const [mouseover, setMouseover] = useState<string>()
+  const [mouseClickedPosition, setMouseClickedPosition] = useState<string>()
   const parentRef = useRef(null)
   const canvasRef = useRef(null)
-  const plugin = useRef<PluginContext>()
+  const [plugin, setPlugin] = useState<PluginContext>()
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
+        console.log('lol')
+        let p: PluginContext | undefined
         if (showInterface) {
           if (!parentRef.current) {
             return
           }
-          plugin.current = await createPluginUI(parentRef.current, {
+          p = await createPluginUI(parentRef.current, {
             ...DefaultPluginUISpec(),
             layout: {
               initial: {
@@ -59,54 +62,50 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
               },
             },
           })
+          setPlugin(p)
         } else {
           if (!canvasRef.current || !parentRef.current) {
             return
           }
-          plugin.current = new PluginContext(DefaultPluginSpec())
-          plugin.current.initViewer(canvasRef.current, parentRef.current)
-          await plugin.current.init()
+          p = new PluginContext(DefaultPluginSpec())
+          p.initViewer(canvasRef.current, parentRef.current)
+          await p.init()
+          setPlugin(p)
         }
-        if (!showAxes) {
-          plugin.current.canvas3d?.setProps({
-            camera: {
-              helper: {
-                axes: {
-                  name: 'off',
-                  params: {},
-                },
-              },
-            },
-          })
-        }
-        await loadStructure({ url, file, plugin: plugin.current })
+
+        console.log('here')
+        await loadStructure({ url, file, plugin: p })
+        console.log('here2')
       } catch (e) {
+        console.error(e)
         setError(e)
       }
     })()
-    return () => {
-      plugin.current = undefined
-    }
+
     // needs review
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [url, file, showAxes, showInterface, showControls])
+
+  // useEffect(() => {
+  //   console.log('wow')
+  //   // eslint-disable-next-line @typescript-eslint/no-floating-promises
+  //   ;(async () => {
+  //     if (!initialized) {
+  //       return
+  //     }
+  //     try {
+  //       await loadStructure({ url, file, plugin: plugin.current })
+  //     } catch (e) {
+  //       setError(e)
+  //     }
+  //   })()
+  // }, [url, initialized, file])
 
   useEffect(() => {
-    ;async () => {
-      try {
-        await loadStructure({ url, file, plugin: plugin.current })
-      } catch (e) {
-        setError(e)
-      }
-    }
-  }, [url, file])
-
-  useEffect(() => {
-    if (!plugin.current) {
+    if (!plugin) {
       return
     }
     if (showAxes) {
-      plugin.current.canvas3d?.setProps({
+      plugin.canvas3d?.setProps({
         camera: {
           helper: {
             axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
@@ -114,7 +113,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         },
       })
     } else {
-      plugin.current.canvas3d?.setProps({
+      plugin.canvas3d?.setProps({
         camera: {
           helper: {
             axes: {
@@ -125,15 +124,18 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         },
       })
     }
-  }, [showAxes])
+  }, [plugin, showAxes])
 
   useEffect(() => {
-    plugin.current?.state.data.events.changed.subscribe(() => {
-      const r =
-        plugin.current?.state.getSnapshot().structureFocus?.current?.label
-      setMouseover(r)
-      if (r) {
-        const [root] = r.split('|')
+    if (!plugin) {
+      return
+    }
+    plugin.state.data.events.changed.subscribe(() => {
+      const clickedPos =
+        plugin.state.getSnapshot().structureFocus?.current?.label
+      setMouseClickedPosition(clickedPos)
+      if (clickedPos) {
+        const [root] = clickedPos.split('|')
         if (root) {
           const [, position] = root.trim().split(' ')
           const pos = +position.trim()
@@ -171,26 +173,25 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         }
       }
     })
-    plugin.current?.canvas3d?.input.move.subscribe(_obj => {
-      // const { x, y } = obj
-      // const pickingId = plugin.current?.canvas3d?.identify(x, y)
-      // const r =
-      //   plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
-      //     .obj?.data
-      // if (r) {
-      //   const r2 = Structure.toStructureElementLoci(r)
-      //   console.log({ pickingId, r, r2 })
-      // }
-      //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
-      // const getPickingSourceData = getPickingSourceData(pickingId)
-      ////todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]
-      //const associatedData = findAssociatedData(getPickingSourceData)
-      //const anotherPickingId = Structure.toStructureElementLoci(associatedData)
-      //this.plugin.managers.camera.focusLoci(anotherPickingId)
-    })
+    // plugin.canvas3d?.input.move.subscribe(_obj => {
+    // const { x, y } = obj
+    // const pickingId = plugin.current?.canvas3d?.identify(x, y)
+    // const r =
+    //   plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
+    //     .obj?.data
+    // if (r) {
+    //   const r2 = Structure.toStructureElementLoci(r)
+    //   console.log({ pickingId, r, r2 })
+    // }
+    //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
+    // const getPickingSourceData = getPickingSourceData(pickingId)
+    ////todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]
+    //const associatedData = findAssociatedData(getPickingSourceData)
+    //const anotherPickingId = Structure.toStructureElementLoci(associatedData)
+    //this.plugin.managers.camera.focusLoci(anotherPickingId)
+    // })
     // needs review
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [plugin, mapping, model])
 
   const width = dimensions.width
   const height = dimensions.height
@@ -209,7 +210,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   } else {
     return (
       <div>
-        {mouseover ?? 'No click'}
+        {mouseClickedPosition}
         <div
           ref={parentRef}
           style={{ position: 'relative', width, height }}
