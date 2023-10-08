@@ -35,7 +35,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     file?: { type: string; filestring: string }
   }
 
-  const initializingRef = useRef(false)
   const [error, setError] = useState<unknown>()
   const [mouseClickedPosition, setMouseClickedPosition] = useState<string>()
   const parentRef = useRef(null)
@@ -46,7 +45,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
-        console.log('lol')
         let p: PluginContext | undefined
         if (showInterface) {
           if (!parentRef.current) {
@@ -73,9 +71,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
           setPlugin(p)
         }
 
-        console.log('here')
         await loadStructure({ url, file, plugin: p })
-        console.log('here2')
       } catch (e) {
         console.error(e)
         setError(e)
@@ -84,21 +80,6 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
 
     // needs review
   }, [url, file, showAxes, showInterface, showControls])
-
-  // useEffect(() => {
-  //   console.log('wow')
-  //   // eslint-disable-next-line @typescript-eslint/no-floating-promises
-  //   ;(async () => {
-  //     if (!initialized) {
-  //       return
-  //     }
-  //     try {
-  //       await loadStructure({ url, file, plugin: plugin.current })
-  //     } catch (e) {
-  //       setError(e)
-  //     }
-  //   })()
-  // }, [url, initialized, file])
 
   useEffect(() => {
     if (!plugin) {

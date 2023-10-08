@@ -63,7 +63,6 @@ const ProteinModel = types
                     refseq_mrna_id,
                   }
                 })
-              console.log({ d })
               self.setData(d)
             } catch (error) {
               self.setError(error)

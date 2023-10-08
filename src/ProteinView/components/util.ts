@@ -15,7 +15,6 @@ export async function loadStructure({
     return
   }
   plugin.clear()
-  console.log('wow clear')
   if (file) {
     const { filestring, type } = file
     const data = await plugin.builders.data.rawData({
@@ -36,7 +35,6 @@ export async function loadStructure({
     if (ext?.includes('?')) {
       ext = ext.slice(0, Math.max(0, ext.indexOf('?')))
     }
-    console.log({ ext, data })
     const traj = await plugin.builders.structure.parseTrajectory(data, ext)
     await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
   }
