@@ -19,47 +19,6 @@ export interface Row {
   refseq_mrna_predicted_id: string
   refseq_mrna_id: string
 }
-export function useBiomartMappings(url: string) {
-  const [data, setData] = useState<Row[]>()
-  const [error, setError] = useState<unknown>()
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        const d = new TextDecoder('utf8')
-          .decode(ungzip(await myfetch(url)))
-          .split('\n')
-          .slice(1)
-          .filter(f => !!f)
-          .map(f => {
-            const res = f.split('\t')
-            const [
-              gene_id,
-              gene_id_version,
-              transcript_id,
-              transcript_id_version,
-              pdb_id,
-              refseq_mrna_id,
-              refseq_mrna_predicted_id,
-            ] = res
-            return {
-              gene_id,
-              gene_id_version,
-              transcript_id_version,
-              transcript_id,
-              pdb_id,
-              refseq_mrna_predicted_id,
-              refseq_mrna_id,
-            }
-          })
-        setData(d)
-      } catch (e) {
-        setError(e)
-      }
-    })()
-  }, [url])
-  return [data, error] as const
-}
 
 export function check(row: Row, val: string) {
   return (

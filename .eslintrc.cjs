@@ -31,6 +31,7 @@ module.exports = {
     'unicorn/no-useless-undefined': 'off',
     'unicorn/catch-error-name': 'off',
     'unicorn/no-nested-ternary': 'off',
+    'unicorn/better-regex': 'off',
 
     'react/prop-types': 'off',
     'react/react-in-jsx-scope': 'off',

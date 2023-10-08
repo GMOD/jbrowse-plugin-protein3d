@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { observer } from 'mobx-react'
 import { Link, MenuItem, TextField, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
@@ -49,14 +50,15 @@ const AutoForm = observer(function AutoForm({
     userSelectionFeat &&
     data?.find(
       row =>
-        check(row, userSelectionFeat.get('name')) ||
-        check(row, userSelectionFeat.get('id')),
+        check(row, userSelectionFeat.get('name').replace(/\.[^/.]+$/, '')) ||
+        check(row, userSelectionFeat.get('id').replace(/\.[^/.]+$/, '')),
     )
 
   useEffect(() => {
     if (found) {
       let iter = 0
       const subs = userSelectionFeat.get('subfeatures') ?? []
+      const { pdb_id } = found
       setMapping(
         subs
           .filter(f => f.get('type') === 'CDS')
@@ -69,11 +71,11 @@ const AutoForm = observer(function AutoForm({
             const ps = iter
             const pe = iter + op
             iter += op
-            return `${ref}:${z(s)}-${z(e)}\t${found.pdb_id}:${z(ps)}-${z(pe)}`
+            return `${ref}:${z(s)}-${z(e)}\t${pdb_id}:${z(ps)}-${z(pe)}`
           })
           .join('\n'),
       )
-      setUrl(`https://files.rcsb.org/view/${found.pdb_id}.cif`)
+      setUrl(`https://files.rcsb.org/view/${pdb_id}.cif`)
     }
   }, [found, userSelectionFeat, setMapping, setUrl])
 
