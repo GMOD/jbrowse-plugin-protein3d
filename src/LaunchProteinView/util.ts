@@ -23,6 +23,7 @@ export function useBiomartMappings(url: string) {
   const [data, setData] = useState<Row[]>()
   const [error, setError] = useState<unknown>()
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
         const d = new TextDecoder('utf8')
@@ -52,8 +53,8 @@ export function useBiomartMappings(url: string) {
             }
           })
         setData(d)
-      } catch (error_) {
-        setError(error_)
+      } catch (e) {
+        setError(e)
       }
     })()
   }, [url])
@@ -72,7 +73,7 @@ export function check(row: Row, val: string) {
 export function getTranscriptFeatures(feature: Feature) {
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
-  const subfeatures = feature.get('subfeatures') || []
+  const subfeatures = feature.get('subfeatures') ?? []
   return subfeatures.some(
     f => f.get('type') === 'CDS' || f.get('type') === 'exon',
   )

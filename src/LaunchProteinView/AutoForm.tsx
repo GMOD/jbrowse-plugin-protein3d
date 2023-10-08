@@ -56,7 +56,7 @@ export default function AutoForm({
   useEffect(() => {
     if (found) {
       let iter = 0
-      const subs = userSelectionFeat.get('subfeatures') || []
+      const subs = userSelectionFeat.get('subfeatures') ?? []
       setMapping(
         subs
           .filter(f => f.get('type') === 'CDS')

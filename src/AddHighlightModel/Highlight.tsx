@@ -19,7 +19,7 @@ const useStyles = makeStyles()({
   },
 })
 
-export default observer(function Highlight({ model }: { model: LGV }) {
+const Highlight = observer(function Highlight({ model }: { model: LGV }) {
   const { classes } = useStyles()
   const { views } = getSession(model)
   const p = views.find(f => f.type === 'ProteinView') as ProteinViewModel
@@ -47,3 +47,5 @@ export default observer(function Highlight({ model }: { model: LGV }) {
     </>
   )
 })
+
+export default Highlight

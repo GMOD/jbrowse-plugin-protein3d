@@ -22,6 +22,7 @@ export default function LaunchProteinViewDialog({
 }: {
   handleClose: () => void
   feature: Feature
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   model: any
 }) {
   const { classes } = useStyles()
@@ -69,7 +70,7 @@ export default function LaunchProteinViewDialog({
           color="primary"
           variant="contained"
           onClick={() => {
-            getSession(model).addView('ProteinView', {
+            session.addView('ProteinView', {
               type: 'ProteinView',
               url,
               mapping,

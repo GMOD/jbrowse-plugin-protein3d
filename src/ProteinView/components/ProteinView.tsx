@@ -133,9 +133,9 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         plugin.current?.state.getSnapshot().structureFocus?.current?.label
       setMouseover(r)
       if (r) {
-        const [root, chain] = r.split('|')
+        const [root] = r.split('|')
         if (root) {
-          const [letter, position] = root.trim().split(' ')
+          const [, position] = root.trim().split(' ')
           const pos = +position.trim()
           // console.log({ pos })
           const overlap = mapping
@@ -173,7 +173,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         }
       }
     })
-    plugin.current?.canvas3d?.input.move.subscribe(obj => {
+    plugin.current?.canvas3d?.input.move.subscribe(_obj => {
       // const { x, y } = obj
       // const pickingId = plugin.current?.canvas3d?.identify(x, y)
       // const r =
@@ -211,7 +211,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   } else {
     return (
       <div>
-        {mouseover || 'No click'}
+        {mouseover ?? 'No click'}
         <div
           ref={parentRef}
           style={{ position: 'relative', width, height }}

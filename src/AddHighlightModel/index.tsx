@@ -5,7 +5,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 // locals
 import Highlight from './Highlight'
 
-export default (pluginManager: PluginManager) => {
+export default function AddHighlightModelF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
     'LinearGenomeView-TracksContainerComponent',
     // @ts-expect-error
