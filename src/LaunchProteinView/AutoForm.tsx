@@ -5,7 +5,7 @@ import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { Row, check, getTranscriptFeatures, useBiomartMappings } from './util'
+import { Row, check, getTranscriptFeatures } from './util'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
