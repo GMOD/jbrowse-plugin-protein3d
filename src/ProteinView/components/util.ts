@@ -1,3 +1,5 @@
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
+
 export async function loadStructure({
   url,
   file,
@@ -5,21 +7,18 @@ export async function loadStructure({
 }: {
   url?: string
   file?: { type: string; filestring: string }
-  plugin?: {
-    clear: () => void
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    [key: string]: any
-  }
+  plugin?: PluginContext
 }) {
   if (!plugin) {
     return
   }
-  plugin.clear()
+  await plugin.clear()
   if (file) {
     const { filestring, type } = file
     const data = await plugin.builders.data.rawData({
       data: filestring,
     })
+    // @ts-expect-error
     const traj = await plugin.builders.structure.parseTrajectory(data, type)
     await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
   } else {
@@ -35,6 +34,7 @@ export async function loadStructure({
     if (ext?.includes('?')) {
       ext = ext.slice(0, Math.max(0, ext.indexOf('?')))
     }
+    // @ts-expect-error
     const traj = await plugin.builders.structure.parseTrajectory(data, ext)
     await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
   }

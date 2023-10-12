@@ -91,7 +91,9 @@ export default class ProteinViewer extends Plugin {
 
     pluginManager.addToExtensionPoint('Core-extendSession', session => {
       return types.compose(
-        types.model({ proteinModel: types.optional(ProteinModel, {}) }),
+        types.model({
+          proteinModel: types.optional(ProteinModel, {}),
+        }),
         // @ts-expect-error
         session,
       )

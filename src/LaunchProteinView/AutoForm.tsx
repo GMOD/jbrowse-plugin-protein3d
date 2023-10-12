@@ -38,7 +38,6 @@ const AutoForm = observer(function AutoForm({
   const { classes } = useStyles()
   const { proteinModel } = session
   const { data, error } = proteinModel
-  console.log({ data, error })
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names

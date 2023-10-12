@@ -1,14 +1,4 @@
 import { Feature } from '@jbrowse/core/util'
-import { ungzip } from 'pako'
-import { useEffect, useState } from 'react'
-
-async function myfetch(url: string) {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching ${url}: ${await res.text()}`)
-  }
-  return res.arrayBuffer()
-}
 
 export interface Row {
   gene_id: string

@@ -17,7 +17,6 @@ function isDisplay(elt: { name: string }): elt is DisplayType {
 function extendStateModel(stateModel: IAnyModelType) {
   return stateModel.views(self => {
     const superContextMenuItems = self.contextMenuItems
-    console.log('test')
     return {
       contextMenuItems() {
         const feature = self.contextMenuFeature

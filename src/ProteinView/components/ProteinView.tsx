@@ -13,15 +13,15 @@ import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helpe
 // locals
 import { ProteinViewModel } from '../model'
 import { loadStructure } from './util'
-
-// based on https://github.com/samirelanduk/molstar-react v0.5.1
-// licensed ISC
+import { Script } from 'molstar/lib/mol-script/script'
+import { StructureSelection } from 'molstar/lib/mol-model/structure/query'
+import { Structure, StructureProperties } from 'molstar/lib/mol-model/structure'
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping } = model
   const {
     file,
-    dimensions = { width: 800, height: 600 },
+    dimensions = { width: 800, height: 500 },
     className = '',
     showInterface = false,
     showControls = true,
@@ -111,67 +111,118 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     if (!plugin) {
       return
     }
-    plugin.state.data.events.changed.subscribe(() => {
-      const clickedPos =
-        plugin.state.getSnapshot().structureFocus?.current?.label
-      setMouseClickedPosition(clickedPos)
-      if (clickedPos) {
-        const [root] = clickedPos.split('|')
-        if (root) {
-          const [, position] = root.trim().split(' ')
-          const pos = +position.trim()
-          const overlap = mapping
-            ?.split('\n')
-            .map(parse => {
-              const [r1, r2] = parse.split('\t')
-              const [refName, crange] = r1.trim().split(':')
-              const [cstart, cend] = crange.trim().split('-')
-              const [pdb, prange] = r2.trim().split(':')
-              const [pstart, pend] = prange.trim().split('-')
-              return {
-                refName,
-                pdb,
-                cstart: +cstart.replaceAll(',', ''),
-                cend: +cend.replaceAll(',', ''),
-                pstart: +pstart.replaceAll(',', ''),
-                pend: +pend.replaceAll(',', ''),
-              }
-            })
-            .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
-          if (overlap) {
-            const poffset = pos - overlap.pstart
-            const coffset = overlap.cstart + poffset * 3
-
-            model.setHighlights([
-              {
-                assemblyName: 'hg38',
-                refName: overlap.refName,
-                start: coffset,
-                end: coffset + 3,
-              },
-            ])
-          }
+    // setSelected is assumed to be a "set" function returned by useState
+    // (selected: any[]) => void
+    plugin.behaviors.interaction.click.subscribe(event => {
+      const selections = [
+        ...plugin.managers.structure.selection.entries.values(),
+      ]
+      console.log({ selections })
+      // This bit can be customized to record any piece information you want
+      const localSelected: any[] = []
+      for (const structure of selections) {
+        console.log({ structure }, structure.selection)
+        if (!structure.structure) {
+          continue
         }
+        Structure.eachAtomicHierarchyElement(structure.structure, {
+          residue: loc => {
+            const position = StructureProperties.residue.label_seq_id(loc)
+            localSelected.push({ position })
+          },
+        })
       }
+      console.log({ localSelected })
     })
-    // plugin.canvas3d?.input.move.subscribe(_obj => {
-    // const { x, y } = obj
-    // const pickingId = plugin.current?.canvas3d?.identify(x, y)
-    // const r =
-    //   plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
-    //     .obj?.data
-    // if (r) {
-    //   const r2 = Structure.toStructureElementLoci(r)
-    //   console.log({ pickingId, r, r2 })
-    // }
-    //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
-    // const getPickingSourceData = getPickingSourceData(pickingId)
-    ////todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]
-    //const associatedData = findAssociatedData(getPickingSourceData)
-    //const anotherPickingId = Structure.toStructureElementLoci(associatedData)
-    //this.plugin.managers.camera.focusLoci(anotherPickingId)
+    // plugin.state.data.events.changed.subscribe(() => {
+    //   const clickedPos =
+    //     plugin.state.getSnapshot().structureFocus?.current?.label
+
+    //   const ligandData =
+    //     plugin.managers.structure.hierarchy.selection.structures[0]
+    //       ?.components[0]?.cell.obj?.data
+
+    //   console.log({ ligandData })
+
+    //   const data =
+    //     plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj
+    //       ?.data
+    //   console.log({ data })
+
+    //   if (data) {
+    //     const selection = Script.getStructureSelection(
+    //       Q =>
+    //         Q.struct.generator.atomGroups({
+    //           'chain-test': Q.core.rel.eq(['B', Q.ammp('label_asym_id')]),
+    //         }),
+    //       data,
+    //     )
+    //     const loci = StructureSelection.toLociWithSourceUnits(selection)
+    //     console.log({ loci })
+    //   }
+    //   setMouseClickedPosition(clickedPos)
+    //   if (clickedPos) {
+    //     const [root] = clickedPos.split('|')
+    //     if (root) {
+    //       const [, position] = root.trim().split(' ')
+    //       const pos = +position.trim()
+    //       const overlap = mapping
+    //         ?.split('\n')
+    //         .map(parse => {
+    //           const [r1, r2] = parse.split('\t')
+    //           const [refName, crange] = r1.trim().split(':')
+    //           const [cstart, cend] = crange.trim().split('-')
+    //           const [pdb, prange] = r2.trim().split(':')
+    //           const [pstart, pend] = prange.trim().split('-')
+    //           return {
+    //             refName,
+    //             pdb,
+    //             cstart: +cstart.replaceAll(',', ''),
+    //             cend: +cend.replaceAll(',', ''),
+    //             pstart: +pstart.replaceAll(',', ''),
+    //             pend: +pend.replaceAll(',', ''),
+    //           }
+    //         })
+    //         .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
+
+    //       console.log({ overlap })
+    //       if (overlap) {
+    //         const poffset = pos - overlap.pstart
+    //         const coffset = overlap.cstart + poffset * 3
+
+    //         model.setHighlights([
+    //           {
+    //             assemblyName: 'hg38',
+    //             refName: overlap.refName,
+    //             start: coffset,
+    //             end: coffset + 3,
+    //           },
+    //         ])
+    //       }
+    //     }
+    //   }
     // })
-    // needs review
+
+    //plugin.canvas3dContext?.input.move.subscribe(obj=>console.log({obj}))
+    //plugin.canvas3d?.input.move.subscribe(obj=>console.log({obj},',k2'))
+    //plugin.canvas3d?.input.move.subscribe(obj => {
+    //  const { x, y } = obj
+    //  const pickingId = plugin.canvas3d?.identify(x, y)
+    //  const r =
+    //    plugin.managers.structure.hierarchy.current.structures[0]?.cell
+    //      .obj?.data
+    //  console.log({x,y})
+    //  if (r) {
+    //    const r2 = Structure.toStructureElementLoci(r)
+    //    console.log({ pickingId, r, r2 })
+    //  }
+    //  //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
+    //  // const getPickingSourceData = getPickingSourceData(pickingId)
+    //  //todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]
+    //  // const associatedData = findAssociatedData(getPickingSourceData)
+    //  // const anotherPickingId = Structure.toStructureElementLoci(associatedData)
+    //  // this.plugin.managers.camera.focusLoci(anotherPickingId)
+    //})
   }, [plugin, mapping, model])
 
   const width = dimensions.width
