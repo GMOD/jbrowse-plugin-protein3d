@@ -45,16 +45,18 @@ const AutoForm = observer(function AutoForm({
   const [userSelection, setUserSelection] = useState(options[0]?.id())
   const userSelectionFeat = options.find(f => f.id() === userSelection)
 
-  const found =
-    userSelectionFeat &&
+  const foundF = (feat?: Feature) =>
+    feat &&
     data?.find(
       row =>
-        check(row, userSelectionFeat.get('name').replace(/\.[^/.]+$/, '')) ||
-        check(row, userSelectionFeat.get('id').replace(/\.[^/.]+$/, '')),
+        check(row, feat.get('name')?.replace(/\.[^/.]+$/, '')) ||
+        check(row, feat.get('id')?.replace(/\.[^/.]+$/, '')),
     )
 
+  const found = foundF(userSelectionFeat)
+
   useEffect(() => {
-    if (found) {
+    if (found && userSelectionFeat) {
       let iter = 0
       const subs = userSelectionFeat.get('subfeatures') ?? []
       const { pdb_id } = found
@@ -92,11 +94,14 @@ const AutoForm = observer(function AutoForm({
               label="Choose isoform"
               select
             >
-              {options.map((val, idx) => (
-                <MenuItem value={val.id()} key={val.id() + '-' + idx}>
-                  {val.get('name') || val.get('id')}
-                </MenuItem>
-              ))}
+              {options.map((val, idx) => {
+                const r = val.get('name') || val.get('id')
+                return (
+                  <MenuItem value={val.id()} key={val.id() + '-' + idx}>
+                    {r} {foundF(val) ? ' (has data)' : ''}
+                  </MenuItem>
+                )
+              })}
             </TextField>
           </div>
           <div className={classes.section}>
