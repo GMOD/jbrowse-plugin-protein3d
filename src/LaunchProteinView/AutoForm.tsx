@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { observer } from 'mobx-react'
 import { Link, MenuItem, TextField, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
@@ -6,12 +6,9 @@ import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { Row, check, getTranscriptFeatures } from './util'
+import { Row, getTranscriptFeatures } from './util'
 
 const useStyles = makeStyles()(theme => ({
-  dialogContent: {
-    width: '80em',
-  },
   textAreaFont: {
     fontFamily: 'Courier New',
   },
@@ -21,6 +18,35 @@ const useStyles = makeStyles()(theme => ({
 }))
 const z = (n: number) => n.toLocaleString('en-US')
 
+function stripTrailingVersion(s?: string) {
+  return s?.replace(/\.[^/.]+$/, '')
+}
+
+function createMapFromData(data?: Row[]) {
+  const map = new Map<string, string>()
+  if (data) {
+    for (const d of data) {
+      const { pdb_id, transcript_id, refseq_mrna_id, transcript_id_version } = d
+      if (!pdb_id) {
+        continue
+      }
+      if (transcript_id) {
+        map.set(transcript_id, pdb_id)
+      }
+      if (refseq_mrna_id) {
+        map.set(refseq_mrna_id, pdb_id)
+      }
+      if (transcript_id_version) {
+        map.set(transcript_id_version, pdb_id)
+      }
+    }
+  }
+  return map
+}
+
+function getDisplayName(f: Feature) {
+  return f.get('name') || f.get('id')
+}
 const AutoForm = observer(function AutoForm({
   session,
   feature,
@@ -28,7 +54,12 @@ const AutoForm = observer(function AutoForm({
   setMapping,
   setUrl,
 }: {
-  session: { proteinModel: { data: Row[]; error: unknown } }
+  session: {
+    proteinModel: {
+      data: Row[]
+      error: unknown
+    }
+  }
   feature: Feature
   mapping: string
   url: string
@@ -44,22 +75,25 @@ const AutoForm = observer(function AutoForm({
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState(options[0]?.id())
   const userSelectionFeat = options.find(f => f.id() === userSelection)
+  const transcriptIdToPdbMap = useMemo(() => createMapFromData(data), [data])
 
-  const foundF = (feat?: Feature) =>
-    feat &&
-    data?.find(
-      row =>
-        check(row, feat.get('name')?.replace(/\.[^/.]+$/, '')) ||
-        check(row, feat.get('id')?.replace(/\.[^/.]+$/, '')),
-    )
+  const foundF = useCallback(
+    (feat?: Feature) => {
+      const n1 = stripTrailingVersion(feat?.get('name'))
+      const n2 = stripTrailingVersion(feat?.get('id'))
+      return (
+        transcriptIdToPdbMap.get(n1 ?? '') ?? transcriptIdToPdbMap.get(n2 ?? '')
+      )
+    },
+    [transcriptIdToPdbMap],
+  )
 
-  const found = foundF(userSelectionFeat)
+  const foundPdbId = foundF(userSelectionFeat)
 
   useEffect(() => {
-    if (found && userSelectionFeat) {
+    if (foundPdbId && userSelectionFeat) {
       let iter = 0
       const subs = userSelectionFeat.get('subfeatures') ?? []
-      const { pdb_id } = found
       setMapping(
         subs
           .filter(f => f.get('type') === 'CDS')
@@ -72,13 +106,17 @@ const AutoForm = observer(function AutoForm({
             const ps = iter
             const pe = iter + op
             iter += op
-            return `${ref}:${z(s)}-${z(e)}\t${pdb_id}:${z(ps)}-${z(pe)}`
+            return `${ref}:${z(s)}-${z(e)}\t${foundPdbId}:${z(ps)}-${z(pe)}`
           })
           .join('\n'),
       )
-      setUrl(`https://files.rcsb.org/view/${pdb_id}.cif`)
+      setUrl(`https://files.rcsb.org/view/${foundPdbId}.cif`)
     }
-  }, [found, userSelectionFeat, setMapping, setUrl])
+  }, [foundPdbId, userSelectionFeat, setMapping, setUrl])
+  const hasDataForFeatures = useMemo(
+    () => options.filter(f => foundF(f)),
+    [foundF, options],
+  )
 
   return (
     <div className={classes.section}>
@@ -87,46 +125,52 @@ const AutoForm = observer(function AutoForm({
       ) : data ? (
         <div>
           <Intro />
-          <div className={classes.section}>
-            <TextField
-              value={userSelection}
-              onChange={event => setUserSelection(event.target.value)}
-              label="Choose isoform"
-              select
-            >
-              {options.map((val, idx) => {
-                const r = val.get('name') || val.get('id')
-                return (
-                  <MenuItem value={val.id()} key={val.id() + '-' + idx}>
-                    {r} {foundF(val) ? ' (has data)' : ''}
-                  </MenuItem>
-                )
-              })}
-            </TextField>
-          </div>
-          <div className={classes.section}>
-            {found ? (
-              <TextField
-                value={mapping}
-                onChange={event => setMapping(event.target.value)}
-                label="Genome to protein mapping"
-                variant="outlined"
-                multiline
-                minRows={10}
-                maxRows={15}
-                InputProps={{
-                  classes: {
-                    input: classes.textAreaFont,
-                  },
-                }}
-                fullWidth
-              />
-            ) : (
-              <Typography color="error">
-                PDB entry not found in BioMart mapping
-              </Typography>
-            )}
-          </div>
+          {hasDataForFeatures.length === 0 ? (
+            <div style={{ color: 'red' }}>No data for feature</div>
+          ) : (
+            <>
+              <div className={classes.section}>
+                <TextField
+                  value={userSelection}
+                  onChange={event => setUserSelection(event.target.value)}
+                  label="Choose isoform"
+                  select
+                >
+                  {hasDataForFeatures.map(val => {
+                    const r = getDisplayName(val)
+                    return (
+                      <MenuItem value={val.id()} key={val.id()}>
+                        {r} (has data)
+                      </MenuItem>
+                    )
+                  })}
+                </TextField>
+              </div>
+              <div className={classes.section}>
+                {foundPdbId ? (
+                  <TextField
+                    value={mapping}
+                    onChange={event => setMapping(event.target.value)}
+                    label="Genome to protein mapping"
+                    variant="outlined"
+                    multiline
+                    minRows={10}
+                    maxRows={15}
+                    InputProps={{
+                      classes: {
+                        input: classes.textAreaFont,
+                      },
+                    }}
+                    fullWidth
+                  />
+                ) : (
+                  <Typography color="error">
+                    PDB entry not found in BioMart mapping
+                  </Typography>
+                )}
+              </div>
+            </>
+          )}
         </div>
       ) : (
         <LoadingEllipses />

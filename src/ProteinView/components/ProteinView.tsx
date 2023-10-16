@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
-import { doesIntersect2 } from '@jbrowse/core/util'
 // molstar
 import { DefaultPluginSpec } from 'molstar/lib/mol-plugin/spec'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
@@ -9,13 +8,11 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { ParamDefinition } from 'molstar/lib/mol-util/param-definition'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helper'
+import { Structure, StructureProperties } from 'molstar/lib/mol-model/structure'
 
 // locals
 import { ProteinViewModel } from '../model'
 import { loadStructure } from './util'
-import { Script } from 'molstar/lib/mol-script/script'
-import { StructureSelection } from 'molstar/lib/mol-model/structure/query'
-import { Structure, StructureProperties } from 'molstar/lib/mol-model/structure'
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping } = model

@@ -10,15 +10,6 @@ export interface Row {
   refseq_mrna_id: string
 }
 
-export function check(row: Row, val: string) {
-  return (
-    (row.transcript_id === val ||
-      row.refseq_mrna_id === val ||
-      row.transcript_id_version === val) &&
-    row.pdb_id
-  )
-}
-
 export function getTranscriptFeatures(feature: Feature) {
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
