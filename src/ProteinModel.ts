@@ -52,13 +52,7 @@ const ProteinModel = types
                     refseq_mrna_id,
                     refseq_mrna_predicted_id,
                   ] = res
-                  if (line.includes('ENST00000459884')) {
-                    console.log(
-                      'also here',
-                      res,
-                      transcript_id === 'ENST00000459884',
-                    )
-                  }
+
                   return {
                     gene_id,
                     gene_id_version,
@@ -69,10 +63,7 @@ const ProteinModel = types
                     refseq_mrna_id,
                   }
                 })
-              console.log(
-                'wtf',
-                d.find(d => d.transcript_id === 'ENST00000459884'),
-              )
+
               self.setData(d)
             } catch (error) {
               self.setError(error)

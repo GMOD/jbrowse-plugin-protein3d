@@ -73,10 +73,8 @@ const AutoForm = observer(function AutoForm({
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
-  const [userSelection, setUserSelection] = useState(options[0]?.id())
-  const userSelectionFeat = options.find(f => f.id() === userSelection)
-  const transcriptIdToPdbMap = useMemo(() => createMapFromData(data), [data])
 
+  const transcriptIdToPdbMap = useMemo(() => createMapFromData(data), [data])
   const foundF = useCallback(
     (feat?: Feature) => {
       const n1 = stripTrailingVersion(feat?.get('name'))
@@ -87,8 +85,18 @@ const AutoForm = observer(function AutoForm({
     },
     [transcriptIdToPdbMap],
   )
+  const hasDataForFeatures = useMemo(
+    () => options.filter(f => foundF(f)),
+    [foundF, options],
+  )
+  const [userSelection, setUserSelection] = useState('')
+  const userSelectionFeat = options.find(f => f.id() === userSelection)
 
   const foundPdbId = foundF(userSelectionFeat)
+
+  useEffect(() => {
+    setUserSelection(hasDataForFeatures[0]?.id())
+  }, [hasDataForFeatures])
 
   useEffect(() => {
     if (foundPdbId && userSelectionFeat) {
@@ -113,10 +121,6 @@ const AutoForm = observer(function AutoForm({
       setUrl(`https://files.rcsb.org/view/${foundPdbId}.cif`)
     }
   }, [foundPdbId, userSelectionFeat, setMapping, setUrl])
-  const hasDataForFeatures = useMemo(
-    () => options.filter(f => foundF(f)),
-    [foundF, options],
-  )
 
   return (
     <div className={classes.section}>
