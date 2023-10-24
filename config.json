@@ -2,15 +2,13 @@
   "plugins": [
     {
       "name": "Protein3d",
-      "url": "http://localhost:9000/dist/jbrowse-plugin-protein3d.umd.development.js"
+      "url": "http://localhost:9000/dist/out.js"
     }
   ],
   "assemblies": [
     {
       "name": "hg38",
-      "aliases": [
-        "GRCh38"
-      ],
+      "aliases": ["GRCh38"],
       "sequence": {
         "type": "ReferenceSequenceTrack",
         "trackId": "P6R5xbRqRr",
@@ -54,12 +52,8 @@
       "type": "FeatureTrack",
       "trackId": "gencode.v36.annotation.sort.gff3",
       "name": "Gencode v36",
-      "category": [
-        "Annotation"
-      ],
-      "assemblyNames": [
-        "hg38"
-      ],
+      "category": ["Annotation"],
+      "assemblyNames": ["hg38"],
       "adapter": {
         "type": "Gff3TabixAdapter",
         "gffGzLocation": {
@@ -104,9 +98,7 @@
         "uri": "trix/hg19_meta.json",
         "locationType": "UriLocation"
       },
-      "assemblyNames": [
-        "hg19"
-      ]
+      "assemblyNames": ["hg19"]
     },
     {
       "type": "TrixTextSearchAdapter",
@@ -123,9 +115,8 @@
         "uri": "trix/hg38_meta.json",
         "locationType": "UriLocation"
       },
-      "assemblyNames": [
-        "hg38"
-      ]
+      "assemblyNames": ["hg38"]
     }
   ]
 }
+
