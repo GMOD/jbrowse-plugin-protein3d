@@ -12,7 +12,33 @@ import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helpe
 // locals
 import { ProteinViewModel } from '../model'
 import { loadStructure } from './util'
-import { doesIntersect2 } from '@jbrowse/core/util'
+import { doesIntersect2, getSession } from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+
+const proteinAbbreviationMapping = Object.fromEntries(
+  [
+    { name: 'alanine', abbreviation: 'Ala', singleLetterCode: 'A' },
+    { name: 'arginine', abbreviation: 'Arg', singleLetterCode: 'R' },
+    { name: 'asparagine', abbreviation: 'Asn', singleLetterCode: 'N' },
+    { name: 'aspartic acid', abbreviation: 'Asp', singleLetterCode: 'D' },
+    { name: 'cysteine', abbreviation: 'Cys', singleLetterCode: 'C' },
+    { name: 'glutamic acid', abbreviation: 'Glu', singleLetterCode: 'E' },
+    { name: 'glutamine', abbreviation: 'Gln', singleLetterCode: 'Q' },
+    { name: 'glycine', abbreviation: 'Gly', singleLetterCode: 'G' },
+    { name: 'histidine', abbreviation: 'His', singleLetterCode: 'H' },
+    { name: 'isoleucine', abbreviation: 'Ile', singleLetterCode: 'I' },
+    { name: 'leucine', abbreviation: 'Leu', singleLetterCode: 'L' },
+    { name: 'lysine', abbreviation: 'Lys', singleLetterCode: 'K' },
+    { name: 'methionine', abbreviation: 'Met', singleLetterCode: 'M' },
+    { name: 'phenylalanine', abbreviation: 'Phe', singleLetterCode: 'F' },
+    { name: 'proline', abbreviation: 'Pro', singleLetterCode: 'P' },
+    { name: 'serine', abbreviation: 'Ser', singleLetterCode: 'S' },
+    { name: 'threonine', abbreviation: 'Thr', singleLetterCode: 'T' },
+    { name: 'tryptophan', abbreviation: 'Trp', singleLetterCode: 'W' },
+    { name: 'tyrosine', abbreviation: 'Tyr', singleLetterCode: 'Y' },
+    { name: 'valine', abbreviation: 'Val', singleLetterCode: 'V' },
+  ].map(r => [r.abbreviation.toUpperCase(), r]),
+)
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping } = model
@@ -32,6 +58,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     file?: { type: string; filestring: string }
   }
 
+  const session = getSession(model)
   const [error, setError] = useState<unknown>()
   const [mouseClickedPosition, setMouseClickedPosition] = useState<string>()
   const parentRef = useRef(null)
@@ -110,51 +137,58 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     }
 
     plugin.state.data.events.changed.subscribe(() => {
-      const clickedPos =
+      const clickedLabel =
         plugin.state.getSnapshot().structureFocus?.current?.label
 
-      setMouseClickedPosition(clickedPos)
-      if (clickedPos) {
-        const [root] = clickedPos.split('|')
-        if (root) {
-          const [, position] = root.trim().split(' ')
-          const pos = +position.trim()
-          const overlap = mapping
-            ?.split('\n')
-            .map(parse => {
-              const [r1, r2] = parse.split('\t')
-              const [refName, crange] = r1.trim().split(':')
-              const [cstart, cend] = crange.trim().split('-')
-              const [pdb, prange] = r2.trim().split(':')
-              const [pstart, pend] = prange.trim().split('-')
-              return {
-                refName,
-                pdb,
-                cstart: +cstart.replaceAll(',', ''),
-                cend: +cend.replaceAll(',', ''),
-                pstart: +pstart.replaceAll(',', ''),
-                pend: +pend.replaceAll(',', ''),
-              }
-            })
-            .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
+      if (clickedLabel) {
+        const [clickPos, chain] = clickedLabel?.split('|') ?? []
+        const [code, position] = clickPos.trim().split(' ')
+        const pos = +position.trim()
+        setMouseClickedPosition(
+          `Position: ${pos}, Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode}), Chain: ${chain}`,
+        )
+        const overlap = mapping
+          ?.split('\n')
+          .map(parse => {
+            const [r1, r2] = parse.split('\t')
+            const [refName, crange] = r1.trim().split(':')
+            const [cstart, cend] = crange.trim().split('-')
+            const [pdb, prange] = r2.trim().split(':')
+            const [pstart, pend] = prange.trim().split('-')
+            return {
+              refName,
+              pdb,
+              cstart: +cstart.replaceAll(',', ''),
+              cend: +cend.replaceAll(',', ''),
+              pstart: +pstart.replaceAll(',', ''),
+              pend: +pend.replaceAll(',', ''),
+            }
+          })
+          .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
 
-          if (overlap) {
-            const poffset = pos - overlap.pstart
-            const coffset = overlap.cstart + poffset * 3
+        if (overlap) {
+          const poffset = Math.round(pos - overlap.pstart)
+          const coffset = overlap.cstart + poffset * 3
+          console.log({ coffset, poffset })
 
-            model.setHighlights([
-              {
-                assemblyName: 'hg38',
-                refName: overlap.refName,
-                start: coffset,
-                end: coffset + 3,
-              },
-            ])
-          }
+          model.setHighlights([
+            {
+              assemblyName: 'hg38',
+              refName: overlap.refName,
+              start: coffset,
+              end: coffset + 3,
+            },
+          ])
+          // eslint-disable-next-line @typescript-eslint/no-floating-promises
+          ;(session.views[0] as LinearGenomeViewModel).navToLocString(
+            `${overlap.refName}:${coffset}-${coffset + 3}`,
+          )
         }
+      } else {
+        setMouseClickedPosition(undefined)
       }
     })
-  }, [plugin, mapping, model])
+  }, [plugin, mapping, session, model])
 
   const width = dimensions.width
   const height = dimensions.height
