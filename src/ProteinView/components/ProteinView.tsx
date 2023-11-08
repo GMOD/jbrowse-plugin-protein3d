@@ -137,55 +137,56 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     }
 
     plugin.state.data.events.changed.subscribe(() => {
-      const clickedLabel =
-        plugin.state.getSnapshot().structureFocus?.current?.label
+      try {
+        const clickedLabel =
+          plugin.state.getSnapshot().structureFocus?.current?.label
 
-      if (clickedLabel) {
-        const [clickPos, chain] = clickedLabel?.split('|') ?? []
-        const [code, position] = clickPos.trim().split(' ')
-        const pos = +position.trim()
-        setMouseClickedPosition(
-          `Position: ${pos}, Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode}), Chain: ${chain}`,
-        )
-        const overlap = mapping
-          ?.split('\n')
-          .map(parse => {
-            const [r1, r2] = parse.split('\t')
-            const [refName, crange] = r1.trim().split(':')
-            const [cstart, cend] = crange.trim().split('-')
-            const [pdb, prange] = r2.trim().split(':')
-            const [pstart, pend] = prange.trim().split('-')
-            return {
-              refName,
-              pdb,
-              cstart: +cstart.replaceAll(',', ''),
-              cend: +cend.replaceAll(',', ''),
-              pstart: +pstart.replaceAll(',', ''),
-              pend: +pend.replaceAll(',', ''),
-            }
-          })
-          .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
-
-        if (overlap) {
-          const poffset = Math.round((pos - overlap.pstart) * 3) - 3
-          const coffset = overlap.cstart + poffset
-          console.log({ coffset, poffset })
-
-          model.setHighlights([
-            {
-              assemblyName: 'hg38',
-              refName: overlap.refName,
-              start: coffset,
-              end: coffset + 3,
-            },
-          ])
-          // eslint-disable-next-line @typescript-eslint/no-floating-promises
-          ;(session.views[0] as LinearGenomeViewModel).navToLocString(
-            `${overlap.refName}:${coffset}-${coffset + 3}`,
+        if (clickedLabel) {
+          const [clickPos, chain] = clickedLabel?.split('|') ?? []
+          const [code, position] = clickPos.trim().split(' ')
+          const pos = +position.trim()
+          setMouseClickedPosition(
+            `Position: ${pos}, Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode}), Chain: ${chain}`,
           )
+          for (const entry of mapping) {
+            const {
+              featureStart,
+              featureEnd,
+              refName,
+              proteinStart,
+              proteinEnd,
+              strand,
+            } = entry
+            const c = pos - 1
+            if (doesIntersect2(proteinStart, proteinEnd, c, c + 1)) {
+              const ret = Math.round((c - proteinStart) * 3)
+              const start =
+                strand === -1 ? featureEnd - ret : featureStart + ret
+              const end =
+                strand === -1 ? featureEnd - ret - 3 : featureStart + ret + 3
+              const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
+              console.log({ s1, s2, pos })
+
+              model.setHighlights([
+                {
+                  assemblyName: 'hg38',
+                  refName,
+                  start: s1,
+                  end: s2,
+                },
+              ])
+              // eslint-disable-next-line @typescript-eslint/no-floating-promises
+              ;(session.views[0] as LinearGenomeViewModel).navToLocString(
+                `${refName}:${s1}-${s2}`,
+              )
+            }
+          }
+        } else {
+          setMouseClickedPosition(undefined)
         }
-      } else {
-        setMouseClickedPosition(undefined)
+      } catch (e) {
+        console.error(e)
+        setError(e)
       }
     })
   }, [plugin, mapping, session, model])

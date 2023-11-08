@@ -8,6 +8,7 @@ import ManualForm from './ManualForm'
 import AutoForm from './AutoForm'
 import TabPanel from './TabPanel'
 import { makeStyles } from 'tss-react/mui'
+import { Mapping } from '../ProteinView/model'
 
 const useStyles = makeStyles()({
   dialogContent: {
@@ -28,9 +29,7 @@ export default function LaunchProteinViewDialog({
   const { classes } = useStyles()
   const session = getSession(model)
   const [choice, setChoice] = useState(0)
-  const [mapping, setMapping] = useState(
-    'chr1:1-100\tA541.1:1-33\nchr1:201-300\tA541.1:34-66',
-  )
+  const [mapping, setMapping] = useState<Mapping[]>([])
 
   const [url, setUrl] = useState('')
   return (

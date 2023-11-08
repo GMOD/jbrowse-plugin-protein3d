@@ -8,6 +8,7 @@ import {
   TextField,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
+import { Mapping } from '../ProteinView/model'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -25,8 +26,8 @@ export default function ManualForm({
 }: {
   setUrl: (arg: string) => void
   url: string
-  mapping: string
-  setMapping: (arg: string) => void
+  mapping: Mapping[]
+  setMapping: (arg: Mapping[]) => void
 }) {
   const { classes } = useStyles()
   const [choice, setChoice] = useState('url')
@@ -68,7 +69,9 @@ export default function ManualForm({
           value={mapping}
           name="genome_mapping"
           label="Genome-to-protein coordinate mapping"
-          onChange={event => setMapping(event.target.value)}
+          onChange={() => {
+            /* do nothing */
+          }}
           variant="outlined"
           multiline
           minRows={10}

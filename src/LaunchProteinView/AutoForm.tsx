@@ -6,7 +6,16 @@ import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { Row, getTranscriptFeatures } from './util'
+import {
+  Row,
+  createMapFromData,
+  generateMap,
+  getDisplayName,
+  getTranscriptFeatures,
+  stripTrailingVersion,
+  z,
+} from './util'
+import { Mapping } from '../ProteinView/model'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -16,37 +25,7 @@ const useStyles = makeStyles()(theme => ({
     marginTop: theme.spacing(6),
   },
 }))
-const z = (n: number) => n.toLocaleString('en-US')
 
-function stripTrailingVersion(s?: string) {
-  return s?.replace(/\.[^/.]+$/, '')
-}
-
-function createMapFromData(data?: Row[]) {
-  const map = new Map<string, string>()
-  if (data) {
-    for (const d of data) {
-      const { pdb_id, transcript_id, refseq_mrna_id, transcript_id_version } = d
-      if (!pdb_id) {
-        continue
-      }
-      if (transcript_id) {
-        map.set(transcript_id, pdb_id)
-      }
-      if (refseq_mrna_id) {
-        map.set(refseq_mrna_id, pdb_id)
-      }
-      if (transcript_id_version) {
-        map.set(transcript_id_version, pdb_id)
-      }
-    }
-  }
-  return map
-}
-
-function getDisplayName(f: Feature) {
-  return f.get('name') || f.get('id')
-}
 const AutoForm = observer(function AutoForm({
   session,
   feature,
@@ -61,10 +40,10 @@ const AutoForm = observer(function AutoForm({
     }
   }
   feature: Feature
-  mapping: string
+  mapping: Mapping[]
   url: string
   setUrl: (arg: string) => void
-  setMapping: (arg: string) => void
+  setMapping: (arg: Mapping[]) => void
 }) {
   const { classes } = useStyles()
   const { proteinModel } = session
@@ -100,24 +79,7 @@ const AutoForm = observer(function AutoForm({
 
   useEffect(() => {
     if (foundPdbId && userSelectionFeat) {
-      let iter = 0
-      const subs = userSelectionFeat.get('subfeatures') ?? []
-      setMapping(
-        subs
-          .filter(f => f.get('type') === 'CDS')
-          .map(f => {
-            const ref = f.get('refName').replace('chr', '')
-            const s = f.get('start')
-            const e = f.get('end')
-            const len = e - s
-            const op = len / 3
-            const ps = iter
-            const pe = iter + op
-            iter += op
-            return `${ref}:${z(s)}-${z(e)}\t${foundPdbId}:${z(ps)}-${z(pe)}`
-          })
-          .join('\n'),
-      )
+      setMapping(generateMap(userSelectionFeat, foundPdbId))
       setUrl(`https://files.rcsb.org/view/${foundPdbId}.cif`)
     }
   }, [foundPdbId, userSelectionFeat, setMapping, setUrl])
@@ -153,9 +115,20 @@ const AutoForm = observer(function AutoForm({
               <div className={classes.section}>
                 {foundPdbId ? (
                   <TextField
-                    value={mapping}
-                    onChange={event => setMapping(event.target.value)}
-                    label="Genome to protein mapping"
+                    value={mapping
+                      .map(
+                        m =>
+                          `${m.refName}:${z(m.featureStart)}-${z(
+                            m.featureEnd,
+                          )}(${m.strand}) ${m.pdbId}:${z(m.proteinStart)}-${z(
+                            m.proteinEnd,
+                          )}`,
+                      )
+                      .join('\n')}
+                    onChange={() => {
+                      /*does nothing now, but should parse and re-store in mapping*/
+                    }}
+                    label="Genome to protein coordinate mapping"
                     variant="outlined"
                     multiline
                     minRows={10}
