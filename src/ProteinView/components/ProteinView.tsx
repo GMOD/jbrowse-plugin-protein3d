@@ -167,8 +167,8 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
           .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
 
         if (overlap) {
-          const poffset = Math.round(pos - overlap.pstart)
-          const coffset = overlap.cstart + poffset * 3
+          const poffset = Math.round((pos - overlap.pstart) * 3) - 3
+          const coffset = overlap.cstart + poffset
           console.log({ coffset, poffset })
 
           model.setHighlights([
