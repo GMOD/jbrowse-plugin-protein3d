@@ -3,7 +3,6 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { getSession } from '@jbrowse/core/util'
-import { Assembly } from '@jbrowse/core/assemblyManager/assembly'
 
 // locals
 import { ProteinViewModel } from '../ProteinView/model'
@@ -17,27 +16,26 @@ const useStyles = makeStyles()({
     position: 'absolute',
     textAlign: 'center',
     overflow: 'hidden',
+    zIndex: 1000,
+    pointerEvents: 'none',
   },
 })
-
-function getCanonicalName(assembly: Assembly, s: string) {
-  return assembly.getCanonicalRefName(s) ?? s
-}
 
 const Highlight = observer(function Highlight({ model }: { model: LGV }) {
   const { classes } = useStyles()
   const { assemblyManager, views } = getSession(model)
+  const { assemblyNames, offsetPx } = model
   const p = views.find(f => f.type === 'ProteinView') as ProteinViewModel
-  const assembly = assemblyManager.get(model.assemblyNames[0])
+  const assembly = assemblyManager.get(assemblyNames[0])
   return assembly ? (
     <>
       {p?.highlights.map((r, idx) => {
-        const refName = getCanonicalName(assembly, r.refName)
+        const refName = assembly.getCanonicalRefName(r.refName) ?? r.refName
         const s = model.bpToPx({ refName, coord: r.start })
         const e = model.bpToPx({ refName, coord: r.end })
         if (s && e) {
           const width = Math.max(Math.abs(e.offsetPx - s.offsetPx), 3)
-          const left = Math.min(s.offsetPx, e.offsetPx) - model.offsetPx
+          const left = Math.min(s.offsetPx, e.offsetPx) - offsetPx
           return (
             <div
               key={`${JSON.stringify(r)}-${idx}`}

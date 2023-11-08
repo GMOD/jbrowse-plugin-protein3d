@@ -110,7 +110,7 @@ const AutoForm = observer(function AutoForm({
             const s = f.get('start')
             const e = f.get('end')
             const len = e - s
-            const op = Math.floor(len / 3)
+            const op = len / 3
             const ps = iter
             const pe = iter + op
             iter += op
@@ -130,7 +130,7 @@ const AutoForm = observer(function AutoForm({
         <div>
           <Intro />
           {hasDataForFeatures.length === 0 ? (
-            <div style={{ color: 'red' }}>No data for feature</div>
+            <Typography color="error">No data for feature</Typography>
           ) : (
             <>
               <div className={classes.section}>
