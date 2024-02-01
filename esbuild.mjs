@@ -51,7 +51,7 @@ let ctx = await esbuild.context({
 
 let { host, port } = await ctx.serve({
   servedir: '.',
-  port: 9000,
+  port: 9001,
   host: 'localhost',
 })
 const formattedHost = host === '127.0.0.1' ? 'localhost' : host

@@ -111,3 +111,21 @@ export function createMapFromData(data?: Row[]) {
 export function getDisplayName(f: Feature) {
   return f.get('name') || f.get('id')
 }
+
+export function getId(val?: Feature) {
+  return val === undefined ? '' : val.get('name') || val.get('id')
+}
+
+export function getTranscriptDisplayName(val?: Feature) {
+  return val === undefined
+    ? ''
+    : [val.get('name'), val.get('id')].filter(f => !!f).join(' ')
+}
+
+export function getGeneDisplayName(val?: Feature) {
+  return val === undefined
+    ? ''
+    : [val.get('gene_name') || val.get('name'), val.get('id')]
+        .filter(f => !!f)
+        .join(' ')
+}
