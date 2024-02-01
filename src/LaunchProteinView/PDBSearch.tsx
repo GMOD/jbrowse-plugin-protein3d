@@ -4,6 +4,7 @@ import {
   Button,
   DialogActions,
   DialogContent,
+  Link,
   MenuItem,
   TextField,
   TextFieldProps,
@@ -24,7 +25,7 @@ import {
 } from './util'
 import { useFeatureSequence } from './useFeatureSequence'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import { jsonfetch } from './fetchUtils'
+import { textfetch } from './fetchUtils'
 import { getProteinSequence } from './calculateProteinSequence'
 import { ErrorMessage } from '@jbrowse/core/ui'
 
@@ -55,7 +56,7 @@ const AutoForm = observer(function AutoForm({
 }) {
   const { classes } = useStyles()
   const view = getContainingView(model) as LinearGenomeViewModel
-  const [error, setError] = useState<unknown>()
+  const [pdb, setPdb] = useState('')
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -74,7 +75,8 @@ const AutoForm = observer(function AutoForm({
         })
       : ''
 
-  const e = error || error2
+  const e = error2
+  const text = `https://alphafold.ebi.ac.uk/search/sequence/${protein.replaceAll('*', '')}`
   return (
     <>
       <DialogContent>
@@ -95,69 +97,16 @@ const AutoForm = observer(function AutoForm({
               </MenuItem>
             ))}
           </TextField2>
+          Visit this link <Link href={text}>{text}</Link>, and then paste the
+          resulting PDB file back into the form below
           <TextField2
-            variant="outlined"
-            multiline
-            minRows={5}
-            maxRows={10}
-            fullWidth
-            value={
-              protein
-                ? `>${getTranscriptDisplayName(selectedTranscript)}\n${protein}`
-                : 'Loading...'
-            }
-            InputProps={{
-              readOnly: true,
-              classes: {
-                input: classes.textAreaFont,
-              },
-            }}
+            value={pdb}
+            onChange={event => setPdb(event.target.value)}
           />
         </div>
       </DialogContent>
       <DialogActions>
-        <Button
-          variant="contained"
-          color="primary"
-          onClick={() => {
-            // eslint-disable-next-line @typescript-eslint/no-floating-promises
-            ;(async () => {
-              try {
-                const r = {
-                  query: {
-                    type: 'terminal',
-                    service: 'sequence',
-                    parameters: {
-                      evalue_cutoff: 0.5,
-                      identity_cutoff: 0.5,
-                      sequence_type: 'protein',
-                      value: protein.replaceAll('*', '').slice(0, 50),
-                    },
-                  },
-                  request_options: {
-                    scoring_strategy: 'sequence',
-                  },
-                  return_type: 'polymer_entity',
-                }
-                console.log({ r })
-                console.log(
-                  `https://search.rcsb.org/rcsbsearch/v2/query?json=${encodeURIComponent(
-                    JSON.stringify(r),
-                  )}`,
-                )
-                const res = await jsonfetch(
-                  `https://search.rcsb.org/rcsbsearch/v2/query?json=${encodeURIComponent(
-                    JSON.stringify(r),
-                  )}`,
-                )
-                console.log({ res })
-              } catch (e) {
-                console.error(e)
-                setError(e)
-              }
-            })()
-          }}
-        >
+        <Button variant="contained" color="primary" onClick={() => {}}>
           Submit
         </Button>
         <Button variant="contained" color="secondary" onClick={handleClose}>

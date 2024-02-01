@@ -1,15 +1,13 @@
 import React, { useState } from 'react'
 import { Dialog } from '@jbrowse/core/ui'
 import { Tab, Tabs } from '@mui/material'
-import { Feature, getSession } from '@jbrowse/core/util'
+import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 
 // locals
 import ManualForm from './ManualForm'
-import AutoForm from './AutoForm'
+import PreLoadedPDBMapping from './PreLoadedPDBMapping'
 import PDBSearch from './PDBSearch'
 import TabPanel from './TabPanel'
-import { makeStyles } from 'tss-react/mui'
-import { Mapping } from '../ProteinView/model'
 
 export default function LaunchProteinViewDialog({
   handleClose,
@@ -18,14 +16,9 @@ export default function LaunchProteinViewDialog({
 }: {
   handleClose: () => void
   feature: Feature
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  model: any
+  model: AbstractTrackModel
 }) {
-  const session = getSession(model)
   const [choice, setChoice] = useState(0)
-  const [mapping, setMapping] = useState<Mapping[]>([])
-
-  const [url, setUrl] = useState('')
   return (
     <Dialog
       maxWidth="xl"
@@ -42,23 +35,10 @@ export default function LaunchProteinViewDialog({
         <PDBSearch feature={feature} model={model} handleClose={handleClose} />
       </TabPanel>
       <TabPanel value={choice} index={1}>
-        <AutoForm
-          feature={feature}
-          mapping={mapping}
-          url={url}
-          setMapping={setMapping}
-          setUrl={setUrl}
-          // @ts-expect-error
-          session={session}
-        />
+        <PreLoadedPDBMapping feature={feature} model={model} />
       </TabPanel>
       <TabPanel value={choice} index={2}>
-        <ManualForm
-          url={url}
-          setUrl={setUrl}
-          mapping={mapping}
-          setMapping={setMapping}
-        />
+        <ManualForm model={model} feature={feature} />
       </TabPanel>
     </Dialog>
   )
