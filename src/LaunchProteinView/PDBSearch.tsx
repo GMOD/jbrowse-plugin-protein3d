@@ -15,6 +15,7 @@ import {
   Feature,
   getContainingView,
 } from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import {
@@ -24,8 +25,6 @@ import {
   getTranscriptFeatures,
 } from './util'
 import { useFeatureSequence } from './useFeatureSequence'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import { textfetch } from './fetchUtils'
 import { getProteinSequence } from './calculateProteinSequence'
 import { ErrorMessage } from '@jbrowse/core/ui'
 
@@ -35,6 +34,10 @@ const useStyles = makeStyles()(theme => ({
   },
   section: {
     marginTop: theme.spacing(6),
+  },
+
+  dialogContent: {
+    width: '80em',
   },
 }))
 
@@ -79,7 +82,7 @@ const AutoForm = observer(function AutoForm({
   const text = `https://alphafold.ebi.ac.uk/search/sequence/${protein.replaceAll('*', '')}`
   return (
     <>
-      <DialogContent>
+      <DialogContent className={classes.dialogContent}>
         <div className={classes.section}>
           <div>
             Find structure associated with sequence from searching PDB API:{' '}
@@ -97,8 +100,8 @@ const AutoForm = observer(function AutoForm({
               </MenuItem>
             ))}
           </TextField2>
-          Visit this link <Link href={text}>{text}</Link>, and then paste the
-          resulting PDB file back into the form below
+          Visit this link: <Link href={text}>AlphaFoldDB Search</Link>, and then
+          paste the resulting PDB file back into the form below
           <TextField2
             value={pdb}
             onChange={event => setPdb(event.target.value)}

@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { observer } from 'mobx-react'
 import {
+  Button,
   DialogActions,
   DialogContent,
   Link,
@@ -14,7 +15,6 @@ import { AbstractTrackModel, Feature, getSession } from '@jbrowse/core/util'
 
 // locals
 import {
-  Row,
   createMapFromData,
   generateMap,
   getDisplayName,
@@ -46,6 +46,7 @@ const AutoForm = observer(function AutoForm({
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
+  // @ts-expect-error
   const { proteinModel } = session
   const { data, error } = proteinModel
   const [choice, setChoice] = useState(0)
@@ -158,7 +159,14 @@ const AutoForm = observer(function AutoForm({
           )}
         </div>
       </DialogContent>
-      <DialogActions></DialogActions>
+      <DialogActions>
+        <Button variant="contained" color="secondary" onClick={() => {}}>
+          Cancel
+        </Button>
+        <Button variant="contained" color="primary" onClick={() => {}}>
+          Submit
+        </Button>
+      </DialogActions>
     </>
   )
 })

@@ -20,6 +20,9 @@ const useStyles = makeStyles()(theme => ({
   section: {
     marginTop: theme.spacing(6),
   },
+  dialogContent: {
+    width: '80em',
+  },
 }))
 export default function ManualForm({
   feature,
@@ -37,7 +40,7 @@ export default function ManualForm({
 
   return (
     <>
-      <DialogContent>
+      <DialogContent className={classes.dialogContent}>
         <div className={classes.section}>
           <FormControl>
             <RadioGroup
