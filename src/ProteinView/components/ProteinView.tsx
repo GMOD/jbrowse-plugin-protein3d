@@ -27,13 +27,11 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
       try {
         const clickedLabel =
           plugin.state.getSnapshot().structureFocus?.current?.label
-        console.log({ clickedLabel }, plugin.state.getSnapshot())
 
         if (clickedLabel) {
           const [clickPos, chain] = clickedLabel?.split('|') ?? []
           const [code, position] = clickPos.trim().split(' ')
           const pos = +position.trim()
-          console.log({ pos, code, chain })
           model.setMouseClickedPosition({ pos, code, chain })
           for (const entry of mapping) {
             const {

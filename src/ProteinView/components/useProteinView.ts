@@ -6,7 +6,7 @@ import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 
 // locals
-import { loadStructureFromUrl } from './util'
+import { loadStructureFromURL } from './loadStructureFromURL'
 
 // note: css must be injected into the js code for jbrowse plugins
 import './molstar.css'
@@ -46,7 +46,7 @@ export default function useProteinView({
         })
         setPlugin(p)
 
-        await loadStructureFromUrl({ url, plugin: p })
+        await loadStructureFromURL({ url, plugin: p })
       } catch (e) {
         console.error(e)
         setError(e)

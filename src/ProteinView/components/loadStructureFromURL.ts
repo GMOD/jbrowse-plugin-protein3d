@@ -7,7 +7,7 @@ export interface LoadStructureOptions {
 }
 
 // adapted from https://github.com/molstar/molstar/blob/ab4130d42d0ab2591f62460292ade0203207d4d2/src/apps/viewer/app.ts#L230
-export async function loadStructureFromUrl({
+export async function loadStructureFromURL({
   url,
   format = 'mmcif',
   isBinary,
@@ -29,18 +29,18 @@ export async function loadStructureFromUrl({
     { url, isBinary },
     { state: { isGhost: true } },
   )
-  if (data) {
-    const trajectory = await plugin.builders.structure.parseTrajectory(
-      data,
-      'mmcif',
-    )
-    const model = await plugin.builders.structure.createModel(trajectory)
-    console.log(model.obj?.data.sequence)
-  }
+
   const trajectory = await plugin.builders.structure.parseTrajectory(
     data,
     format,
   )
+  const model = await plugin.builders.structure.createModel(trajectory)
+  const seq = model.obj?.data.sequence.sequences[0].sequence.label
+    .toArray()
+    // @ts-expect-error
+    .join('')
+
+  console.log({ seq })
 
   await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
