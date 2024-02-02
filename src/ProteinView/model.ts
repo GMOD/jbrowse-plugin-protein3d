@@ -15,6 +15,16 @@ export const StructureModel = types.model({
 
 const root = 'https://files.rcsb.org/view/'
 
+export interface Mapping {
+  refName: string
+  featureStart: number
+  featureEnd: number
+  pdbId: string
+  proteinStart: number
+  proteinEnd: number
+  strand: number
+}
+
 function stateModelFactory() {
   return types
     .compose(
@@ -23,7 +33,7 @@ function stateModelFactory() {
         id: ElementId,
         type: types.literal('ProteinView'),
         url: types.optional(types.string, root + '1LOL.cif'),
-        mapping: types.maybe(types.string),
+        mapping: types.frozen<Mapping[]>(),
         highlights: types.array(Region),
       }),
     )

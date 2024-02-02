@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
-import { doesIntersect2 } from '@jbrowse/core/util'
 // molstar
 import { DefaultPluginSpec } from 'molstar/lib/mol-plugin/spec'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
@@ -13,15 +12,39 @@ import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helpe
 // locals
 import { ProteinViewModel } from '../model'
 import { loadStructure } from './util'
+import { doesIntersect2, getSession } from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-// based on https://github.com/samirelanduk/molstar-react v0.5.1
-// licensed ISC
+const proteinAbbreviationMapping = Object.fromEntries(
+  [
+    { name: 'alanine', abbreviation: 'Ala', singleLetterCode: 'A' },
+    { name: 'arginine', abbreviation: 'Arg', singleLetterCode: 'R' },
+    { name: 'asparagine', abbreviation: 'Asn', singleLetterCode: 'N' },
+    { name: 'aspartic acid', abbreviation: 'Asp', singleLetterCode: 'D' },
+    { name: 'cysteine', abbreviation: 'Cys', singleLetterCode: 'C' },
+    { name: 'glutamic acid', abbreviation: 'Glu', singleLetterCode: 'E' },
+    { name: 'glutamine', abbreviation: 'Gln', singleLetterCode: 'Q' },
+    { name: 'glycine', abbreviation: 'Gly', singleLetterCode: 'G' },
+    { name: 'histidine', abbreviation: 'His', singleLetterCode: 'H' },
+    { name: 'isoleucine', abbreviation: 'Ile', singleLetterCode: 'I' },
+    { name: 'leucine', abbreviation: 'Leu', singleLetterCode: 'L' },
+    { name: 'lysine', abbreviation: 'Lys', singleLetterCode: 'K' },
+    { name: 'methionine', abbreviation: 'Met', singleLetterCode: 'M' },
+    { name: 'phenylalanine', abbreviation: 'Phe', singleLetterCode: 'F' },
+    { name: 'proline', abbreviation: 'Pro', singleLetterCode: 'P' },
+    { name: 'serine', abbreviation: 'Ser', singleLetterCode: 'S' },
+    { name: 'threonine', abbreviation: 'Thr', singleLetterCode: 'T' },
+    { name: 'tryptophan', abbreviation: 'Trp', singleLetterCode: 'W' },
+    { name: 'tyrosine', abbreviation: 'Tyr', singleLetterCode: 'Y' },
+    { name: 'valine', abbreviation: 'Val', singleLetterCode: 'V' },
+  ].map(r => [r.abbreviation.toUpperCase(), r]),
+)
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping } = model
   const {
     file,
-    dimensions = { width: 800, height: 600 },
+    dimensions = { width: 800, height: 500 },
     className = '',
     showInterface = false,
     showControls = true,
@@ -35,20 +58,23 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     file?: { type: string; filestring: string }
   }
 
+  const session = getSession(model)
   const [error, setError] = useState<unknown>()
-  const [mouseover, setMouseover] = useState<string>()
+  const [mouseClickedPosition, setMouseClickedPosition] = useState<string>()
   const parentRef = useRef(null)
   const canvasRef = useRef(null)
-  const plugin = useRef<PluginContext>()
+  const [plugin, setPlugin] = useState<PluginContext>()
 
   useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
+        let p: PluginContext | undefined
         if (showInterface) {
           if (!parentRef.current) {
             return
           }
-          plugin.current = await createPluginUI(parentRef.current, {
+          p = await createPluginUI(parentRef.current, {
             ...DefaultPluginUISpec(),
             layout: {
               initial: {
@@ -58,48 +84,41 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
               },
             },
           })
+          setPlugin(p)
         } else {
           if (!canvasRef.current || !parentRef.current) {
             return
           }
-          plugin.current = new PluginContext(DefaultPluginSpec())
-          plugin.current.initViewer(canvasRef.current, parentRef.current)
-          await plugin.current.init()
+          p = new PluginContext(DefaultPluginSpec())
+          p.initViewer(canvasRef.current, parentRef.current)
+          await p.init()
+          setPlugin(p)
         }
-        if (!showAxes) {
-          plugin.current.canvas3d?.setProps({
-            camera: {
-              helper: {
-                axes: {
-                  name: 'off',
-                  params: {},
-                },
-              },
-            },
-          })
-        }
-        await loadStructure({ url, file, plugin: plugin.current })
+
+        await loadStructure({ url, file, plugin: p })
       } catch (e) {
+        console.error(e)
         setError(e)
       }
     })()
-    return () => {
-      plugin.current = undefined
-    }
+
     // needs review
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [url, file, showAxes, showInterface, showControls])
 
   useEffect(() => {
-    loadStructure({ url, file, plugin: plugin.current })
-  }, [url, file])
-
-  useEffect(() => {
-    if (!plugin.current) {
+    if (!plugin) {
       return
     }
-    if (!showAxes) {
-      plugin.current.canvas3d?.setProps({
+    if (showAxes) {
+      plugin.canvas3d?.setProps({
+        camera: {
+          helper: {
+            axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
+          },
+        },
+      })
+    } else {
+      plugin.canvas3d?.setProps({
         camera: {
           helper: {
             axes: {
@@ -109,83 +128,68 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
           },
         },
       })
-    } else {
-      plugin.current.canvas3d?.setProps({
-        camera: {
-          helper: {
-            axes: ParamDefinition.getDefaultValues(CameraHelperParams).axes,
-          },
-        },
-      })
     }
-  }, [showAxes])
+  }, [plugin, showAxes])
 
   useEffect(() => {
-    plugin.current?.state.data.events.changed.subscribe(() => {
-      const r =
-        plugin.current?.state.getSnapshot().structureFocus?.current?.label
-      setMouseover(r)
-      if (r) {
-        const [root, chain] = r.split('|')
-        if (root) {
-          const [letter, position] = root.trim().split(' ')
-          const pos = +position.trim()
-          // console.log({ pos })
-          const overlap = mapping
-            ?.split('\n')
-            .map(parse => {
-              const [r1, r2] = parse.split('\t')
-              const [refName, crange] = r1.trim().split(':')
-              const [cstart, cend] = crange.trim().split('-')
-              const [pdb, prange] = r2.trim().split(':')
-              const [pstart, pend] = prange.trim().split('-')
-              // console.log({ cstart, cend })
-              return {
-                refName,
-                pdb,
-                cstart: +cstart.replaceAll(',', ''),
-                cend: +cend.replaceAll(',', ''),
-                pstart: +pstart.replaceAll(',', ''),
-                pend: +pend.replaceAll(',', ''),
-              }
-            })
-            .find(f => doesIntersect2(f.pstart, f.pend, pos, pos + 1))
-          if (overlap) {
-            const poffset = pos - overlap.pstart
-            const coffset = overlap.cstart + poffset * 3
+    if (!plugin) {
+      return
+    }
 
-            model.setHighlights([
-              {
-                assemblyName: 'hg38',
-                refName: overlap.refName,
-                start: coffset,
-                end: coffset + 3,
-              },
-            ])
+    plugin.state.data.events.changed.subscribe(() => {
+      try {
+        const clickedLabel =
+          plugin.state.getSnapshot().structureFocus?.current?.label
+
+        if (clickedLabel) {
+          const [clickPos, chain] = clickedLabel?.split('|') ?? []
+          const [code, position] = clickPos.trim().split(' ')
+          const pos = +position.trim()
+          setMouseClickedPosition(
+            `Position: ${pos}, Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode}), Chain: ${chain}`,
+          )
+          for (const entry of mapping) {
+            const {
+              featureStart,
+              featureEnd,
+              refName,
+              proteinStart,
+              proteinEnd,
+              strand,
+            } = entry
+            const c = pos - 1
+            if (doesIntersect2(proteinStart, proteinEnd, c, c + 1)) {
+              const ret = Math.round((c - proteinStart) * 3)
+              const start =
+                strand === -1 ? featureEnd - ret : featureStart + ret
+              const end =
+                strand === -1 ? featureEnd - ret - 3 : featureStart + ret + 3
+              const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
+              console.log({ s1, s2, pos })
+
+              model.setHighlights([
+                {
+                  assemblyName: 'hg38',
+                  refName,
+                  start: s1,
+                  end: s2,
+                },
+              ])
+              // eslint-disable-next-line @typescript-eslint/no-floating-promises
+              ;(session.views[0] as LinearGenomeViewModel).navToLocString(
+                `${refName}:${s1}-${s2}`,
+              )
+            }
           }
+        } else {
+          setMouseClickedPosition(undefined)
         }
+      } catch (e) {
+        console.error(e)
+        setError(e)
       }
     })
-    plugin.current?.canvas3d?.input.move.subscribe(obj => {
-      // const { x, y } = obj
-      // const pickingId = plugin.current?.canvas3d?.identify(x, y)
-      // const r =
-      //   plugin.current?.managers.structure.hierarchy.current.structures[0]?.cell
-      //     .obj?.data
-      // if (r) {
-      //   const r2 = Structure.toStructureElementLoci(r)
-      //   console.log({ pickingId, r, r2 })
-      // }
-      //todo: Gets the current source data, return:[40.5922,17.4164,12.4629]
-      // const getPickingSourceData = getPickingSourceData(pickingId)
-      ////todo: Finding Associated Data，return :[43.4349,13.9762,16.5152]
-      //const associatedData = findAssociatedData(getPickingSourceData)
-      //const anotherPickingId = Structure.toStructureElementLoci(associatedData)
-      //this.plugin.managers.camera.focusLoci(anotherPickingId)
-    })
-    // needs review
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [plugin, mapping, session, model])
 
   const width = dimensions.width
   const height = dimensions.height
@@ -204,7 +208,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   } else {
     return (
       <div>
-        {mouseover || 'No click'}
+        {mouseClickedPosition}
         <div
           ref={parentRef}
           style={{ position: 'relative', width, height }}
@@ -220,11 +224,14 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   }
 })
 
-export default observer(function ({ model }: { model: ProteinViewModel }) {
+const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {
+  const { url } = model
   return (
     <div>
-      <div>{model.url}</div>
+      <div>{url}</div>
       <ProteinView model={model} />
     </div>
   )
 })
+
+export default Wrapper

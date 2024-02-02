@@ -1,8 +1,10 @@
+import { lazy } from 'react'
 import PluginManager from '@jbrowse/core/PluginManager'
 import { ViewType } from '@jbrowse/core/pluggableElementTypes'
 
 import stateModelF from './model'
-import ReactComponent from './components/ProteinView'
+
+const ReactComponent = lazy(() => import('./components/ProteinView'))
 
 export default function ProteinViewF(pluginManager: PluginManager) {
   pluginManager.addViewType(() => {

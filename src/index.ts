@@ -1,11 +1,13 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 import { AbstractSessionModel, isAbstractMenuManager } from '@jbrowse/core/util'
-
+import { types } from 'mobx-state-tree'
+// locals
 import { version } from '../package.json'
 import ProteinViewF from './ProteinView'
 import LaunchProteinViewF from './LaunchProteinView'
 import AddHighlightModelF from './AddHighlightModel'
+import ProteinModel from './ProteinModel'
 
 export default class ProteinViewer extends Plugin {
   name = 'ProteinViewer'
@@ -15,6 +17,16 @@ export default class ProteinViewer extends Plugin {
     ProteinViewF(pluginManager)
     LaunchProteinViewF(pluginManager)
     AddHighlightModelF(pluginManager)
+
+    pluginManager.addToExtensionPoint('Core-extendSession', session => {
+      return types.compose(
+        types.model({
+          proteinModel: types.optional(ProteinModel, {}),
+        }),
+        // @ts-expect-error
+        session,
+      )
+    })
   }
 
   configure(pluginManager: PluginManager) {
