@@ -79,7 +79,7 @@ const AutoForm = observer(function AutoForm({
       : ''
 
   const e = error2
-  const text = `https://alphafold.ebi.ac.uk/search/sequence/${protein.replaceAll('*', '')}`
+  const text = `https://alphafold.ebi.ac.uk/search/sequence/${protein.replaceAll('*', '').replaceAll('&', '')}`
   return (
     <>
       <DialogContent className={classes.dialogContent}>

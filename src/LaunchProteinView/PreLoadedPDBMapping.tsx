@@ -40,16 +40,17 @@ const useStyles = makeStyles()(theme => ({
 const AutoForm = observer(function AutoForm({
   model,
   feature,
+  handleClose,
 }: {
   model: AbstractTrackModel
   feature: Feature
+  handleClose: () => void
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
   // @ts-expect-error
   const { proteinModel } = session
   const { data, error } = proteinModel
-  const [choice, setChoice] = useState(0)
   const [mapping, setMapping] = useState<Mapping[]>([])
   const [url, setUrl] = useState('')
   // check if we are looking at a 'two-level' or 'three-level' feature by
@@ -163,7 +164,18 @@ const AutoForm = observer(function AutoForm({
         <Button variant="contained" color="secondary" onClick={() => {}}>
           Cancel
         </Button>
-        <Button variant="contained" color="primary" onClick={() => {}}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            session.addView('ProteinView', {
+              type: 'ProteinView',
+              url,
+              mapping,
+            })
+            handleClose()
+          }}
+        >
           Submit
         </Button>
       </DialogActions>

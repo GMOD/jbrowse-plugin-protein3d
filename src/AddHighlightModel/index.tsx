@@ -15,7 +15,7 @@ export default function AddHighlightModelF(pluginManager: PluginManager) {
     ) => {
       return [
         ...rest,
-        <Highlight key="highlight_protein_viewer" model={model} />,
+        <Highlight key="highlight_protein_viewer_protein3d" model={model} />,
       ]
     },
   )
