@@ -1,41 +1,45 @@
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
+import { StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset'
 
-export async function loadStructure({
+export interface LoadStructureOptions {
+  representationParams?: StructureRepresentationPresetProvider.CommonParams
+}
+
+// adapted from https://github.com/molstar/molstar/blob/ab4130d42d0ab2591f62460292ade0203207d4d2/src/apps/viewer/app.ts#L230
+export async function loadStructureFromUrl({
   url,
-  file,
+  format = 'mmcif',
+  isBinary,
+  options,
   plugin,
 }: {
-  url?: string
-  file?: { type: string; filestring: string }
+  url: string
+  format?: BuiltInTrajectoryFormat
+  isBinary?: boolean
+  options?: LoadStructureOptions & { label?: string }
   plugin?: PluginContext
 }) {
   if (!plugin) {
     return
   }
   await plugin.clear()
-  if (file) {
-    const { filestring, type } = file
-    const data = await plugin.builders.data.rawData({
-      data: filestring,
-    })
-    // @ts-expect-error
-    const traj = await plugin.builders.structure.parseTrajectory(data, type)
-    await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
-  } else {
-    const structureUrl = url
-    if (!structureUrl) {
-      return
-    }
-    const data = await plugin.builders.data.download(
-      { url: structureUrl },
-      { state: { isGhost: true } },
-    )
-    let ext = structureUrl.split('.').pop()?.replace('cif', 'mmcif')
-    if (ext?.includes('?')) {
-      ext = ext.slice(0, Math.max(0, ext.indexOf('?')))
-    }
-    // @ts-expect-error
-    const traj = await plugin.builders.structure.parseTrajectory(data, ext)
-    await plugin.builders.structure.hierarchy.applyPreset(traj, 'default')
-  }
+
+  const data = await plugin.builders.data.download(
+    { url, isBinary },
+    { state: { isGhost: true } },
+  )
+  const trajectory = await plugin.builders.structure.parseTrajectory(
+    data,
+    format,
+  )
+
+  await plugin.builders.structure.hierarchy.applyPreset(
+    trajectory,
+    'all-models',
+    {
+      useDefaultIfSingleModel: true,
+      representationPresetParams: options?.representationParams,
+    },
+  )
 }
