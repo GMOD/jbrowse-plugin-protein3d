@@ -15,6 +15,7 @@ import {
   AbstractTrackModel,
   Feature,
   getContainingView,
+  getSession,
 } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -89,17 +90,18 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   handleClose: () => void
 }) {
   const { classes } = useStyles()
-  const view = getContainingView(model) as LinearGenomeViewModel
+  const session = getSession(model)
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState(getId(options[0]))
-  const selectedTranscript = options.find(val => getId(val) === userSelection)!
-  const { sequence, error: error2 } = useFeatureSequence({
-    view,
-    feature: selectedTranscript,
-  })
+  // const view = getContainingView(model) as LinearGenomeViewModel
+  // const selectedTranscript = options.find(val => getId(val) === userSelection)!
+  // const { sequence, error: error2 } = useFeatureSequence({
+  //   view,
+  //   feature: selectedTranscript,
+  // })
   // const protein =
   //   sequence && !('error' in sequence)
   //     ? getProteinSequence({
@@ -120,13 +122,16 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
 
   console.log({ mapping, foundStructureId, userSelectionFeat })
 
-  const e = error2 || error
+  const e = error
+  const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         <div className={classes.section}>
           {e ? <ErrorMessage error={e} /> : null}
-          <div>Find Uniprot ID from MyGene.info</div>
+          <div>
+            Find Uniprot ID from MyGene.info, and access result from AlphaFold
+          </div>
           <TextField2
             value={userSelection}
             onChange={event => setUserSelection(event.target.value)}
@@ -157,7 +162,13 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <Button
           variant="contained"
           color="primary"
+          disabled={!foundStructureId}
           onClick={() => {
+            session.addView('ProteinView', {
+              type: 'ProteinView',
+              url,
+              mapping,
+            })
             handleClose()
           }}
         >

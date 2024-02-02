@@ -90,18 +90,8 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
 })
 
 const Header = observer(function ({ model }: { model: ProteinViewModel }) {
-  const { showControls, mouseClickedString } = model
-  return (
-    <div>
-      {mouseClickedString} <label htmlFor="show_controls">Show controls?</label>
-      <input
-        id="show_controls"
-        type="checkbox"
-        checked={showControls}
-        onChange={event => model.setShowControls(event.target.checked)}
-      />
-    </div>
-  )
+  const { mouseClickedString } = model
+  return <div>{mouseClickedString}</div>
 })
 
 const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {

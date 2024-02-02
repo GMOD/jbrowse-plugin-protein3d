@@ -4,7 +4,7 @@ import { Tab, Tabs } from '@mui/material'
 import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 
 // locals
-import ManualForm from './ManualForm'
+import ManualPDBMapping from './ManualPDBMapping'
 import PreLoadedPDBMapping from './PreLoadedPDBMapping'
 import MyGeneInfoSearch from './MyGeneInfoSearch'
 import TabPanel from './TabPanel'
@@ -27,23 +27,26 @@ export default function LaunchProteinViewDialog({
       open
     >
       <Tabs value={choice} onChange={(_, val) => setChoice(val)}>
-        <Tab value={0} label="Pre-loaded data" />
-        <Tab value={1} label="Manual" />
-        <Tab value={2} label="MyGene.info search" />
+        <Tab value={0} label="AlphaFold/UniProt search" />
+        <Tab value={1} label="Pre-loaded data" />
+        <Tab value={2} label="Manual" />
       </Tabs>
-
       <TabPanel value={choice} index={0}>
+        <MyGeneInfoSearch
+          model={model}
+          feature={feature}
+          handleClose={handleClose}
+        />
+      </TabPanel>
+      <TabPanel value={choice} index={1}>
         <PreLoadedPDBMapping
           feature={feature}
           model={model}
           handleClose={handleClose}
         />
       </TabPanel>
-      <TabPanel value={choice} index={1}>
-        <ManualForm model={model} feature={feature} handleClose={handleClose} />
-      </TabPanel>
       <TabPanel value={choice} index={2}>
-        <MyGeneInfoSearch
+        <ManualPDBMapping
           model={model}
           feature={feature}
           handleClose={handleClose}
