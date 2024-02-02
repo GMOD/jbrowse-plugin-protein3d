@@ -6,6 +6,7 @@ import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 // locals
 import ManualForm from './ManualForm'
 import PreLoadedPDBMapping from './PreLoadedPDBMapping'
+import MyGeneInfoSearch from './MyGeneInfoSearch'
 import TabPanel from './TabPanel'
 
 export default function LaunchProteinViewDialog({
@@ -28,6 +29,7 @@ export default function LaunchProteinViewDialog({
       <Tabs value={choice} onChange={(_, val) => setChoice(val)}>
         <Tab value={0} label="Pre-loaded data" />
         <Tab value={1} label="Manual" />
+        <Tab value={2} label="MyGene.info search" />
       </Tabs>
 
       <TabPanel value={choice} index={0}>
@@ -38,7 +40,14 @@ export default function LaunchProteinViewDialog({
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
-        <ManualForm model={model} feature={feature} />
+        <ManualForm model={model} feature={feature} handleClose={handleClose} />
+      </TabPanel>
+      <TabPanel value={choice} index={2}>
+        <MyGeneInfoSearch
+          model={model}
+          feature={feature}
+          handleClose={handleClose}
+        />
       </TabPanel>
     </Dialog>
   )

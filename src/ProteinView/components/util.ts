@@ -29,6 +29,14 @@ export async function loadStructureFromUrl({
     { url, isBinary },
     { state: { isGhost: true } },
   )
+  if (data) {
+    const trajectory = await plugin.builders.structure.parseTrajectory(
+      data,
+      'mmcif',
+    )
+    const model = await plugin.builders.structure.createModel(trajectory)
+    console.log(model.obj?.data.sequence)
+  }
   const trajectory = await plugin.builders.structure.parseTrajectory(
     data,
     format,

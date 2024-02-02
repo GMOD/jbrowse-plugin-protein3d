@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import { Mapping } from '../ProteinView/model'
-import { AbstractTrackModel } from '@jbrowse/core/util'
+import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -27,9 +27,11 @@ const useStyles = makeStyles()(theme => ({
 export default function ManualForm({
   feature,
   model,
+  handleClose,
 }: {
   model: AbstractTrackModel
   feature: Feature
+  handleClose: () => void
 }) {
   const { classes } = useStyles()
   const [choice, setChoice] = useState('url')
@@ -93,10 +95,20 @@ export default function ManualForm({
         </div>
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" color="secondary" onClick={() => {}}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => handleClose()}
+        >
           Cancel
         </Button>
-        <Button variant="contained" color="primary" onClick={() => {}}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            handleClose()
+          }}
+        >
           Submit
         </Button>
       </DialogActions>

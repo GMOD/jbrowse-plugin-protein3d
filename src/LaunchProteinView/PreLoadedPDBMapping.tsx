@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { observer } from 'mobx-react'
 import {
   Button,
@@ -22,7 +22,7 @@ import {
   stripTrailingVersion,
   z,
 } from './util'
-import { Mapping } from '../ProteinView/model'
+import MappingTextField from './MappingTextField'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -44,6 +44,14 @@ function foundF(f: Feature | undefined, map: Map<string, string>) {
   )
 }
 
+function str(refName: string, start: number, end: number, strand?: number) {
+  return [
+    `${refName}:${z(start)}-${z(end)}`,
+    strand === undefined ? undefined : `${strand}`,
+  ]
+    .filter(f => !!f)
+    .join('')
+}
 const AutoForm = observer(function AutoForm({
   model,
   feature,
@@ -58,32 +66,33 @@ const AutoForm = observer(function AutoForm({
   // @ts-expect-error
   const { proteinModel } = session
   const { data, error } = proteinModel
-  const [mapping, setMapping] = useState<Mapping[]>([])
-  const [url, setUrl] = useState('')
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
-
-  const transcriptIdToPdbMap = useMemo(() => createMapFromData(data), [data])
+  const transcriptIdToStructureMap = useMemo(
+    () => createMapFromData(data),
+    [data],
+  )
 
   const hasDataForFeatures = useMemo(
-    () => options.filter(f => foundF(f, transcriptIdToPdbMap)),
-    [transcriptIdToPdbMap, options],
+    () => options.filter(f => foundF(f, transcriptIdToStructureMap)),
+    [transcriptIdToStructureMap, options],
   )
   const [userSelection, setUserSelection] = useState('')
   const userSelectionFeat = options.find(f => f.id() === userSelection)
-  const foundPdbId = foundF(userSelectionFeat, transcriptIdToPdbMap)
+  const foundStructureId = foundF(userSelectionFeat, transcriptIdToStructureMap)
 
   useEffect(() => {
     setUserSelection(hasDataForFeatures[0]?.id())
   }, [hasDataForFeatures])
 
-  useEffect(() => {
-    if (foundPdbId && userSelectionFeat) {
-      setMapping(generateMap(userSelectionFeat, foundPdbId))
-      setUrl(`https://files.rcsb.org/view/${foundPdbId}.cif`)
-    }
-  }, [foundPdbId, userSelectionFeat, setMapping, setUrl])
+  const mapping =
+    foundStructureId && userSelectionFeat
+      ? generateMap(userSelectionFeat, foundStructureId)
+      : []
+  const url = foundStructureId
+    ? `https://files.rcsb.org/view/${foundStructureId}.cif`
+    : undefined
 
   return (
     <>
@@ -115,40 +124,10 @@ const AutoForm = observer(function AutoForm({
                       })}
                     </TextField>
                   </div>
-                  <div className={classes.section}>
-                    {foundPdbId ? (
-                      <TextField
-                        value={mapping
-                          .map(
-                            m =>
-                              `${m.refName}:${z(m.featureStart)}-${z(
-                                m.featureEnd,
-                              )}(${m.strand}) ${m.pdbId}:${z(m.proteinStart)}-${z(
-                                m.proteinEnd,
-                              )}`,
-                          )
-                          .join('\n')}
-                        onChange={() => {
-                          /*does nothing now, but should parse and re-store in mapping*/
-                        }}
-                        label="Genome to protein coordinate mapping"
-                        variant="outlined"
-                        multiline
-                        minRows={10}
-                        maxRows={15}
-                        InputProps={{
-                          classes: {
-                            input: classes.textAreaFont,
-                          },
-                        }}
-                        fullWidth
-                      />
-                    ) : (
-                      <Typography color="error">
-                        PDB entry not found in BioMart mapping
-                      </Typography>
-                    )}
-                  </div>
+                  <MappingTextField
+                    mapping={mapping}
+                    foundStructureId={foundStructureId}
+                  />
                 </>
               )}
             </div>
