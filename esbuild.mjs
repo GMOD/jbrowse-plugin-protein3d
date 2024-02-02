@@ -1,7 +1,25 @@
+import fs from 'fs'
 import * as esbuild from 'esbuild'
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import JbrowseGlobals from '@jbrowse/core/ReExports/list.js'
 import prettyBytes from 'pretty-bytes'
+
+// from https://github.com/evanw/esbuild/issues/2110#issuecomment-1079934680
+const StyleLoader = {
+  name: 'inline-style',
+  setup({ onLoad }) {
+    const template = css =>
+      `typeof document<'u'&&` +
+      `document.head.appendChild(document.createElement('style'))` +
+      `.appendChild(document.createTextNode(${JSON.stringify(css)}))`
+    onLoad({ filter: /\.css$/ }, async args => {
+      let css = await fs.promises.readFile(args.path, 'utf8')
+      return {
+        contents: template(css),
+      }
+    })
+  },
+}
 
 function createGlobalMap(jbrowseGlobals) {
   const globalMap = {}
@@ -21,6 +39,7 @@ let ctx = await esbuild.context({
   outfile: 'dist/out.js',
   metafile: true,
   plugins: [
+    StyleLoader,
     globalExternals(createGlobalMap(JbrowseGlobals.default)),
     {
       name: 'rebuild-log',

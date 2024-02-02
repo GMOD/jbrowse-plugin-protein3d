@@ -3,11 +3,11 @@ import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
 // molstar
 import { DefaultPluginSpec } from 'molstar/lib/mol-plugin/spec'
-import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { ParamDefinition } from 'molstar/lib/mol-util/param-definition'
-import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { CameraHelperParams } from 'molstar/lib/mol-canvas3d/helper/camera-helper'
+
+import './molstar.css'
 
 // locals
 import { ProteinViewModel } from '../model'
@@ -46,13 +46,11 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     file,
     dimensions = { width: 800, height: 500 },
     className = '',
-    showInterface = false,
     showControls = true,
     showAxes = true,
   } = {} as {
     showControls?: boolean
     showAxes?: boolean
-    showInterface?: boolean
     className?: string
     dimensions?: { width: number; height: number }
     file?: { type: string; filestring: string }
@@ -69,31 +67,15 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
-        let p: PluginContext | undefined
-        if (showInterface) {
-          if (!parentRef.current) {
-            return
-          }
-          p = await createPluginUI(parentRef.current, {
-            ...DefaultPluginUISpec(),
-            layout: {
-              initial: {
-                isExpanded: false,
-                controlsDisplay: 'reactive',
-                showControls,
-              },
-            },
-          })
-          setPlugin(p)
-        } else {
-          if (!canvasRef.current || !parentRef.current) {
-            return
-          }
-          p = new PluginContext(DefaultPluginSpec())
-          p.initViewer(canvasRef.current, parentRef.current)
-          await p.init()
-          setPlugin(p)
+        if (!canvasRef.current || !parentRef.current) {
+          return
         }
+        const r = DefaultPluginSpec()
+        console.log({ r })
+        const p = new PluginContext(DefaultPluginSpec())
+        p.initViewer(canvasRef.current, parentRef.current)
+        await p.init()
+        setPlugin(p)
 
         await loadStructure({ url, file, plugin: p })
       } catch (e) {
@@ -103,7 +85,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     })()
 
     // needs review
-  }, [url, file, showAxes, showInterface, showControls])
+  }, [url, file, showAxes, showControls])
 
   useEffect(() => {
     if (!plugin) {
@@ -194,34 +176,23 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const width = dimensions.width
   const height = dimensions.height
 
-  if (error) {
-    return <ErrorMessage error={error} />
-  } else if (showInterface) {
-    return (
-      <div style={{ position: 'relative', width, height, overflow: 'hidden' }}>
-        <div
-          ref={parentRef}
-          style={{ position: 'absolute', left: 0, top: 0, right: 0, bottom: 0 }}
+  return error ? (
+    <ErrorMessage error={error} />
+  ) : (
+    <div>
+      {mouseClickedPosition}
+      <div
+        ref={parentRef}
+        style={{ position: 'relative', width, height }}
+        className={className}
+      >
+        <canvas
+          ref={canvasRef}
+          style={{ position: 'absolute', top: 0, left: 0 }}
         />
       </div>
-    )
-  } else {
-    return (
-      <div>
-        {mouseClickedPosition}
-        <div
-          ref={parentRef}
-          style={{ position: 'relative', width, height }}
-          className={className}
-        >
-          <canvas
-            ref={canvasRef}
-            style={{ position: 'absolute', top: 0, left: 0 }}
-          />
-        </div>
-      </div>
-    )
-  }
+    </div>
+  )
 })
 
 const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {
