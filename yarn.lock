@@ -1923,10 +1923,12 @@
   dependencies:
     undici-types "~5.26.4"
 
-"@types/node@^16.18.69":
-  version "16.18.79"
-  resolved "https://registry.yarnpkg.com/@types/node/-/node-16.18.79.tgz#153e25561b271cf87dc1b28d38f98cebd514d788"
-  integrity sha512-Qd7jdLR5zmnIyMhfDrfPqN5tUCvreVpP3Qrf2oSM+F7SNzlb/MwHISGUkdFHtevfkPJ3iAGyeQI/jsbh9EStgQ==
+"@types/node@^18.19.4":
+  version "18.19.14"
+  resolved "https://registry.yarnpkg.com/@types/node/-/node-18.19.14.tgz#1880ff1b3ac913f3877f711588e5ed227da01886"
+  integrity sha512-EnQ4Us2rmOS64nHDWr0XqAD8DsO6f3XR6lf9UIIrZQpUzPVdN/oPuEzfDWNHSyXLvoGgjuEm/sPwFGSSs35Wtg==
+  dependencies:
+    undici-types "~5.26.4"
 
 "@types/normalize-package-data@^2.4.0":
   version "2.4.4"
@@ -4408,10 +4410,10 @@ ignore@^5.2.0, ignore@^5.2.4:
   resolved "https://registry.yarnpkg.com/ignore/-/ignore-5.3.1.tgz#5073e554cd42c5b33b394375f538b8593e34d4ef"
   integrity sha512-5Fytz/IraMjqpwfd34ke28PTVMjZjJG2MPn5t7OE4eUCUNf8BAa7b5WUS9/Qvr6mwOQS7Mk6vdsMno5he+T8Xw==
 
-immer@^9.0.21:
-  version "9.0.21"
-  resolved "https://registry.yarnpkg.com/immer/-/immer-9.0.21.tgz#1e025ea31a40f24fb064f1fef23e931496330176"
-  integrity sha512-bc4NBHqOqSfRW7POMkHd51LvClaeMXpm8dx0e8oE2GORbq5aRK7Bxl4FyzVLdGtLmvLKL7BTDBG5ACQm4HWjTA==
+immer@^10.0.3:
+  version "10.0.3"
+  resolved "https://registry.yarnpkg.com/immer/-/immer-10.0.3.tgz#a8de42065e964aa3edf6afc282dfc7f7f34ae3c9"
+  integrity sha512-pwupu3eWfouuaowscykeckFmVTpqbzW+rXFCX8rQLkZzM9ftBmU/++Ra+o+L27mz03zJTlyV4UUr+fdKNffo4A==
 
 immutable@^4.3.4:
   version "4.3.5"
@@ -5694,23 +5696,16 @@ mobx@^6.0.0:
   resolved "https://registry.yarnpkg.com/mobx/-/mobx-6.12.0.tgz#72b2685ca5af031aaa49e77a4d76ed67fcbf9135"
   integrity sha512-Mn6CN6meXEnMa0a5u6a5+RKrqRedHBhZGd15AWLk9O6uFY4KYHzImdt8JI8WODo1bjTSRnwXhJox+FCUZhCKCQ==
 
-molstar-react@^0.5.1:
-  version "0.5.2"
-  resolved "https://registry.yarnpkg.com/molstar-react/-/molstar-react-0.5.2.tgz#98c17cb73ddd034c49bd31e6f3695b1eb0144986"
-  integrity sha512-9sGlElCEZ30yrx8oky1aOUyTtHn0IgI3x85sXzD1kSCA7vx1v950t3r/+rqxGrHJ+19hhogS2RHmH6VDQVYg4A==
-  dependencies:
-    prop-types "^15.7.2"
-
-molstar@^3.33.0:
-  version "3.44.0"
-  resolved "https://registry.yarnpkg.com/molstar/-/molstar-3.44.0.tgz#fae4ab120da5c0b2912fc2f856104100dfff13db"
-  integrity sha512-lalV/MiYvB9+5prYaLpGdHknO3Nvn+G265MvMFNviqyueacvKS7sXnQ2wDnOkdOPKBlJktLNKyrgGcwLTNGEUw==
+molstar@next:
+  version "4.0.0-beta.0"
+  resolved "https://registry.yarnpkg.com/molstar/-/molstar-4.0.0-beta.0.tgz#89728c96762c0623f6ee01a2afa56ccdc8b5a6dc"
+  integrity sha512-u96LSLILY6ZKYWH9yGBypEyowmM7vLu3z3yW2wQ5DNrs5OitenAirSbdcc9amgFq0zNshtkcaFKscIxOdqqkmw==
   dependencies:
     "@types/argparse" "^2.0.14"
     "@types/benchmark" "^2.1.5"
     "@types/compression" "1.7.5"
     "@types/express" "^4.17.21"
-    "@types/node" "^16.18.69"
+    "@types/node" "^18.19.4"
     "@types/node-fetch" "^2.6.10"
     "@types/swagger-ui-dist" "3.30.4"
     argparse "^2.0.1"
@@ -5719,7 +5714,7 @@ molstar@^3.33.0:
     cors "^2.8.5"
     express "^4.18.2"
     h264-mp4-encoder "^1.0.12"
-    immer "^9.0.21"
+    immer "^10.0.3"
     immutable "^4.3.4"
     io-ts "^2.2.21"
     node-fetch "^2.7.0"
