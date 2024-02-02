@@ -1,17 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect } from 'react'
 import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
-// molstar
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
-import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
-import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
-import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
+import { doesIntersect2, getSession } from '@jbrowse/core/util'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import { ProteinViewModel } from '../model'
-import { loadStructureFromUrl } from './util'
-import { doesIntersect2, getSession } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import useProteinView from './useProteinView'
 
 // note: css must be injected into the js code for jbrowse plugins
 import './molstar.css'
@@ -20,43 +15,8 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping, showControls } = model
   const dimensions = { width: model.width, height: 500 }
   const session = getSession(model)
-  const [error, setError] = useState<unknown>()
-  const parentRef = useRef<HTMLDivElement>(null)
-  const [plugin, setPlugin] = useState<PluginContext>()
-
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        if (!parentRef.current) {
-          return
-        }
-        const d = document.createElement('div')
-        parentRef.current.append(d)
-        const p = await createPluginUI({
-          target: d,
-          render: renderReact18,
-          spec: {
-            ...DefaultPluginUISpec(),
-            layout: {
-              initial: {
-                controlsDisplay: 'reactive',
-                showControls,
-              },
-            },
-          },
-        })
-        setPlugin(p)
-
-        await loadStructureFromUrl({ url, plugin: p })
-      } catch (e) {
-        console.error(e)
-        setError(e)
-      }
-    })()
-
-    // needs review
-  }, [url, showControls])
+  const { plugin, parentRef, error } = useProteinView({ url, showControls })
+  const [error2, setError2] = useState<unknown>()
 
   useEffect(() => {
     if (!plugin) {
@@ -67,11 +27,13 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
       try {
         const clickedLabel =
           plugin.state.getSnapshot().structureFocus?.current?.label
+        console.log({ clickedLabel }, plugin.state.getSnapshot())
 
         if (clickedLabel) {
           const [clickPos, chain] = clickedLabel?.split('|') ?? []
           const [code, position] = clickPos.trim().split(' ')
           const pos = +position.trim()
+          console.log({ pos, code, chain })
           model.setMouseClickedPosition({ pos, code, chain })
           for (const entry of mapping) {
             const {
@@ -108,7 +70,7 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
         }
       } catch (e) {
         console.error(e)
-        setError(e)
+        setError2(e)
       }
     })
   }, [plugin, mapping, session, model])
@@ -116,8 +78,9 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const width = dimensions.width
   const height = dimensions.height
 
-  return error ? (
-    <ErrorMessage error={error} />
+  const e = error || error2
+  return e ? (
+    <ErrorMessage error={e} />
   ) : (
     <div>
       <Header model={model} />

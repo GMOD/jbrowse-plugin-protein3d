@@ -37,6 +37,13 @@ const useStyles = makeStyles()(theme => ({
   },
 }))
 
+function foundF(f: Feature | undefined, map: Map<string, string>) {
+  return (
+    map.get(stripTrailingVersion(f?.get('name')) ?? '') ??
+    map.get(stripTrailingVersion(f?.get('id')) ?? '')
+  )
+}
+
 const AutoForm = observer(function AutoForm({
   model,
   feature,
@@ -58,24 +65,14 @@ const AutoForm = observer(function AutoForm({
   const options = getTranscriptFeatures(feature)
 
   const transcriptIdToPdbMap = useMemo(() => createMapFromData(data), [data])
-  const foundF = useCallback(
-    (feat?: Feature) => {
-      const n1 = stripTrailingVersion(feat?.get('name'))
-      const n2 = stripTrailingVersion(feat?.get('id'))
-      return (
-        transcriptIdToPdbMap.get(n1 ?? '') ?? transcriptIdToPdbMap.get(n2 ?? '')
-      )
-    },
-    [transcriptIdToPdbMap],
-  )
+
   const hasDataForFeatures = useMemo(
-    () => options.filter(f => foundF(f)),
-    [foundF, options],
+    () => options.filter(f => foundF(f, transcriptIdToPdbMap)),
+    [transcriptIdToPdbMap, options],
   )
   const [userSelection, setUserSelection] = useState('')
   const userSelectionFeat = options.find(f => f.id() === userSelection)
-
-  const foundPdbId = foundF(userSelectionFeat)
+  const foundPdbId = foundF(userSelectionFeat, transcriptIdToPdbMap)
 
   useEffect(() => {
     setUserSelection(hasDataForFeatures[0]?.id())
@@ -161,7 +158,11 @@ const AutoForm = observer(function AutoForm({
         </div>
       </DialogContent>
       <DialogActions>
-        <Button variant="contained" color="secondary" onClick={() => {}}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={() => handleClose()}
+        >
           Cancel
         </Button>
         <Button
