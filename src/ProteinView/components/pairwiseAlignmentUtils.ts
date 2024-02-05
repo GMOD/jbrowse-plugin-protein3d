@@ -3,17 +3,20 @@ import { textfetch, timeout } from '../../fetchUtils'
 const base = `https://www.ebi.ac.uk/Tools/services/rest`
 
 async function runEmbossMatcher({
-  sequence,
+  seq1,
+  seq2,
   onProgress,
 }: {
-  sequence: string
+  seq1: string
+  seq2: string
   onProgress: (arg: string) => void
 }) {
   const jobId = await textfetch(`${base}/emboss_matcher/run`, {
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
-      sequence,
+      asequence: seq1,
+      bsequence: seq2,
     }),
   })
   await wait({
@@ -22,22 +25,25 @@ async function runEmbossMatcher({
     onProgress,
   })
   return {
-    msa: await textfetch(`${base}/emboss_matcher/result/${jobId}/fa`),
+    alignment: await textfetch(`${base}/emboss_matcher/result/${jobId}/fa`),
   }
 }
 
 async function runEmbossNeedle({
-  sequence,
+  seq1,
+  seq2,
   onProgress,
 }: {
-  sequence: string
+  seq1: string
+  seq2: string
   onProgress: (arg: string) => void
 }) {
   const jobId = await textfetch(`${base}/emboss_needle/run`, {
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
-      sequence,
+      asequence: seq1,
+      bsequence: seq2,
     }),
   })
   await wait({
@@ -46,7 +52,7 @@ async function runEmbossNeedle({
     onProgress,
   })
   return {
-    msa: await textfetch(`${base}/emboss_needle/result/${jobId}/fa`),
+    alignment: await textfetch(`${base}/emboss_needle/result/${jobId}/fa`),
   }
 }
 async function wait({
@@ -62,7 +68,7 @@ async function wait({
   while (true) {
     for (let i = 0; i < 10; i++) {
       await timeout(1000)
-      onProgress(`Re-checking alignment to PDB sequence in... ${10 - i}`)
+      onProgress(`Re-checking alignment to PDB seq1,seq2 in... ${10 - i}`)
     }
     const result = await textfetch(`${base}/${algorithm}/status/${jobId}`)
 
@@ -72,20 +78,22 @@ async function wait({
   }
 }
 
-export async function launchMSA({
+export async function launchPairwiseAlignment({
   algorithm,
-  sequence,
+  seq1,
+  seq2,
   onProgress,
 }: {
   algorithm: string
-  sequence: string
+  seq1: string
+  seq2: string
   onProgress: (arg: string) => void
 }) {
   onProgress(`Launching ${algorithm} MSA...`)
   if (algorithm === 'emboss_matcher') {
-    return runEmbossMatcher({ sequence, onProgress })
+    return runEmbossMatcher({ seq1, seq2, onProgress })
   } else if (algorithm === 'emboss_needle') {
-    return runEmbossNeedle({ sequence, onProgress })
+    return runEmbossNeedle({ seq1, seq2, onProgress })
   } else {
     throw new Error('unknown algorithm')
   }

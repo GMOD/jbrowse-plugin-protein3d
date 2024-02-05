@@ -8,9 +8,6 @@ import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 // locals
 import { loadStructureFromURL } from './loadStructureFromURL'
 
-// note: css must be injected into the js code for jbrowse plugins
-import './molstar.css'
-
 export default function useProteinView({
   url,
   showControls,
