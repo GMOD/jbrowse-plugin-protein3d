@@ -4,20 +4,13 @@ import {
   Button,
   DialogActions,
   DialogContent,
-  Link,
   MenuItem,
   TextField,
   TextFieldProps,
   Typography,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
-import {
-  AbstractTrackModel,
-  Feature,
-  getContainingView,
-  getSession,
-} from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import { AbstractTrackModel, Feature, getSession } from '@jbrowse/core/util'
 
 // locals
 import {
@@ -28,11 +21,8 @@ import {
   getTranscriptFeatures,
   stripTrailingVersion,
 } from './util'
-import { useFeatureSequence } from './useFeatureSequence'
-import { getProteinSequence } from './calculateProteinSequence'
 import { ErrorMessage } from '@jbrowse/core/ui'
-import { jsonfetch } from './fetchUtils'
-import MappingTextField from './MappingTextField'
+import { jsonfetch } from '../fetchUtils'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -120,8 +110,6 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
       ? generateMap(userSelectionFeat, foundStructureId)
       : []
 
-  console.log({ mapping, foundStructureId, userSelectionFeat })
-
   const e = error
   const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
   return (
@@ -145,10 +133,6 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
             ))}
           </TextField2>
           <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-          <MappingTextField
-            foundStructureId={foundStructureId}
-            mapping={mapping}
-          />
         </div>
       </DialogContent>
       <DialogActions>

@@ -6,6 +6,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import { ProteinViewModel } from '../model'
+import ProteinViewHeader from './ProteinViewHeader'
 import useProteinView from './useProteinView'
 
 // note: css must be injected into the js code for jbrowse plugins
@@ -15,7 +16,10 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { url, mapping, showControls } = model
   const dimensions = { width: model.width, height: 500 }
   const session = getSession(model)
-  const { plugin, parentRef, error } = useProteinView({ url, showControls })
+  const { plugin, seq, parentRef, error } = useProteinView({
+    url,
+    showControls,
+  })
   const [error2, setError2] = useState<unknown>()
 
   useEffect(() => {
@@ -57,10 +61,12 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
                   end: s2,
                 },
               ])
-              // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              ;(session.views[0] as LinearGenomeViewModel).navToLocString(
-                `${refName}:${s1}-${s2}`,
-              )
+              ;(session.views[0] as LinearGenomeViewModel)
+                .navToLocString(`${refName}:${s1}-${s2}`)
+                .catch(e => {
+                  console.error(e)
+                  setError2(e)
+                })
             }
           }
         } else {
@@ -81,15 +87,10 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
     <ErrorMessage error={e} />
   ) : (
     <div>
-      <Header model={model} />
+      <ProteinViewHeader model={model} />
       <div ref={parentRef} style={{ position: 'relative', width, height }} />
     </div>
   )
-})
-
-const Header = observer(function ({ model }: { model: ProteinViewModel }) {
-  const { mouseClickedString } = model
-  return <div>{mouseClickedString}</div>
 })
 
 const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {

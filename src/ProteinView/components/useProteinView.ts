@@ -21,10 +21,12 @@ export default function useProteinView({
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
   const [error, setError] = useState<unknown>()
+  const [seq, setSeq] = useState('')
+
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    let p: PluginContext | undefined
+      // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
-      let p: PluginContext | undefined
       try {
         if (!parentRef.current) {
           return
@@ -46,16 +48,18 @@ export default function useProteinView({
         })
         setPlugin(p)
 
-        await loadStructureFromURL({ url, plugin: p })
+        const { seq } = await loadStructureFromURL({ url, plugin: p })
+        setSeq(seq)
       } catch (e) {
         console.error(e)
         setError(e)
       }
-      return () => {
-        p?.unmount()
-      }
     })()
+    return () => {
+      console.log('t1')
+      p?.unmount()
+    }
   }, [url, showControls])
 
-  return { parentRef, error, plugin }
+  return { parentRef, error, plugin, seq }
 }

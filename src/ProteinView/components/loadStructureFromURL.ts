@@ -18,11 +18,8 @@ export async function loadStructureFromURL({
   format?: BuiltInTrajectoryFormat
   isBinary?: boolean
   options?: LoadStructureOptions & { label?: string }
-  plugin?: PluginContext
+  plugin: PluginContext
 }) {
-  if (!plugin) {
-    return
-  }
   await plugin.clear()
 
   const data = await plugin.builders.data.download(
@@ -40,8 +37,6 @@ export async function loadStructureFromURL({
     // @ts-expect-error
     .join('')
 
-  console.log({ seq })
-
   await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
     'all-models',
@@ -50,4 +45,6 @@ export async function loadStructureFromURL({
       representationPresetParams: options?.representationParams,
     },
   )
+
+  return { seq: seq as string }
 }
