@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { launchPairwiseAlignment } from './pairwiseAlignmentUtils'
 
-export default function useProteinView({
+export default function usePairwiseAlignment({
   seq1,
   seq2,
 }: {
@@ -15,6 +15,9 @@ export default function useProteinView({
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
+        if (!seq1 || !seq2) {
+          return
+        }
         const alignment = await launchPairwiseAlignment({
           seq1,
           seq2,

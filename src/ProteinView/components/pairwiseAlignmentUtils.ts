@@ -1,4 +1,5 @@
 import { textfetch, timeout } from '../../fetchUtils'
+import { parse } from 'clustal-js'
 
 const base = `https://www.ebi.ac.uk/Tools/services/rest`
 
@@ -15,8 +16,8 @@ async function runEmbossMatcher({
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
-      asequence: seq1,
-      bsequence: seq2,
+      asequence: `>a\n${seq1}`,
+      bsequence: `>b\n${seq2}`,
     }),
   })
   await wait({
@@ -25,7 +26,7 @@ async function runEmbossMatcher({
     onProgress,
   })
   return {
-    alignment: await textfetch(`${base}/emboss_matcher/result/${jobId}/fa`),
+    alignment: await textfetch(`${base}/emboss_matcher/result/${jobId}/aln`),
   }
 }
 
@@ -38,12 +39,13 @@ async function runEmbossNeedle({
   seq2: string
   onProgress: (arg: string) => void
 }) {
+  console.log({ seq1, seq2 })
   const jobId = await textfetch(`${base}/emboss_needle/run`, {
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
-      asequence: seq1,
-      bsequence: seq2,
+      asequence: `>a\n${seq1}`,
+      bsequence: `>b\n${seq2}`,
     }),
   })
   await wait({
@@ -51,8 +53,16 @@ async function runEmbossNeedle({
     algorithm: 'emboss_needle',
     onProgress,
   })
+
+  const ret = await textfetch(`${base}/emboss_needle/result/${jobId}/aln`)
+  const stripped = ret
+    .split('\n')
+    .filter(line => !line.startsWith('#'))
+    .join('\n')
+  const result = parse(stripped)
+  console.log({ result, stripped, ret })
   return {
-    alignment: await textfetch(`${base}/emboss_needle/result/${jobId}/fa`),
+    alignment: ret,
   }
 }
 async function wait({

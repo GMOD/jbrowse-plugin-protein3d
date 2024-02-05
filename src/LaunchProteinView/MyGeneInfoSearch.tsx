@@ -10,7 +10,12 @@ import {
   Typography,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
-import { AbstractTrackModel, Feature, getSession } from '@jbrowse/core/util'
+import {
+  AbstractTrackModel,
+  Feature,
+  getContainingView,
+  getSession,
+} from '@jbrowse/core/util'
 
 // locals
 import {
@@ -23,6 +28,9 @@ import {
 } from './util'
 import { ErrorMessage } from '@jbrowse/core/ui'
 import { jsonfetch } from '../fetchUtils'
+import { useFeatureSequence } from './useFeatureSequence'
+import { getProteinSequence } from './calculateProteinSequence'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -86,31 +94,26 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState(getId(options[0]))
-  // const view = getContainingView(model) as LinearGenomeViewModel
-  // const selectedTranscript = options.find(val => getId(val) === userSelection)!
-  // const { sequence, error: error2 } = useFeatureSequence({
-  //   view,
-  //   feature: selectedTranscript,
-  // })
-  // const protein =
-  //   sequence && !('error' in sequence)
-  //     ? getProteinSequence({
-  //         seq: sequence.seq,
-  //         selectedTranscript,
-  //       })
-  //     : ''
+  const view = getContainingView(model) as LinearGenomeViewModel
+  const selectedTranscript = options.find(val => getId(val) === userSelection)!
+  const { sequence, error: error2 } = useFeatureSequence({
+    view,
+    feature: selectedTranscript,
+  })
+  const protein =
+    sequence && !('error' in sequence)
+      ? getProteinSequence({
+          seq: sequence.seq,
+          selectedTranscript,
+        })
+      : ''
 
   const { result: foundStructureId, error } = useMyGeneInfo({
     id: userSelection,
   })
+  console.log({ protein })
 
-  const userSelectionFeat = options.find(f => getId(f) === userSelection)
-  const mapping =
-    foundStructureId && userSelectionFeat
-      ? generateMap(userSelectionFeat, foundStructureId)
-      : []
-
-  const e = error
+  const e = error || error2
   const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
   return (
     <>
@@ -118,7 +121,9 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <div className={classes.section}>
           {e ? <ErrorMessage error={e} /> : null}
           <div>
-            Find Uniprot ID from MyGene.info, and access result from AlphaFold
+            Looks up the UniProt ID associated with a given transcript from
+            MyGene.info, and uses this to load the 3-D structure from
+            AlphaFoldDB
           </div>
           <TextField2
             value={userSelection}
@@ -133,6 +138,9 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
             ))}
           </TextField2>
           <Typography>Found Uniprot ID: {foundStructureId}</Typography>
+          {protein ? null : (
+            <Typography>Waiting for protein sequence...</Typography>
+          )}
         </div>
       </DialogContent>
       <DialogActions>
@@ -146,12 +154,12 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <Button
           variant="contained"
           color="primary"
-          disabled={!foundStructureId}
+          disabled={!foundStructureId || !protein}
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,
-              mapping,
+              seq: protein,
             })
             handleClose()
           }}

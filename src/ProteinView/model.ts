@@ -35,8 +35,10 @@ function stateModelFactory() {
         type: types.literal('ProteinView'),
         url: types.optional(types.string, root + '1LOL.cif'),
         mapping: types.frozen<Mapping[]>(),
+        seq: types.maybe(types.string),
         highlights: types.array(Region),
         showControls: false,
+        height: types.optional(types.number, 500),
       }),
     )
     .volatile(() => ({
