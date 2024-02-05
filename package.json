@@ -31,7 +31,7 @@
     "name": "Protein3d"
   },
   "dependencies": {
-    "molstar": "next",
+    "molstar": "^4.0.0",
     "pako": "^2.1.0"
   },
   "devDependencies": {
