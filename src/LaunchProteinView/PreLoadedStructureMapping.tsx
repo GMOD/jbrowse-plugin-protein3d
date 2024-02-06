@@ -20,14 +20,10 @@ import {
   getDisplayName,
   getTranscriptFeatures,
   stripTrailingVersion,
-  z,
 } from './util'
 import MappingTextField from './MappingTextField'
 
 const useStyles = makeStyles()(theme => ({
-  textAreaFont: {
-    fontFamily: 'Courier New',
-  },
   section: {
     marginTop: theme.spacing(6),
   },
@@ -44,14 +40,6 @@ function foundF(f: Feature | undefined, map: Map<string, string>) {
   )
 }
 
-function str(refName: string, start: number, end: number, strand?: number) {
-  return [
-    `${refName}:${z(start)}-${z(end)}`,
-    strand === undefined ? undefined : `${strand}`,
-  ]
-    .filter(f => !!f)
-    .join('')
-}
 const AutoForm = observer(function AutoForm({
   model,
   feature,
@@ -114,14 +102,11 @@ const AutoForm = observer(function AutoForm({
                       label="Choose isoform"
                       select
                     >
-                      {hasDataForFeatures.map(val => {
-                        const r = getDisplayName(val)
-                        return (
-                          <MenuItem value={val.id()} key={val.id()}>
-                            {r} (has data)
-                          </MenuItem>
-                        )
-                      })}
+                      {hasDataForFeatures.map(val => (
+                        <MenuItem value={val.id()} key={val.id()}>
+                          {getDisplayName(val)} (has data)
+                        </MenuItem>
+                      ))}
                     </TextField>
                   </div>
                   <MappingTextField
