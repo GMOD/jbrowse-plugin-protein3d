@@ -35,8 +35,8 @@ export async function handleProteinToGenomeMapping({
         const ret = Math.round((c - proteinStart) * 3)
         const neg = strand === -1
         const p = (3 - phase) % 3
-        const start = neg ? featureEnd - ret + p : featureStart + ret - p
-        const end = neg ? featureEnd - ret - 3 + p : featureStart + ret + 3 - p
+        const start = neg ? featureEnd - ret + 3 + p : featureStart + ret - p
+        const end = neg ? featureEnd - ret + p : featureStart + ret + 3 - p
         const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
         model.setHighlights([
           {
