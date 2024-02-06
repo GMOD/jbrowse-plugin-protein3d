@@ -36,14 +36,4 @@ const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   )
 })
 
-const Wrapper = observer(function ({ model }: { model: ProteinViewModel }) {
-  const { url } = model
-  return (
-    <div>
-      <div>{url}</div>
-      <ProteinView model={model} />
-    </div>
-  )
-})
-
-export default Wrapper
+export default ProteinView

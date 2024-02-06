@@ -7,8 +7,13 @@ const ProteinViewHeader = observer(function ({
 }: {
   model: ProteinViewModel
 }) {
-  const { mouseClickedString } = model
-  return <div>{mouseClickedString}</div>
+  const { url, mouseClickedString, alignment } = model
+  return (
+    <div>
+      {url} {mouseClickedString}{' '}
+      {!alignment ? <div>Loading pairwise alignment...</div> : null}
+    </div>
+  )
 })
 
 export default ProteinViewHeader

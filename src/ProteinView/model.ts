@@ -9,6 +9,7 @@ import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
 import { generateMap } from '../LaunchProteinView/util'
 import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
+import { parsePairwise } from 'clustal-js'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -19,8 +20,6 @@ export const StructureModel = types.model({
   }),
   range: types.maybe(types.string),
 })
-
-const root = 'https://files.rcsb.org/view/'
 
 export interface Mapping {
   refName: string
@@ -48,7 +47,10 @@ function stateModelFactory() {
         /**
          * #property
          */
-        url: types.optional(types.string, root + '1LOL.cif'),
+        url: types.optional(
+          types.string,
+          `https://files.rcsb.org/view/1LOL.cif`,
+        ),
         /**
          * #property
          */
@@ -73,10 +75,13 @@ function stateModelFactory() {
          * #property
          */
         seq2: types.maybe(types.string),
+        /**
+         * #property
+         */
+        alignment: types.frozen<ReturnType<typeof parsePairwise> | undefined>(),
       }),
     )
     .volatile(() => ({
-      alignment: undefined as any,
       error: undefined as unknown,
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -111,7 +116,7 @@ function stateModelFactory() {
       setError(e: unknown) {
         self.error = e
       },
-      setAlignment(r: unknown) {
+      setAlignment(r?: ReturnType<typeof parsePairwise> | undefined) {
         self.alignment = r
       },
     }))
@@ -131,7 +136,10 @@ function stateModelFactory() {
 
       get mapping() {
         return self.alignment && self.feature
-          ? generateMap(new SimpleFeature(self.feature), 'lol', self.alignment)
+          ? generateMap({
+              feature: new SimpleFeature(self.feature),
+              alignment: self.alignment,
+            })
           : undefined
       },
     }))
@@ -142,6 +150,9 @@ function stateModelFactory() {
           autorun(async () => {
             try {
               const { seq1, seq2 } = self
+              if (self.alignment) {
+                return
+              }
               if (!seq1 || !seq2) {
                 return
               }
@@ -151,7 +162,6 @@ function stateModelFactory() {
                 algorithm: 'emboss_needle',
                 onProgress: () => {},
               })
-              console.log({ alignment })
               self.setAlignment(alignment.alignment)
             } catch (e) {
               console.error(e)

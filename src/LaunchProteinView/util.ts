@@ -1,4 +1,5 @@
 import { Feature } from '@jbrowse/core/util'
+import { parsePairwise } from 'clustal-js'
 
 export interface Row {
   gene_id: string
@@ -29,16 +30,57 @@ export function z(n: number) {
   return n.toLocaleString('en-US')
 }
 
-// see similar function in msaview plugin
-export function generateMap(
-  f: Feature,
-  structureId: string,
-  alignment?: string,
-) {
-  let iter = 0
+interface Alignment {
+  alns: {
+    id: string
+    seq: string
+  }[]
+}
 
-  const strand = f.get('strand')
-  const subs = f.children() ?? []
+function align(alignment: Alignment, query: number) {
+  const k1 = alignment.alns[0].seq
+  const k2 = alignment.alns[1].seq
+  if (k1.length !== k2.length) {
+    throw new Error('mismatched length')
+  }
+
+  let j = 0
+  let k = 0
+
+  // eslint-disable-next-line unicorn/no-for-loop
+  for (let i = 0; i < k1.length; i++) {
+    const char1 = k1[i]
+    const char2 = k2[i]
+    if (char2 === '-') {
+      j++
+    } else if (char1 === '-') {
+      k++
+    } else {
+      j++
+      k++
+    }
+
+    if (k === query + 1) {
+      return j
+    }
+  }
+  return undefined
+}
+
+// see similar function in msaview plugin
+export function generateMap({
+  feature,
+  alignment,
+}: {
+  feature: Feature
+  alignment?: ReturnType<typeof parsePairwise> | undefined
+}) {
+  let iter = 0
+  if (!alignment) {
+    return []
+  }
+  const strand = feature.get('strand')
+  const subs = feature.children() ?? []
   return subs
     .filter(f => f.get('type') === 'CDS')
     .sort((a, b) => b.get('start') - a.get('start'))
@@ -47,18 +89,23 @@ export function generateMap(
       const featureStart = f.get('start')
       const featureEnd = f.get('end')
       const phase = f.get('phase')
-      const len = featureEnd - featureStart
-      const op = len / 3
-      const proteinStart = iter
-      const proteinEnd = iter + op
+      console.log({ phase })
+      const len = featureEnd - featureStart + (3 - phase)
+      const op = Math.floor(len / 3)
+      const sourceProteinStart = iter
+      const sourceProteinEnd = Math.floor(iter + op)
+      const targetProteinStart = align(alignment, sourceProteinStart)
+      const targetProteinEnd = align(alignment, sourceProteinEnd)
+      console.log({ sourceProteinStart, sourceProteinEnd })
       iter += op
       return {
         refName,
         featureStart,
         featureEnd,
-        proteinStart,
-        proteinEnd,
-        structureId,
+        sourceProteinStart,
+        sourceProteinEnd,
+        targetProteinStart,
+        targetProteinEnd,
         phase,
         strand,
       } as const

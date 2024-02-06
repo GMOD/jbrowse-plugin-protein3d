@@ -4,7 +4,6 @@ import { makeStyles } from 'tss-react/mui'
 
 // locals
 import { generateMap, z } from './util'
-import { Feature } from '@jbrowse/core/util'
 
 function str(refName: string, start: number, end: number, strand?: number) {
   return [
@@ -20,10 +19,6 @@ const useStyles = makeStyles()(theme => ({
   },
   section: {
     marginTop: theme.spacing(6),
-  },
-
-  dialogContent: {
-    width: '80em',
   },
 }))
 
@@ -44,7 +39,7 @@ export default function MappingTextField({
             .map(m =>
               [
                 str(m.refName, m.featureStart, m.featureEnd, m.strand),
-                str(m.structureId, m.proteinStart, m.proteinEnd),
+                str('P', m.targetProteinStart || -1, m.targetProteinEnd || -1),
               ].join(' '),
             )
             .join('\n')}

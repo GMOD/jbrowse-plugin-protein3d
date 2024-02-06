@@ -76,7 +76,9 @@ const AutoForm = observer(function AutoForm({
 
   const mapping =
     foundStructureId && userSelectionFeat
-      ? generateMap(userSelectionFeat, foundStructureId)
+      ? generateMap({
+          feature: userSelectionFeat,
+        })
       : []
   const url = foundStructureId
     ? `https://files.rcsb.org/view/${foundStructureId}.cif`
