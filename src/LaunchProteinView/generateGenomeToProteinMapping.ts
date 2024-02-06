@@ -61,6 +61,10 @@ export function generateGenomeToProteinMapping({
   } else {
     cds.sort((a, b) => a.get('start') - b.get('start'))
   }
+  const s1 = alignment.alns[0].seq
+  const s2 = alignment.alns[1].seq
+  console.log({ s1, s2 })
+
   return cds
     .map(f => {
       const refName = f.get('refName').replace('chr', '')
@@ -80,6 +84,8 @@ export function generateGenomeToProteinMapping({
           sourceProteinEnd,
           targetProteinStart,
           targetProteinEnd,
+          k1: s1.slice(sourceProteinStart, sourceProteinEnd),
+          k2: s2.slice(targetProteinStart, targetProteinEnd),
         })
         return {
           refName,

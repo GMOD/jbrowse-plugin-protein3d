@@ -32,11 +32,14 @@ export async function handleProteinToGenomeMapping({
       const c = pos - 1
       console.log({ c, c1: c + 1, proteinStart, proteinEnd })
       if (doesIntersect2(proteinStart, proteinEnd, c, c + 1)) {
-        const ret = Math.round((c - proteinStart) * 3)
+        const ret = (c - proteinStart) * 3
         const neg = strand === -1
         const p = (3 - phase) % 3
-        const start = neg ? featureEnd - ret + 3 + p : featureStart + ret - p
-        const end = neg ? featureEnd - ret + p : featureStart + ret + 3 - p
+        console.log({ c, proteinStart, ret, phase, p })
+        const fe = featureEnd - ret
+        const fs = featureStart + ret
+        const start = neg ? fe - p + 3 : fs - p
+        const end = neg ? fe - p : fs + 3 - p
         const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
         model.setHighlights([
           {
@@ -46,7 +49,7 @@ export async function handleProteinToGenomeMapping({
             end: s2,
           },
         ])
-        await lgv.navToLocString(`${refName}:${s1}-${s2}`)
+        await lgv.navToLocString(`${refName}:${s1}-${s2}${neg ? '[rev]' : ''}`)
         break
       }
     }

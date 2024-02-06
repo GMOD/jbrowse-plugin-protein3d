@@ -1,5 +1,5 @@
 import { textfetch, timeout } from '../../fetchUtils'
-import { parse, parsePairwise } from 'clustal-js'
+import { parsePairwise } from 'clustal-js'
 
 const base = `https://www.ebi.ac.uk/Tools/services/rest`
 
