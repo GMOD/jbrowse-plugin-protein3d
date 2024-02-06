@@ -21,7 +21,7 @@ import {
   stripTrailingVersion,
 } from './util'
 import MappingTextField from './MappingTextField'
-import { generateGenomeToProteinMapping } from './generateGenomeToProteinMapping'
+import { generateGenomeToProteinMapping } from '../generateGenomeToProteinMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {

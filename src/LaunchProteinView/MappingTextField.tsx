@@ -4,7 +4,7 @@ import { makeStyles } from 'tss-react/mui'
 
 // locals
 import { z } from './util'
-import { generateGenomeToProteinMapping } from './generateGenomeToProteinMapping'
+import { generateGenomeToProteinMapping } from '../generateGenomeToProteinMapping'
 
 function str(refName: string, start: number, end: number, strand?: number) {
   return [

@@ -9,7 +9,7 @@ import { parsePairwise } from 'clustal-js'
 // locals
 import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
-import { generateGenomeToProteinMapping } from '../LaunchProteinView/generateGenomeToProteinMapping'
+import { generateGenomeToProteinMapping } from '../generateGenomeToProteinMapping'
 
 export const StructureModel = types.model({
   id: types.identifier,
