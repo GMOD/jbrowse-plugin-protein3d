@@ -84,7 +84,6 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   const { result: foundStructureId, error } = useMyGeneInfo({
     id: userSelection,
   })
-  console.log({ protein })
 
   const e = error || error2
   const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`

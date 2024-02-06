@@ -3,7 +3,8 @@ import { TextField, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 // locals
-import { generateMap, z } from './util'
+import { z } from './util'
+import { generateGenomeToProteinMapping } from './generateGenomeToProteinMapping'
 
 function str(refName: string, start: number, end: number, strand?: number) {
   return [
@@ -26,7 +27,7 @@ export default function MappingTextField({
   mapping,
   foundStructureId,
 }: {
-  mapping: ReturnType<typeof generateMap>
+  mapping: ReturnType<typeof generateGenomeToProteinMapping>
   foundStructureId?: string
 }) {
   const { classes } = useStyles()

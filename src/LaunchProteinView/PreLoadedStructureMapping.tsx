@@ -16,12 +16,12 @@ import { AbstractTrackModel, Feature, getSession } from '@jbrowse/core/util'
 // locals
 import {
   createMapFromData,
-  generateMap,
   getDisplayName,
   getTranscriptFeatures,
   stripTrailingVersion,
 } from './util'
 import MappingTextField from './MappingTextField'
+import { generateGenomeToProteinMapping } from './generateGenomeToProteinMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {
@@ -76,7 +76,7 @@ const AutoForm = observer(function AutoForm({
 
   const mapping =
     foundStructureId && userSelectionFeat
-      ? generateMap({
+      ? generateGenomeToProteinMapping({
           feature: userSelectionFeat,
         })
       : []

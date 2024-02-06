@@ -13,7 +13,6 @@ interface MyGeneInfoResults {
 export default function useMyGeneInfo({ id }: { id: string }) {
   const [result, setResult] = useState<MyGeneInfoResults>()
   const [error, setError] = useState<unknown>()
-  console.log({ id })
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {

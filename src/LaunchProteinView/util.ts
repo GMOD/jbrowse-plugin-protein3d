@@ -1,5 +1,4 @@
 import { Feature } from '@jbrowse/core/util'
-import { parsePairwise } from 'clustal-js'
 
 export interface Row {
   gene_id: string
@@ -28,103 +27,6 @@ export function stripTrailingVersion(s?: string) {
 
 export function z(n: number) {
   return n.toLocaleString('en-US')
-}
-
-interface Alignment {
-  alns: {
-    id: string
-    seq: string
-  }[]
-}
-
-function align(alignment: Alignment, query: number) {
-  console.log({ query })
-  const k1 = alignment.alns[0].seq
-  const k2 = alignment.alns[1].seq
-  if (k1.length !== k2.length) {
-    throw new Error('mismatched length')
-  }
-
-  let j = 0
-  let k = 0
-
-  // eslint-disable-next-line unicorn/no-for-loop
-  for (let i = 0; i < k1.length; i++) {
-    const char1 = k1[i]
-    const char2 = k2[i]
-    if (char2 === '-') {
-      j++
-    } else if (char1 === '-') {
-      k++
-    } else {
-      j++
-      k++
-    }
-
-    if (k === query) {
-      return j
-    }
-  }
-  return undefined
-}
-
-// see similar function in msaview plugin
-export function generateMap({
-  feature,
-  alignment,
-}: {
-  feature: Feature
-  alignment?: ReturnType<typeof parsePairwise> | undefined
-}) {
-  let iter = 0
-  if (!alignment) {
-    return []
-  }
-  const strand = feature.get('strand')
-  const subs = feature.children() ?? []
-  let remainder = 0
-  return subs
-    .filter(f => f.get('type') === 'CDS')
-    .sort((a, b) => b.get('start') - a.get('start'))
-    .map(f => {
-      const refName = f.get('refName').replace('chr', '')
-      const featureStart = f.get('start')
-      const featureEnd = f.get('end')
-      const phase = f.get('phase')
-      const len = featureEnd - featureStart
-      const op = Math.floor(len / 3)
-      // console.log(3 - remainder, phase)
-      // remainder = len % 3
-      const sourceProteinStart = iter
-      const sourceProteinEnd = iter + op
-      const targetProteinStart = align(alignment, sourceProteinStart) || 0
-      const targetProteinEnd = align(alignment, sourceProteinEnd) || 0
-      const d1 = sourceProteinEnd - sourceProteinStart
-      const d2 = targetProteinEnd - targetProteinStart
-      console.log({
-        sourceProteinStart,
-        sourceProteinEnd,
-        targetProteinStart,
-        targetProteinEnd,
-        phase,
-        iter,
-        op,
-        source_d1: d1,
-        target_d2: d2,
-      })
-      iter += op
-      return {
-        refName,
-        featureStart,
-        featureEnd,
-        sourceProteinStart,
-        sourceProteinEnd,
-        targetProteinStart,
-        targetProteinEnd,
-        phase,
-        strand,
-      } as const
-    })
 }
 
 export function createMapFromData(data?: Row[]) {

@@ -4,12 +4,12 @@ import { ElementId, Region } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
 import { Instance, addDisposer, cast, types } from 'mobx-state-tree'
 import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
+import { parsePairwise } from 'clustal-js'
 
 // locals
-import { generateMap } from '../LaunchProteinView/util'
 import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
-import { parsePairwise } from 'clustal-js'
+import { generateGenomeToProteinMapping } from '../LaunchProteinView/generateGenomeToProteinMapping'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -20,16 +20,6 @@ export const StructureModel = types.model({
   }),
   range: types.maybe(types.string),
 })
-
-export interface Mapping {
-  refName: string
-  featureStart: number
-  featureEnd: number
-  pdbId: string
-  proteinStart: number
-  proteinEnd: number
-  strand: number
-}
 
 function stateModelFactory() {
   return types
@@ -136,7 +126,7 @@ function stateModelFactory() {
 
       get mapping() {
         return self.alignment && self.feature
-          ? generateMap({
+          ? generateGenomeToProteinMapping({
               feature: new SimpleFeature(self.feature),
               alignment: self.alignment,
             })
