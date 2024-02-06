@@ -1,5 +1,5 @@
 import { textfetch, timeout } from '../../fetchUtils'
-import { parse } from 'clustal-js'
+import { parse, parsePairwise } from 'clustal-js'
 
 const base = `https://www.ebi.ac.uk/Tools/services/rest`
 
@@ -25,8 +25,14 @@ async function runEmbossMatcher({
     algorithm: 'emboss_matcher',
     onProgress,
   })
+  const ret = await textfetch(`${base}/emboss_matcher/result/${jobId}/aln`)
   return {
-    alignment: await textfetch(`${base}/emboss_matcher/result/${jobId}/aln`),
+    alignment: parsePairwise(
+      ret
+        .split('\n')
+        .filter(line => !line.startsWith('#'))
+        .join('\n'),
+    ),
   }
 }
 
@@ -55,14 +61,13 @@ async function runEmbossNeedle({
   })
 
   const ret = await textfetch(`${base}/emboss_needle/result/${jobId}/aln`)
-  const stripped = ret
-    .split('\n')
-    .filter(line => !line.startsWith('#'))
-    .join('\n')
-  const result = parse(stripped)
-  console.log({ result, stripped, ret })
   return {
-    alignment: ret,
+    alignment: parsePairwise(
+      ret
+        .split('\n')
+        .filter(line => !line.startsWith('#'))
+        .join('\n'),
+    ),
   }
 }
 async function wait({

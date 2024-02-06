@@ -12,7 +12,7 @@ async function myfetch(url: string) {
   }
   return res.arrayBuffer()
 }
-const ProteinModel = types
+const ProteinModelSessionExtension = types
   .model({})
   .volatile(() => ({
     data: undefined as Row[] | undefined,
@@ -74,4 +74,4 @@ const ProteinModel = types
     }
   })
 
-export default ProteinModel
+export default ProteinModelSessionExtension

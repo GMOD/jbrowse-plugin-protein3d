@@ -1,12 +1,14 @@
+import { autorun } from 'mobx'
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId, Region } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
 import { Instance, addDisposer, cast, types } from 'mobx-state-tree'
-import { proteinAbbreviationMapping } from './util'
 import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
+
+// locals
 import { generateMap } from '../LaunchProteinView/util'
+import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
-import { autorun } from 'mobx'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -128,7 +130,7 @@ function stateModelFactory() {
       },
 
       get mapping() {
-        return self.alignment
+        return self.alignment && self.feature
           ? generateMap(new SimpleFeature(self.feature), 'lol', self.alignment)
           : undefined
       },
@@ -149,6 +151,7 @@ function stateModelFactory() {
                 algorithm: 'emboss_needle',
                 onProgress: () => {},
               })
+              console.log({ alignment })
               self.setAlignment(alignment.alignment)
             } catch (e) {
               console.error(e)

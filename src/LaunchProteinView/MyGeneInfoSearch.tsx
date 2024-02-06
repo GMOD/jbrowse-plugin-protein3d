@@ -16,21 +16,19 @@ import {
   getContainingView,
   getSession,
 } from '@jbrowse/core/util'
+import { ErrorMessage } from '@jbrowse/core/ui'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import {
-  generateMap,
   getGeneDisplayName,
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
-  stripTrailingVersion,
 } from './util'
-import { ErrorMessage } from '@jbrowse/core/ui'
-import { jsonfetch } from '../fetchUtils'
 import { useFeatureSequence } from './useFeatureSequence'
 import { getProteinSequence } from './calculateProteinSequence'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import useMyGeneInfo from './useMyGeneInfo'
 
 const useStyles = makeStyles()(theme => ({
   textAreaFont: {
@@ -52,32 +50,7 @@ function TextField2({ children, ...rest }: TextFieldProps) {
     </div>
   )
 }
-interface MyGeneInfoResults {
-  hits: {
-    uniprot: {
-      'Swiss-Prot': string
-    }
-  }[]
-}
-function useMyGeneInfo({ id }: { id: string }) {
-  const [result, setResult] = useState<MyGeneInfoResults>()
-  const [error, setError] = useState<unknown>()
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        const res = await jsonfetch(
-          `https://mygene.info/v3/query?q=${stripTrailingVersion(id)}&fields=uniprot,symbol`,
-        )
-        setResult(res)
-      } catch (e) {
-        console.error(e)
-        setError(e)
-      }
-    })()
-  }, [id])
-  return { result: result?.hits[0].uniprot['Swiss-Prot'], error }
-}
+
 const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   feature,
   model,
@@ -159,7 +132,8 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,
-              seq: protein,
+              seq2: protein,
+              feature: selectedTranscript.toJSON(),
             })
             handleClose()
           }}

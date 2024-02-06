@@ -53,7 +53,6 @@ export default function useProteinView({
       }
     })()
     return () => {
-      console.log('t1')
       p?.unmount()
     }
   }, [url, showControls])
