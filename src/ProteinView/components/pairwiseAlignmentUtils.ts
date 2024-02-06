@@ -45,7 +45,6 @@ async function runEmbossNeedle({
   seq2: string
   onProgress: (arg: string) => void
 }) {
-  console.log({ seq1, seq2 })
   const jobId = await textfetch(`${base}/emboss_needle/run`, {
     method: 'POST',
     body: new URLSearchParams({

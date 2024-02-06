@@ -41,7 +41,7 @@ export default function useProteinViewClickActionBehavior({
                 strand,
               } = entry
               console.log({ proteinStart, proteinEnd })
-              if (!proteinStart || !proteinEnd) {
+              if (proteinStart === undefined || proteinEnd === undefined) {
                 console.warn('No mapping', proteinStart, proteinEnd)
                 break
               } else {

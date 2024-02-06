@@ -38,6 +38,7 @@ interface Alignment {
 }
 
 function align(alignment: Alignment, query: number) {
+  console.log({ query })
   const k1 = alignment.alns[0].seq
   const k2 = alignment.alns[1].seq
   if (k1.length !== k2.length) {
@@ -60,7 +61,7 @@ function align(alignment: Alignment, query: number) {
       k++
     }
 
-    if (k === query + 1) {
+    if (k === query) {
       return j
     }
   }
@@ -81,6 +82,7 @@ export function generateMap({
   }
   const strand = feature.get('strand')
   const subs = feature.children() ?? []
+  let remainder = 0
   return subs
     .filter(f => f.get('type') === 'CDS')
     .sort((a, b) => b.get('start') - a.get('start'))
@@ -89,14 +91,27 @@ export function generateMap({
       const featureStart = f.get('start')
       const featureEnd = f.get('end')
       const phase = f.get('phase')
-      console.log({ phase })
-      const len = featureEnd - featureStart + (3 - phase)
+      const len = featureEnd - featureStart
       const op = Math.floor(len / 3)
+      // console.log(3 - remainder, phase)
+      // remainder = len % 3
       const sourceProteinStart = iter
-      const sourceProteinEnd = Math.floor(iter + op)
-      const targetProteinStart = align(alignment, sourceProteinStart)
-      const targetProteinEnd = align(alignment, sourceProteinEnd)
-      console.log({ sourceProteinStart, sourceProteinEnd })
+      const sourceProteinEnd = iter + op
+      const targetProteinStart = align(alignment, sourceProteinStart) || 0
+      const targetProteinEnd = align(alignment, sourceProteinEnd) || 0
+      const d1 = sourceProteinEnd - sourceProteinStart
+      const d2 = targetProteinEnd - targetProteinStart
+      console.log({
+        sourceProteinStart,
+        sourceProteinEnd,
+        targetProteinStart,
+        targetProteinEnd,
+        phase,
+        iter,
+        op,
+        source_d1: d1,
+        target_d2: d2,
+      })
       iter += op
       return {
         refName,
