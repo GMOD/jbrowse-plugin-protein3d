@@ -1,8 +1,12 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId, Region } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
-import { Instance, cast, types } from 'mobx-state-tree'
+import { Instance, addDisposer, cast, types } from 'mobx-state-tree'
 import { proteinAbbreviationMapping } from './util'
+import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
+import { generateMap } from '../LaunchProteinView/util'
+import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
+import { autorun } from 'mobx'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -31,23 +35,58 @@ function stateModelFactory() {
     .compose(
       BaseViewModel,
       types.model({
+        /**
+         * #property
+         */
         id: ElementId,
+        /**
+         * #property
+         */
         type: types.literal('ProteinView'),
+        /**
+         * #property
+         */
         url: types.optional(types.string, root + '1LOL.cif'),
-        mapping: types.frozen<Mapping[]>(),
-        seq: types.maybe(types.string),
+        /**
+         * #property
+         */
         highlights: types.array(Region),
+        /**
+         * #property
+         */
         showControls: false,
+        /**
+         * #property
+         */
         height: types.optional(types.number, 500),
+        /**
+         * #property
+         */
+        feature: types.frozen<SimpleFeatureSerialized>(),
+        /**
+         * #property
+         */
+        seq1: types.maybe(types.string),
+        /**
+         * #property
+         */
+        seq2: types.maybe(types.string),
       }),
     )
     .volatile(() => ({
+      alignment: undefined as any,
+      error: undefined as unknown,
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mouseClickedPosition: undefined as
         | { pos: number; code: string; chain: string }
         | undefined,
     }))
     .actions(self => ({
+      setSeqs(str1?: string, str2?: string) {
+        self.seq1 = str1
+        self.seq2 = str2
+      },
       setShowControls(arg: boolean) {
         self.showControls = arg
       },
@@ -67,6 +106,12 @@ function stateModelFactory() {
       clearHighlights() {
         self.highlights = cast([])
       },
+      setError(e: unknown) {
+        self.error = e
+      },
+      setAlignment(r: unknown) {
+        self.alignment = r
+      },
     }))
     .views(self => ({
       get mouseClickedString() {
@@ -80,6 +125,37 @@ function stateModelFactory() {
         } else {
           return ''
         }
+      },
+
+      get mapping() {
+        return self.alignment
+          ? generateMap(new SimpleFeature(self.feature), 'lol', self.alignment)
+          : undefined
+      },
+    }))
+    .actions(self => ({
+      afterAttach() {
+        addDisposer(
+          self,
+          autorun(async () => {
+            try {
+              const { seq1, seq2 } = self
+              if (!seq1 || !seq2) {
+                return
+              }
+              const alignment = await launchPairwiseAlignment({
+                seq1,
+                seq2,
+                algorithm: 'emboss_needle',
+                onProgress: () => {},
+              })
+              self.setAlignment(alignment.alignment)
+            } catch (e) {
+              console.error(e)
+              self.setError(e)
+            }
+          }),
+        )
       },
     }))
 }

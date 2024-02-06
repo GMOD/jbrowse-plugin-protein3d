@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
 
@@ -8,27 +8,24 @@ import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
 import useProteinView from './useProteinView'
-import usePairwiseAlignment from './usePairwiseAlignment'
 import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
 
 // note: css must be injected into the js code for jbrowse plugins
 import './molstar.css'
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
-  const { width, height, url, showControls } = model
+  const { width, height, url, showControls, seq2 } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     showControls,
   })
   const { error: error2 } = useProteinViewClickActionBehavior({ plugin, model })
-  const { alignment, error: error3 } = usePairwiseAlignment({
-    seq1: seq,
-    seq2: model.seq ?? '',
-  })
 
-  console.log({ alignment })
+  useEffect(() => {
+    model.setSeqs(seq, seq2)
+  }, [seq, model, seq2])
 
-  const e = error || error2 || error3
+  const e = error || error2
   return e ? (
     <ErrorMessage error={e} />
   ) : (

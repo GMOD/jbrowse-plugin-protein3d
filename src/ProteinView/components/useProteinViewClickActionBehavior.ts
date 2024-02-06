@@ -28,36 +28,38 @@ export default function useProteinViewClickActionBehavior({
           const [code, position] = clickPos.trim().split(' ')
           const pos = +position.trim()
           model.setMouseClickedPosition({ pos, code, chain })
-          for (const entry of mapping) {
-            const {
-              featureStart,
-              featureEnd,
-              refName,
-              proteinStart,
-              proteinEnd,
-              strand,
-            } = entry
-            const c = pos - 1
-            if (doesIntersect2(proteinStart, proteinEnd, c, c + 1)) {
-              const ret = Math.round((c - proteinStart) * 3)
-              const neg = strand === -1
-              const start = neg ? featureEnd - ret : featureStart + ret
-              const end = neg ? featureEnd - ret - 3 : featureStart + ret + 3
-              const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
-              model.setHighlights([
-                {
-                  assemblyName: 'hg38',
-                  refName,
-                  start: s1,
-                  end: s2,
-                },
-              ])
-              ;(session.views[0] as LinearGenomeViewModel)
-                .navToLocString(`${refName}:${s1}-${s2}`)
-                .catch(e => {
-                  console.error(e)
-                  setError(e)
-                })
+          if (mapping) {
+            for (const entry of mapping) {
+              const {
+                featureStart,
+                featureEnd,
+                refName,
+                proteinStart,
+                proteinEnd,
+                strand,
+              } = entry
+              const c = pos - 1
+              if (doesIntersect2(proteinStart, proteinEnd, c, c + 1)) {
+                const ret = Math.round((c - proteinStart) * 3)
+                const neg = strand === -1
+                const start = neg ? featureEnd - ret : featureStart + ret
+                const end = neg ? featureEnd - ret - 3 : featureStart + ret + 3
+                const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
+                model.setHighlights([
+                  {
+                    assemblyName: 'hg38',
+                    refName,
+                    start: s1,
+                    end: s2,
+                  },
+                ])
+                ;(session.views[0] as LinearGenomeViewModel)
+                  .navToLocString(`${refName}:${s1}-${s2}`)
+                  .catch(e => {
+                    console.error(e)
+                    setError(e)
+                  })
+              }
             }
           }
         } else {

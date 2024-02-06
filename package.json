@@ -31,7 +31,7 @@
     "name": "Protein3d"
   },
   "dependencies": {
-    "clustal-js": "^1.0.3",
+    "clustal-js": "^2.0.1",
     "molstar": "^4.0.0",
     "pako": "^2.1.0"
   },

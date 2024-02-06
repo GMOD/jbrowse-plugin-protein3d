@@ -2734,10 +2734,10 @@ clsx@^2.0.0, clsx@^2.1.0:
   resolved "https://registry.yarnpkg.com/clsx/-/clsx-2.1.0.tgz#e851283bcb5c80ee7608db18487433f7b23f77cb"
   integrity sha512-m3iNNWpd9rl3jvvcBnu70ylMdrXt8Vlq4HYadnU5fwcOtvkSQWPmj7amUcDT2qYI7risszBjI5AUIUox9D16pg==
 
-clustal-js@^1.0.3:
-  version "1.0.3"
-  resolved "https://registry.yarnpkg.com/clustal-js/-/clustal-js-1.0.3.tgz#1ae48a5c4dd06e3cbee48d607abb71fa7881995e"
-  integrity sha512-wahusOUa7vfR5pTMDivxn6sY+mvIozMTMq3Vs1Yj3HYhXXBUiHIHb7CjubvrXnOkFzETBAI0rnWkebZaOwSHIQ==
+clustal-js@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/clustal-js/-/clustal-js-2.0.1.tgz#485b23334950fc2040067b799dda432b0a6a7273"
+  integrity sha512-rdntqVPd4tromWENkOz1P/XACIFLaHPhQ1hwBmEbLFVBn5s6oRLMEvgMf63k0y2gk81ti2vecWwFOlhGLOuFfw==
 
 color-convert@^1.9.0:
   version "1.9.3"

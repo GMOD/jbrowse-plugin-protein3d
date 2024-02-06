@@ -44,7 +44,7 @@ export default function MappingTextField({
             .map(m =>
               [
                 str(m.refName, m.featureStart, m.featureEnd, m.strand),
-                str(m.pdbId, m.proteinStart, m.proteinEnd),
+                str(m.structureId, m.proteinStart, m.proteinEnd),
               ].join(' '),
             )
             .join('\n')}
