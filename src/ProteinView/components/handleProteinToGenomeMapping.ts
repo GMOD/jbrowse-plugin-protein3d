@@ -21,12 +21,12 @@ export async function handleProteinToGenomeMapping({
   const r1 = coord1[pos]
   console.log({ r1, pos, coord1, coord2 })
   if (!r1) {
-    console.error('Pairwise seq map failed to resolve')
+    session.notify('Pairwise seq map failed to resolve')
     return
   }
   const s0 = p2g[r1]
   if (!s0) {
-    console.error('Genome position not found')
+    session.notify('Genome position not found')
     return
   }
   const start = s0 + (strand === -1 ? 5 : 0)

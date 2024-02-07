@@ -1,13 +1,10 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import featureData from './data.json'
 import { genomeToProteinMapping } from './genomeToProteinMapping'
+import { feature } from './data2'
 
 test('mapping', () => {
   const res = genomeToProteinMapping({
-    feature: new SimpleFeature(featureData),
+    feature: new SimpleFeature(feature),
   })
-  expect(
-    genomeToProteinMapping({ feature: new SimpleFeature(featureData) }),
-  ).toMatchSnapshot()
-  console.log(res.p2g[0])
+  expect(res).toMatchSnapshot()
 })
