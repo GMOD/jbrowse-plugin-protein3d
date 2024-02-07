@@ -9,7 +9,7 @@ import { parsePairwise } from 'clustal-js'
 // locals
 import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
-import { generateGenomeToProteinMapping } from '../generateGenomeToProteinMapping'
+import { genomeToProteinMapping } from '../genomeToProteinMapping'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -126,9 +126,8 @@ function stateModelFactory() {
 
       get mapping() {
         return self.alignment && self.feature
-          ? generateGenomeToProteinMapping({
+          ? genomeToProteinMapping({
               feature: new SimpleFeature(self.feature),
-              alignment: self.alignment,
             })
           : undefined
       },

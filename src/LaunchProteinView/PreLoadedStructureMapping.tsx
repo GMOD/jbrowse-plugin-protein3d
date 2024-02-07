@@ -20,8 +20,7 @@ import {
   getTranscriptFeatures,
   stripTrailingVersion,
 } from './util'
-import MappingTextField from './MappingTextField'
-import { generateGenomeToProteinMapping } from '../generateGenomeToProteinMapping'
+import { genomeToProteinMapping } from '../genomeToProteinMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {
@@ -76,7 +75,7 @@ const AutoForm = observer(function AutoForm({
 
   const mapping =
     foundStructureId && userSelectionFeat
-      ? generateGenomeToProteinMapping({
+      ? genomeToProteinMapping({
           feature: userSelectionFeat,
         })
       : []
@@ -111,10 +110,6 @@ const AutoForm = observer(function AutoForm({
                       ))}
                     </TextField>
                   </div>
-                  <MappingTextField
-                    mapping={mapping}
-                    foundStructureId={foundStructureId}
-                  />
                 </>
               )}
             </div>
@@ -124,11 +119,7 @@ const AutoForm = observer(function AutoForm({
         </div>
       </DialogContent>
       <DialogActions>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => handleClose()}
-        >
+        <Button variant="contained" color="secondary" onClick={handleClose}>
           Cancel
         </Button>
         <Button
