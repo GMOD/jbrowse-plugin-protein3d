@@ -23,13 +23,14 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
         if (!p2g[proteinPos]) {
-          p2g[proteinPos] = genomePos + phase
+          p2g[proteinPos] = genomePos
         }
       }
     }
   } else {
     for (const f of cds) {
       const phase = f.get('phase') as number
+      console.log('t1', phase)
       for (
         let genomePos = f.get('end');
         genomePos > f.get('start');
@@ -38,7 +39,7 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
         if (!p2g[proteinPos]) {
-          p2g[proteinPos] = genomePos + phase
+          p2g[proteinPos] = genomePos
         }
       }
     }

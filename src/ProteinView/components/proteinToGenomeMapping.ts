@@ -18,21 +18,21 @@ export async function proteinToGenomeMapping({
   const lgv = session.views[0] as LinearGenomeViewModel
   const { p2g, strand, refName } = mapping
   const { coord1, coord2 } = pairwiseSeqMap(alignment)
-  const r1 = coord1[pos]
-  console.log({ r1, pos, coord1, coord2 })
-  if (!r1) {
+  // positions are 1-based from molstar, our data structures are 0-based
+  const r1 = coord1[pos - 1]
+  console.log({ pos, r1 })
+  if (r1 === undefined) {
     session.notify('Pairwise seq map failed to resolve')
     return
   }
   const s0 = p2g[r1]
-  if (!s0) {
+  if (s0 === undefined) {
     session.notify('Genome position not found')
     return
   }
-  const start = s0 + (strand === -1 ? 3 : 0)
+  const start = s0
   const end = start + 3 * strand
   const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
-  console.log({ refName, start, end, pos, r1 })
 
   model.setHighlights([
     {

@@ -80,13 +80,22 @@ function stateModelFactory() {
         | undefined,
     }))
     .actions(self => ({
+      /**
+       * #action
+       */
       setSeqs(str1?: string, str2?: string) {
         self.seq1 = str1
         self.seq2 = str2
       },
+      /**
+       * #action
+       */
       setShowControls(arg: boolean) {
         self.showControls = arg
       },
+      /**
+       * #action
+       */
       setMouseClickedPosition(arg?: {
         pos: number
         code: string
@@ -94,12 +103,21 @@ function stateModelFactory() {
       }) {
         self.mouseClickedPosition = arg
       },
+      /**
+       * #action
+       */
       setHighlights(r: IRegion[]) {
         self.highlights = cast(r)
       },
+      /**
+       * #action
+       */
       addToHighlights(r: IRegion) {
         self.highlights.push(r)
       },
+      /**
+       * #action
+       */
       clearHighlights() {
         self.highlights = cast([])
       },
