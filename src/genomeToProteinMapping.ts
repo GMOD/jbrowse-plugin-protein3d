@@ -9,7 +9,7 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
     .filter(f => f.get('type') === 'CDS')
     .sort((a, b) => strand * (a.get('start') - b.get('start')))
   const g2p = {} as Record<number, number | undefined>
-  const p2g = {} as Record<number, number[] | undefined>
+  const p2g = {} as Record<number, number | undefined>
 
   let proteinCounter = 0
   if (strand !== -1) {
@@ -23,9 +23,8 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
         if (!p2g[proteinPos]) {
-          p2g[proteinPos] = []
+          p2g[proteinPos] = genomePos + phase
         }
-        p2g[proteinPos]!.push(genomePos + phase)
       }
     }
   } else {
@@ -39,9 +38,8 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
         if (!p2g[proteinPos]) {
-          p2g[proteinPos] = []
+          p2g[proteinPos] = genomePos + phase
         }
-        p2g[proteinPos]!.push(genomePos - phase)
       }
     }
   }

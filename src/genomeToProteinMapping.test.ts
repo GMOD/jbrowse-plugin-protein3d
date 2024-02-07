@@ -22,6 +22,6 @@ test('mapping', () => {
   const p0 = aln.coord1[392]!
   const g0 = p2g[p0]
   expect(p0).toBe(0)
-  expect(g0).toBe([51_296_155, 51_296_154, 51_296_153])
+  expect(g0).toBe(51_296_155)
   expect(res).toMatchSnapshot()
 })

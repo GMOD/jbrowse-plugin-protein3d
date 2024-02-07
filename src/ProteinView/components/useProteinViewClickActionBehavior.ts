@@ -4,7 +4,7 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
 import { ProteinViewModel } from '../model'
-import { handleProteinToGenomeMapping } from './handleProteinToGenomeMapping'
+import { proteinToGenomeMapping } from './handleProteinToGenomeMapping'
 
 export default function useProteinViewClickActionBehavior({
   plugin,
@@ -30,7 +30,7 @@ export default function useProteinViewClickActionBehavior({
           const [code, position] = clickPos.trim().split(' ')
           const pos = +position.trim()
           model.setMouseClickedPosition({ pos, code, chain })
-          handleProteinToGenomeMapping({ model, pos }).catch(e => {
+          proteinToGenomeMapping({ model, pos }).catch(e => {
             console.error(e)
             setError(e)
           })

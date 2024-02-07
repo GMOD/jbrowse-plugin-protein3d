@@ -3,7 +3,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { ProteinViewModel } from '../model'
 import { pairwiseSeqMap } from '../../pairwiseSeqMap'
 
-export async function handleProteinToGenomeMapping({
+export async function proteinToGenomeMapping({
   model,
   pos,
 }: {
@@ -29,7 +29,7 @@ export async function handleProteinToGenomeMapping({
     session.notify('Genome position not found')
     return
   }
-  const start = s0 + (strand === -1 ? 5 : 0)
+  const start = s0 + (strand === -1 ? 3 : 0)
   const end = start + 3 * strand
   const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
   console.log({ refName, start, end, pos, r1 })
