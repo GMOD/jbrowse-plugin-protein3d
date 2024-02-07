@@ -30,7 +30,6 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
   } else {
     for (const f of cds) {
       const phase = f.get('phase') as number
-      console.log('t1', phase)
       for (
         let genomePos = f.get('end');
         genomePos > f.get('start');

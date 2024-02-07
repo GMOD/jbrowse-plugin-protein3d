@@ -1,5 +1,5 @@
 /* manually downloaded from https://molstar.org/viewer/ */
-
+export default `
 .msp-plugin {
   font-family: 'Helvetica Neue', 'Segoe UI', Helvetica, 'Source Sans Pro', Arial,
     sans-serif;
@@ -3133,4 +3133,4 @@ fieldset[disabled] .msp-plugin .msp-btn-link:focus {
 .msp-plugin .msp-plugin-init-error {
   white-space: pre;
   margin: 10px;
-}
+}`

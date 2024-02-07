@@ -48,11 +48,11 @@ function stateModelFactory() {
         /**
          * #property
          */
-        showControls: false,
+        showControls: true,
         /**
          * #property
          */
-        height: types.optional(types.number, 500),
+        height: types.optional(types.number, 650),
         /**
          * #property
          */

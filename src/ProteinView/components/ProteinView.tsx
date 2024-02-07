@@ -11,7 +11,11 @@ import useProteinView from './useProteinView'
 import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
 
 // note: css must be injected into the js code for jbrowse plugins
-import './molstar.css'
+import css from './molstar'
+
+const style = document.createElement('style')
+style.append(css)
+document.head.append(style)
 
 const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
   const { width, height, url, showControls, seq2 } = model
