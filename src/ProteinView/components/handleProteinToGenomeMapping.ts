@@ -1,6 +1,7 @@
 import { getSession } from '@jbrowse/core/util'
-import { ProteinViewModel } from '../model'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import { ProteinViewModel } from '../model'
+import { pairwiseSeqMap } from '../../pairwiseSeqMap'
 
 export async function handleProteinToGenomeMapping({
   model,
@@ -9,35 +10,39 @@ export async function handleProteinToGenomeMapping({
   pos: number
   model: ProteinViewModel
 }) {
-  const { mapping } = model
+  const { mapping, alignment } = model
   const session = getSession(model)
-  if (!mapping) {
+  if (!mapping || !alignment) {
     return
   }
   const lgv = session.views[0] as LinearGenomeViewModel
   const { p2g, strand, refName } = mapping
-  const start = p2g[pos]
-  if (!start) {
-    throw new Error('Genome position not found')
+  const { coord1, coord2 } = pairwiseSeqMap(alignment)
+  const r1 = coord1[pos]
+  console.log({ r1, pos, coord1, coord2 })
+  if (!r1) {
+    console.error('Pairwise seq map failed to resolve')
+    return
   }
-  const end = start + 3
+  const s0 = p2g[r1]
+  if (!s0) {
+    console.error('Genome position not found')
+    return
+  }
+  const start = s0 + (strand === -1 ? 5 : 0)
+  const end = start + 3 * strand
+  const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
+  console.log({ refName, start, end, pos, r1 })
 
-  //   const p = (3 - phase) % 3
-  //   console.log({ c, proteinStart, ret, phase, p })
-  //   const fe = featureEnd - ret
-  //   const fs = featureStart + ret
-  //   const start = neg ? fe - p + 3 : fs - p
-  //   const end = neg ? fe - p : fs + 3 - p
-  //   const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
   model.setHighlights([
     {
       assemblyName: 'hg38',
       refName,
-      start,
-      end,
+      start: s1,
+      end: s2,
     },
   ])
   await lgv.navToLocString(
-    `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
+    `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
   )
 }
