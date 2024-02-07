@@ -4,7 +4,7 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
 import { ProteinViewModel } from '../model'
-import { proteinToGenomeMapping } from './handleProteinToGenomeMapping'
+import { proteinToGenomeMapping } from './proteinToGenomeMapping'
 
 export default function useProteinViewClickActionBehavior({
   plugin,
