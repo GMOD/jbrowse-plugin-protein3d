@@ -43,6 +43,7 @@ export default function useProteinView({
             },
           },
         })
+        await p.initialized
         setPlugin(p)
 
         const { seq } = await loadStructureFromURL({ url, plugin: p })
