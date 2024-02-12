@@ -5,7 +5,7 @@ export interface Alignment {
   }[]
 }
 
-export function pairwiseSeqMap(alignment: Alignment) {
+export default function pairwiseSeqMap(alignment: Alignment) {
   const k1 = alignment.alns[0].seq
   const k2 = alignment.alns[1].seq
   if (k1.length !== k2.length) {

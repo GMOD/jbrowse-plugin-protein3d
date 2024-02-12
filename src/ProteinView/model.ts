@@ -181,5 +181,8 @@ function stateModelFactory() {
 }
 
 export default stateModelFactory
-export type ProteinViewStateModel = ReturnType<typeof stateModelFactory>
-export type ProteinViewModel = Instance<ProteinViewStateModel>
+export type JBrowsePluginProteinViewStateModel = ReturnType<
+  typeof stateModelFactory
+>
+export type JBrowsePluginProteinViewModel =
+  Instance<JBrowsePluginProteinViewStateModel>

@@ -5,7 +5,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { getSession } from '@jbrowse/core/util'
 
 // locals
-import { ProteinViewModel } from '../ProteinView/model'
+import { JBrowsePluginProteinViewModel } from '../ProteinView/model'
 
 type LGV = LinearGenomeViewModel
 
@@ -25,7 +25,9 @@ const Highlight = observer(function Highlight({ model }: { model: LGV }) {
   const { classes } = useStyles()
   const { assemblyManager, views } = getSession(model)
   const { assemblyNames, offsetPx } = model
-  const p = views.find(f => f.type === 'ProteinView') as ProteinViewModel
+  const p = views.find(
+    f => f.type === 'ProteinView',
+  ) as JBrowsePluginProteinViewModel
   const assembly = assemblyManager.get(assemblyNames[0])
   return assembly ? (
     <>

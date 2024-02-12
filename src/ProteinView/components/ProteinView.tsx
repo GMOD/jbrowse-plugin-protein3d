@@ -3,17 +3,18 @@ import { observer } from 'mobx-react'
 import { ErrorMessage } from '@jbrowse/core/ui'
 
 // locals
-import { ProteinViewModel } from '../model'
+
+import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
 import useProteinView from './useProteinView'
 import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
 import selectResidue from './selectResidue'
+import pairwiseSeqMap from '../../pairwiseSeqMap'
 
 // note: css must be injected into the js code for jbrowse plugins
-import css from './molstar'
-import { pairwiseSeqMap } from '../../pairwiseSeqMap'
+import css from './molstarCss'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -21,7 +22,11 @@ if (document?.head) {
   document.head?.append(style)
 }
 
-const ProteinView = observer(function ({ model }: { model: ProteinViewModel }) {
+const ProteinView = observer(function ({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
   const { width, height, url, showControls, seq2, alignment } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,

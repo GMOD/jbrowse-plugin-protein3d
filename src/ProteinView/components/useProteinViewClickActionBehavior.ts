@@ -3,7 +3,7 @@ import { getSession } from '@jbrowse/core/util'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
-import { ProteinViewModel } from '../model'
+import { JBrowsePluginProteinViewModel } from '../model'
 import { proteinToGenomeMapping } from './proteinToGenomeMapping'
 
 export default function useProteinViewClickActionBehavior({
@@ -11,7 +11,7 @@ export default function useProteinViewClickActionBehavior({
   model,
 }: {
   plugin?: PluginContext
-  model: ProteinViewModel
+  model: JBrowsePluginProteinViewModel
 }) {
   const [error, setError] = useState<unknown>()
   const session = getSession(model)

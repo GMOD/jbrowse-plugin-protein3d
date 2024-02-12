@@ -1,11 +1,11 @@
 import React from 'react'
 import { observer } from 'mobx-react'
-import { ProteinViewModel } from '../model'
+import { JBrowsePluginProteinViewModel } from '../model'
 
 const ProteinViewHeader = observer(function ({
   model,
 }: {
-  model: ProteinViewModel
+  model: JBrowsePluginProteinViewModel
 }) {
   const { url, mouseClickedString, alignment } = model
   return (

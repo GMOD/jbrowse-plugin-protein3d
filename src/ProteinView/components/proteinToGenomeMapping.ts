@@ -1,14 +1,16 @@
 import { getSession } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import { ProteinViewModel } from '../model'
-import { pairwiseSeqMap } from '../../pairwiseSeqMap'
+
+// locals
+import { JBrowsePluginProteinViewModel } from '../model'
+import pairwiseSeqMap from '../../pairwiseSeqMap'
 
 export async function proteinToGenomeMapping({
   model,
   pos,
 }: {
   pos: number
-  model: ProteinViewModel
+  model: JBrowsePluginProteinViewModel
 }) {
   const { mapping, alignment } = model
   const session = getSession(model)
@@ -17,7 +19,7 @@ export async function proteinToGenomeMapping({
   }
   const lgv = session.views[0] as LinearGenomeViewModel
   const { p2g, strand, refName } = mapping
-  const { coord1, coord2 } = pairwiseSeqMap(alignment)
+  const { coord1 } = pairwiseSeqMap(alignment)
   // positions are 1-based from molstar, our data structures are 0-based
   const r1 = coord1[pos - 1]
   console.log({ pos, r1 })
