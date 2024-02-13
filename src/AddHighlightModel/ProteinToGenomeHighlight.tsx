@@ -21,7 +21,11 @@ const useStyles = makeStyles()({
   },
 })
 
-const Highlight = observer(function Highlight({ model }: { model: LGV }) {
+const ProteinToGenomeHighlight = observer(function Highlight({
+  model,
+}: {
+  model: LGV
+}) {
   const { classes } = useStyles()
   const { assemblyManager, views } = getSession(model)
   const { assemblyNames, offsetPx } = model
@@ -52,4 +56,4 @@ const Highlight = observer(function Highlight({ model }: { model: LGV }) {
   ) : null
 })
 
-export default Highlight
+export default ProteinToGenomeHighlight

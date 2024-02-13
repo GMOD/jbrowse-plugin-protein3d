@@ -3,7 +3,7 @@ import PluginManager from '@jbrowse/core/PluginManager'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import Highlight from './Highlight'
+import HighlightComponents from './HighlightComponents'
 
 export default function AddHighlightModelF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
@@ -15,7 +15,10 @@ export default function AddHighlightModelF(pluginManager: PluginManager) {
     ) => {
       return [
         ...rest,
-        <Highlight key="highlight_protein_viewer_protein3d" model={model} />,
+        <HighlightComponents
+          key="highlight_protein_viewer_protein3d"
+          model={model}
+        />,
       ]
     },
   )
