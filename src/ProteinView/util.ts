@@ -58,3 +58,15 @@ export function getMolstarStructureSelection({
     structure,
   )
 }
+
+export function toStr(r: { pos: number; code?: string; chain?: string }) {
+  return [
+    `Position: ${r.pos}`,
+    r.code
+      ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`
+      : '',
+    r.chain ? `Chain: ${r.chain}` : '',
+  ]
+    .filter(f => !!f)
+    .join(', ')
+}

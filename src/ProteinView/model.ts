@@ -12,22 +12,13 @@ import { parsePairwise } from 'clustal-js'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { proteinAbbreviationMapping } from './util'
+import { checkHovered, toStr } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import { genomeToProteinMapping } from '../genomeToProteinMapping'
-import { genomeToProtein } from './genomeToProtein'
 import pairwiseSeqMap from '../pairwiseSeqMap'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
-
-function toStr(r: { pos: number; code: string; chain: string }) {
-  return [
-    `Position: ${r.pos}`,
-    `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`,
-    `Chain: ${r.chain}`,
-  ].join(', ')
-}
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -104,7 +95,7 @@ function stateModelFactory() {
        * #volatile
        */
       hoverPosition: undefined as
-        | { pos: number; code: string; chain: string }
+        | { pos: number; code?: string; chain?: string }
         | undefined,
       /**
        * #volatile
@@ -124,7 +115,7 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setHoveredPosition(arg?: { pos: number; chain: string; code: string }) {
+      setHoveredPosition(arg?: { pos: number; chain?: string; code?: string }) {
         self.hoverPosition = arg
       },
       /**
@@ -218,10 +209,7 @@ function stateModelFactory() {
        * #getter
        */
       get mouseCol2(): number | undefined {
-        console.log(
-          genomeToProtein({ model: self as JBrowsePluginProteinViewModel }),
-        )
-        return genomeToProtein({ model: self as JBrowsePluginProteinViewModel })
+        return self.hoverPosition?.pos
       },
     }))
     .actions(self => ({
@@ -244,6 +232,27 @@ function stateModelFactory() {
             } catch (e) {
               console.error(e)
               self.setError(e)
+            }
+          }),
+        )
+        addDisposer(
+          self,
+          autorun(() => {
+            const { hovered } = getSession(self)
+            const { transcriptToProteinMap, connectedView } = self
+            if (
+              !connectedView?.initialized ||
+              !transcriptToProteinMap ||
+              !checkHovered(hovered)
+            ) {
+              return undefined
+            }
+
+            const pos = transcriptToProteinMap.g2p[hovered.hoverPosition.coord]
+            if (pos !== undefined) {
+              self.setHoveredPosition({
+                pos,
+              })
             }
           }),
         )
