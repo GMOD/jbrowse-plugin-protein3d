@@ -1,47 +1,31 @@
-import React, { Suspense, lazy, useState } from 'react'
+import React from 'react'
 import { observer } from 'mobx-react'
-import { IconButton, Tooltip } from '@mui/material'
+import { Tooltip } from '@mui/material'
 
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
-import { Help } from '@mui/icons-material'
-
-const HelpDialog = lazy(() => import('./HelpDialog'))
+import HelpButton from './HelpButton'
 
 const ProteinAlignment = observer(function ({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const {
-    mouseCol2,
-    pairwiseSeqMap,
-    alignment,
-    transcriptToProteinMap = { p2g: {} },
-  } = model
+  const { mouseCol2, pairwiseSeqMap, alignment } = model
 
   const a0 = alignment!.alns[0].seq as string
   const a1 = alignment!.alns[1].seq as string
   const con = alignment!.consensus
-  const [open, setOpen] = useState(false)
-
-  const ret = Object.keys(transcriptToProteinMap.p2g)
-    .map(s => +s)
-    .sort((a, b) => a - b)
-  console.log({ ret })
 
   function c(i: number) {
     const c0 =
       mouseCol2 !== undefined ? pairwiseSeqMap?.coord2[mouseCol2] : undefined
     return c0 !== undefined && i === c0 ? '#0f0' : undefined
   }
-  console.log({ mouseCol2 })
 
   return (
     <div>
-      <IconButton style={{ float: 'right' }} onClick={() => setOpen(true)}>
-        <Help />
-      </IconButton>
+      <HelpButton />
       <div
         style={{
           fontSize: 9,
@@ -84,11 +68,6 @@ const ProteinAlignment = observer(function ({
             </span>
           ))}
         </div>
-        {open ? (
-          <Suspense fallback={null}>
-            <HelpDialog handleClose={() => setOpen(false)} />
-          </Suspense>
-        ) : null}
       </div>
     </div>
   )
