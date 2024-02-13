@@ -22,7 +22,6 @@ export async function proteinToGenomeMapping({
   const { coord1 } = pairwiseSeqMap(alignment)
   // positions are 1-based from molstar, our data structures are 0-based
   const r1 = coord1[pos - 1]
-  console.log({ pos, r1 })
   if (r1 === undefined) {
     session.notify('Pairwise seq map failed to resolve')
     return

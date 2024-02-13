@@ -9,7 +9,6 @@ export function genomeToProtein({
 }): number | undefined {
   const { hovered } = getSession(model)
   const { transcriptToProteinMap, connectedView } = model
-  console.log('h1', connectedView)
   if (
     !connectedView?.initialized ||
     !transcriptToProteinMap ||
@@ -18,6 +17,5 @@ export function genomeToProtein({
     return undefined
   }
 
-  console.log(transcriptToProteinMap.g2p[hovered.hoverPosition.coord])
   return transcriptToProteinMap.g2p[hovered.hoverPosition.coord]
 }

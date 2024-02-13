@@ -12,8 +12,6 @@ import useProteinView from './useProteinView'
 import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
 import selectResidue from './selectResidue'
 import pairwiseSeqMap from '../../pairwiseSeqMap'
-
-// note: css must be injected into the js code for jbrowse plugins
 import css from './molstarCss'
 import highlightResidue from './highlightResidue'
 
@@ -36,7 +34,7 @@ const ProteinView = observer(function ({
   const { error: error2 } = useProteinViewClickActionBehavior({ plugin, model })
 
   const structureLoaded =
-    !!plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
+    plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
 
   useEffect(() => {
     model.setSeqs(seq, seq2)
@@ -48,16 +46,21 @@ const ProteinView = observer(function ({
     }
     const { coord1 } = pairwiseSeqMap(alignment)
     for (const coord of Object.keys(coord1)) {
-      selectResidue({ plugin, selectedResidue: +coord })
+      selectResidue({
+        plugin,
+        selectedResidue: +coord,
+      })
     }
   }, [plugin, structureLoaded, alignment])
 
   useEffect(() => {
-    console.log('here', mouseCol2)
     if (!plugin || !alignment || !structureLoaded || mouseCol2 === undefined) {
       return
     }
-    highlightResidue({ plugin, selectedResidue: +mouseCol2 })
+    highlightResidue({
+      plugin,
+      selectedResidue: mouseCol2 + 2,
+    })
   }, [plugin, structureLoaded, mouseCol2, alignment])
 
   return error ? (
