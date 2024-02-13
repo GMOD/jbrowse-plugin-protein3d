@@ -12,13 +12,13 @@ export async function proteinToGenomeMapping({
   pos: number
   model: JBrowsePluginProteinViewModel
 }) {
-  const { mapping, alignment } = model
+  const { transcriptToProteinMap, alignment } = model
   const session = getSession(model)
-  if (!mapping || !alignment) {
+  if (!transcriptToProteinMap || !alignment) {
     return
   }
   const lgv = session.views[0] as LinearGenomeViewModel
-  const { p2g, strand, refName } = mapping
+  const { p2g, strand, refName } = transcriptToProteinMap
   const { coord1 } = pairwiseSeqMap(alignment)
   // positions are 1-based from molstar, our data structures are 0-based
   const r1 = coord1[pos - 1]

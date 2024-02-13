@@ -14,7 +14,6 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
   let proteinCounter = 0
   if (strand !== -1) {
     for (const f of cds) {
-      const phase = f.get('phase') as number
       for (
         let genomePos = f.get('start');
         genomePos < f.get('end');
@@ -29,7 +28,6 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
     }
   } else {
     for (const f of cds) {
-      const phase = f.get('phase') as number
       for (
         let genomePos = f.get('end');
         genomePos > f.get('start');

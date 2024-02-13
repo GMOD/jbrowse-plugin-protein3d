@@ -15,6 +15,7 @@ import pairwiseSeqMap from '../../pairwiseSeqMap'
 
 // note: css must be injected into the js code for jbrowse plugins
 import css from './molstarCss'
+import highlightResidue from './highlightResidue'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -27,7 +28,7 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { width, height, url, showControls, seq2, alignment } = model
+  const { width, height, url, showControls, seq2, alignment, mouseCol2 } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     showControls,
@@ -50,6 +51,14 @@ const ProteinView = observer(function ({
       selectResidue({ plugin, selectedResidue: +coord })
     }
   }, [plugin, structureLoaded, alignment])
+
+  useEffect(() => {
+    console.log('here', mouseCol2)
+    if (!plugin || !alignment || !structureLoaded || mouseCol2 === undefined) {
+      return
+    }
+    highlightResidue({ plugin, selectedResidue: +mouseCol2 })
+  }, [plugin, structureLoaded, mouseCol2, alignment])
 
   return error ? (
     <ErrorMessage error={error} />

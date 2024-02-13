@@ -133,6 +133,7 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
               url,
               seq2: protein,
               feature: selectedTranscript.toJSON(),
+              connectedViewId: view.id,
             })
             handleClose()
           }}

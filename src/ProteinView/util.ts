@@ -1,3 +1,5 @@
+import { Feature } from '@jbrowse/core/util'
+
 export const proteinAbbreviationMapping = Object.fromEntries(
   [
     { name: 'alanine', abbreviation: 'Ala', singleLetterCode: 'A' },
@@ -22,3 +24,15 @@ export const proteinAbbreviationMapping = Object.fromEntries(
     { name: 'valine', abbreviation: 'Val', singleLetterCode: 'V' },
   ].map(r => [r.abbreviation.toUpperCase(), r]),
 )
+
+export function checkHovered(hovered: unknown): hovered is {
+  hoverFeature: Feature
+  hoverPosition: { coord: number; refName: string }
+} {
+  return (
+    !!hovered &&
+    typeof hovered == 'object' &&
+    'hoverFeature' in hovered &&
+    'hoverPosition' in hovered
+  )
+}

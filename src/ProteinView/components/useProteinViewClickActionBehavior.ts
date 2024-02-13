@@ -15,7 +15,7 @@ export default function useProteinViewClickActionBehavior({
 }) {
   const [error, setError] = useState<unknown>()
   const session = getSession(model)
-  const { mapping } = model
+  const { transcriptToProteinMap } = model
   useEffect(() => {
     if (!plugin) {
       return
@@ -42,6 +42,6 @@ export default function useProteinViewClickActionBehavior({
         setError(e)
       }
     })
-  }, [plugin, mapping, session, model])
+  }, [plugin, transcriptToProteinMap, session, model])
   return { error }
 }

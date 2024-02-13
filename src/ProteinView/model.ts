@@ -3,13 +3,19 @@ import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId, Region } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
 import { Instance, addDisposer, cast, types } from 'mobx-state-tree'
-import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
+import {
+  SimpleFeature,
+  SimpleFeatureSerialized,
+  getSession,
+} from '@jbrowse/core/util'
 import { parsePairwise } from 'clustal-js'
 
 // locals
 import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
 import { genomeToProteinMapping } from '../genomeToProteinMapping'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import { genomeToProtein } from './genomeToProtein'
 
 export const StructureModel = types.model({
   id: types.identifier,
@@ -21,6 +27,14 @@ export const StructureModel = types.model({
   range: types.maybe(types.string),
 })
 
+type LGV = LinearGenomeViewModel
+type MaybeLGV = LGV | undefined
+
+/**
+ * #stateModel Protein3dViewPlugin
+ * extends
+ * - BaseViewModel
+ */
 function stateModelFactory() {
   return types
     .compose(
@@ -69,6 +83,11 @@ function stateModelFactory() {
          * #property
          */
         alignment: types.frozen<ReturnType<typeof parsePairwise> | undefined>(),
+
+        /**
+         * #property
+         */
+        connectedViewId: types.maybe(types.string),
       }),
     )
     .volatile(() => ({
@@ -78,6 +97,15 @@ function stateModelFactory() {
       mouseClickedPosition: undefined as
         | { pos: number; code: string; chain: string }
         | undefined,
+    }))
+    .views(self => ({
+      /**
+       * #getter
+       */
+      get connectedView() {
+        const { views } = getSession(self)
+        return views.find(f => f.id === self.connectedViewId) as MaybeLGV
+      },
     }))
     .actions(self => ({
       /**
@@ -121,14 +149,23 @@ function stateModelFactory() {
       clearHighlights() {
         self.highlights = cast([])
       },
+      /**
+       * #action
+       */
       setError(e: unknown) {
         self.error = e
       },
+      /**
+       * #action
+       */
       setAlignment(r?: ReturnType<typeof parsePairwise> | undefined) {
         self.alignment = r
       },
     }))
     .views(self => ({
+      /**
+       * #getter
+       */
       get mouseClickedString() {
         if (self.mouseClickedPosition) {
           const { pos, code, chain } = self.mouseClickedPosition
@@ -141,13 +178,21 @@ function stateModelFactory() {
           return ''
         }
       },
-
-      get mapping() {
+      /**
+       * #getter
+       */
+      get transcriptToProteinMap() {
         return self.alignment && self.feature
           ? genomeToProteinMapping({
               feature: new SimpleFeature(self.feature),
             })
           : undefined
+      },
+      /**
+       * #getter
+       */
+      get mouseCol2(): number | undefined {
+        return genomeToProtein({ model: self as JBrowsePluginProteinViewModel })
       },
     }))
     .actions(self => ({
