@@ -13,7 +13,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import { proteinAbbreviationMapping } from './util'
-import { launchPairwiseAlignment } from './components/launchRemotePairwiseAlignment'
+import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import { genomeToProteinMapping } from '../genomeToProteinMapping'
 import { genomeToProtein } from './genomeToProtein'
 

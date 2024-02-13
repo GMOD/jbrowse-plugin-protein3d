@@ -1,6 +1,9 @@
 import React from 'react'
 import { observer } from 'mobx-react'
+
+// locals
 import { JBrowsePluginProteinViewModel } from '../model'
+import ProteinAlignment from './ProteinAlignment'
 
 const ProteinViewHeader = observer(function ({
   model,
@@ -19,23 +22,6 @@ const ProteinViewHeader = observer(function ({
         )}
       </div>
     </>
-  )
-})
-
-const ProteinAlignment = observer(function ({
-  model,
-}: {
-  model: JBrowsePluginProteinViewModel
-}) {
-  const { alignment } = model
-  return (
-    <pre style={{ overflow: 'auto' }}>
-      {[
-        alignment!.alns[0].seq,
-        alignment!.consensus,
-        alignment!.alns[1].seq,
-      ].join('\n')}
-    </pre>
   )
 })
 

@@ -2,8 +2,8 @@ import { getSession } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { JBrowsePluginProteinViewModel } from '../model'
-import pairwiseSeqMap from '../../pairwiseSeqMap'
+import { JBrowsePluginProteinViewModel } from './model'
+import pairwiseSeqMap from '../pairwiseSeqMap'
 
 export async function proteinToGenomeMapping({
   model,

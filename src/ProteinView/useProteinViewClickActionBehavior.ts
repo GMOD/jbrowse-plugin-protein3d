@@ -3,7 +3,7 @@ import { getSession } from '@jbrowse/core/util'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
-import { JBrowsePluginProteinViewModel } from '../model'
+import { JBrowsePluginProteinViewModel } from './model'
 import { proteinToGenomeMapping } from './proteinToGenomeMapping'
 
 export default function useProteinViewClickActionBehavior({

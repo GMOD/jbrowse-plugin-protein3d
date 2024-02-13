@@ -8,12 +8,13 @@ import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
-import useProteinView from './useProteinView'
-import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
-import selectResidue from './selectResidue'
+import useProteinView from '../useProteinView'
+import useProteinViewClickBehavior from '../useProteinViewClickBehavior'
+import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
+import selectResidue from '../selectResidue'
 import pairwiseSeqMap from '../../pairwiseSeqMap'
-import css from './css/molstar'
-import highlightResidue from './highlightResidue'
+import css from '../css/molstar'
+import highlightResidue from '../highlightResidue'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -31,7 +32,8 @@ const ProteinView = observer(function ({
     url,
     showControls,
   })
-  const { error: error2 } = useProteinViewClickActionBehavior({ plugin, model })
+  const { error: error2 } = useProteinViewClickBehavior({ plugin, model })
+  const { error: error3 } = useProteinViewHoverBehavior({ plugin, model })
 
   const structureLoaded =
     plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
@@ -48,7 +50,7 @@ const ProteinView = observer(function ({
     for (const coord of Object.keys(coord1)) {
       selectResidue({
         plugin,
-        selectedResidue: +coord,
+        selectedResidue: +coord + 1,
       })
     }
   }, [plugin, structureLoaded, alignment])
