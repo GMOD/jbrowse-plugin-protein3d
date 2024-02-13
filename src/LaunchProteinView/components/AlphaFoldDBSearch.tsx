@@ -40,6 +40,7 @@ const useStyles = makeStyles()(theme => ({
   },
 }))
 
+type LGV = LinearGenomeViewModel
 function TextField2({ children, ...rest }: TextFieldProps) {
   return (
     <div>
@@ -64,7 +65,7 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState(getId(options[0]))
-  const view = getContainingView(model) as LinearGenomeViewModel
+  const view = getContainingView(model) as LGV
   const selectedTranscript = options.find(val => getId(val) === userSelection)!
   const { sequence, error: error2 } = useFeatureSequence({
     view,
@@ -90,22 +91,16 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <div className={classes.section}>
           {e ? <ErrorMessage error={e} /> : null}
           <div>
-            Looks up the UniProt ID associated with a given transcript from
-            MyGene.info, and uses this to load the 3-D structure from
-            AlphaFoldDB
+            Looks up the UniProt ID associated with a given transcript using the
+            transcript ID, and uses that to find the corresponding predicted
+            structure in AlphaFoldDB
           </div>
-          <TextField2
-            value={userSelection}
-            onChange={event => setUserSelection(event.target.value)}
-            label="Choose isoform to search"
-            select
-          >
-            {options.map(val => (
-              <MenuItem value={getId(val)} key={val.id()}>
-                {getGeneDisplayName(feature)} - {getTranscriptDisplayName(val)}
-              </MenuItem>
-            ))}
-          </TextField2>
+          <TranscriptSelector
+            val={userSelection}
+            setVal={setUserSelection}
+            options={options}
+            feature={feature}
+          />
           <Typography>Found Uniprot ID: {foundStructureId}</Typography>
           {protein ? null : (
             <Typography>Waiting for protein sequence...</Typography>
@@ -142,5 +137,32 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
     </>
   )
 })
+
+function TranscriptSelector({
+  val,
+  setVal,
+  options,
+  feature,
+}: {
+  options: Feature[]
+  feature: Feature
+  val: string
+  setVal: (str: string) => void
+}) {
+  return (
+    <TextField2
+      value={val}
+      onChange={event => setVal(event.target.value)}
+      label="Choose isoform to search"
+      select
+    >
+      {options.map(val => (
+        <MenuItem value={getId(val)} key={val.id()}>
+          {getGeneDisplayName(feature)} - {getTranscriptDisplayName(val)}
+        </MenuItem>
+      ))}
+    </TextField2>
+  )
+}
 
 export default MyGeneInfoSearch

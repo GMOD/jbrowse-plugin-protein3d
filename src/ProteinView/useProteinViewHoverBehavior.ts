@@ -8,6 +8,7 @@ import {
   StructureElement,
   StructureProperties as Props,
 } from 'molstar/lib/mol-model/structure'
+import { hoverProteinToGenome } from './proteinToGenomeMapping'
 
 export default function useProteinViewClickActionBehavior({
   plugin,
@@ -31,7 +32,8 @@ export default function useProteinViewClickActionBehavior({
           const pos = Props.residue.auth_seq_id(loc)
           const code = Props.atom.label_comp_id(loc)
           const chain = Props.chain.auth_asym_id(loc)
-          model.setHoveredPosition({ pos, code, chain })
+          model.setHoveredPosition({ pos: pos - 1, code, chain })
+          hoverProteinToGenome({ model, pos: pos - 1 })
         }
       }
     })

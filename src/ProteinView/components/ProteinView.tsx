@@ -12,7 +12,6 @@ import useProteinView from '../useProteinView'
 import useProteinViewClickBehavior from '../useProteinViewClickBehavior'
 import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
 import selectResidue from '../selectResidue'
-import pairwiseSeqMap from '../../pairwiseSeqMap'
 import css from '../css/molstar'
 import highlightResidue from '../highlightResidue'
 
@@ -27,16 +26,8 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const {
-    width,
-    height,
-    url,
-    showControls,
-    pairwiseSeqMap,
-    seq2,
-    alignment,
-    mouseCol2,
-  } = model
+  const { width, height, url, showControls, pairwiseSeqMap, seq2, mouseCol2 } =
+    model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     showControls,
@@ -68,13 +59,12 @@ const ProteinView = observer(function ({
     if (!plugin || !structure || mouseCol2 === undefined || !pairwiseSeqMap) {
       return
     }
-    const c0 = pairwiseSeqMap.coord2[mouseCol2]
-    console.log({ pairwiseSeqMap, mouseCol2, c0 })
+    const c0 = mouseCol2
     if (c0 !== undefined) {
       highlightResidue({
         structure,
         plugin,
-        selectedResidue: c0 + 1,
+        selectedResidue: c0,
       })
     } else {
       console.warn('not found')

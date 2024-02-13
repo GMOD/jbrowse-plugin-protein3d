@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useState } from 'react'
 import { IconButton } from '@mui/material'
 
 // locals
-import { Help } from '@mui/icons-material'
+import Help from '@mui/icons-material/Help'
 
 const HelpDialog = lazy(() => import('./HelpDialog'))
 

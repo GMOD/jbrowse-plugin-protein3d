@@ -4,7 +4,7 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
 import { JBrowsePluginProteinViewModel } from './model'
-import { proteinToGenomeMapping } from './proteinToGenomeMapping'
+import { clickProteinToGenome } from './proteinToGenomeMapping'
 import {
   StructureElement,
   StructureProperties as Props,
@@ -31,9 +31,9 @@ export default function useProteinViewClickActionBehavior({
           const pos = Props.residue.auth_seq_id(loc)
           const code = Props.atom.label_comp_id(loc)
           const chain = Props.chain.auth_asym_id(loc)
-          model.setHoveredPosition({ pos, code, chain })
+          model.setHoveredPosition({ pos: pos - 1, code, chain })
 
-          proteinToGenomeMapping({ model, pos }).catch(e => {
+          clickProteinToGenome({ model, pos: pos - 1 }).catch(e => {
             console.error(e)
             setError(e)
           })

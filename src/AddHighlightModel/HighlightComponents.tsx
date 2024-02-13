@@ -3,7 +3,8 @@ import { observer } from 'mobx-react'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import ProteinToGenomeHighlight from './ProteinToGenomeHighlight'
+import ProteinToGenomeClickHighlight from './ProteinToGenomeClickHighlight'
+import ProteinToGenomeHoverHighlight from './ProteinToGenomeHoverHighlight'
 import GenomeMouseoverHighlight from './GenomeMouseoverHighlight'
 
 type LGV = LinearGenomeViewModel
@@ -15,7 +16,8 @@ const HighlightComponents = observer(function Highlight({
 }) {
   return (
     <>
-      <ProteinToGenomeHighlight model={model} />
+      <ProteinToGenomeClickHighlight model={model} />
+      <ProteinToGenomeHoverHighlight model={model} />
       <GenomeMouseoverHighlight model={model} />
     </>
   )

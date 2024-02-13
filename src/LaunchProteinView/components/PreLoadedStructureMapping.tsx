@@ -75,9 +75,7 @@ const AutoForm = observer(function AutoForm({
 
   const mapping =
     foundStructureId && userSelectionFeat
-      ? genomeToProteinMapping({
-          feature: userSelectionFeat,
-        })
+      ? genomeToProteinMapping(userSelectionFeat)
       : []
   const url = foundStructureId
     ? `https://files.rcsb.org/view/${foundStructureId}.cif`

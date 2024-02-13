@@ -5,7 +5,7 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { JBrowsePluginProteinViewModel } from './model'
 import pairwiseSeqMap from '../pairwiseSeqMap'
 
-export async function proteinToGenomeMapping({
+export function proteinToGenomeMapping({
   model,
   pos,
 }: {
@@ -13,29 +13,42 @@ export async function proteinToGenomeMapping({
   model: JBrowsePluginProteinViewModel
 }) {
   const { transcriptToProteinMap, alignment } = model
-  const session = getSession(model)
   if (!transcriptToProteinMap || !alignment) {
-    return
+    return undefined
   }
-  const lgv = session.views[0] as LinearGenomeViewModel
-  const { p2g, strand, refName } = transcriptToProteinMap
+  const { p2g, strand } = transcriptToProteinMap
   const { coord1 } = pairwiseSeqMap(alignment)
   // positions are 1-based from molstar, our data structures are 0-based
-  const r1 = coord1[pos - 1]
+  const r1 = coord1[pos]
   if (r1 === undefined) {
-    session.notify('Pairwise seq map failed to resolve')
-    return
+    return undefined
   }
   const s0 = p2g[r1]
   if (s0 === undefined) {
-    session.notify('Genome position not found')
-    return
+    return undefined
   }
   const start = s0
   const end = start + 3 * strand
-  const [s1, s2] = [Math.min(start, end), Math.max(start, end)]
+  return [Math.min(start, end), Math.max(start, end)]
+}
 
-  model.setHighlights([
+export async function clickProteinToGenome({
+  model,
+  pos,
+}: {
+  pos: number
+  model: JBrowsePluginProteinViewModel
+}) {
+  const session = getSession(model)
+  const result = proteinToGenomeMapping({ pos, model })
+  const { transcriptToProteinMap } = model
+  if (!transcriptToProteinMap || result === undefined) {
+    return undefined
+  }
+  const [s1, s2] = result
+  const lgv = session.views[0] as LinearGenomeViewModel
+  const { strand, refName } = transcriptToProteinMap
+  model.setClickGenomeHighlights([
     {
       assemblyName: 'hg38',
       refName,
@@ -46,4 +59,32 @@ export async function proteinToGenomeMapping({
   await lgv.navToLocString(
     `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
   )
+}
+
+export function hoverProteinToGenome({
+  model,
+  pos,
+}: {
+  pos: number
+  model: JBrowsePluginProteinViewModel
+}) {
+  const session = getSession(model)
+  const result = proteinToGenomeMapping({ pos, model })
+  const { transcriptToProteinMap } = model
+  if (!transcriptToProteinMap || !result) {
+    return
+  }
+  if (!result) {
+    session.notify('Genome position not found')
+  }
+  const [s1, s2] = result
+  const { refName } = transcriptToProteinMap
+  model.setHoverGenomeHighlights([
+    {
+      assemblyName: 'hg38',
+      refName,
+      start: s1,
+      end: s2,
+    },
+  ])
 }

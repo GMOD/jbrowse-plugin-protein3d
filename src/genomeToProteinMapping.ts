@@ -1,7 +1,7 @@
 import { Feature } from '@jbrowse/core/util'
 
 // see similar function in msaview plugin
-export function genomeToProteinMapping({ feature }: { feature: Feature }) {
+export function genomeToProteinMapping(feature: Feature) {
   const strand = feature.get('strand') as number
   const refName = feature.get('refName')
   const subs = feature.children() ?? []

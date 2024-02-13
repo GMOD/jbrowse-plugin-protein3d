@@ -11,7 +11,10 @@ export default function highlightResidue({
   selectedResidue: number
   plugin: PluginContext
 }) {
-  const sel = getMolstarStructureSelection({ structure, selectedResidue })
+  const sel = getMolstarStructureSelection({
+    structure,
+    selectedResidue: selectedResidue + 1,
+  })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
   plugin?.managers.interactivity.lociHighlights.clearHighlights()
   plugin?.managers.interactivity.lociHighlights.highlight({

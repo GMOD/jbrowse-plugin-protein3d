@@ -4,9 +4,7 @@ import { feature, alignment } from './test_data/gene'
 import pairwiseSeqMap from './pairwiseSeqMap'
 
 test('mapping', () => {
-  const res = genomeToProteinMapping({
-    feature: new SimpleFeature(feature),
-  })
+  const res = genomeToProteinMapping(new SimpleFeature(feature))
   const { p2g } = res
   const aln = pairwiseSeqMap(alignment)
 

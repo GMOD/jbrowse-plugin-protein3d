@@ -48,7 +48,11 @@ function stateModelFactory() {
         /**
          * #property
          */
-        highlights: types.array(Region),
+        clickGenomeHighlights: types.array(Region),
+        /**
+         * #property
+         */
+        hoverGenomeHighlights: types.array(Region),
         /**
          * #property
          */
@@ -146,20 +150,26 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setHighlights(r: IRegion[]) {
-        self.highlights = cast(r)
+      setClickGenomeHighlights(r: IRegion[]) {
+        self.clickGenomeHighlights = cast(r)
       },
       /**
        * #action
        */
-      addToHighlights(r: IRegion) {
-        self.highlights.push(r)
+      clearClickGenomeHighlights() {
+        self.clickGenomeHighlights = cast([])
       },
       /**
        * #action
        */
-      clearHighlights() {
-        self.highlights = cast([])
+      setHoverGenomeHighlights(r: IRegion[]) {
+        self.hoverGenomeHighlights = cast(r)
+      },
+      /**
+       * #action
+       */
+      clearHoverGenomeHighlights() {
+        self.hoverGenomeHighlights = cast([])
       },
       /**
        * #action
@@ -199,10 +209,8 @@ function stateModelFactory() {
        * #getter
        */
       get transcriptToProteinMap() {
-        return self.alignment && self.feature
-          ? genomeToProteinMapping({
-              feature: new SimpleFeature(self.feature),
-            })
+        return self.feature
+          ? genomeToProteinMapping(new SimpleFeature(self.feature))
           : undefined
       },
       /**
@@ -239,19 +247,22 @@ function stateModelFactory() {
           self,
           autorun(() => {
             const { hovered } = getSession(self)
-            const { transcriptToProteinMap, connectedView } = self
+            const { pairwiseSeqMap, transcriptToProteinMap, connectedView } =
+              self
             if (
               !connectedView?.initialized ||
               !transcriptToProteinMap ||
+              !pairwiseSeqMap ||
               !checkHovered(hovered)
             ) {
               return undefined
             }
 
             const pos = transcriptToProteinMap.g2p[hovered.hoverPosition.coord]
-            if (pos !== undefined) {
+            const c0 = pos ? pairwiseSeqMap?.coord2[pos] : undefined
+            if (c0 !== undefined) {
               self.setHoveredPosition({
-                pos,
+                pos: c0,
               })
             }
           }),

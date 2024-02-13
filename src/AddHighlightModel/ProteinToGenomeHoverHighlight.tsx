@@ -21,7 +21,7 @@ const useStyles = makeStyles()({
   },
 })
 
-const ProteinToGenomeHighlight = observer(function Highlight({
+const ProteinToGenomeHoverHighlight = observer(function Highlight({
   model,
 }: {
   model: LGV
@@ -35,7 +35,7 @@ const ProteinToGenomeHighlight = observer(function Highlight({
   const assembly = assemblyManager.get(assemblyNames[0])
   return assembly ? (
     <>
-      {p?.highlights.map((r, idx) => {
+      {p?.hoverGenomeHighlights.map((r, idx) => {
         const refName = assembly.getCanonicalRefName(r.refName) ?? r.refName
         const s = model.bpToPx({ refName, coord: r.start })
         const e = model.bpToPx({ refName, coord: r.end })
@@ -56,4 +56,4 @@ const ProteinToGenomeHighlight = observer(function Highlight({
   ) : null
 })
 
-export default ProteinToGenomeHighlight
+export default ProteinToGenomeHoverHighlight
