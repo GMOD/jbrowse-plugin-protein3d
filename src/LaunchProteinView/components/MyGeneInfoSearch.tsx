@@ -25,15 +25,12 @@ import {
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
-} from './util'
-import { useFeatureSequence } from './useFeatureSequence'
-import { getProteinSequence } from './calculateProteinSequence'
-import useMyGeneInfo from './useMyGeneInfo'
+} from '../util'
+import { useFeatureSequence } from '../useFeatureSequence'
+import { getProteinSequence } from '../calculateProteinSequence'
+import useMyGeneInfo from '../useMyGeneInfo'
 
 const useStyles = makeStyles()(theme => ({
-  textAreaFont: {
-    fontFamily: 'Courier New',
-  },
   section: {
     marginTop: theme.spacing(6),
   },

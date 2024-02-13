@@ -19,8 +19,8 @@ import {
   getDisplayName,
   getTranscriptFeatures,
   stripTrailingVersion,
-} from './util'
-import { genomeToProteinMapping } from '../genomeToProteinMapping'
+} from '../util'
+import { genomeToProteinMapping } from '../../genomeToProteinMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {
