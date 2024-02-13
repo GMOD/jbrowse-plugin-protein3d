@@ -32,6 +32,7 @@
     "name": "Protein3d"
   },
   "dependencies": {
+    "@mui/icons-material": "^5.15.10",
     "clustal-js": "^2.0.1",
     "molstar": "^4.0.0",
     "pako": "^2.1.0"

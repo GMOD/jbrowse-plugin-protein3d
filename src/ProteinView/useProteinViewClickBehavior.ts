@@ -5,6 +5,10 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 // local
 import { JBrowsePluginProteinViewModel } from './model'
 import { proteinToGenomeMapping } from './proteinToGenomeMapping'
+import {
+  StructureElement,
+  StructureProperties as Props,
+} from 'molstar/lib/mol-model/structure'
 
 export default function useProteinViewClickActionBehavior({
   plugin,
@@ -20,26 +24,20 @@ export default function useProteinViewClickActionBehavior({
     if (!plugin) {
       return
     }
-    const { state } = plugin
+    plugin.behaviors.interaction.click.subscribe(event => {
+      if (StructureElement.Loci.is(event.current.loci)) {
+        const loc = StructureElement.Loci.getFirstLocation(event.current.loci)
+        if (loc) {
+          const pos = Props.residue.auth_seq_id(loc)
+          const code = Props.atom.label_comp_id(loc)
+          const chain = Props.chain.auth_asym_id(loc)
+          model.setHoveredPosition({ pos, code, chain })
 
-    state.data.events.changed.subscribe(() => {
-      try {
-        const clickedLabel = state.getSnapshot().structureFocus?.current?.label
-        if (clickedLabel) {
-          const [clickPos, chain] = clickedLabel?.split('|') ?? []
-          const [code, position] = clickPos.trim().split(' ')
-          const pos = +position.trim()
-          model.setMouseClickedPosition({ pos, code, chain })
           proteinToGenomeMapping({ model, pos }).catch(e => {
             console.error(e)
             setError(e)
           })
-        } else {
-          model.setMouseClickedPosition(undefined)
         }
-      } catch (e) {
-        console.error(e)
-        setError(e)
       }
     })
   }, [plugin, transcriptToProteinMap, session, model])

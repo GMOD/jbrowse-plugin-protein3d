@@ -1,4 +1,6 @@
 import { Feature } from '@jbrowse/core/util'
+import { Structure } from 'molstar/lib/mol-model/structure'
+import { Script } from 'molstar/lib/mol-script/script'
 
 export const proteinAbbreviationMapping = Object.fromEntries(
   [
@@ -34,5 +36,25 @@ export function checkHovered(hovered: unknown): hovered is {
     typeof hovered == 'object' &&
     'hoverFeature' in hovered &&
     'hoverPosition' in hovered
+  )
+}
+
+export function getMolstarStructureSelection({
+  structure,
+  selectedResidue,
+}: {
+  structure: Structure
+  selectedResidue: number
+}) {
+  return Script.getStructureSelection(
+    Q =>
+      Q.struct.generator.atomGroups({
+        'residue-test': Q.core.rel.eq([
+          Q.struct.atomProperty.macromolecular.label_seq_id(),
+          selectedResidue,
+        ]),
+        'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
+      }),
+    structure,
   )
 }

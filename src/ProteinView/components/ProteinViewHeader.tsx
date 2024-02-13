@@ -10,11 +10,15 @@ const ProteinViewHeader = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { url, mouseClickedString, alignment } = model
+  const { url, clickString, hoverString, alignment } = model
   return (
     <>
       <div>
-        {url} {mouseClickedString}{' '}
+        {[
+          url,
+          clickString ? `Click: ${clickString}` : '',
+          hoverString ? `Hover: ${hoverString}` : '',
+        ].join(' ')}
         {!alignment ? (
           <div>Loading pairwise alignment...</div>
         ) : (

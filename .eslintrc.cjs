@@ -54,5 +54,6 @@ module.exports = {
     'no-extra-semi': 'off',
     'unicorn/no-negated-condition': 'off',
     'unicorn/no-array-callback-reference': 'off',
+    'unicorn/prefer-spread': 'off',
   },
 }

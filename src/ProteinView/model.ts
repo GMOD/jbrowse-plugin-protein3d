@@ -16,19 +16,18 @@ import { proteinAbbreviationMapping } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import { genomeToProteinMapping } from '../genomeToProteinMapping'
 import { genomeToProtein } from './genomeToProtein'
-
-export const StructureModel = types.model({
-  id: types.identifier,
-  structure: types.model({
-    pdb: types.string,
-    startPos: types.number,
-    endPos: types.number,
-  }),
-  range: types.maybe(types.string),
-})
+import pairwiseSeqMap from '../pairwiseSeqMap'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
+
+function toStr(r: { pos: number; code: string; chain: string }) {
+  return [
+    `Position: ${r.pos}`,
+    `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`,
+    `Chain: ${r.chain}`,
+  ].join(', ')
+}
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -98,7 +97,13 @@ function stateModelFactory() {
       /**
        * #volatile
        */
-      mouseClickedPosition: undefined as
+      clickPosition: undefined as
+        | { pos: number; code: string; chain: string }
+        | undefined,
+      /**
+       * #volatile
+       */
+      hoverPosition: undefined as
         | { pos: number; code: string; chain: string }
         | undefined,
       /**
@@ -116,6 +121,12 @@ function stateModelFactory() {
       },
     }))
     .actions(self => ({
+      /**
+       * #action
+       */
+      setHoveredPosition(arg?: { pos: number; chain: string; code: string }) {
+        self.hoverPosition = arg
+      },
       /**
        * #action
        */
@@ -138,12 +149,8 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setMouseClickedPosition(arg?: {
-        pos: number
-        code: string
-        chain: string
-      }) {
-        self.mouseClickedPosition = arg
+      setClickedPosition(arg?: { pos: number; code: string; chain: string }) {
+        self.clickPosition = arg
       },
       /**
        * #action
@@ -180,15 +187,22 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get mouseClickedString() {
-        const r = self.mouseClickedPosition
-        return r
-          ? [
-              `Position: ${r.pos}`,
-              `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`,
-              `Chain: ${r.chain}`,
-            ].join(', ')
-          : ''
+      get pairwiseSeqMap() {
+        return self.alignment ? pairwiseSeqMap(self.alignment) : undefined
+      },
+      /**
+       * #getter
+       */
+      get clickString() {
+        const r = self.clickPosition
+        return r ? toStr(r) : ''
+      },
+      /**
+       * #getter
+       */
+      get hoverString() {
+        const r = self.hoverPosition
+        return r ? toStr(r) : ''
       },
       /**
        * #getter
@@ -204,6 +218,9 @@ function stateModelFactory() {
        * #getter
        */
       get mouseCol2(): number | undefined {
+        console.log(
+          genomeToProtein({ model: self as JBrowsePluginProteinViewModel }),
+        )
         return genomeToProtein({ model: self as JBrowsePluginProteinViewModel })
       },
     }))

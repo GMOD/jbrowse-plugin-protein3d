@@ -27,15 +27,24 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { width, height, url, showControls, seq2, alignment, mouseCol2 } = model
+  const {
+    width,
+    height,
+    url,
+    showControls,
+    pairwiseSeqMap,
+    seq2,
+    alignment,
+    mouseCol2,
+  } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     showControls,
   })
   const { error: error2 } = useProteinViewClickBehavior({ plugin, model })
-  const { error: error3 } = useProteinViewHoverBehavior({ plugin, model })
+  useProteinViewHoverBehavior({ plugin, model })
 
-  const structureLoaded =
+  const structure =
     plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
 
   useEffect(() => {
@@ -43,27 +52,34 @@ const ProteinView = observer(function ({
   }, [seq, model, seq2])
 
   useEffect(() => {
-    if (!plugin || !alignment || !structureLoaded) {
+    if (!plugin || !pairwiseSeqMap || !structure) {
       return
     }
-    const { coord1 } = pairwiseSeqMap(alignment)
-    for (const coord of Object.keys(coord1)) {
+    for (const coord of Object.keys(pairwiseSeqMap.coord1)) {
       selectResidue({
+        structure,
         plugin,
         selectedResidue: +coord + 1,
       })
     }
-  }, [plugin, structureLoaded, alignment])
+  }, [plugin, structure, pairwiseSeqMap])
 
   useEffect(() => {
-    if (!plugin || !alignment || !structureLoaded || mouseCol2 === undefined) {
+    if (!plugin || !structure || mouseCol2 === undefined || !pairwiseSeqMap) {
       return
     }
-    highlightResidue({
-      plugin,
-      selectedResidue: mouseCol2 + 1,
-    })
-  }, [plugin, structureLoaded, mouseCol2, alignment])
+    const c0 = pairwiseSeqMap.coord2[mouseCol2]
+    console.log({ pairwiseSeqMap, mouseCol2, c0 })
+    if (c0 !== undefined) {
+      highlightResidue({
+        structure,
+        plugin,
+        selectedResidue: c0 + 1,
+      })
+    } else {
+      console.warn('not found')
+    }
+  }, [plugin, structure, mouseCol2, pairwiseSeqMap])
 
   return error ? (
     <ErrorMessage error={error} />

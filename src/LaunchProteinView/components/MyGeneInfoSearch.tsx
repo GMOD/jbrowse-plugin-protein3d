@@ -131,6 +131,7 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
               seq2: protein,
               feature: selectedTranscript.toJSON(),
               connectedViewId: view.id,
+              displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
             })
             handleClose()
           }}
