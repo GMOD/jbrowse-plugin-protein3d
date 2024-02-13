@@ -1,5 +1,5 @@
 import pairwiseSeqMap from './pairwiseSeqMap'
-import { alignment } from './data2'
+import { alignment } from './test_data/gene'
 
 test('test', () => {
   const ret = pairwiseSeqMap(alignment)

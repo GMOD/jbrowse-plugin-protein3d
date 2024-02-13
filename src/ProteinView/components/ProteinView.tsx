@@ -59,7 +59,7 @@ const ProteinView = observer(function ({
     }
     highlightResidue({
       plugin,
-      selectedResidue: mouseCol2 + 2,
+      selectedResidue: mouseCol2 + 1,
     })
   }, [plugin, structureLoaded, mouseCol2, alignment])
 

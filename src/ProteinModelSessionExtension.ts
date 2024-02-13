@@ -4,14 +4,8 @@ import { ungzip } from 'pako'
 
 // locals
 import { Row } from './LaunchProteinView/util'
+import { abfetch } from './fetchUtils'
 
-async function myfetch(url: string) {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching ${url}: ${await res.text()}`)
-  }
-  return res.arrayBuffer()
-}
 const ProteinModelSessionExtension = types
   .model({})
   .volatile(() => ({
@@ -35,7 +29,7 @@ const ProteinModelSessionExtension = types
           autorun(async () => {
             try {
               const ret = new TextDecoder('utf8').decode(
-                ungzip(await myfetch(url)),
+                ungzip(await abfetch(url)),
               )
               const d = ret
                 .split('\n')

@@ -41,5 +41,7 @@ export function genomeToProteinMapping({ feature }: { feature: Feature }) {
       }
     }
   }
+
+  console.log(Object.entries(g2p).sort((a, b) => +b[0] - +a[0]))
   return { g2p, p2g, refName, strand }
 }

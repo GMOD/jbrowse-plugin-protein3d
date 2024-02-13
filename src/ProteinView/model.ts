@@ -9,12 +9,12 @@ import {
   getSession,
 } from '@jbrowse/core/util'
 import { parsePairwise } from 'clustal-js'
+import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import { proteinAbbreviationMapping } from './util'
-import { launchPairwiseAlignment } from './components/pairwiseAlignmentUtils'
+import { launchPairwiseAlignment } from './components/launchRemotePairwiseAlignment'
 import { genomeToProteinMapping } from '../genomeToProteinMapping'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { genomeToProtein } from './genomeToProtein'
 
 export const StructureModel = types.model({

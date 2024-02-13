@@ -1,6 +1,6 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { genomeToProteinMapping } from './genomeToProteinMapping'
-import { feature, alignment } from './data2'
+import { feature, alignment } from './test_data/gene'
 import pairwiseSeqMap from './pairwiseSeqMap'
 
 test('mapping', () => {
