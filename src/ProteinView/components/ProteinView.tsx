@@ -12,7 +12,7 @@ import useProteinView from './useProteinView'
 import useProteinViewClickActionBehavior from './useProteinViewClickActionBehavior'
 import selectResidue from './selectResidue'
 import pairwiseSeqMap from '../../pairwiseSeqMap'
-import css from './molstarCss'
+import css from './css/molstar'
 import highlightResidue from './highlightResidue'
 
 if (document?.head) {

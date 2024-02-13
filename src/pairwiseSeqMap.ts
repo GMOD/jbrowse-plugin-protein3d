@@ -19,7 +19,7 @@ export default function pairwiseSeqMap(alignment: Alignment) {
   const mismatch1 = {} as Record<string, boolean | undefined>
   const mismatch2 = {} as Record<string, boolean | undefined>
 
-  // eslint-disable-next-line unicorn/no-for-loop
+   
   for (let i = k; i < k1.length; i++) {
     const char1 = k1[i]
     const char2 = k2[i]

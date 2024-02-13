@@ -91,12 +91,20 @@ function stateModelFactory() {
       }),
     )
     .volatile(() => ({
+      /**
+       * #volatile
+       */
       error: undefined as unknown,
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      /**
+       * #volatile
+       */
       mouseClickedPosition: undefined as
         | { pos: number; code: string; chain: string }
         | undefined,
+      /**
+       * #volatile
+       */
+      progress: '',
     }))
     .views(self => ({
       /**
@@ -120,6 +128,12 @@ function stateModelFactory() {
        */
       setShowControls(arg: boolean) {
         self.showControls = arg
+      },
+      /**
+       * #action
+       */
+      setProgress(str: string) {
+        self.progress = str
       },
       /**
        * #action
@@ -158,7 +172,7 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setAlignment(r?: ReturnType<typeof parsePairwise> | undefined) {
+      setAlignment(r?: ReturnType<typeof parsePairwise>) {
         self.alignment = r
       },
     }))
@@ -167,16 +181,14 @@ function stateModelFactory() {
        * #getter
        */
       get mouseClickedString() {
-        if (self.mouseClickedPosition) {
-          const { pos, code, chain } = self.mouseClickedPosition
-          return [
-            `Position: ${pos}`,
-            `Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode})`,
-            `Chain: ${chain}`,
-          ].join(', ')
-        } else {
-          return ''
-        }
+        const r = self.mouseClickedPosition
+        return r
+          ? [
+              `Position: ${r.pos}`,
+              `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`,
+              `Chain: ${r.chain}`,
+            ].join(', ')
+          : ''
       },
       /**
        * #getter
@@ -202,17 +214,14 @@ function stateModelFactory() {
           autorun(async () => {
             try {
               const { seq1, seq2 } = self
-              if (self.alignment) {
-                return
-              }
-              if (!seq1 || !seq2) {
+              if (!!self.alignment || !seq1 || !seq2) {
                 return
               }
               const alignment = await launchPairwiseAlignment({
                 seq1,
                 seq2,
                 algorithm: 'emboss_needle',
-                onProgress: () => {},
+                onProgress: arg => self.setProgress(arg),
               })
               self.setAlignment(alignment.alignment)
             } catch (e) {

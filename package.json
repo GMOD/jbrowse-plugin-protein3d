@@ -24,7 +24,7 @@
     "clean": "rimraf dist",
     "start": "node esbuild.mjs",
     "build": "NODE_ENV=production rollup --config --bundleConfigAsCjs",
-    "lint": "eslint --ext .js,.ts,.jsx,.tsx src/",
+    "lint": "eslint --report-unused-disable-directives --max-warnings 0 --ext .js,.ts,.jsx,.tsx src/",
     "prepack": "npm run build",
     "postversion": "git push --follow-tags"
   },
