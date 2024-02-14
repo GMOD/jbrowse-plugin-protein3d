@@ -52,11 +52,11 @@ export function createMapFromData(data?: Row[]) {
 }
 
 export function getDisplayName(f: Feature): string {
-  return f.get('name') || f.get('id')
+  return f.get('id')
 }
 
 export function getId(val?: Feature): string {
-  return val === undefined ? '' : val.get('name') || val.get('id')
+  return val === undefined ? '' : val.id()
 }
 
 export function getTranscriptDisplayName(val?: Feature): string {

@@ -1,7 +1,9 @@
+import { getConf } from '@jbrowse/core/configuration'
 import {
   Feature,
   defaultCodonTable,
   generateCodonTable,
+  getSession,
   revcom,
 } from '@jbrowse/core/util'
 
@@ -56,14 +58,14 @@ export function dedupe(list: Feat[]) {
 }
 
 export function getProteinSequence({
-  selectedTranscript,
+  feature,
   seq,
 }: {
   seq: string
-  selectedTranscript: Feature
+  feature: Feature
 }) {
   // @ts-expect-error
-  const f = selectedTranscript.toJSON() as {
+  const f = feature.toJSON() as {
     start: number
     end: number
     strand: number
@@ -86,4 +88,40 @@ export function getProteinSequence({
     sequence: f.strand === -1 ? revcom(seq) : seq,
     codonTable: generateCodonTable(defaultCodonTable),
   })
+}
+
+export async function fetchProteinSeq({
+  feature,
+  view,
+}: {
+  feature: Feature
+  view: { assemblyNames?: string[] } | undefined
+}) {
+  const start = feature.get('start')
+  const end = feature.get('end')
+  const refName = feature.get('refName')
+  const session = getSession(view)
+  const { assemblyManager, rpcManager } = session
+  const [assemblyName] = view?.assemblyNames ?? []
+  const assembly = await assemblyManager.waitForAssembly(assemblyName)
+  if (!assembly) {
+    throw new Error('assembly not found')
+  }
+  const sessionId = 'getSequence'
+  const feats = await rpcManager.call(sessionId, 'CoreGetFeatures', {
+    adapterConfig: getConf(assembly, ['sequence', 'adapter']),
+    sessionId,
+    regions: [
+      {
+        start,
+        end,
+        refName: assembly.getCanonicalRefName(refName),
+        assemblyName,
+      },
+    ],
+  })
+
+  const [feat] = feats as Feature[]
+  const seq = feat?.get('seq') as string | undefined
+  return seq ? getProteinSequence({ seq, feature }) : undefined
 }

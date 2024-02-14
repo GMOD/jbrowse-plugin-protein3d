@@ -5,7 +5,10 @@ import { Tooltip, Typography } from '@mui/material'
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
 import HelpButton from './HelpButton'
-import { clickProteinToGenome } from '../proteinToGenomeMapping'
+import {
+  clickProteinToGenome,
+  hoverProteinToGenome,
+} from '../proteinToGenomeMapping'
 
 function SplitString({
   str,
@@ -53,6 +56,15 @@ const ProteinAlignment = observer(function ({
   const set =
     ret !== undefined ? new Set(Object.keys(ret).map(f => +f)) : undefined
 
+  function r(pos: number) {
+    model.setHoveredPosition({ pos })
+    hoverProteinToGenome({ model, pos: pos })
+  }
+  function s(pos: number) {
+    clickProteinToGenome({ model, pos }).catch(e => {
+      console.error(e)
+    })
+  }
   return (
     <div>
       <HelpButton />
@@ -70,6 +82,10 @@ const ProteinAlignment = observer(function ({
           overflow: 'auto',
           whiteSpace: 'nowrap',
         }}
+        onMouseLeave={() => {
+          model.setHoveredPosition(undefined)
+          model.clearHoverGenomeHighlights()
+        }}
       >
         <div>
           <Tooltip title="This is the sequence of the protein from the structure file">
@@ -79,12 +95,8 @@ const ProteinAlignment = observer(function ({
             str={a0}
             col={mouseCol2}
             set={set}
-            onMouseOver={pos => model.setHoveredPosition({ pos })}
-            onClick={pos => {
-              clickProteinToGenome({ model, pos }).catch(e => {
-                console.error(e)
-              })
-            }}
+            onMouseOver={r}
+            onClick={s}
           />
         </div>
         <div>
@@ -93,12 +105,8 @@ const ProteinAlignment = observer(function ({
             str={con}
             col={mouseCol2}
             set={set}
-            onMouseOver={pos => model.setHoveredPosition({ pos })}
-            onClick={pos => {
-              clickProteinToGenome({ model, pos }).catch(e => {
-                console.error(e)
-              })
-            }}
+            onMouseOver={r}
+            onClick={s}
           />
         </div>
         <div>
@@ -109,12 +117,8 @@ const ProteinAlignment = observer(function ({
             str={a1}
             col={mouseCol2}
             set={set}
-            onMouseOver={pos => model.setHoveredPosition({ pos })}
-            onClick={pos => {
-              clickProteinToGenome({ model, pos }).catch(e => {
-                console.error(e)
-              })
-            }}
+            onMouseOver={r}
+            onClick={s}
           />
         </div>
       </div>

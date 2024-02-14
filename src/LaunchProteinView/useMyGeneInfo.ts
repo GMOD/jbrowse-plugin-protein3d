@@ -17,6 +17,9 @@ export default function useMyGeneInfo({ id }: { id: string }) {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
+        if (!id) {
+          return
+        }
         const res = await jsonfetch(
           `https://mygene.info/v3/query?q=${stripTrailingVersion(id)}&fields=uniprot,symbol`,
         )
@@ -27,5 +30,5 @@ export default function useMyGeneInfo({ id }: { id: string }) {
       }
     })()
   }, [id])
-  return { result: result?.hits[0].uniprot['Swiss-Prot'], error }
+  return { result: result?.hits[0]?.uniprot['Swiss-Prot'], error }
 }

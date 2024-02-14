@@ -1,14 +1,6 @@
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { observer } from 'mobx-react'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  MenuItem,
-  TextField,
-  TextFieldProps,
-  Typography,
-} from '@mui/material'
+import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import {
   AbstractTrackModel,
@@ -16,38 +8,31 @@ import {
   getContainingView,
   getSession,
 } from '@jbrowse/core/util'
-import { ErrorMessage } from '@jbrowse/core/ui'
+import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import {
+  getDisplayName,
   getGeneDisplayName,
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from '../util'
-import { useFeatureSequence } from '../useFeatureSequence'
-import { getProteinSequence } from '../calculateProteinSequence'
 import useMyGeneInfo from '../useMyGeneInfo'
+import TranscriptSelector from './TranscriptSelector'
+import useAllSequences from '../useProteinSequences'
 
 const useStyles = makeStyles()(theme => ({
   section: {
     marginTop: theme.spacing(6),
   },
-
   dialogContent: {
     width: '80em',
   },
 }))
 
 type LGV = LinearGenomeViewModel
-function TextField2({ children, ...rest }: TextFieldProps) {
-  return (
-    <div>
-      <TextField {...rest}>{children}</TextField>
-    </div>
-  )
-}
 
 const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   feature,
@@ -64,24 +49,20 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
-  const [userSelection, setUserSelection] = useState(getId(options[0]))
+  const [userSelection, setUserSelection] = useState<string>()
   const view = getContainingView(model) as LGV
   const selectedTranscript = options.find(val => getId(val) === userSelection)!
-  const { sequence, error: error2 } = useFeatureSequence({
-    view,
-    feature: selectedTranscript,
-  })
-  const protein =
-    sequence && !('error' in sequence)
-      ? getProteinSequence({
-          seq: sequence.seq,
-          selectedTranscript,
-        })
-      : ''
-
+  const { seqs, error: error2 } = useAllSequences({ feature, view })
+  const protein = seqs?.[userSelection ?? '']
   const { result: foundStructureId, error } = useMyGeneInfo({
-    id: userSelection,
+    id: selectedTranscript ? getDisplayName(selectedTranscript) : '',
   })
+
+  useEffect(() => {
+    if (userSelection === undefined && seqs !== undefined) {
+      setUserSelection(options.find(f => !!seqs[f.id()])?.id())
+    }
+  }, [options, userSelection, seqs])
 
   const e = error || error2
   const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
@@ -91,19 +72,30 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <div className={classes.section}>
           {e ? <ErrorMessage error={e} /> : null}
           <div>
-            Looks up the UniProt ID associated with a given transcript using the
-            transcript ID, and uses that to find the corresponding predicted
-            structure in AlphaFoldDB
+            Looks up a transcript ID in AlphaFoldDB structure (via UniProt ID of
+            gene)
           </div>
-          <TranscriptSelector
-            val={userSelection}
-            setVal={setUserSelection}
-            options={options}
-            feature={feature}
-          />
-          <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-          {protein ? null : (
-            <Typography>Waiting for protein sequence...</Typography>
+          {seqs ? (
+            <>
+              <TranscriptSelector
+                val={userSelection ?? ''}
+                setVal={setUserSelection}
+                options={options}
+                feature={feature}
+                seqs={seqs}
+              />
+              {!foundStructureId && selectedTranscript ? (
+                <Typography>
+                  Searching {getDisplayName(selectedTranscript)} for UniProt ID
+                </Typography>
+              ) : (
+                <Typography>Found Uniprot ID: {foundStructureId}</Typography>
+              )}
+            </>
+          ) : (
+            <div style={{ margin: 20 }}>
+              <LoadingEllipses title="Loading protein sequences" variant="h6" />
+            </div>
           )}
         </div>
       </DialogContent>
@@ -137,32 +129,5 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
     </>
   )
 })
-
-function TranscriptSelector({
-  val,
-  setVal,
-  options,
-  feature,
-}: {
-  options: Feature[]
-  feature: Feature
-  val: string
-  setVal: (str: string) => void
-}) {
-  return (
-    <TextField2
-      value={val}
-      onChange={event => setVal(event.target.value)}
-      label="Choose isoform to search"
-      select
-    >
-      {options.map(val => (
-        <MenuItem value={getId(val)} key={val.id()}>
-          {getGeneDisplayName(feature)} - {getTranscriptDisplayName(val)}
-        </MenuItem>
-      ))}
-    </TextField2>
-  )
-}
 
 export default MyGeneInfoSearch
