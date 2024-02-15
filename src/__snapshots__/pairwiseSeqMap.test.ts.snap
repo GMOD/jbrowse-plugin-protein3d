@@ -2,7 +2,7 @@
 
 exports[`test 1`] = `
 {
-  "coord1": {
+  "structureToTranscriptPosition": {
     "392": 0,
     "393": 1,
     "394": 2,
@@ -225,7 +225,7 @@ exports[`test 1`] = `
     "611": 219,
     "612": 220,
   },
-  "coord2": {
+  "transcriptToStructurePositon": {
     "0": 392,
     "1": 393,
     "10": 402,
@@ -448,7 +448,5 @@ exports[`test 1`] = `
     "98": 490,
     "99": 491,
   },
-  "mismatch1": {},
-  "mismatch2": {},
 }
 `;

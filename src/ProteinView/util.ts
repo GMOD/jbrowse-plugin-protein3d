@@ -70,3 +70,7 @@ export function toStr(r: { pos: number; code?: string; chain?: string }) {
     .filter(f => !!f)
     .join(', ')
 }
+
+export function invertMap(arg: Record<number, number | undefined>) {
+  return Object.fromEntries(Object.entries(arg).map(([a, b]) => [b, a]))
+}

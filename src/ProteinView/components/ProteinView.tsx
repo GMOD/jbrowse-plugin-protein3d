@@ -46,7 +46,7 @@ const ProteinView = observer(function ({
     if (!plugin || !pairwiseSeqMap || !structure) {
       return
     }
-    for (const coord of Object.keys(pairwiseSeqMap.coord1)) {
+    for (const coord of Object.keys(pairwiseSeqMap.structureToTranscriptPosition)) {
       selectResidue({
         structure,
         plugin,

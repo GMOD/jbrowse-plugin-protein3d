@@ -12,14 +12,15 @@ export function proteinToGenomeMapping({
   pos: number
   model: JBrowsePluginProteinViewModel
 }) {
-  const { transcriptToProteinMap, alignment } = model
-  if (!transcriptToProteinMap || !alignment) {
+  const { genomeToTranscriptMapping, alignment } = model
+  if (!genomeToTranscriptMapping || !alignment) {
     return undefined
   }
-  const { p2g, strand } = transcriptToProteinMap
-  const { coord1 } = pairwiseSeqMap(alignment)
+  const { p2g, strand } = genomeToTranscriptMapping
+  const { structureToTranscriptPosition } = pairwiseSeqMap(alignment)
   // positions are 1-based from molstar, our data structures are 0-based
-  const r1 = coord1[pos]
+  const r1 = structureToTranscriptPosition[pos]
+  // console.log({ pos, r1, structureToTranscriptPosition })
   if (r1 === undefined) {
     return undefined
   }
@@ -41,13 +42,13 @@ export async function clickProteinToGenome({
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ pos, model })
-  const { transcriptToProteinMap } = model
-  if (!transcriptToProteinMap || result === undefined) {
+  const { genomeToTranscriptMapping } = model
+  if (!genomeToTranscriptMapping || result === undefined) {
     return undefined
   }
   const [s1, s2] = result
   const lgv = session.views[0] as LinearGenomeViewModel
-  const { strand, refName } = transcriptToProteinMap
+  const { strand, refName } = genomeToTranscriptMapping
   model.setClickGenomeHighlights([
     {
       assemblyName: 'hg38',
@@ -70,15 +71,15 @@ export function hoverProteinToGenome({
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ pos, model })
-  const { transcriptToProteinMap } = model
-  if (!transcriptToProteinMap || !result) {
+  const { genomeToTranscriptMapping } = model
+  if (!genomeToTranscriptMapping || !result) {
     return
   }
   if (!result) {
     session.notify('Genome position not found')
   }
   const [s1, s2] = result
-  const { refName } = transcriptToProteinMap
+  const { refName } = genomeToTranscriptMapping
   model.setHoverGenomeHighlights([
     {
       assemblyName: 'hg38',

@@ -12,9 +12,9 @@ import { parsePairwise } from 'clustal-js'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { checkHovered, toStr } from './util'
+import { checkHovered, invertMap, toStr } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
-import { genomeToProteinMapping } from '../genomeToProteinMapping'
+import { genomeToTranscriptMapping } from '../genomeToTranscriptMapping'
 import pairwiseSeqMap from '../pairwiseSeqMap'
 
 type LGV = LinearGenomeViewModel
@@ -93,13 +93,23 @@ function stateModelFactory() {
        * #volatile
        */
       clickPosition: undefined as
-        | { pos: number; code: string; chain: string }
+        | {
+            pos: number
+            type: 'StructurePositon'
+            code: string
+            chain: string
+          }
         | undefined,
       /**
        * #volatile
        */
       hoverPosition: undefined as
-        | { pos: number; code?: string; chain?: string }
+        | {
+            pos: number
+            type: 'StructurePositon'
+            code?: string
+            chain?: string
+          }
         | undefined,
       /**
        * #volatile
@@ -119,7 +129,12 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setHoveredPosition(arg?: { pos: number; chain?: string; code?: string }) {
+      setHoveredPosition(arg?: {
+        pos: number
+        type: 'StructurePosition'
+        chain?: string
+        code?: string
+      }) {
         self.hoverPosition = arg
       },
       /**
@@ -144,7 +159,12 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setClickedPosition(arg?: { pos: number; code: string; chain: string }) {
+      setClickedPosition(arg?: {
+        pos: number
+        type: 'StructurePositon'
+        code: string
+        chain: string
+      }) {
         self.clickPosition = arg
       },
       /**
@@ -208,9 +228,9 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get transcriptToProteinMap() {
+      get genomeToTranscriptMapping() {
         return self.feature
-          ? genomeToProteinMapping(new SimpleFeature(self.feature))
+          ? genomeToTranscriptMapping(new SimpleFeature(self.feature))
           : undefined
       },
       /**
@@ -218,6 +238,20 @@ function stateModelFactory() {
        */
       get mouseCol2(): number | undefined {
         return self.hoverPosition?.pos
+      },
+    }))
+    .views(self => ({
+      get inversePairwiseSeqMap() {
+        return self.pairwiseSeqMap
+          ? {
+              structureToTranscriptPosition: invertMap(
+                self.pairwiseSeqMap.structureToTranscriptPosition,
+              ),
+              genomeToStructurePositon: invertMap(
+                self.pairwiseSeqMap.transcriptToStructurePositon,
+              ),
+            }
+          : undefined
       },
     }))
     .actions(self => ({
@@ -247,21 +281,24 @@ function stateModelFactory() {
           self,
           autorun(() => {
             const { hovered } = getSession(self)
-            const { pairwiseSeqMap, transcriptToProteinMap, connectedView } =
+            const { pairwiseSeqMap, genomeToTranscriptMapping, connectedView } =
               self
             if (
               !connectedView?.initialized ||
-              !transcriptToProteinMap ||
+              !genomeToTranscriptMapping ||
               !pairwiseSeqMap ||
               !checkHovered(hovered)
             ) {
               return undefined
             }
 
-            const pos = transcriptToProteinMap.g2p[hovered.hoverPosition.coord]
-            const c0 = pos ? pairwiseSeqMap?.coord2[pos] : undefined
+            const pos = genomeToTranscriptMapping.g2p[hovered.hoverPosition.coord]
+            const c0 = pos
+              ? pairwiseSeqMap?.genomeToStructurePositon[pos]
+              : undefined
             if (c0 !== undefined) {
               self.setHoveredPosition({
+                type: 'StructurePosition',
                 pos: c0,
               })
             }

@@ -1,10 +1,10 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import { genomeToProteinMapping } from './genomeToProteinMapping'
+import { genomeToTranscriptMapping } from './genomeToTranscriptMapping'
 import { feature, alignment } from './test_data/gene'
 import pairwiseSeqMap from './pairwiseSeqMap'
 
 test('mapping', () => {
-  const res = genomeToProteinMapping(new SimpleFeature(feature))
+  const res = genomeToTranscriptMapping(new SimpleFeature(feature))
   const { p2g } = res
   const aln = pairwiseSeqMap(alignment)
 
@@ -17,7 +17,7 @@ test('mapping', () => {
   // maps the 392 position in the "pdb version of the protein" to the 0th
   // position in the genome version of the protein, and then maps that back to
   // the genome
-  const p0 = aln.coord1[392]!
+  const p0 = aln.structureToTranscriptPosition[392]!
   const g0 = p2g[p0]
   expect(p0).toBe(0)
   expect(g0).toBe(51_296_155)

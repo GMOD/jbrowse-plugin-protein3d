@@ -9,6 +9,7 @@ import {
   clickProteinToGenome,
   hoverProteinToGenome,
 } from '../proteinToGenomeMapping'
+import { notEmpty } from '@jbrowse/core/util'
 
 function SplitString({
   str,
@@ -48,17 +49,34 @@ const ProteinAlignment = observer(function ({
   model: JBrowsePluginProteinViewModel
 }) {
   const { mouseCol2, alignment, pairwiseSeqMap } = model
+  console.log({ mouseCol2 })
 
   const a0 = alignment!.alns[0].seq as string
   const a1 = alignment!.alns[1].seq as string
   const con = alignment!.consensus
-  const ret = pairwiseSeqMap?.coord1
   const set =
-    ret !== undefined ? new Set(Object.keys(ret).map(f => +f)) : undefined
+    pairwiseSeqMap?.structureToTranscriptPosition !== undefined
+      ? new Set(
+          Object.values(pairwiseSeqMap.structureToTranscriptPosition)
+            .filter(notEmpty)
+            .map(f => +f),
+        )
+      : undefined
+
+  const trans = mouseCol2
+    ? pairwiseSeqMap?.structureToTranscriptPosition[mouseCol2]
+    : undefined
+  console.log({
+    trans,
+    mouseCol2,
+    c1: pairwiseSeqMap?.structureToTranscriptPosition,
+    c2: pairwiseSeqMap?.transcriptToStructurePositon,
+  })
 
   function r(pos: number) {
-    model.setHoveredPosition({ pos })
-    hoverProteinToGenome({ model, pos: pos })
+    // TODOOOO
+    model.setHoveredPosition({ pos, type: 'StructurePosition' })
+    hoverProteinToGenome({ model, pos })
   }
   function s(pos: number) {
     clickProteinToGenome({ model, pos }).catch(e => {

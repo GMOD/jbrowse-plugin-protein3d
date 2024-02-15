@@ -20,7 +20,7 @@ import {
   getTranscriptFeatures,
   stripTrailingVersion,
 } from '../util'
-import { genomeToProteinMapping } from '../../genomeToProteinMapping'
+import { genomeToProteinMapping } from '../../genomeToTranscriptPositonMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {
