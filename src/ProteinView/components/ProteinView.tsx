@@ -33,7 +33,7 @@ const ProteinView = observer(function ({
     showControls,
     structureSeqToTranscriptSeqPosition,
     seq2,
-    mouseCol2,
+    structureSeqHoverPos,
   } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
@@ -63,19 +63,19 @@ const ProteinView = observer(function ({
   }, [plugin, structure, structureSeqToTranscriptSeqPosition])
 
   useEffect(() => {
-    if (!plugin || !structure || mouseCol2 === undefined) {
+    if (!plugin || !structure || structureSeqHoverPos === undefined) {
       return
     }
-    if (mouseCol2 !== undefined) {
+    if (structureSeqHoverPos !== undefined) {
       highlightResidue({
         structure,
         plugin,
-        selectedResidue: mouseCol2,
+        selectedResidue: structureSeqHoverPos,
       })
     } else {
       console.warn('not found')
     }
-  }, [plugin, structure, mouseCol2])
+  }, [plugin, structure, structureSeqHoverPos])
 
   return error ? (
     <ErrorMessage error={error} />

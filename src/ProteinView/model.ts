@@ -12,13 +12,13 @@ import { parsePairwise } from 'clustal-js'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { checkHovered, toStr } from './util'
+import { checkHovered, invertMap, toStr } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import {
   structureSeqVsTranscriptSeqMap,
   genomeToTranscriptSeqMapping,
-  transcriptSeqVsAlignmentMap,
-  structureSeqVsAlignmentMap,
+  structurePositionToAlignmentMap,
+  transcriptPositionToAlignmentMap,
 } from '../mappings'
 
 type LGV = LinearGenomeViewModel
@@ -226,17 +226,33 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get structureSeqVsAlignmentMap() {
+      get structurePositionToAlignmentMap() {
         return self.alignment
-          ? structureSeqVsAlignmentMap(self.alignment)
+          ? structurePositionToAlignmentMap(self.alignment)
           : undefined
       },
       /**
        * #getter
        */
-      get transcriptSeqVsAlignmentMap() {
+      get transcriptPositionToAlignmentMap() {
         return self.alignment
-          ? transcriptSeqVsAlignmentMap(self.alignment)
+          ? transcriptPositionToAlignmentMap(self.alignment)
+          : undefined
+      },
+      /**
+       * #getter
+       */
+      get alignmentToTranscriptPosition() {
+        return this.transcriptPositionToAlignmentMap
+          ? invertMap(this.transcriptPositionToAlignmentMap)
+          : undefined
+      },
+      /**
+       * #getter
+       */
+      get alignmentToStructurePosition() {
+        return this.structurePositionToAlignmentMap
+          ? invertMap(this.structurePositionToAlignmentMap)
           : undefined
       },
       /**
@@ -264,7 +280,7 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get mouseCol2(): number | undefined {
+      get structureSeqHoverPos(): number | undefined {
         return self.hoverPosition?.structureSeqPos
       },
     }))

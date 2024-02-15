@@ -53,29 +53,29 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
   }
 }
 
-export function structureSeqVsAlignmentMap(alignment: Alignment) {
+export function structurePositionToAlignmentMap(alignment: Alignment) {
   const structureSeq = alignment.alns[0].seq
   const structurePositionToAlignment = {} as Record<string, number | undefined>
 
   for (let i = 0, j = 0; i < structureSeq.length; i++) {
     if (structureSeq[i] !== '-') {
+      structurePositionToAlignment[j] = i
       j++
     }
-    structurePositionToAlignment[j] = i
   }
 
   return structurePositionToAlignment
 }
 
-export function transcriptSeqVsAlignmentMap(alignment: Alignment) {
+export function transcriptPositionToAlignmentMap(alignment: Alignment) {
   const transcriptSeq = alignment.alns[1].seq
   const transcriptPositionToAlignment = {} as Record<string, number | undefined>
 
   for (let i = 0, j = 0; i < transcriptSeq.length; i++) {
     if (transcriptSeq[i] !== '-') {
+      transcriptPositionToAlignment[j] = i
       j++
     }
-    transcriptPositionToAlignment[j] = i
   }
 
   return transcriptPositionToAlignment

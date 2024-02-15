@@ -9,71 +9,44 @@ import {
   clickProteinToGenome,
   hoverProteinToGenome,
 } from '../proteinToGenomeMapping'
-import { notEmpty } from '@jbrowse/core/util'
-
-function SplitString({
-  str,
-  col,
-  set,
-  onMouseOver,
-  onClick,
-}: {
-  str: string
-  col?: number
-  set?: Set<number>
-  onMouseOver?: (arg: number) => void
-  onClick?: (arg: number) => void
-}) {
-  return str.split('').map((d, i) => (
-    <span
-      key={`${d}-${i}`}
-      onMouseOver={() => onMouseOver?.(i)}
-      onClick={() => onClick?.(i)}
-      style={{
-        background:
-          col !== undefined && i === col
-            ? '#f69'
-            : set?.has(i)
-              ? '#33ff19'
-              : undefined,
-      }}
-    >
-      {d === ' ' ? <>&nbsp;</> : d}
-    </span>
-  ))
-}
+import SplitString from './SplitString'
 
 const ProteinAlignment = observer(function ({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { mouseCol2, alignment, structureSeqToTranscriptSeqPosition } = model
-  console.log({ mouseCol2 })
-
+  const {
+    structureSeqHoverPos,
+    alignment,
+    structurePositionToAlignmentMap,
+    alignmentToStructurePosition,
+  } = model
   const a0 = alignment!.alns[0].seq as string
   const a1 = alignment!.alns[1].seq as string
   const con = alignment!.consensus
-  const set =
-    structureSeqToTranscriptSeqPosition !== undefined
-      ? new Set(
-          Object.values(structureSeqToTranscriptSeqPosition)
-            .filter(notEmpty)
-            .map(f => +f),
-        )
+  const set = new Set<number>()
+  // eslint-disable-next-line unicorn/no-for-loop
+  for (let i = 0; i < con.length; i++) {
+    const letter = con[i]
+    if (letter === '|') {
+      set.add(i)
+    }
+  }
+
+  const alignmentHoverPos =
+    structureSeqHoverPos !== undefined
+      ? structurePositionToAlignmentMap?.[structureSeqHoverPos]
       : undefined
 
-  const trans = mouseCol2
-    ? structureSeqToTranscriptSeqPosition[mouseCol2]
-    : undefined
-
-  function r(pos: number) {
-    // TODOOOO
-    model.setHoveredPosition({ pos, type: 'StructurePosition' })
-    hoverProteinToGenome({ model, pos })
+  function onMouseOver(alignmentPos: number) {
+    const structureSeqPos = alignmentToStructurePosition[alignmentPos]
+    model.setHoveredPosition({ structureSeqPos })
+    hoverProteinToGenome({ model, structureSeqPos })
   }
-  function s(pos: number) {
-    clickProteinToGenome({ model, pos }).catch(e => {
+  function onClick(alignmentPos: number) {
+    const structureSeqPos = alignmentToStructurePosition[alignmentPos]
+    clickProteinToGenome({ model, structureSeqPos }).catch(e => {
       console.error(e)
     })
   }
@@ -105,20 +78,20 @@ const ProteinAlignment = observer(function ({
           </Tooltip>
           <SplitString
             str={a0}
-            col={mouseCol2}
+            col={alignmentHoverPos}
             set={set}
-            onMouseOver={r}
-            onClick={s}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
           />
         </div>
         <div>
           <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
           <SplitString
             str={con}
-            col={mouseCol2}
+            col={alignmentHoverPos}
             set={set}
-            onMouseOver={r}
-            onClick={s}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
           />
         </div>
         <div>
@@ -127,10 +100,10 @@ const ProteinAlignment = observer(function ({
           </Tooltip>
           <SplitString
             str={a1}
-            col={mouseCol2}
+            col={alignmentHoverPos}
             set={set}
-            onMouseOver={r}
-            onClick={s}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
           />
         </div>
       </div>
