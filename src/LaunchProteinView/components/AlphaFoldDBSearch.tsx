@@ -19,8 +19,11 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from '../util'
-import useMyGeneInfo from '../useMyGeneInfo'
 import TranscriptSelector from './TranscriptSelector'
+import HelpButton from './HelpButton'
+
+// hooks
+import useMyGeneInfo from '../useMyGeneInfo'
 import useAllSequences from '../useProteinSequences'
 
 const useStyles = makeStyles()(theme => ({
@@ -72,8 +75,7 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
         <div className={classes.section}>
           {e ? <ErrorMessage error={e} /> : null}
           <div>
-            Looks up a transcript ID in AlphaFoldDB structure (via UniProt ID of
-            gene)
+            Look up AlphaFoldDB structure for given transcript <HelpButton />
           </div>
           {seqs ? (
             <>
