@@ -20,7 +20,7 @@ import {
   getTranscriptFeatures,
   stripTrailingVersion,
 } from '../util'
-import { genomeToProteinMapping } from '../../genomeToTranscriptPositonMapping'
+import { genomeToTranscriptMapping } from '../../genomeToTranscriptMapping'
 
 const useStyles = makeStyles()(theme => ({
   section: {
@@ -75,7 +75,7 @@ const AutoForm = observer(function AutoForm({
 
   const mapping =
     foundStructureId && userSelectionFeat
-      ? genomeToProteinMapping(userSelectionFeat)
+      ? genomeToTranscriptMapping(userSelectionFeat)
       : []
   const url = foundStructureId
     ? `https://files.rcsb.org/view/${foundStructureId}.cif`

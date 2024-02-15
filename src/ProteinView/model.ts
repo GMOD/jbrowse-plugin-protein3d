@@ -214,6 +214,14 @@ function stateModelFactory() {
       /**
        * #getter
        */
+      get seqToAlignmentPosition() {
+        return self.alignment
+          ? seqToAlignmentPositon(self.alignment)
+          : undefined
+      },
+      /**
+       * #getter
+       */
       get clickString() {
         const r = self.clickPosition
         return r ? toStr(r) : ''
@@ -256,6 +264,7 @@ function stateModelFactory() {
     }))
     .actions(self => ({
       afterAttach() {
+        // pairwise align transcript sequence to structure sequence
         addDisposer(
           self,
           autorun(async () => {
@@ -277,6 +286,8 @@ function stateModelFactory() {
             }
           }),
         )
+
+        // convert hover over the genome to structure position
         addDisposer(
           self,
           autorun(() => {
@@ -292,9 +303,10 @@ function stateModelFactory() {
               return undefined
             }
 
-            const pos = genomeToTranscriptMapping.g2p[hovered.hoverPosition.coord]
+            const pos =
+              genomeToTranscriptMapping.g2p[hovered.hoverPosition.coord]
             const c0 = pos
-              ? pairwiseSeqMap?.genomeToStructurePositon[pos]
+              ? pairwiseSeqMap?.transcriptToStructurePositon[pos]
               : undefined
             if (c0 !== undefined) {
               self.setHoveredPosition({
