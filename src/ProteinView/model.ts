@@ -12,10 +12,14 @@ import { parsePairwise } from 'clustal-js'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { checkHovered, invertMap, toStr } from './util'
+import { checkHovered, toStr } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
-import { genomeToTranscriptMapping } from '../genomeToTranscriptMapping'
-import pairwiseSeqMap from '../pairwiseSeqMap'
+import {
+  structureSeqVsTranscriptSeqMap,
+  genomeToTranscriptSeqMapping,
+  transcriptSeqVsAlignmentMap,
+  structureSeqVsAlignmentMap,
+} from '../mappings'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
@@ -94,8 +98,7 @@ function stateModelFactory() {
        */
       clickPosition: undefined as
         | {
-            pos: number
-            type: 'StructurePositon'
+            structureSeqPos: number
             code: string
             chain: string
           }
@@ -105,8 +108,7 @@ function stateModelFactory() {
        */
       hoverPosition: undefined as
         | {
-            pos: number
-            type: 'StructurePositon'
+            structureSeqPos: number
             code?: string
             chain?: string
           }
@@ -130,8 +132,7 @@ function stateModelFactory() {
        * #action
        */
       setHoveredPosition(arg?: {
-        pos: number
-        type: 'StructurePosition'
+        structureSeqPos: number
         chain?: string
         code?: string
       }) {
@@ -160,8 +161,7 @@ function stateModelFactory() {
        * #action
        */
       setClickedPosition(arg?: {
-        pos: number
-        type: 'StructurePositon'
+        structureSeqPos: number
         code: string
         chain: string
       }) {
@@ -208,15 +208,35 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get pairwiseSeqMap() {
-        return self.alignment ? pairwiseSeqMap(self.alignment) : undefined
+      get structureSeqToTranscriptSeqPosition() {
+        return self.alignment
+          ? structureSeqVsTranscriptSeqMap(self.alignment)
+              .structureSeqToTranscriptSeqPosition
+          : undefined
       },
       /**
        * #getter
        */
-      get seqToAlignmentPosition() {
+      get transcriptSeqToStructureSeqPositon() {
         return self.alignment
-          ? seqToAlignmentPositon(self.alignment)
+          ? structureSeqVsTranscriptSeqMap(self.alignment)
+              .transcriptSeqToStructureSeqPositon
+          : undefined
+      },
+      /**
+       * #getter
+       */
+      get structureSeqVsAlignmentMap() {
+        return self.alignment
+          ? structureSeqVsAlignmentMap(self.alignment)
+          : undefined
+      },
+      /**
+       * #getter
+       */
+      get transcriptSeqVsAlignmentMap() {
+        return self.alignment
+          ? transcriptSeqVsAlignmentMap(self.alignment)
           : undefined
       },
       /**
@@ -236,30 +256,16 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get genomeToTranscriptMapping() {
+      get genomeToTranscriptSeqMapping() {
         return self.feature
-          ? genomeToTranscriptMapping(new SimpleFeature(self.feature))
+          ? genomeToTranscriptSeqMapping(new SimpleFeature(self.feature))
           : undefined
       },
       /**
        * #getter
        */
       get mouseCol2(): number | undefined {
-        return self.hoverPosition?.pos
-      },
-    }))
-    .views(self => ({
-      get inversePairwiseSeqMap() {
-        return self.pairwiseSeqMap
-          ? {
-              structureToTranscriptPosition: invertMap(
-                self.pairwiseSeqMap.structureToTranscriptPosition,
-              ),
-              genomeToStructurePositon: invertMap(
-                self.pairwiseSeqMap.transcriptToStructurePositon,
-              ),
-            }
-          : undefined
+        return self.hoverPosition?.structureSeqPos
       },
     }))
     .actions(self => ({
@@ -292,26 +298,27 @@ function stateModelFactory() {
           self,
           autorun(() => {
             const { hovered } = getSession(self)
-            const { pairwiseSeqMap, genomeToTranscriptMapping, connectedView } =
-              self
+            const {
+              transcriptSeqToStructureSeqPositon,
+              genomeToTranscriptSeqMapping,
+              connectedView,
+            } = self
             if (
               !connectedView?.initialized ||
-              !genomeToTranscriptMapping ||
-              !pairwiseSeqMap ||
+              !genomeToTranscriptSeqMapping ||
               !checkHovered(hovered)
             ) {
               return undefined
             }
 
             const pos =
-              genomeToTranscriptMapping.g2p[hovered.hoverPosition.coord]
+              genomeToTranscriptSeqMapping.g2p[hovered.hoverPosition.coord]
             const c0 = pos
-              ? pairwiseSeqMap?.transcriptToStructurePositon[pos]
+              ? transcriptSeqToStructureSeqPositon?.[pos]
               : undefined
             if (c0 !== undefined) {
               self.setHoveredPosition({
-                type: 'StructurePosition',
-                pos: c0,
+                structureSeqPos: c0,
               })
             }
           }),

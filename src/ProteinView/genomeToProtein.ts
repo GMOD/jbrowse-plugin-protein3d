@@ -8,14 +8,14 @@ export function genomeToProtein({
   model: JBrowsePluginProteinViewModel
 }): number | undefined {
   const { hovered } = getSession(model)
-  const { genomeToTranscriptMapping, connectedView } = model
+  const { genomeToTranscriptSeqMapping, connectedView } = model
   if (
     !connectedView?.initialized ||
-    !genomeToTranscriptMapping ||
+    !genomeToTranscriptSeqMapping ||
     !checkHovered(hovered)
   ) {
     return undefined
   }
 
-  return genomeToTranscriptMapping.g2p[hovered.hoverPosition.coord]
+  return genomeToTranscriptSeqMapping.g2p[hovered.hoverPosition.coord]
 }

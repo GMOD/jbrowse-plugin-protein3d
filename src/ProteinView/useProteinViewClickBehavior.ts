@@ -19,7 +19,6 @@ export default function useProteinViewClickActionBehavior({
 }) {
   const [error, setError] = useState<unknown>()
   const session = getSession(model)
-  const { genomeToTranscriptMapping } = model
   useEffect(() => {
     if (!plugin) {
       return
@@ -32,19 +31,18 @@ export default function useProteinViewClickActionBehavior({
           const code = Props.atom.label_comp_id(loc)
           const chain = Props.chain.auth_asym_id(loc)
           model.setHoveredPosition({
-            pos: pos - 1,
-            type: 'StructurePosition',
+            structureSeqPos: pos - 1,
             code,
             chain,
           })
 
-          clickProteinToGenome({ model, pos: pos - 1 }).catch(e => {
+          clickProteinToGenome({ model, structureSeqPos: pos - 1 }).catch(e => {
             console.error(e)
             setError(e)
           })
         }
       }
     })
-  }, [plugin, genomeToTranscriptMapping, session, model])
+  }, [plugin, session, model])
   return { error }
 }

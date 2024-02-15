@@ -26,8 +26,15 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { width, height, url, showControls, pairwiseSeqMap, seq2, mouseCol2 } =
-    model
+  const {
+    width,
+    height,
+    url,
+    showControls,
+    structureSeqToTranscriptSeqPosition,
+    seq2,
+    mouseCol2,
+  } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     showControls,
@@ -43,33 +50,32 @@ const ProteinView = observer(function ({
   }, [seq, model, seq2])
 
   useEffect(() => {
-    if (!plugin || !pairwiseSeqMap || !structure) {
+    if (!plugin || !structureSeqToTranscriptSeqPosition || !structure) {
       return
     }
-    for (const coord of Object.keys(pairwiseSeqMap.structureToTranscriptPosition)) {
+    for (const coord of Object.keys(structureSeqToTranscriptSeqPosition)) {
       selectResidue({
         structure,
         plugin,
         selectedResidue: +coord + 1,
       })
     }
-  }, [plugin, structure, pairwiseSeqMap])
+  }, [plugin, structure, structureSeqToTranscriptSeqPosition])
 
   useEffect(() => {
-    if (!plugin || !structure || mouseCol2 === undefined || !pairwiseSeqMap) {
+    if (!plugin || !structure || mouseCol2 === undefined) {
       return
     }
-    const c0 = mouseCol2
-    if (c0 !== undefined) {
+    if (mouseCol2 !== undefined) {
       highlightResidue({
         structure,
         plugin,
-        selectedResidue: c0,
+        selectedResidue: mouseCol2,
       })
     } else {
       console.warn('not found')
     }
-  }, [plugin, structure, mouseCol2, pairwiseSeqMap])
+  }, [plugin, structure, mouseCol2])
 
   return error ? (
     <ErrorMessage error={error} />

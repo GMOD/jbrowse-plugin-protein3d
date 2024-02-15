@@ -48,30 +48,24 @@ const ProteinAlignment = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { mouseCol2, alignment, pairwiseSeqMap } = model
+  const { mouseCol2, alignment, structureSeqToTranscriptSeqPosition } = model
   console.log({ mouseCol2 })
 
   const a0 = alignment!.alns[0].seq as string
   const a1 = alignment!.alns[1].seq as string
   const con = alignment!.consensus
   const set =
-    pairwiseSeqMap?.structureToTranscriptPosition !== undefined
+    structureSeqToTranscriptSeqPosition !== undefined
       ? new Set(
-          Object.values(pairwiseSeqMap.structureToTranscriptPosition)
+          Object.values(structureSeqToTranscriptSeqPosition)
             .filter(notEmpty)
             .map(f => +f),
         )
       : undefined
 
   const trans = mouseCol2
-    ? pairwiseSeqMap?.structureToTranscriptPosition[mouseCol2]
+    ? structureSeqToTranscriptSeqPosition[mouseCol2]
     : undefined
-  console.log({
-    trans,
-    mouseCol2,
-    c1: pairwiseSeqMap?.structureToTranscriptPosition,
-    c2: pairwiseSeqMap?.transcriptToStructurePositon,
-  })
 
   function r(pos: number) {
     // TODOOOO

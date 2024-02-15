@@ -3,24 +3,24 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import { JBrowsePluginProteinViewModel } from './model'
-import pairwiseSeqMap from '../pairwiseSeqMap'
 
 export function proteinToGenomeMapping({
   model,
-  pos,
+  structureSeqPos,
 }: {
-  pos: number
+  structureSeqPos: number
   model: JBrowsePluginProteinViewModel
 }) {
-  const { genomeToTranscriptMapping, alignment } = model
-  if (!genomeToTranscriptMapping || !alignment) {
+  const {
+    genomeToTranscriptSeqMapping,
+    alignment,
+    structureSeqToTranscriptSeqPosition,
+  } = model
+  if (!genomeToTranscriptSeqMapping || !alignment) {
     return undefined
   }
-  const { p2g, strand } = genomeToTranscriptMapping
-  const { structureToTranscriptPosition } = pairwiseSeqMap(alignment)
-  // positions are 1-based from molstar, our data structures are 0-based
-  const r1 = structureToTranscriptPosition[pos]
-  // console.log({ pos, r1, structureToTranscriptPosition })
+  const { p2g, strand } = genomeToTranscriptSeqMapping
+  const r1 = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
   if (r1 === undefined) {
     return undefined
   }
@@ -35,20 +35,20 @@ export function proteinToGenomeMapping({
 
 export async function clickProteinToGenome({
   model,
-  pos,
+  structureSeqPos,
 }: {
-  pos: number
+  structureSeqPos: number
   model: JBrowsePluginProteinViewModel
 }) {
   const session = getSession(model)
-  const result = proteinToGenomeMapping({ pos, model })
-  const { genomeToTranscriptMapping } = model
-  if (!genomeToTranscriptMapping || result === undefined) {
+  const result = proteinToGenomeMapping({ structureSeqPos, model })
+  const { genomeToTranscriptSeqMapping } = model
+  if (!genomeToTranscriptSeqMapping || result === undefined) {
     return undefined
   }
   const [s1, s2] = result
   const lgv = session.views[0] as LinearGenomeViewModel
-  const { strand, refName } = genomeToTranscriptMapping
+  const { strand, refName } = genomeToTranscriptSeqMapping
   model.setClickGenomeHighlights([
     {
       assemblyName: 'hg38',
@@ -64,22 +64,22 @@ export async function clickProteinToGenome({
 
 export function hoverProteinToGenome({
   model,
-  pos,
+  structureSeqPos,
 }: {
-  pos: number
+  structureSeqPos: number
   model: JBrowsePluginProteinViewModel
 }) {
   const session = getSession(model)
-  const result = proteinToGenomeMapping({ pos, model })
-  const { genomeToTranscriptMapping } = model
-  if (!genomeToTranscriptMapping || !result) {
+  const result = proteinToGenomeMapping({ structureSeqPos, model })
+  const { genomeToTranscriptSeqMapping } = model
+  if (!genomeToTranscriptSeqMapping || !result) {
     return
   }
   if (!result) {
     session.notify('Genome position not found')
   }
   const [s1, s2] = result
-  const { refName } = genomeToTranscriptMapping
+  const { refName } = genomeToTranscriptSeqMapping
   model.setHoverGenomeHighlights([
     {
       assemblyName: 'hg38',

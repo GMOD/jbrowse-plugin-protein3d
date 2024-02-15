@@ -59,9 +59,13 @@ export function getMolstarStructureSelection({
   )
 }
 
-export function toStr(r: { pos: number; code?: string; chain?: string }) {
+export function toStr(r: {
+  structureSeqPos: number
+  code?: string
+  chain?: string
+}) {
   return [
-    `Position: ${r.pos}`,
+    `Position: ${r.structureSeqPos}`,
     r.code
       ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`
       : '',
@@ -69,8 +73,4 @@ export function toStr(r: { pos: number; code?: string; chain?: string }) {
   ]
     .filter(f => !!f)
     .join(', ')
-}
-
-export function invertMap(arg: Record<number, number | undefined>) {
-  return Object.fromEntries(Object.entries(arg).map(([a, b]) => [b, a]))
 }
