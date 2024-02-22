@@ -11,4 +11,7 @@ export const useStyles = makeStyles()({
     pointerEvents: 'none',
     overflow: 'hidden',
   },
+  thinborder: {
+    border: '1px solid black',
+  },
 })

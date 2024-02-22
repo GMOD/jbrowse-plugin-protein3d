@@ -3,7 +3,7 @@ import { observer } from 'mobx-react'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { getSession } from '@jbrowse/core/util'
 // locals
-import { useStyles } from './util'
+import Highlight from './Highlight'
 
 const GenomeMouseoverHighlight = observer(function ({
   model,
@@ -23,21 +23,21 @@ const HoverHighlight = observer(function ({
 }: {
   model: LinearGenomeViewModel
 }) {
-  const { classes } = useStyles()
   const session = getSession(model)
   if (session.views.some(s => s.type === 'ProteinView')) {
     const { hovered } = session
-    const { offsetPx } = model
+    const { assemblyNames } = model
     // @ts-expect-error
     const { coord, refName } = hovered.hoverPosition
-
-    const s = model.bpToPx({ refName, coord: coord - 1 })
-    const e = model.bpToPx({ refName, coord: coord })
-    if (s && e) {
-      const width = Math.max(Math.abs(e.offsetPx - s.offsetPx), 4)
-      const left = Math.min(s.offsetPx, e.offsetPx) - offsetPx
-      return <div className={classes.highlight} style={{ left, width }} />
-    }
+    return (
+      <Highlight
+        model={model}
+        start={coord - 1}
+        end={coord}
+        refName={refName}
+        assemblyName={assemblyNames[0]}
+      />
+    )
   }
   return null
 })
