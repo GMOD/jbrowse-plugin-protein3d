@@ -35,7 +35,7 @@ export default function HelpDialog({
         </Typography2>
         <Typography2>
           If you need a 100% fidelity protein, you can do a folding with e.g.
-          AlphaFold to make sure the stucture you are using matches exactly the
+          AlphaFold to make sure the structure you are using matches exactly the
           sequence of the transcript
         </Typography2>
       </DialogContent>

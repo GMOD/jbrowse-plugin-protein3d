@@ -27,15 +27,79 @@ import useMyGeneInfo from '../useMyGeneInfo'
 import useAllSequences from '../useProteinSequences'
 
 const useStyles = makeStyles()(theme => ({
-  section: {
-    marginTop: theme.spacing(6),
-  },
   dialogContent: {
+    marginTop: theme.spacing(6),
     width: '80em',
   },
 }))
 
 type LGV = LinearGenomeViewModel
+
+function SearchStatus({
+  foundStructureId,
+  selectedTranscript,
+  success,
+  loading,
+}: {
+  foundStructureId?: string
+  selectedTranscript: Feature
+  success: boolean
+  loading: boolean
+}) {
+  return !foundStructureId ? (
+    <Typography>
+      Searching {getDisplayName(selectedTranscript)} for UniProt ID
+    </Typography>
+  ) : (
+    <>
+      <Typography>Found Uniprot ID: {foundStructureId}</Typography>
+      {loading ? (
+        <LoadingEllipses title="Looking up structure in AlphaFoldDB" />
+      ) : success ? (
+        <Typography>Found structure in AlphaFoldDB</Typography>
+      ) : (
+        <Typography>
+          No structure found for this UniProtID in AlphaFoldDB{' '}
+          <a
+            href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
+          >
+            (search for results)
+          </a>
+        </Typography>
+      )}
+    </>
+  )
+}
+
+function useCheckAlphaFoldDBExistence({
+  foundStructureId,
+}: {
+  foundStructureId?: string
+}) {
+  const [error, setError] = useState<unknown>()
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    ;(async () => {
+      try {
+        if (foundStructureId) {
+          setLoading(true)
+          await fetch(
+            `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`,
+            { method: 'HEAD' },
+          )
+          setLoading(false)
+          setSuccess(true)
+        }
+      } catch (e) {
+        console.error(e)
+        setError(e)
+      }
+    })()
+  }, [foundStructureId])
+  return { error, loading, success }
+}
 
 const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   feature,
@@ -66,40 +130,46 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
       setUserSelection(options.find(f => !!seqs[f.id()])?.id())
     }
   }, [options, userSelection, seqs])
+  const {
+    success,
+    loading,
+    error: error3,
+  } = useCheckAlphaFoldDBExistence({
+    foundStructureId,
+  })
 
-  const e = error || error2
+  const e = error || error2 || error3
   const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
   return (
     <>
       <DialogContent className={classes.dialogContent}>
-        <div className={classes.section}>
-          {e ? <ErrorMessage error={e} /> : null}
-          <div>
-            Look up AlphaFoldDB structure for given transcript <HelpButton />
-          </div>
-          {seqs ? (
-            <>
-              <TranscriptSelector
-                val={userSelection ?? ''}
-                setVal={setUserSelection}
-                options={options}
-                feature={feature}
-                seqs={seqs}
-              />
-              {!foundStructureId && selectedTranscript ? (
-                <Typography>
-                  Searching {getDisplayName(selectedTranscript)} for UniProt ID
-                </Typography>
-              ) : (
-                <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-              )}
-            </>
-          ) : (
-            <div style={{ margin: 20 }}>
-              <LoadingEllipses title="Loading protein sequences" variant="h6" />
-            </div>
-          )}
+        {e ? <ErrorMessage error={e} /> : null}
+        <div>
+          Look up AlphaFoldDB structure for given transcript <HelpButton />
         </div>
+        {seqs ? (
+          <>
+            <TranscriptSelector
+              val={userSelection ?? ''}
+              setVal={setUserSelection}
+              options={options}
+              feature={feature}
+              seqs={seqs}
+            />
+            {selectedTranscript ? (
+              <SearchStatus
+                foundStructureId={foundStructureId}
+                selectedTranscript={selectedTranscript}
+                success={success}
+                loading={loading}
+              />
+            ) : null}
+          </>
+        ) : (
+          <div style={{ margin: 20 }}>
+            <LoadingEllipses title="Loading protein sequences" variant="h6" />
+          </div>
+        )}
       </DialogContent>
       <DialogActions>
         <Button

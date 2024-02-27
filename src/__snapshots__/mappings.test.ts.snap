@@ -1124,7 +1124,7 @@ exports[`test 1`] = `
     "611": 219,
     "612": 220,
   },
-  "transcriptSeqToStructureSeqPositon": {
+  "transcriptSeqToStructureSeqPosition": {
     "0": 392,
     "1": 393,
     "10": 402,

@@ -217,10 +217,10 @@ function stateModelFactory() {
       /**
        * #getter
        */
-      get transcriptSeqToStructureSeqPositon() {
+      get transcriptSeqToStructureSeqPosition() {
         return self.alignment
           ? structureSeqVsTranscriptSeqMap(self.alignment)
-              .transcriptSeqToStructureSeqPositon
+              .transcriptSeqToStructureSeqPosition
           : undefined
       },
       /**
@@ -315,7 +315,7 @@ function stateModelFactory() {
           autorun(() => {
             const { hovered } = getSession(self)
             const {
-              transcriptSeqToStructureSeqPositon,
+              transcriptSeqToStructureSeqPosition,
               genomeToTranscriptSeqMapping,
               connectedView,
             } = self
@@ -330,7 +330,7 @@ function stateModelFactory() {
             const pos =
               genomeToTranscriptSeqMapping.g2p[hovered.hoverPosition.coord]
             const c0 = pos
-              ? transcriptSeqToStructureSeqPositon?.[pos]
+              ? transcriptSeqToStructureSeqPosition?.[pos]
               : undefined
             if (c0 !== undefined) {
               self.setHoveredPosition({

@@ -20,7 +20,7 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
     string,
     number | undefined
   >
-  const transcriptSeqToStructureSeqPositon = {} as Record<
+  const transcriptSeqToStructureSeqPosition = {} as Record<
     string,
     number | undefined
   >
@@ -32,7 +32,7 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
 
     if (c1 === c2) {
       structureSeqToTranscriptSeqPosition[j] = k
-      transcriptSeqToStructureSeqPositon[k] = j
+      transcriptSeqToStructureSeqPosition[k] = j
       k++
       j++
     } else if (c2 === '-') {
@@ -41,7 +41,7 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
       k++
     } else {
       structureSeqToTranscriptSeqPosition[j] = k
-      transcriptSeqToStructureSeqPositon[k] = j
+      transcriptSeqToStructureSeqPosition[k] = j
 
       k++
       j++
@@ -49,7 +49,7 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
   }
   return {
     structureSeqToTranscriptSeqPosition,
-    transcriptSeqToStructureSeqPositon,
+    transcriptSeqToStructureSeqPosition,
   }
 }
 
