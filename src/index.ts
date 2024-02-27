@@ -1,6 +1,5 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
-import { AbstractSessionModel, isAbstractMenuManager } from '@jbrowse/core/util'
 import { types } from 'mobx-state-tree'
 // locals
 import { version } from '../package.json'
@@ -29,14 +28,5 @@ export default class ProteinViewer extends Plugin {
     })
   }
 
-  configure(pluginManager: PluginManager) {
-    if (isAbstractMenuManager(pluginManager.rootModel)) {
-      pluginManager.rootModel.appendToMenu('Add', {
-        label: 'Protein View',
-        onClick: (session: AbstractSessionModel) => {
-          session.addView('ProteinView', {})
-        },
-      })
-    }
-  }
+  configure(_pluginManager: PluginManager) {}
 }
