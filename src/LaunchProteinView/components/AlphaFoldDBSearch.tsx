@@ -101,7 +101,7 @@ function useCheckAlphaFoldDBExistence({
   return { error, loading, success }
 }
 
-const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
+const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   feature,
   model,
   handleClose,
@@ -202,4 +202,4 @@ const MyGeneInfoSearch = observer(function MyGeneInfoSearch({
   )
 })
 
-export default MyGeneInfoSearch
+export default AlphaFoldDBSearch

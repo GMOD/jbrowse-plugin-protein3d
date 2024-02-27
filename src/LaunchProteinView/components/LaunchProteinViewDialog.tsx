@@ -6,6 +6,7 @@ import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 // locals
 import PreLoadedStructureMapping from './PreLoadedStructureMapping'
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
+import UserProvidedStructure from './UserProvidedStructure'
 import TabPanel from './TabPanel'
 
 export default function LaunchProteinViewDialog({
@@ -27,7 +28,8 @@ export default function LaunchProteinViewDialog({
     >
       <Tabs value={choice} onChange={(_, val) => setChoice(val)}>
         <Tab value={0} label="AlphaFoldDB search" />
-        <Tab value={1} label="Pre-loaded" />
+        <Tab value={1} label="Manual" />
+        <Tab value={2} label="Pre-configured" />
       </Tabs>
       <TabPanel value={choice} index={0}>
         <AlphaFoldDBSearch
@@ -37,6 +39,13 @@ export default function LaunchProteinViewDialog({
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
+        <UserProvidedStructure
+          model={model}
+          feature={feature}
+          handleClose={handleClose}
+        />
+      </TabPanel>
+      <TabPanel value={choice} index={2}>
         <PreLoadedStructureMapping
           feature={feature}
           model={model}
