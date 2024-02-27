@@ -7,12 +7,15 @@ import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 
 // locals
 import { loadStructureFromURL } from './loadStructureFromURL'
+import { loadStructureFromData } from './loadStructureFromData'
 
 export default function useProteinView({
   url,
+  data,
   showControls,
 }: {
-  url: string
+  url?: string
+  data?: string
   showControls: boolean
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
@@ -46,8 +49,13 @@ export default function useProteinView({
         await p.initialized
         setPlugin(p)
 
-        const { seq } = await loadStructureFromURL({ url, plugin: p })
-        setSeq(seq)
+        if (url) {
+          const { seq } = await loadStructureFromURL({ url, plugin: p })
+          setSeq(seq)
+        } else if (data) {
+          const { seq } = await loadStructureFromData({ data, plugin: p })
+          setSeq(seq)
+        }
       } catch (e) {
         console.error(e)
         setError(e)
@@ -56,7 +64,7 @@ export default function useProteinView({
     return () => {
       p?.unmount()
     }
-  }, [url, showControls])
+  }, [url, data, showControls])
 
   return { parentRef, error, plugin, seq }
 }

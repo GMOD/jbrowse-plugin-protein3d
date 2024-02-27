@@ -14,6 +14,7 @@ import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
 import selectResidue from '../selectResidue'
 import css from '../css/molstar'
 import highlightResidue from '../highlightResidue'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -26,20 +27,44 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
+  const { url, data, showControls } = model
+  const { plugin, seq, parentRef, error } = useProteinView({
+    url,
+    data,
+    showControls,
+  })
+  return error ? (
+    <ErrorMessage error={error} />
+  ) : (
+    <ProteinViewContainer
+      model={model}
+      plugin={plugin}
+      seq={seq}
+      parentRef={parentRef}
+    />
+  )
+})
+
+const ProteinViewContainer = observer(function ({
+  model,
+  plugin,
+  seq,
+  parentRef,
+}: {
+  model: JBrowsePluginProteinViewModel
+  plugin?: PluginContext
+  seq?: string
+  parentRef?: React.RefObject<HTMLDivElement>
+}) {
   const {
     width,
     height,
-    url,
-    showControls,
     structureSeqToTranscriptSeqPosition,
     seq2,
     structureSeqHoverPos,
   } = model
-  const { plugin, seq, parentRef, error } = useProteinView({
-    url,
-    showControls,
-  })
-  const { error: error2 } = useProteinViewClickBehavior({ plugin, model })
+
+  const { error } = useProteinViewClickBehavior({ plugin, model })
   useProteinViewHoverBehavior({ plugin, model })
 
   const structure =
@@ -77,11 +102,9 @@ const ProteinView = observer(function ({
     }
   }, [plugin, structure, structureSeqHoverPos])
 
-  return error ? (
-    <ErrorMessage error={error} />
-  ) : (
+  return (
     <div>
-      {error2 ? <ErrorMessage error={error2} /> : null}
+      {error ? <ErrorMessage error={error} /> : null}
       <ProteinViewHeader model={model} />
       <div
         ref={parentRef}

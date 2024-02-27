@@ -44,11 +44,14 @@ function stateModelFactory() {
         type: types.literal('ProteinView'),
         /**
          * #property
+         * url to structure file
          */
-        url: types.optional(
-          types.string,
-          `https://files.rcsb.org/view/1LOL.cif`,
-        ),
+        url: types.maybe(types.string),
+        /**
+         * #property
+         * full string for structure data
+         */
+        data: types.maybe(types.string),
         /**
          * #property
          */

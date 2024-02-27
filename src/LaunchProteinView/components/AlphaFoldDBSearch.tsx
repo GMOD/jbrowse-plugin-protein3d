@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { observer } from 'mobx-react'
-import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  Button,
+  DialogActions,
+  DialogContent,
+  Link,
+  Typography,
+} from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import {
   AbstractTrackModel,
@@ -60,11 +66,12 @@ function SearchStatus({
       ) : (
         <Typography>
           No structure found for this UniProtID in AlphaFoldDB{' '}
-          <a
+          <Link
+            target="_blank"
             href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
           >
             (search for results)
-          </a>
+          </Link>
         </Typography>
       )}
     </>
@@ -118,7 +125,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState<string>()
   const view = getContainingView(model) as LGV
-  const selectedTranscript = options.find(val => getId(val) === userSelection)!
+  const selectedTranscript = options.find(val => getId(val) === userSelection)
   const { seqs, error: error2 } = useAllSequences({ feature, view })
   const protein = seqs?.[userSelection ?? '']
   const { result: foundStructureId, error } = useMyGeneInfo({
@@ -182,13 +189,13 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
         <Button
           variant="contained"
           color="primary"
-          disabled={!foundStructureId || !protein}
+          disabled={!foundStructureId || !protein || !selectedTranscript}
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,
               seq2: protein,
-              feature: selectedTranscript.toJSON(),
+              feature: selectedTranscript?.toJSON(),
               connectedViewId: view.id,
               displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
             })
