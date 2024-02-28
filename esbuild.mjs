@@ -14,7 +14,6 @@ function createGlobalMap(jbrowseGlobals) {
   return globalMap
 }
 
-console.log(process.env.NODE_ENV)
 if (process.env.NODE_ENV === 'production') {
   await esbuild.build({
     entryPoints: ['src/index.ts'],
