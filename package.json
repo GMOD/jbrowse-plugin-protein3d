@@ -23,7 +23,7 @@
     "test": "jest",
     "clean": "rimraf dist",
     "start": "node esbuild.mjs",
-    "build": "NODE_ENV=production rollup --config --bundleConfigAsCjs",
+    "build": "tsc && NODE_ENV=production node esbuild.mjs",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --ext .js,.ts,.jsx,.tsx src/",
     "prepack": "npm run build",
     "postversion": "git push --follow-tags"
@@ -38,16 +38,12 @@
     "pako": "^2.1.0"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.5",
-    "@babel/preset-react": "^7.10.4",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@jbrowse/core": "^2.0.0",
-    "@jbrowse/development-tools": "^2.0.0",
     "@jbrowse/plugin-linear-genome-view": "^2.4.2",
     "@mui/material": "^5.12.0",
     "@mui/system": "^5.12.0",
     "@mui/x-data-grid": "^6.16.1",
-    "@rollup/plugin-replace": "^5.0.2",
     "@types/jest": "^29.5.12",
     "@types/node": "^20.11.16",
     "@types/pako": "^2.0.0",
@@ -72,7 +68,6 @@
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "rimraf": "^5.0.0",
-    "rollup": "^4.9.6",
     "rxjs": "^7.0.0",
     "serve": "^14.2.0",
     "ts-jest": "^29.1.2",
