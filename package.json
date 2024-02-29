@@ -13,6 +13,7 @@
   "scripts": {
     "test": "jest",
     "clean": "rimraf dist",
+    "prebuild": "npm run clean",
     "start": "node esbuild.mjs",
     "build": "tsc && NODE_ENV=production node esbuild.mjs",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0 --ext .js,.ts,.jsx,.tsx src/",
