@@ -89,6 +89,14 @@ function stateModelFactory() {
          * #property
          */
         connectedViewId: types.maybe(types.string),
+        /**
+         * #property
+         */
+        showHighlight: true,
+        /**
+         * #property
+         */
+        zoomToBaseLevel: false,
       }),
     )
     .volatile(() => ({
@@ -205,6 +213,18 @@ function stateModelFactory() {
        */
       setAlignment(r?: ReturnType<typeof parsePairwise>) {
         self.alignment = r
+      },
+      /**
+       * #action
+       */
+      setShowHighlight(arg: boolean) {
+        self.showHighlight = arg
+      },
+      /**
+       * #action
+       */
+      setZoomToBaseLevel(arg: boolean) {
+        self.zoomToBaseLevel = arg
       },
     }))
     .views(self => ({

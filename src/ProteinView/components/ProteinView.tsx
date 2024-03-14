@@ -1,20 +1,24 @@
 import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
-import { ErrorMessage } from '@jbrowse/core/ui'
+import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // locals
-
 import { JBrowsePluginProteinViewModel } from '../model'
-import ProteinViewHeader from './ProteinViewHeader'
+import Header from './Header'
 
 // hooks
 import useProteinView from '../useProteinView'
 import useProteinViewClickBehavior from '../useProteinViewClickBehavior'
 import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
+
+// utils
 import selectResidue from '../selectResidue'
-import css from '../css/molstar'
 import highlightResidue from '../highlightResidue'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import clearSelection from '../clearSelection'
+
+// css
+import css from '../css/molstar'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -27,7 +31,7 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { url, data, showControls } = model
+  const { url, data, showControls, alignment } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     data,
@@ -35,13 +39,15 @@ const ProteinView = observer(function ({
   })
   return error ? (
     <ErrorMessage error={error} />
-  ) : (
+  ) : alignment ? (
     <ProteinViewContainer
       model={model}
       plugin={plugin}
       seq={seq}
       parentRef={parentRef}
     />
+  ) : (
+    <LoadingEllipses title="Loading pairwise alignment" />
   )
 })
 
@@ -62,6 +68,7 @@ const ProteinViewContainer = observer(function ({
     structureSeqToTranscriptSeqPosition,
     seq2,
     structureSeqHoverPos,
+    showHighlight,
   } = model
 
   const { error } = useProteinViewClickBehavior({ plugin, model })
@@ -78,14 +85,18 @@ const ProteinViewContainer = observer(function ({
     if (!plugin || !structureSeqToTranscriptSeqPosition || !structure) {
       return
     }
-    for (const coord of Object.keys(structureSeqToTranscriptSeqPosition)) {
-      selectResidue({
-        structure,
-        plugin,
-        selectedResidue: +coord + 1,
-      })
+    if (showHighlight) {
+      for (const coord of Object.keys(structureSeqToTranscriptSeqPosition)) {
+        selectResidue({
+          structure,
+          plugin,
+          selectedResidue: +coord + 1,
+        })
+      }
+    } else {
+      clearSelection({ plugin })
     }
-  }, [plugin, structure, structureSeqToTranscriptSeqPosition])
+  }, [plugin, structure, showHighlight, structureSeqToTranscriptSeqPosition])
 
   useEffect(() => {
     if (!plugin || !structure || structureSeqHoverPos === undefined) {
@@ -105,7 +116,7 @@ const ProteinViewContainer = observer(function ({
   return (
     <div>
       {error ? <ErrorMessage error={error} /> : null}
-      <ProteinViewHeader model={model} />
+      <Header model={model} />
       <div
         ref={parentRef}
         style={{

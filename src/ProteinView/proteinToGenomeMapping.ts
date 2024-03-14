@@ -42,7 +42,8 @@ export async function clickProteinToGenome({
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ structureSeqPos, model })
-  const { genomeToTranscriptSeqMapping } = model
+  const { genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
+  const { assemblyManager } = session
   if (!genomeToTranscriptSeqMapping || result === undefined) {
     return undefined
   }
@@ -57,9 +58,17 @@ export async function clickProteinToGenome({
       end: s2,
     },
   ])
-  await lgv.navToLocString(
-    `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
-  )
+
+  if (!zoomToBaseLevel) {
+    const assembly = assemblyManager.get(lgv.assemblyNames[0])
+    const r = assembly?.getCanonicalRefName(refName) ?? refName
+    // @ts-expect-error
+    lgv.centerAt(s1, r)
+  } else {
+    await lgv.navToLocString(
+      `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
+    )
+  }
 }
 
 export function hoverProteinToGenome({

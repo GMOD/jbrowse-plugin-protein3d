@@ -1,16 +1,19 @@
 import React from 'react'
+
 export default function SplitString({
   str,
   col,
   set,
   onMouseOver,
   onClick,
+  showHighlight,
 }: {
   str: string
   col?: number
   set?: Set<number>
   onMouseOver?: (arg: number) => void
   onClick?: (arg: number) => void
+  showHighlight: boolean
 }) {
   return str.split('').map((d, i) => (
     <span
@@ -21,7 +24,7 @@ export default function SplitString({
         background:
           col !== undefined && i === col
             ? '#f69'
-            : set?.has(i)
+            : set?.has(i) && showHighlight
               ? '#33ff19'
               : undefined,
       }}

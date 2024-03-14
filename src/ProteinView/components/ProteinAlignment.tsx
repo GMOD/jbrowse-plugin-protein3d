@@ -21,6 +21,7 @@ const ProteinAlignment = observer(function ({
     alignment,
     structurePositionToAlignmentMap,
     alignmentToStructurePosition,
+    showHighlight,
   } = model
   const a0 = alignment!.alns[0].seq as string
   const a1 = alignment!.alns[1].seq as string
@@ -52,7 +53,8 @@ const ProteinAlignment = observer(function ({
   }
   return (
     <div>
-      <HelpButton />
+      <HelpButton model={model} />
+
       <Typography>
         Alignment of the protein structure file&apos;s sequence with the
         selected transcript&apos;s sequence. Green is the aligned portion
@@ -78,6 +80,7 @@ const ProteinAlignment = observer(function ({
           </Tooltip>
           <SplitString
             str={a0}
+            showHighlight={showHighlight}
             col={alignmentHoverPos}
             set={set}
             onMouseOver={onMouseOver}
@@ -87,6 +90,7 @@ const ProteinAlignment = observer(function ({
         <div>
           <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
           <SplitString
+            showHighlight={showHighlight}
             str={con}
             col={alignmentHoverPos}
             set={set}
@@ -101,6 +105,7 @@ const ProteinAlignment = observer(function ({
           <SplitString
             str={a1}
             col={alignmentHoverPos}
+            showHighlight={showHighlight}
             set={set}
             onMouseOver={onMouseOver}
             onClick={onClick}
