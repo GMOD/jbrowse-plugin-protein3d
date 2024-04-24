@@ -97,6 +97,10 @@ function stateModelFactory() {
          * #property
          */
         zoomToBaseLevel: false,
+        /**
+         * #property
+         */
+        showAlignment: true,
       }),
     )
     .volatile(() => ({
@@ -139,6 +143,12 @@ function stateModelFactory() {
       },
     }))
     .actions(self => ({
+      /**
+       * #action
+       */
+      setShowAlignment(f: boolean) {
+        self.showAlignment = f
+      },
       /**
        * #action
        */

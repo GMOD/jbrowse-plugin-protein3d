@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
-import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
+import { ErrorMessage } from '@jbrowse/core/ui'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // locals
@@ -31,7 +31,7 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { url, data, showControls, alignment } = model
+  const { url, data, showControls } = model
   const { plugin, seq, parentRef, error } = useProteinView({
     url,
     data,
@@ -39,15 +39,13 @@ const ProteinView = observer(function ({
   })
   return error ? (
     <ErrorMessage error={error} />
-  ) : alignment ? (
+  ) : (
     <ProteinViewContainer
       model={model}
       plugin={plugin}
       seq={seq}
       parentRef={parentRef}
     />
-  ) : (
-    <LoadingEllipses title="Loading pairwise alignment" />
   )
 })
 
@@ -69,6 +67,7 @@ const ProteinViewContainer = observer(function ({
     seq2,
     structureSeqHoverPos,
     showHighlight,
+    alignment,
   } = model
 
   const { error } = useProteinViewClickBehavior({ plugin, model })
@@ -114,7 +113,7 @@ const ProteinViewContainer = observer(function ({
   }, [plugin, structure, structureSeqHoverPos])
 
   return (
-    <div>
+    <div style={{ background: !alignment ? '#ccc' : undefined }}>
       {error ? <ErrorMessage error={error} /> : null}
       <Header model={model} />
       <div

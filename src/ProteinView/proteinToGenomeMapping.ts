@@ -62,7 +62,6 @@ export async function clickProteinToGenome({
   if (!zoomToBaseLevel) {
     const assembly = assemblyManager.get(lgv.assemblyNames[0])
     const r = assembly?.getCanonicalRefName(refName) ?? refName
-    // @ts-expect-error
     lgv.centerAt(s1, r)
   } else {
     await lgv.navToLocString(
