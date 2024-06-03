@@ -10,9 +10,18 @@ import {
 import { Dialog } from '@jbrowse/core/ui'
 
 function Typography2({ children }: TypographyProps) {
-  return <Typography style={{ margin: 4 }}>{children}</Typography>
+  return (
+    <Typography
+      style={{
+        margin: 4,
+        marginBottom: 12,
+      }}
+    >
+      {children}
+    </Typography>
+  )
 }
-export default function HelpDialog({
+export default function ProteinAlignmentHelpDialog({
   handleClose,
 }: {
   handleClose: () => void

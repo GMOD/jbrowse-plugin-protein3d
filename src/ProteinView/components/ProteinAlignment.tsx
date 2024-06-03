@@ -4,7 +4,7 @@ import { Tooltip, Typography } from '@mui/material'
 
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
-import HelpButton from './HelpButton'
+import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   clickProteinToGenome,
   hoverProteinToGenome,
@@ -53,7 +53,7 @@ const ProteinAlignment = observer(function ({
   }
   return (
     <div>
-      <HelpButton model={model} />
+      <ProteinAlignmentHelpButton model={model} />
 
       <Typography>
         Alignment of the protein structure file&apos;s sequence with the

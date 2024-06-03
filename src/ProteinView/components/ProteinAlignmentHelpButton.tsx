@@ -8,9 +8,11 @@ import { JBrowsePluginProteinViewModel } from '../model'
 // icons
 import Help from '@mui/icons-material/Help'
 
-const HelpDialog = lazy(() => import('./HelpDialog'))
+const ProteinAlignmentHelpDialog = lazy(
+  () => import('./ProteinAlignmentHelpDialog'),
+)
 
-export default function HelpButton({
+export default function ProteinAlignmentHelpButton({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
@@ -20,7 +22,7 @@ export default function HelpButton({
       style={{ float: 'right' }}
       onClick={() =>
         getSession(model).queueDialog(handleClose => [
-          HelpDialog,
+          ProteinAlignmentHelpDialog,
           { handleClose },
         ])
       }

@@ -46,6 +46,21 @@ const useStyles = makeStyles()(theme => ({
 
 type LGV = LinearGenomeViewModel
 
+function HelpText() {
+  return (
+    <div style={{ marginBottom: 20 }}>
+      Manually supply a protein structure (PDB, mmCIF, etc) for a given
+      transcript. You can open the file from the result of running, for example,{' '}
+      <Link target="_blank" href="https://github.com/sokrypton/ColabFold">
+        ColabFold
+      </Link>
+      . This plugin will align the protein sequence calculated from the genome
+      to the protein sequence embedded in the structure file which allows for
+      slight differences in these two representations.
+    </div>
+  )
+}
+
 const UserProvidedStructure = observer(function ({
   feature,
   model,
@@ -81,17 +96,7 @@ const UserProvidedStructure = observer(function ({
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
-        <div style={{ marginBottom: 20 }}>
-          Manually supply a protein structure (PDB, mmCIF, etc) for a given
-          transcript. You can open the file from the result of running, for
-          example,{' '}
-          <Link target="_blank" href="https://github.com/sokrypton/ColabFold">
-            ColabFold
-          </Link>
-          . This plugin will align the protein sequence calculated from the
-          genome to the protein sequence embedded in the structure file which
-          allows for slight differences in these two representations.
-        </div>
+        <HelpText />
         {seqs ? (
           <>
             <TranscriptSelector

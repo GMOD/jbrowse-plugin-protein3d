@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { observer } from 'mobx-react'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  Link,
-  Typography,
-} from '@mui/material'
+import { Button, DialogActions, DialogContent } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import {
   AbstractTrackModel,
@@ -31,6 +25,8 @@ import HelpButton from './HelpButton'
 // hooks
 import useMyGeneInfo from '../useMyGeneInfo'
 import useAllSequences from '../useProteinSequences'
+import { useCheckAlphaFoldDBExistence } from './useCheckAlphaFoldDBExistence'
+import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -40,73 +36,6 @@ const useStyles = makeStyles()(theme => ({
 }))
 
 type LGV = LinearGenomeViewModel
-
-function SearchStatus({
-  foundStructureId,
-  selectedTranscript,
-  success,
-  loading,
-}: {
-  foundStructureId?: string
-  selectedTranscript: Feature
-  success: boolean
-  loading: boolean
-}) {
-  return !foundStructureId ? (
-    <Typography>
-      Searching {getDisplayName(selectedTranscript)} for UniProt ID
-    </Typography>
-  ) : (
-    <>
-      <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-      {loading ? (
-        <LoadingEllipses title="Looking up structure in AlphaFoldDB" />
-      ) : success ? (
-        <Typography>Found structure in AlphaFoldDB</Typography>
-      ) : (
-        <Typography>
-          No structure found for this UniProtID in AlphaFoldDB{' '}
-          <Link
-            target="_blank"
-            href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
-          >
-            (search for results)
-          </Link>
-        </Typography>
-      )}
-    </>
-  )
-}
-
-function useCheckAlphaFoldDBExistence({
-  foundStructureId,
-}: {
-  foundStructureId?: string
-}) {
-  const [error, setError] = useState<unknown>()
-  const [loading, setLoading] = useState(false)
-  const [success, setSuccess] = useState(false)
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        if (foundStructureId) {
-          setLoading(true)
-          await fetch(
-            `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`,
-            { method: 'HEAD' },
-          )
-          setLoading(false)
-          setSuccess(true)
-        }
-      } catch (e) {
-        console.error(e)
-        setError(e)
-      }
-    })()
-  }, [foundStructureId])
-  return { error, loading, success }
-}
 
 const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   feature,
@@ -164,7 +93,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               seqs={seqs}
             />
             {selectedTranscript ? (
-              <SearchStatus
+              <AlphaFoldDBSearchStatus
                 foundStructureId={foundStructureId}
                 selectedTranscript={selectedTranscript}
                 success={success}
@@ -174,7 +103,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           </>
         ) : (
           <div style={{ margin: 20 }}>
-            <LoadingEllipses title="Loading protein sequences" variant="h6" />
+            <LoadingEllipses message="Loading protein sequences" variant="h6" />
           </div>
         )}
       </DialogContent>
