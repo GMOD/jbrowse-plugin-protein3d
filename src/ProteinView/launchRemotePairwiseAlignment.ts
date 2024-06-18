@@ -78,7 +78,6 @@ async function wait({
   algorithm: string
   onProgress: (arg: string) => void
 }) {
-  // eslint-disable-next-line no-constant-condition
   while (true) {
     for (let i = 0; i < 10; i++) {
       await timeout(1000)
