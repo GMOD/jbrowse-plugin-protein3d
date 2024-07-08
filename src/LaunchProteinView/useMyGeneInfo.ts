@@ -13,6 +13,7 @@ interface MyGeneInfoResults {
 export default function useMyGeneInfo({ id }: { id: string }) {
   const [result, setResult] = useState<MyGeneInfoResults>()
   const [error, setError] = useState<unknown>()
+  const [loading, setLoading] = useState(false)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
@@ -20,9 +21,11 @@ export default function useMyGeneInfo({ id }: { id: string }) {
         if (!id) {
           return
         }
+        setLoading(true)
         const res = await jsonfetch(
           `https://mygene.info/v3/query?q=${stripTrailingVersion(id)}&fields=uniprot,symbol`,
         )
+        setLoading(false)
         setResult(res)
       } catch (e) {
         console.error(e)
@@ -30,5 +33,5 @@ export default function useMyGeneInfo({ id }: { id: string }) {
       }
     })()
   }, [id])
-  return { result: result?.hits[0]?.uniprot['Swiss-Prot'], error }
+  return { loading, result: result?.hits[0]?.uniprot['Swiss-Prot'], error }
 }
