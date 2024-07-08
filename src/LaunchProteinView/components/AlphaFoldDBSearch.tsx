@@ -11,6 +11,9 @@ import {
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+import { loadStructureFromURL } from '../../ProteinView/loadStructureFromURL'
+import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
+import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 // locals
 import {
   getDisplayName,
@@ -27,6 +30,7 @@ import useMyGeneInfo from '../useMyGeneInfo'
 import useAllSequences from '../useProteinSequences'
 import { useCheckAlphaFoldDBExistence } from './useCheckAlphaFoldDBExistence'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
+import { useStructureFileSequence } from './useStructureFileSequence'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -66,16 +70,14 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       setUserSelection(options.find(f => !!seqs[f.id()])?.id())
     }
   }, [options, userSelection, seqs])
-  const {
-    success,
-    loading,
-    error: error3,
-  } = useCheckAlphaFoldDBExistence({
-    foundStructureId,
-  })
 
+  const {
+    seq,
+    isLoading,
+    error: error3,
+  } = useStructureFileSequence({ foundStructureId })
   const e = error || error2 || error3
-  const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
+
   return (
     <>
       <DialogContent className={classes.dialogContent}>

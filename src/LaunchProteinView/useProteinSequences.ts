@@ -14,10 +14,12 @@ export default function useAllSequences({
 }) {
   const [error, setError] = useState<unknown>()
   const [seqs, setSeqs] = useState<Record<string, string>>()
+  const [isLoading, setLoading] = useState(false)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
+        setLoading(true)
         const ret = [] as [string, string][]
         for (const f of getTranscriptFeatures(feature)) {
           const seq = await fetchProteinSeq({ view, feature: f })
@@ -29,8 +31,10 @@ export default function useAllSequences({
       } catch (e) {
         console.error(e)
         setError(e)
+      } finally {
+        setLoading(false)
       }
     })()
   }, [feature, view])
-  return { seqs, error }
+  return { isLoading, seqs, error }
 }
