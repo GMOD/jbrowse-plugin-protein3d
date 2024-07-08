@@ -1,5 +1,5 @@
 {
-  "version": "0.0.1",
+  "version": "0.0.2",
   "name": "jbrowse-plugin-protein3d",
   "keywords": [
     "jbrowse",
@@ -65,7 +65,6 @@
     "tss-react": "^4.9.4",
     "typescript": "^5.3.3"
   },
-  "private": true,
   "author": "Colin <colin.diesh@gmail.com>",
   "license": "MIT"
 }
