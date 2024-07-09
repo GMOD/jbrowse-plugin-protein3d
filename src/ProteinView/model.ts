@@ -32,6 +32,7 @@ type MaybeLGV = LGV | undefined
 function stateModelFactory() {
   return types
     .compose(
+      'ProteinView',
       BaseViewModel,
       types.model({
         /**
@@ -319,7 +320,7 @@ function stateModelFactory() {
     }))
     .actions(self => ({
       afterAttach() {
-        // pairwise align transcript sequence to structure sequence
+        // pairwise align transcript sequence to structure residues
         addDisposer(
           self,
           autorun(async () => {

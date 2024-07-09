@@ -26,7 +26,7 @@ export default function LaunchProteinViewDialog({
       open
     >
       <Tabs value={choice} onChange={(_, val) => setChoice(val)}>
-        <Tab value={0} label="AlphaFoldDB search" />
+        <Tab value={0} label="Automatic lookup" />
         <Tab value={1} label="Manual" />
       </Tabs>
       <TabPanel value={choice} index={0}>

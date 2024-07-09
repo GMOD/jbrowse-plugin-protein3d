@@ -87,7 +87,12 @@ export default [
           ignoreRestSiblings: true,
         },
       ],
-
+      'no-console': [
+        'warn',
+        {
+          allow: ['error', 'warn'],
+        },
+      ],
       curly: 'error',
       'no-extra-semi': 'off',
       'unicorn/no-negated-condition': 'off',

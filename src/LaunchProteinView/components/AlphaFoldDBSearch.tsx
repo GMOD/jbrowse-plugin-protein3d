@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import { observer } from 'mobx-react'
-import { Button, DialogActions, DialogContent } from '@mui/material'
+import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import {
   AbstractTrackModel,
@@ -73,6 +73,7 @@ const AlphaFoldDBSearch = observer(function ({
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
   })
+
   const url = uniprotId
     ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
     : undefined
@@ -86,10 +87,6 @@ const AlphaFoldDBSearch = observer(function ({
 
   useEffect(() => {
     if (isoformSequences !== undefined) {
-      console.log(
-        { structureSequence },
-        options.find(f => isoformSequences[f.id()]?.seq == structureSequence),
-      )
       const ret =
         options.find(
           f =>
@@ -98,16 +95,16 @@ const AlphaFoldDBSearch = observer(function ({
         ) ?? options.find(f => !!isoformSequences[f.id()])
       setUserSelection(ret?.id())
     }
-  }, [options, structureSequence, userSelection, isoformSequences])
+  }, [options, structureSequence, isoformSequences])
 
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
-        <div>
+        <Typography>
           Automatically find AlphaFoldDB entry for given transcript{' '}
           <HelpButton />
-        </div>
+        </Typography>
         {isRemoteStructureSequenceLoading ? (
           <LoadingEllipses
             variant="h6"
@@ -161,8 +158,9 @@ const AlphaFoldDBSearch = observer(function ({
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,
-              seq2: protein,
+              seq2: protein?.seq,
               feature: selectedTranscript?.toJSON(),
+              completeMatch:
               connectedViewId: view.id,
               displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
             })

@@ -3,14 +3,17 @@ import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 import { loadStructureFromData } from '../../ProteinView/loadStructureFromData'
 
-async function structureFileSequenceFetcher(file: File) {
+async function structureFileSequenceFetcher(
+  file: File,
+  format: 'pdb' | 'mmcif',
+) {
   const ret = document.createElement('div')
   const p = await createPluginUI({
     target: ret,
     render: renderReact18,
   })
   const data = await file.text()
-  const { seq } = await loadStructureFromData({ data, plugin: p })
+  const { seq } = await loadStructureFromData({ data, plugin: p, format })
   p.unmount()
   ret.remove()
   return seq
@@ -30,7 +33,12 @@ export default function useLocalStructureFileSequence({
       try {
         if (file) {
           setLoading(true)
-          const seq = await structureFileSequenceFetcher(file)
+
+          const ext = file.name.slice(file.name.lastIndexOf('.') + 1) || 'pdb'
+          const seq = await structureFileSequenceFetcher(
+            file,
+            (ext === 'cif' ? 'mmcif' : ext) as 'pdb' | 'mmcif',
+          )
           setSeq(seq)
         }
       } catch (e) {

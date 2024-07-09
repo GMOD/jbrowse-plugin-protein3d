@@ -3,13 +3,13 @@ import { observer } from 'mobx-react'
 import {
   Button,
   DialogActions,
-  Radio,
-  RadioGroup,
   DialogContent,
-  TextField,
   FormControlLabel,
   FormControl,
   Link,
+  Radio,
+  RadioGroup,
+  TextField,
   Typography,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
@@ -29,9 +29,11 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from './util'
+
 // components
 import TranscriptSelector from './TranscriptSelector'
 import MSATable from './MSATable'
+import HelpButton from './HelpButton'
 
 // hooks
 import useIsoformProteinSequences from './useIsoformProteinSequences'
@@ -77,27 +79,23 @@ const UserProvidedStructure = observer(function ({
   const { classes } = useStyles()
   const session = getSession(model)
   const [file, setFile] = useState<File>()
+  const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')
   const [error2, setError] = useState<unknown>()
   const [structureURL, setStructureURL] = useState('')
-  const [selection, setSelection] = useState<string>()
+  const [userSelection, setUserSelection] = useState<string>()
+  const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const view = getContainingView(model) as LGV
-  const selectedTranscript = options.find(val => getId(val) === selection)
+  const selectedTranscript = options.find(val => getId(val) === userSelection)
   const { isoformSequences, error } = useIsoformProteinSequences({
     feature,
     view,
   })
-  const protein = isoformSequences?.[selection ?? '']
-  useEffect(() => {
-    if (selection === undefined && isoformSequences !== undefined) {
-      setSelection(options.find(f => !!isoformSequences[f.id()])?.id())
-    }
-  }, [options, selection, isoformSequences])
-
+  const protein = isoformSequences?.[userSelection ?? '']
   const { seq: structureSequence1, error: error3 } =
     useLocalStructureFileSequence({ file })
 
@@ -109,36 +107,30 @@ const UserProvidedStructure = observer(function ({
     'structureSequence'
   const structureSequence = structureSequence1 ?? structureSequence2
 
+  useEffect(() => {
+    if (isoformSequences !== undefined) {
+      const ret =
+        options.find(
+          f =>
+            isoformSequences[f.id()]?.seq.replaceAll('*', '') ==
+            structureSequence,
+        ) ?? options.find(f => !!isoformSequences[f.id()])
+      setUserSelection(ret?.id())
+    }
+  }, [options, structureSequence, isoformSequences])
+
   const e = error || error2 || error3 || error4
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
         <HelpText />
-        {isoformSequences ? (
-          structureSequence ? (
-            <>
-              <TranscriptSelector
-                val={selection ?? ''}
-                setVal={setSelection}
-                structureSequence={structureSequence}
-                isoforms={options}
-                feature={feature}
-                isoformSequences={isoformSequences}
-              />
-              <MSATable
-                structureName={structureName}
-                structureSequence={structureSequence}
-                isoformSequences={isoformSequences}
-              />
-            </>
-          ) : null
-        ) : (
-          <div style={{ margin: 20 }}>
-            <LoadingEllipses title="Loading protein sequences" variant="h6" />
-          </div>
-        )}
+
         <div style={{ display: 'flex', margin: 30 }}>
+          <Typography>
+            Open your structure file <HelpButton />
+          </Typography>
+
           <FormControl component="fieldset">
             <RadioGroup
               value={choice}
@@ -146,6 +138,11 @@ const UserProvidedStructure = observer(function ({
             >
               <FormControlLabel value="url" control={<Radio />} label="URL" />
               <FormControlLabel value="file" control={<Radio />} label="File" />
+              <FormControlLabel
+                value="pdb"
+                control={<Radio />}
+                label="PDB ID"
+              />
             </RadioGroup>
           </FormControl>
           {choice === 'url' ? (
@@ -180,6 +177,56 @@ const UserProvidedStructure = observer(function ({
               </Button>
             </div>
           ) : null}
+          {choice === 'pdb' ? (
+            <TextField
+              value={pdbId}
+              onChange={event => {
+                const s = event.target.value
+                setPdbId(s)
+                setStructureURL(`https://files.rcsb.org/download/${s}.cif`)
+              }}
+              label="PDB ID"
+            />
+          ) : null}
+        </div>
+        <div style={{ margin: 20 }}>
+          {isoformSequences ? (
+            structureSequence ? (
+              <>
+                <TranscriptSelector
+                  val={userSelection ?? ''}
+                  setVal={setUserSelection}
+                  structureSequence={structureSequence}
+                  isoforms={options}
+                  feature={feature}
+                  isoformSequences={isoformSequences}
+                />
+                <div style={{ margin: 10 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() =>
+                      setShowAllProteinSequences(!showAllProteinSequences)
+                    }
+                  >
+                    {showAllProteinSequences
+                      ? 'Hide all isoform protein sequences'
+                      : 'Show all isoform protein sequences'}
+                  </Button>
+
+                  {showAllProteinSequences ? (
+                    <MSATable
+                      structureSequence={structureSequence}
+                      structureName={structureName}
+                      isoformSequences={isoformSequences}
+                    />
+                  ) : null}
+                </div>
+              </>
+            ) : null
+          ) : (
+            <LoadingEllipses title="Loading protein sequences" variant="h6" />
+          )}
         </div>
       </DialogContent>
       <DialogActions>
@@ -198,26 +245,15 @@ const UserProvidedStructure = observer(function ({
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             ;(async () => {
               try {
-                if (file) {
-                  const data = await file.text()
-                  session.addView('ProteinView', {
-                    type: 'ProteinView',
-                    data,
-                    seq2: protein,
-                    feature: selectedTranscript?.toJSON(),
-                    connectedViewId: view.id,
-                    displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
-                  })
-                } else if (structureURL) {
-                  session.addView('ProteinView', {
-                    type: 'ProteinView',
-                    url: structureURL,
-                    seq2: protein,
-                    feature: selectedTranscript?.toJSON(),
-                    connectedViewId: view.id,
-                    displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
-                  })
-                }
+                session.addView('ProteinView', {
+                  type: 'ProteinView',
+                  seq2: protein,
+                  feature: selectedTranscript?.toJSON(),
+                  connectedViewId: view.id,
+                  displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
+                  ...(file ? { data: await file.text() } : {}),
+                  ...(structureURL ? { url: structureURL } : {}),
+                })
                 handleClose()
               } catch (e) {
                 console.error(e)

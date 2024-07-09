@@ -45,7 +45,8 @@ export default function TranscriptSelector({
         .map(f => (
           <MenuItem value={f.id()} key={f.id()}>
             {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {isoformSequences[f.id()].seq.length}aa) matches structure sequence*
+            {isoformSequences[f.id()].seq.length}aa) (matches structure
+            residues)
           </MenuItem>
         ))}
       {isoforms

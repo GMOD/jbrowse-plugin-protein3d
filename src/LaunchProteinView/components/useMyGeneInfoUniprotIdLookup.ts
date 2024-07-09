@@ -34,11 +34,9 @@ export default function useMyGeneInfo({ id }: { id: string }) {
     })()
   }, [id])
 
-  console.log(result?.hits[0]?.uniprot)
-
   return {
     isLoading,
-    uniprotId: result?.hits[0]?.uniprot['Swiss-Prot'],
+    uniprotId: result?.hits[0]?.uniprot?.['Swiss-Prot'],
     error,
   }
 }

@@ -23,7 +23,7 @@ export default function SplitString({
       style={{
         background:
           col !== undefined && i === col
-            ? '#f69'
+            ? '#f698'
             : set?.has(i) && showHighlight
               ? '#33ff19'
               : undefined,

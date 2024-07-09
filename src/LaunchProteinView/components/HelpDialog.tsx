@@ -18,26 +18,41 @@ export default function HelpDialog({
   handleClose: () => void
 }) {
   return (
-    <Dialog
-      open
-      maxWidth="lg"
-      onClose={handleClose}
-      title="Automatic protein structure lookup procedure"
-    >
+    <Dialog open maxWidth="lg" onClose={handleClose} title="Help">
       <DialogContent>
         <Typography2>
-          The automatic lookup performs the following steps:
-          <ol>
+          The procedure for the protein lookup is as follows:
+          <ul>
             <li>
-              searches mygene.info for the transcript ID, in order to retrieve
-              the UniProt ID associated with a given transcript ID
+              (Automatic lookup) Searches mygene.info for the transcript ID, in
+              order to retrieve the UniProt ID associated with a given
+              transcript ID and then, the UniProt ID is used to lookup the
+              structure in AlphaFoldDB
             </li>
             <li>
-              Then, it uses that UniProt ID to lookup the structure in
-              AlphaFoldDB because every UniProt ID has been processed by
-              AlphaFold.
+              (Manual) Allows you to choose your own structure file from your
+              local machine (e.g. a PDB file predicted by e.g. ColabFold) or
+              supply a specific URL
             </li>
-          </ol>
+            <li>
+              The residues from the structure are downloaded, and then you can
+              choose the transcript isoform from the selected gene that best
+              represents the structure. Asterisks are displayed if there is an
+              exact sequence match
+            </li>
+            <li>
+              The residues from the structure are finally aligned to the to the
+              selected transcript&apos;s protein sequence representation, and
+              this creates a mapping from the reference genome coordinates to
+              positions in the 3-D structure
+            </li>
+            <li>
+              Finally the molstar panel is opened, and this contains many
+              specialized features features, plus additional mouseover and
+              selection features supplied by the plugin to connect mouse click
+              actions and mouse hover with coordinates on the linear genome view
+            </li>
+          </ul>
         </Typography2>
         <Typography2>
           If you run into challenges with this workflow e.g. your transcripts

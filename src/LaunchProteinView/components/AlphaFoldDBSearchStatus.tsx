@@ -1,5 +1,5 @@
-import React from 'react'
-import { Link, Typography } from '@mui/material'
+import React, { useState } from 'react'
+import { Button, Link, Typography } from '@mui/material'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
@@ -37,6 +37,7 @@ export default function AlphaFoldDBSearchStatus({
   const url2 = uniprotId
     ? `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
     : undefined
+  const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
   return !uniprotId ? (
     <Typography>
@@ -57,11 +58,24 @@ export default function AlphaFoldDBSearchStatus({
         </a>
       </Typography>
       {structureSequence ? (
-        <MSATable
-          structureSequence={structureSequence}
-          structureName={uniprotId}
-          isoformSequences={isoformSequences}
-        />
+        <div style={{ margin: 20 }}>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => setShowAllProteinSequences(!showAllProteinSequences)}
+          >
+            {showAllProteinSequences
+              ? 'Hide all isoform protein sequences'
+              : 'Show all isoform protein sequences'}
+          </Button>
+          {showAllProteinSequences ? (
+            <MSATable
+              structureSequence={structureSequence}
+              structureName={uniprotId}
+              isoformSequences={isoformSequences}
+            />
+          ) : null}
+        </div>
       ) : (
         <NotFound uniprotId={uniprotId} />
       )}
