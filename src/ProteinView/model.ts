@@ -329,13 +329,30 @@ function stateModelFactory() {
               if (!!self.alignment || !seq1 || !seq2) {
                 return
               }
-              const alignment = await launchPairwiseAlignment({
-                seq1,
-                seq2,
-                algorithm: 'emboss_needle',
-                onProgress: arg => self.setProgress(arg),
-              })
-              self.setAlignment(alignment.alignment)
+              const r1 = seq1.replaceAll('*', '')
+              const r2 = seq2.replaceAll('*', '')
+              if (r1 !== r2) {
+                const alignment = await launchPairwiseAlignment({
+                  seq1: r1,
+                  seq2: r2,
+                  algorithm: 'emboss_needle',
+                  onProgress: arg => self.setProgress(arg),
+                })
+                self.setAlignment(alignment.alignment)
+              } else {
+                let consensus = ''
+                // eslint-disable-next-line @typescript-eslint/prefer-for-of
+                for (let i = 0; i < r1.length; i++) {
+                  consensus += '|'
+                }
+                self.setAlignment({
+                  consensus,
+                  alns: [
+                    { id: 'seq1', seq: r1 },
+                    { id: 'seq2', seq: r2 },
+                  ],
+                })
+              }
             } catch (e) {
               console.error(e)
               self.setError(e)
