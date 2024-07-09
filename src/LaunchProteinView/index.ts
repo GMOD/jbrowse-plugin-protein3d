@@ -26,7 +26,7 @@ function extendStateModel(stateModel: IAnyModelType) {
           ...(feature
             ? [
                 {
-                  label: 'Launch protein view',
+                  label: 'Launch 3-D protein view',
                   icon: AddIcon,
                   onClick: () => {
                     getSession(track).queueDialog(handleClose => [

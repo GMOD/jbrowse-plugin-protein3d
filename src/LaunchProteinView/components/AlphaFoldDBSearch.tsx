@@ -63,7 +63,7 @@ const AlphaFoldDBSearch = observer(function ({
     feature,
     view,
   })
-  const protein = isoformSequences?.[userSelection ?? '']
+  const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
   const {
     uniprotId,
     isLoading: isMyGeneLoading,
@@ -116,6 +116,20 @@ const AlphaFoldDBSearch = observer(function ({
             variant="h6"
             message="Looking up UniProt ID from mygene.info"
           />
+        ) : !uniprotId ? (
+          <div>
+            UniProt ID not found. Search sequence on AlphaFoldDB{' '}
+            <a
+              href={`https://alphafold.ebi.ac.uk/search/sequence/${userSelectedProteinSequence?.seq.replaceAll('*', '')}`}
+              target="_blank"
+              rel="noreferrer"
+            >
+              here
+            </a>{' '}
+            <br />
+            After visiting the above link, then paste the structure URL into the
+            Manual tab
+          </div>
         ) : null}
         {isIsoformProteinSequencesLoading ? (
           <LoadingEllipses
@@ -153,14 +167,15 @@ const AlphaFoldDBSearch = observer(function ({
         <Button
           variant="contained"
           color="primary"
-          disabled={!uniprotId || !protein || !selectedTranscript}
+          disabled={
+            !uniprotId || !userSelectedProteinSequence || !selectedTranscript
+          }
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',
               url,
-              seq2: protein?.seq,
+              seq2: userSelectedProteinSequence?.seq,
               feature: selectedTranscript?.toJSON(),
-              completeMatch:
               connectedViewId: view.id,
               displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
             })

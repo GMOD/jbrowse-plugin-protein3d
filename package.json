@@ -28,7 +28,7 @@
     "pako": "^2.1.0"
   },
   "devDependencies": {
-    "@eslint/compat": "^1.1.0",
+    "@eslint/compat": "^1.1.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
     "@jbrowse/core": "^2.0.0",
     "@jbrowse/plugin-linear-genome-view": "^2.4.2",

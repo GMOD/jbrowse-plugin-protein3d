@@ -93,15 +93,15 @@ function stateModelFactory() {
         /**
          * #property
          */
-        showHighlight: true,
+        showHighlight: false,
         /**
          * #property
          */
-        zoomToBaseLevel: false,
+        zoomToBaseLevel: true,
         /**
          * #property
          */
-        showAlignment: true,
+        showAlignment: false,
       }),
     )
     .volatile(() => ({
@@ -317,6 +317,12 @@ function stateModelFactory() {
       get structureSeqHoverPos(): number | undefined {
         return self.hoverPosition?.structureSeqPos
       },
+
+      get exactMatch() {
+        const r1 = self.seq1?.replaceAll('*', '')
+        const r2 = self.seq2?.replaceAll('*', '')
+        return r1 === r2
+      },
     }))
     .actions(self => ({
       afterAttach() {
@@ -325,13 +331,13 @@ function stateModelFactory() {
           self,
           autorun(async () => {
             try {
-              const { seq1, seq2 } = self
+              const { seq1, seq2, exactMatch } = self
               if (!!self.alignment || !seq1 || !seq2) {
                 return
               }
               const r1 = seq1.replaceAll('*', '')
               const r2 = seq2.replaceAll('*', '')
-              if (r1 !== r2) {
+              if (!exactMatch) {
                 const alignment = await launchPairwiseAlignment({
                   seq1: r1,
                   seq2: r2,
@@ -339,6 +345,10 @@ function stateModelFactory() {
                   onProgress: arg => self.setProgress(arg),
                 })
                 self.setAlignment(alignment.alignment)
+
+                // showHighlight when we are
+                self.setShowHighlight(true)
+                self.setShowAlignment(true)
               } else {
                 let consensus = ''
                 // eslint-disable-next-line @typescript-eslint/prefer-for-of

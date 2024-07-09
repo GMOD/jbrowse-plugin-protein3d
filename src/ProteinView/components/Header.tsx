@@ -20,11 +20,13 @@ const ProteinViewHeader = observer(function ({
   return (
     <div>
       <InformativeHeaderArea model={model} />
-      {showAlignment && alignment ? (
-        <ProteinAlignment model={model} />
-      ) : (
-        <LoadingEllipses message="Loading pairwise alignment" />
-      )}
+      {showAlignment ? (
+        alignment ? (
+          <ProteinAlignment model={model} />
+        ) : (
+          <LoadingEllipses message="Loading pairwise alignment" />
+        )
+      ) : null}
     </div>
   )
 })
