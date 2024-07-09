@@ -5,29 +5,30 @@ import { Feature } from '@jbrowse/core/util'
 import { getTranscriptFeatures } from './util'
 import { fetchProteinSeq } from './calculateProteinSequence'
 
-export default function useAllSequences({
+export default function useIsoformProteinSequences({
   feature,
   view,
 }: {
   feature: Feature
-  view: { assemblyNames?: string[] } | undefined
+  view?: { assemblyNames?: string[] }
 }) {
   const [error, setError] = useState<unknown>()
-  const [seqs, setSeqs] = useState<Record<string, string>>()
+  const [isoformSequences, setIsoformSequences] =
+    useState<Record<string, { feature: Feature; seq: string }>>()
   const [isLoading, setLoading] = useState(false)
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
         setLoading(true)
-        const ret = [] as [string, string][]
+        const ret = [] as [string, { feature: Feature; seq: string }][]
         for (const f of getTranscriptFeatures(feature)) {
           const seq = await fetchProteinSeq({ view, feature: f })
           if (seq) {
-            ret.push([f.id(), seq])
+            ret.push([f.id(), { feature: f, seq }])
           }
         }
-        setSeqs(Object.fromEntries(ret))
+        setIsoformSequences(Object.fromEntries(ret))
       } catch (e) {
         console.error(e)
         setError(e)
@@ -36,5 +37,5 @@ export default function useAllSequences({
       }
     })()
   }, [feature, view])
-  return { isLoading, seqs, error }
+  return { isLoading, isoformSequences, error }
 }

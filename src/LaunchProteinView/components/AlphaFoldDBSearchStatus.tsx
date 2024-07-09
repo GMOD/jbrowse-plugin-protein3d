@@ -5,17 +5,34 @@ import { LoadingEllipses } from '@jbrowse/core/ui'
 
 // locals
 import { getDisplayName } from '../util'
+import MSATable from './MSATable'
+
+function NotFound({ foundStructureId }: { foundStructureId: string }) {
+  return (
+    <Typography>
+      No structure found for this UniProtID in AlphaFoldDB{' '}
+      <Link
+        target="_blank"
+        href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
+      >
+        (search for results)
+      </Link>
+    </Typography>
+  )
+}
 
 export default function AlphaFoldDBSearchStatus({
   foundStructureId,
   selectedTranscript,
-  success,
-  loading,
+  structureSequence,
+  isLoading,
+  isoformSequences,
 }: {
   foundStructureId?: string
   selectedTranscript: Feature
-  success: boolean
-  loading: boolean
+  structureSequence?: string
+  isLoading: boolean
+  isoformSequences: Record<string, { feature: Feature; seq: string }>
 }) {
   return !foundStructureId ? (
     <Typography>
@@ -24,20 +41,19 @@ export default function AlphaFoldDBSearchStatus({
   ) : (
     <>
       <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-      {loading ? (
+      {isLoading ? (
         <LoadingEllipses title="Looking up structure in AlphaFoldDB" />
-      ) : success ? (
-        <Typography>Found structure in AlphaFoldDB</Typography>
+      ) : structureSequence ? (
+        <div>
+          <Typography>Found structure in AlphaFoldDB</Typography>
+          <MSATable
+            structureSequence={structureSequence}
+            structureName={foundStructureId}
+            isoformSequences={isoformSequences}
+          />
+        </div>
       ) : (
-        <Typography>
-          No structure found for this UniProtID in AlphaFoldDB{' '}
-          <Link
-            target="_blank"
-            href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
-          >
-            (search for results)
-          </Link>
-        </Typography>
+        <NotFound foundStructureId={foundStructureId} />
       )}
     </>
   )

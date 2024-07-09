@@ -32,7 +32,10 @@ import {
 import TranscriptSelector from './TranscriptSelector'
 
 // hooks
-import useAllSequences from '../useProteinSequences'
+import useIsoformProteinSequences from '../useIsoformProteinSequences'
+import useLocalStructureFileSequence from './useLocalStructureFileSequence'
+import MSATable from './MSATable'
+import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -83,46 +86,54 @@ const UserProvidedStructure = observer(function ({
   const options = getTranscriptFeatures(feature)
   const view = getContainingView(model) as LGV
   const selectedTranscript = options.find(val => getId(val) === selection)
-  const { seqs, error } = useAllSequences({ feature, view })
-  const protein = seqs?.[selection ?? '']
+  const { isoformSequences, error } = useIsoformProteinSequences({
+    feature,
+    view,
+  })
+  const protein = isoformSequences?.[selection ?? '']
   useEffect(() => {
-    if (selection === undefined && seqs !== undefined) {
-      setSelection(options.find(f => !!seqs[f.id()])?.id())
+    if (selection === undefined && isoformSequences !== undefined) {
+      setSelection(options.find(f => !!isoformSequences[f.id()])?.id())
     }
-  }, [options, selection, seqs])
+  }, [options, selection, isoformSequences])
 
-  const e = error || error2
+  const { seq: structureSequence1, error: error3 } =
+    useLocalStructureFileSequence({ file })
+
+  const { seq: structureSequence2, error: error4 } =
+    useRemoteStructureFileSequence({ url: structureURL })
+  const structureName =
+    file?.name ??
+    structureURL.slice(structureURL.indexOf('/')) ??
+    'structureSequence'
+  const structureSequence = structureSequence1 ?? structureSequence2
+
+  const e = error || error2 || error3 || error4
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
         <HelpText />
-        {seqs ? (
-          <>
-            <TranscriptSelector
-              val={selection ?? ''}
-              setVal={setSelection}
-              options={options}
-              feature={feature}
-              seqs={seqs}
-            />
-            {selectedTranscript ? (
-              <TextField
-                variant="outlined"
-                multiline
-                minRows={5}
-                maxRows={10}
-                fullWidth
-                value={`>${selectedTranscript.get('name') || selectedTranscript.get('id')}\n${protein}`}
-                InputProps={{
-                  readOnly: true,
-                  classes: {
-                    input: classes.textAreaFont,
-                  },
-                }}
+        {isoformSequences ? (
+          structureSequence ? (
+            <>
+              <TranscriptSelector
+                val={selection ?? ''}
+                setVal={setSelection}
+                structureSequence={structureSequence}
+                isoforms={options}
+                feature={feature}
+                isoformSequences={isoformSequences}
               />
-            ) : null}
-          </>
+              <MSATable
+                structureName={structureName}
+                structureSequence={structureSequence}
+                isoformSequences={isoformSequences}
+              />
+            </>
+          ) : (
+            <div>Loading...</div>
+          )
         ) : (
           <div style={{ margin: 20 }}>
             <LoadingEllipses title="Loading protein sequences" variant="h6" />

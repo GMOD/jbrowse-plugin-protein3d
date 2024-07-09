@@ -11,9 +11,6 @@ import {
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-import { loadStructureFromURL } from '../../ProteinView/loadStructureFromURL'
-import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
-import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 // locals
 import {
   getDisplayName,
@@ -22,15 +19,16 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from '../util'
+
+// components
 import TranscriptSelector from './TranscriptSelector'
 import HelpButton from './HelpButton'
+import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 
 // hooks
 import useMyGeneInfo from '../useMyGeneInfo'
-import useAllSequences from '../useProteinSequences'
-import { useCheckAlphaFoldDBExistence } from './useCheckAlphaFoldDBExistence'
-import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
-import { useStructureFileSequence } from './useStructureFileSequence'
+import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
+import useIsoformProteinSequences from '../useIsoformProteinSequences'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -59,23 +57,29 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const [userSelection, setUserSelection] = useState<string>()
   const view = getContainingView(model) as LGV
   const selectedTranscript = options.find(val => getId(val) === userSelection)
-  const { seqs, error: error2 } = useAllSequences({ feature, view })
-  const protein = seqs?.[userSelection ?? '']
+  const { isoformSequences, error: error2 } = useIsoformProteinSequences({
+    feature,
+    view,
+  })
+  const protein = isoformSequences?.[userSelection ?? '']
   const { result: foundStructureId, error } = useMyGeneInfo({
     id: selectedTranscript ? getDisplayName(selectedTranscript) : '',
   })
 
   useEffect(() => {
-    if (userSelection === undefined && seqs !== undefined) {
-      setUserSelection(options.find(f => !!seqs[f.id()])?.id())
+    if (userSelection === undefined && isoformSequences !== undefined) {
+      setUserSelection(options.find(f => !!isoformSequences[f.id()])?.id())
     }
-  }, [options, userSelection, seqs])
+  }, [options, userSelection, isoformSequences])
 
+  const url = foundStructureId
+    ? `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
+    : undefined
   const {
-    seq,
+    seq: structureSequence,
     isLoading,
     error: error3,
-  } = useStructureFileSequence({ foundStructureId })
+  } = useRemoteStructureFileSequence({ url })
   const e = error || error2 || error3
 
   return (
@@ -85,21 +89,23 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
         <div>
           Look up AlphaFoldDB structure for given transcript <HelpButton />
         </div>
-        {seqs ? (
+        {isoformSequences && structureSequence ? (
           <>
             <TranscriptSelector
               val={userSelection ?? ''}
               setVal={setUserSelection}
-              options={options}
+              structureSequence={structureSequence}
               feature={feature}
-              seqs={seqs}
+              isoforms={options}
+              isoformSequences={isoformSequences}
             />
             {selectedTranscript ? (
               <AlphaFoldDBSearchStatus
                 foundStructureId={foundStructureId}
                 selectedTranscript={selectedTranscript}
-                success={success}
-                loading={loading}
+                structureSequence={structureSequence}
+                isLoading={isLoading}
+                isoformSequences={isoformSequences}
               />
             ) : null}
           </>

@@ -16,15 +16,17 @@ function TextField2({ children, ...rest }: TextFieldProps) {
 export default function TranscriptSelector({
   val,
   setVal,
-  options,
+  isoforms,
+  isoformSequences,
+  structureSequence,
   feature,
-  seqs,
 }: {
-  options: Feature[]
+  isoforms: Feature[]
   feature: Feature
   val: string
   setVal: (str: string) => void
-  seqs: Record<string, string>
+  structureSequence: string
+  isoformSequences: Record<string, { feature: Feature; seq: string }>
 }) {
   return (
     <TextField2
@@ -33,16 +35,35 @@ export default function TranscriptSelector({
       label="Choose transcript isoform"
       select
     >
-      {options
-        .filter(f => !!seqs[f.id()])
+      {isoforms
+        .filter(f => !!isoformSequences[f.id()])
+        .filter(
+          f =>
+            isoformSequences[f.id()].seq.replaceAll('*', '') ===
+            structureSequence,
+        )
         .map(f => (
           <MenuItem value={f.id()} key={f.id()}>
             {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {seqs[f.id()].length}aa)
+            {isoformSequences[f.id()].seq.length}aa) matches structure sequence*
           </MenuItem>
         ))}
-      {options
-        .filter(f => !seqs[f.id()])
+      {isoforms
+        .filter(f => !!isoformSequences[f.id()])
+        .filter(f => isoformSequences[f.id()].seq !== structureSequence)
+        .sort(
+          (a, b) =>
+            isoformSequences[a.id()].seq.length -
+            isoformSequences[b.id()].seq.length,
+        )
+        .map(f => (
+          <MenuItem value={f.id()} key={f.id()}>
+            {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
+            {isoformSequences[f.id()].seq.length}aa)
+          </MenuItem>
+        ))}
+      {isoforms
+        .filter(f => !isoformSequences[f.id()])
         .map(f => (
           <MenuItem value={f.id()} key={f.id()} disabled>
             {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (no

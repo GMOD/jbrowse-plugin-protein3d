@@ -1,24 +1,25 @@
 import { useEffect, useState } from 'react'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
-import { loadStructureFromURL } from '../../ProteinView/loadStructureFromURL'
+import { loadStructureFromData } from '../../ProteinView/loadStructureFromData'
 
-async function structureFileSequenceFetcher(url: string) {
+async function structureFileSequenceFetcher(file: File) {
   const ret = document.createElement('div')
   const p = await createPluginUI({
     target: ret,
     render: renderReact18,
   })
-  const { seq } = await loadStructureFromURL({ url, plugin: p })
+  const data = await file.text()
+  const { seq } = await loadStructureFromData({ data, plugin: p })
   p.unmount()
   ret.remove()
   return seq
 }
 
-export function useStructureFileSequence({
-  foundStructureId,
+export default function useLocalStructureFileSequence({
+  file,
 }: {
-  foundStructureId?: string
+  file?: File
 }) {
   const [error, setError] = useState<unknown>()
   const [isLoading, setLoading] = useState(false)
@@ -27,10 +28,9 @@ export function useStructureFileSequence({
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
-        if (foundStructureId) {
+        if (file) {
           setLoading(true)
-          const url = `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
-          const seq = await structureFileSequenceFetcher(url)
+          const seq = await structureFileSequenceFetcher(file)
           setSeq(seq)
         }
       } catch (e) {
@@ -40,6 +40,6 @@ export function useStructureFileSequence({
         setLoading(false)
       }
     })()
-  }, [foundStructureId])
+  }, [file])
   return { error, isLoading, seq }
 }
