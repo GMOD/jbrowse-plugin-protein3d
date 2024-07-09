@@ -28,13 +28,14 @@ import {
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
-} from '../util'
+} from './util'
+// components
 import TranscriptSelector from './TranscriptSelector'
+import MSATable from './MSATable'
 
 // hooks
-import useIsoformProteinSequences from '../useIsoformProteinSequences'
+import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useLocalStructureFileSequence from './useLocalStructureFileSequence'
-import MSATable from './MSATable'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 
 const useStyles = makeStyles()(theme => ({
@@ -104,7 +105,7 @@ const UserProvidedStructure = observer(function ({
     useRemoteStructureFileSequence({ url: structureURL })
   const structureName =
     file?.name ??
-    structureURL.slice(structureURL.indexOf('/')) ??
+    structureURL.slice(structureURL.lastIndexOf('/') + 1) ??
     'structureSequence'
   const structureSequence = structureSequence1 ?? structureSequence2
 
@@ -131,9 +132,7 @@ const UserProvidedStructure = observer(function ({
                 isoformSequences={isoformSequences}
               />
             </>
-          ) : (
-            <div>Loading...</div>
-          )
+          ) : null
         ) : (
           <div style={{ margin: 20 }}>
             <LoadingEllipses title="Loading protein sequences" variant="h6" />

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { jsonfetch } from '../fetchUtils'
+import { jsonfetch } from '../../fetchUtils'
 import { stripTrailingVersion } from './util'
 
 interface MyGeneInfoResults {
@@ -34,9 +34,11 @@ export default function useMyGeneInfo({ id }: { id: string }) {
     })()
   }, [id])
 
+  console.log(result?.hits[0]?.uniprot)
+
   return {
     isLoading,
-    result: result?.hits[0]?.uniprot['Swiss-Prot'],
+    uniprotId: result?.hits[0]?.uniprot['Swiss-Prot'],
     error,
   }
 }

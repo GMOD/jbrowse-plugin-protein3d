@@ -18,7 +18,7 @@ import {
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
-} from '../util'
+} from './util'
 
 // components
 import TranscriptSelector from './TranscriptSelector'
@@ -26,9 +26,9 @@ import HelpButton from './HelpButton'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 
 // hooks
-import useMyGeneInfo from '../useMyGeneInfo'
+import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
-import useIsoformProteinSequences from '../useIsoformProteinSequences'
+import useIsoformProteinSequences from './useIsoformProteinSequences'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {
@@ -37,9 +37,7 @@ const useStyles = makeStyles()(theme => ({
   },
 }))
 
-type LGV = LinearGenomeViewModel
-
-const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
+const AlphaFoldDBSearch = observer(function ({
   feature,
   model,
   handleClose,
@@ -55,41 +53,80 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState<string>()
-  const view = getContainingView(model) as LGV
+  const view = getContainingView(model) as LinearGenomeViewModel
   const selectedTranscript = options.find(val => getId(val) === userSelection)
-  const { isoformSequences, error: error2 } = useIsoformProteinSequences({
+  const {
+    isoformSequences,
+    isLoading: isIsoformProteinSequencesLoading,
+    error: isoformProteinSequencesError,
+  } = useIsoformProteinSequences({
     feature,
     view,
   })
   const protein = isoformSequences?.[userSelection ?? '']
-  const { result: foundStructureId, error } = useMyGeneInfo({
-    id: selectedTranscript ? getDisplayName(selectedTranscript) : '',
+  const {
+    uniprotId,
+    isLoading: isMyGeneLoading,
+    error: myGeneError,
+  } = useMyGeneInfoUniprotIdLookup({
+    id: selectedTranscript
+      ? getDisplayName(selectedTranscript)
+      : getDisplayName(feature),
   })
-
-  useEffect(() => {
-    if (userSelection === undefined && isoformSequences !== undefined) {
-      setUserSelection(options.find(f => !!isoformSequences[f.id()])?.id())
-    }
-  }, [options, userSelection, isoformSequences])
-
-  const url = foundStructureId
-    ? `https://alphafold.ebi.ac.uk/files/AF-${foundStructureId}-F1-model_v4.cif`
+  const url = uniprotId
+    ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
     : undefined
   const {
     seq: structureSequence,
-    isLoading,
-    error: error3,
+    isLoading: isRemoteStructureSequenceLoading,
+    error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
-  const e = error || error2 || error3
+  const e =
+    myGeneError || isoformProteinSequencesError || remoteStructureSequenceError
+
+  useEffect(() => {
+    if (isoformSequences !== undefined) {
+      console.log(
+        { structureSequence },
+        options.find(f => isoformSequences[f.id()]?.seq == structureSequence),
+      )
+      const ret =
+        options.find(
+          f =>
+            isoformSequences[f.id()]?.seq.replaceAll('*', '') ==
+            structureSequence,
+        ) ?? options.find(f => !!isoformSequences[f.id()])
+      setUserSelection(ret?.id())
+    }
+  }, [options, structureSequence, userSelection, isoformSequences])
 
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
         <div>
-          Look up AlphaFoldDB structure for given transcript <HelpButton />
+          Automatically find AlphaFoldDB entry for given transcript{' '}
+          <HelpButton />
         </div>
-        {isoformSequences && structureSequence ? (
+        {isRemoteStructureSequenceLoading ? (
+          <LoadingEllipses
+            variant="h6"
+            message="Loading sequence from remote structure file"
+          />
+        ) : null}
+        {isMyGeneLoading ? (
+          <LoadingEllipses
+            variant="h6"
+            message="Looking up UniProt ID from mygene.info"
+          />
+        ) : null}
+        {isIsoformProteinSequencesLoading ? (
+          <LoadingEllipses
+            variant="h6"
+            message="Loading protein sequences from transcript isoforms"
+          />
+        ) : null}
+        {isoformSequences && structureSequence && selectedTranscript ? (
           <>
             <TranscriptSelector
               val={userSelection ?? ''}
@@ -99,21 +136,14 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               isoforms={options}
               isoformSequences={isoformSequences}
             />
-            {selectedTranscript ? (
-              <AlphaFoldDBSearchStatus
-                foundStructureId={foundStructureId}
-                selectedTranscript={selectedTranscript}
-                structureSequence={structureSequence}
-                isLoading={isLoading}
-                isoformSequences={isoformSequences}
-              />
-            ) : null}
+            <AlphaFoldDBSearchStatus
+              uniprotId={uniprotId}
+              selectedTranscript={selectedTranscript}
+              structureSequence={structureSequence}
+              isoformSequences={isoformSequences}
+            />
           </>
-        ) : (
-          <div style={{ margin: 20 }}>
-            <LoadingEllipses message="Loading protein sequences" variant="h6" />
-          </div>
-        )}
+        ) : null}
       </DialogContent>
       <DialogActions>
         <Button
@@ -126,7 +156,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
         <Button
           variant="contained"
           color="primary"
-          disabled={!foundStructureId || !protein || !selectedTranscript}
+          disabled={!uniprotId || !protein || !selectedTranscript}
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',

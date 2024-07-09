@@ -1,19 +1,18 @@
 import React from 'react'
 import { Link, Typography } from '@mui/material'
 import { Feature } from '@jbrowse/core/util'
-import { LoadingEllipses } from '@jbrowse/core/ui'
 
 // locals
-import { getDisplayName } from '../util'
+import { getDisplayName } from './util'
 import MSATable from './MSATable'
 
-function NotFound({ foundStructureId }: { foundStructureId: string }) {
+function NotFound({ uniprotId }: { uniprotId: string }) {
   return (
     <Typography>
       No structure found for this UniProtID in AlphaFoldDB{' '}
       <Link
         target="_blank"
-        href={`https://alphafold.ebi.ac.uk/search/text/${foundStructureId}`}
+        href={`https://alphafold.ebi.ac.uk/search/text/${uniprotId}`}
       >
         (search for results)
       </Link>
@@ -22,38 +21,49 @@ function NotFound({ foundStructureId }: { foundStructureId: string }) {
 }
 
 export default function AlphaFoldDBSearchStatus({
-  foundStructureId,
+  uniprotId,
   selectedTranscript,
   structureSequence,
-  isLoading,
   isoformSequences,
 }: {
-  foundStructureId?: string
+  uniprotId?: string
   selectedTranscript: Feature
   structureSequence?: string
-  isLoading: boolean
   isoformSequences: Record<string, { feature: Feature; seq: string }>
 }) {
-  return !foundStructureId ? (
+  const url = uniprotId
+    ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
+    : undefined
+  const url2 = uniprotId
+    ? `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
+    : undefined
+
+  return !uniprotId ? (
     <Typography>
       Searching {getDisplayName(selectedTranscript)} for UniProt ID
     </Typography>
   ) : (
     <>
-      <Typography>Found Uniprot ID: {foundStructureId}</Typography>
-      {isLoading ? (
-        <LoadingEllipses title="Looking up structure in AlphaFoldDB" />
-      ) : structureSequence ? (
-        <div>
-          <Typography>Found structure in AlphaFoldDB</Typography>
-          <MSATable
-            structureSequence={structureSequence}
-            structureName={foundStructureId}
-            isoformSequences={isoformSequences}
-          />
-        </div>
+      <Typography>
+        Found Uniprot ID:{' '}
+        <a href={url2} target="_blank" rel="noreferrer">
+          {uniprotId}
+        </a>
+      </Typography>
+      <Typography>
+        AlphaFoldDB link:{' '}
+        <a href={url} target="_blank" rel="noreferrer">
+          {url}
+        </a>
+      </Typography>
+      {structureSequence ? (
+        <MSATable
+          structureSequence={structureSequence}
+          structureName={uniprotId}
+          isoformSequences={isoformSequences}
+        />
       ) : (
-        <NotFound foundStructureId={foundStructureId} />
+        <NotFound uniprotId={uniprotId} />
       )}
     </>
   )

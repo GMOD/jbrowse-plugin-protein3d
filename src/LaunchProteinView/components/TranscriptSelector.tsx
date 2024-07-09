@@ -3,7 +3,7 @@ import { MenuItem, TextField, TextFieldProps } from '@mui/material'
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { getGeneDisplayName, getTranscriptDisplayName } from '../util'
+import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
 function TextField2({ children, ...rest }: TextFieldProps) {
   return (
@@ -50,11 +50,15 @@ export default function TranscriptSelector({
         ))}
       {isoforms
         .filter(f => !!isoformSequences[f.id()])
-        .filter(f => isoformSequences[f.id()].seq !== structureSequence)
+        .filter(
+          f =>
+            isoformSequences[f.id()].seq.replaceAll('*', '') !==
+            structureSequence,
+        )
         .sort(
           (a, b) =>
-            isoformSequences[a.id()].seq.length -
-            isoformSequences[b.id()].seq.length,
+            isoformSequences[b.id()].seq.length -
+            isoformSequences[a.id()].seq.length,
         )
         .map(f => (
           <MenuItem value={f.id()} key={f.id()}>

@@ -4,7 +4,7 @@ import { Feature, max } from '@jbrowse/core/util'
 import { makeStyles } from 'tss-react/mui'
 
 // locals
-import { getTranscriptDisplayName } from '../util'
+import { getTranscriptDisplayName } from './util'
 
 const useStyles = makeStyles()({
   textAreaFont: {
