@@ -19,6 +19,7 @@ import clearSelection from '../clearSelection'
 
 // css
 import css from '../css/molstar'
+import Icn3dViewer from './Icn3dProteinView'
 
 if (document?.head) {
   const style = document.createElement('style')
@@ -40,12 +41,13 @@ const ProteinView = observer(function ({
   return error ? (
     <ErrorMessage error={error} />
   ) : (
-    <ProteinViewContainer
-      model={model}
-      plugin={plugin}
-      seq={seq}
-      parentRef={parentRef}
-    />
+    // <ProteinViewContainer
+    //   model={model}
+    //   plugin={plugin}
+    //   seq={seq}
+    //   parentRef={parentRef}
+    // />
+    <Icn3dViewer model={model} />
   )
 })
 

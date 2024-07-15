@@ -24,6 +24,7 @@
     "@mui/icons-material": "^5.15.10",
     "clustal-js": "^2.0.1",
     "g2p_mapper": "^1.0.3",
+    "load-script": "^2.0.0",
     "molstar": "^4.0.0",
     "pako": "^2.1.0"
   },
