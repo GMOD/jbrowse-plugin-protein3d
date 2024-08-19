@@ -102,9 +102,7 @@ const UserProvidedStructure = observer(function ({
   const { seq: structureSequence2, error: error4 } =
     useRemoteStructureFileSequence({ url: structureURL })
   const structureName =
-    file?.name ??
-    structureURL.slice(structureURL.lastIndexOf('/') + 1) ??
-    'structureSequence'
+    file?.name ?? structureURL.slice(structureURL.lastIndexOf('/') + 1)
   const structureSequence = structureSequence1 ?? structureSequence2
 
   useEffect(() => {

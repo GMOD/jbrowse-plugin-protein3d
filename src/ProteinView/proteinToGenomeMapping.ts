@@ -30,7 +30,7 @@ export function proteinToGenomeMapping({
   }
   const start = s0
   const end = start + 3 * strand
-  return [Math.min(start, end), Math.max(start, end)]
+  return [Math.min(start, end), Math.max(start, end)] as const
 }
 
 export async function clickProteinToGenome({
@@ -64,7 +64,7 @@ export async function clickProteinToGenome({
       `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
     )
   } else {
-    const assembly = assemblyManager.get(lgv.assemblyNames[0])
+    const assembly = assemblyManager.get(lgv.assemblyNames[0]!)
     const r = assembly?.getCanonicalRefName(refName) ?? refName
     lgv.centerAt(s1, r)
   }
@@ -80,11 +80,12 @@ export function hoverProteinToGenome({
   const session = getSession(model)
   const result = proteinToGenomeMapping({ structureSeqPos, model })
   const { genomeToTranscriptSeqMapping } = model
-  if (!genomeToTranscriptSeqMapping || !result) {
+  if (!genomeToTranscriptSeqMapping) {
     return
   }
   if (!result) {
     session.notify('Genome position not found')
+    return
   }
   const [s1, s2] = result
   const { refName } = genomeToTranscriptSeqMapping

@@ -20,11 +20,9 @@ import clearSelection from '../clearSelection'
 // css
 import css from '../css/molstar'
 
-if (document.head) {
-  const style = document.createElement('style')
-  style.append(css)
-  document.head.append(style)
-}
+const style = document.createElement('style')
+style.append(css)
+document.head.append(style)
 
 const ProteinView = observer(function ({
   model,
@@ -98,9 +96,10 @@ const ProteinViewContainer = observer(function ({
   }, [plugin, structure, showHighlight, structureSeqToTranscriptSeqPosition])
 
   useEffect(() => {
-    if (!plugin || !structure || structureSeqHoverPos === undefined) {
+    if (!plugin || !structure) {
       return
     }
+
     if (structureSeqHoverPos === undefined) {
       console.warn('not found')
     } else {

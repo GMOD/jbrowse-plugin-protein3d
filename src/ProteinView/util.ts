@@ -5,7 +5,10 @@ import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 
 export function checkHovered(hovered: unknown): hovered is {
   hoverFeature: Feature
-  hoverPosition: { coord: number; refName: string }
+  hoverPosition: {
+    coord: number
+    refName: string
+  }
 } {
   return (
     !!hovered &&
@@ -43,7 +46,7 @@ export function toStr(r: {
   return [
     `Position: ${r.structureSeqPos}`,
     r.code
-      ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code].singleLetterCode})`
+      ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`
       : '',
     r.chain ? `Chain: ${r.chain}` : '',
   ]
@@ -51,6 +54,12 @@ export function toStr(r: {
     .join(', ')
 }
 
-export function invertMap(arg: Record<number, number | undefined>) {
-  return Object.fromEntries(Object.entries(arg).map(([a, b]) => [b, a]))
+export function invertMap(
+  arg: Record<number, number | undefined>,
+): Record<number, number> {
+  return Object.fromEntries(
+    Object.entries(arg)
+      .map(([a, b]) => [b, a])
+      .filter(f => !!f[0]),
+  )
 }

@@ -23,9 +23,12 @@ const ProteinAlignment = observer(function ({
     alignmentToStructurePosition,
     showHighlight,
   } = model
-  const a0 = alignment!.alns[0].seq as string
-  const a1 = alignment!.alns[1].seq as string
-  const con = alignment!.consensus
+  if (!alignment) {
+    return <div>No alignment</div>
+  }
+  const a0 = alignment.alns[0]!.seq as string
+  const a1 = alignment.alns[1]!.seq as string
+  const con = alignment.consensus
   const set = new Set<number>()
   // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < con.length; i++) {
@@ -47,7 +50,7 @@ const ProteinAlignment = observer(function ({
   }
   function onClick(alignmentPos: number) {
     const structureSeqPos = alignmentToStructurePosition[alignmentPos]
-    clickProteinToGenome({ model, structureSeqPos }).catch(e => {
+    clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
       console.error(e)
     })
   }

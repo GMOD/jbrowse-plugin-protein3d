@@ -36,10 +36,12 @@ export default function useProteinViewClickActionBehavior({
             chain,
           })
 
-          clickProteinToGenome({ model, structureSeqPos: pos - 1 }).catch(e => {
-            console.error(e)
-            setError(e)
-          })
+          clickProteinToGenome({ model, structureSeqPos: pos - 1 }).catch(
+            (e: unknown) => {
+              console.error(e)
+              setError(e)
+            },
+          )
         }
       }
     })

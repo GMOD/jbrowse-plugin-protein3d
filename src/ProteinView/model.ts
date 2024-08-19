@@ -72,7 +72,7 @@ function stateModelFactory() {
         /**
          * #property
          */
-        feature: types.frozen<SimpleFeatureSerialized>(),
+        feature: types.frozen<SimpleFeatureSerialized | undefined>(),
         /**
          * #property
          */

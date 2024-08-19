@@ -78,6 +78,7 @@ async function wait({
   algorithm: string
   onProgress: (arg: string) => void
 }) {
+  // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
   while (true) {
     for (let i = 0; i < 10; i++) {
       await timeout(1000)
@@ -87,6 +88,8 @@ async function wait({
 
     if (result === 'FINISHED') {
       break
+    } else if (result.includes('FAILED')) {
+      throw new Error('Remote returned FAILED')
     }
   }
 }

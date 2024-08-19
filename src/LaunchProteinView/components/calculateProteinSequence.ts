@@ -30,7 +30,7 @@ export function calculateProteinSequence({
   let protein = ''
   for (let i = 0; i < str.length; i += 3) {
     // use & symbol for undefined codon, or partial slice
-    protein += codonTable[str.slice(i, i + 3)] || '&'
+    protein += codonTable[str.slice(i, i + 3)] ?? '&'
   }
   return protein
 }
