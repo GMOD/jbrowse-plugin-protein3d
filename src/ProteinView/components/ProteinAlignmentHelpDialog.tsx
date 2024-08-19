@@ -50,7 +50,12 @@ export default function ProteinAlignmentHelpDialog({
       </DialogContent>
       <Divider />
       <DialogActions>
-        <Button onClick={() => handleClose()} color="primary">
+        <Button
+          onClick={() => {
+            handleClose()
+          }}
+          color="primary"
+        >
           Close
         </Button>
       </DialogActions>

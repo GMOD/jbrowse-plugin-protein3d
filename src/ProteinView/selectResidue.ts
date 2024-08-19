@@ -13,7 +13,7 @@ export default function selectResidue({
 }) {
   const sel = getMolstarStructureSelection({ structure, selectedResidue })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
-  plugin?.managers.interactivity.lociSelects.select({
+  plugin.managers.interactivity.lociSelects.select({
     loci,
   })
 }

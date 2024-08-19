@@ -10,12 +10,20 @@ export default function HelpButton() {
   const [show, setShow] = useState(false)
   return (
     <>
-      <IconButton onClick={() => setShow(true)}>
+      <IconButton
+        onClick={() => {
+          setShow(true)
+        }}
+      >
         <Help />
       </IconButton>
       {show ? (
         <Suspense fallback={null}>
-          <HelpDialog handleClose={() => setShow(false)} />
+          <HelpDialog
+            handleClose={() => {
+              setShow(false)
+            }}
+          />
         </Suspense>
       ) : null}
     </>

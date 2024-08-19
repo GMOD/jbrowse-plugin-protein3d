@@ -337,19 +337,7 @@ function stateModelFactory() {
               }
               const r1 = seq1.replaceAll('*', '')
               const r2 = seq2.replaceAll('*', '')
-              if (!exactMatch) {
-                const alignment = await launchPairwiseAlignment({
-                  seq1: r1,
-                  seq2: r2,
-                  algorithm: 'emboss_needle',
-                  onProgress: arg => self.setProgress(arg),
-                })
-                self.setAlignment(alignment.alignment)
-
-                // showHighlight when we are
-                self.setShowHighlight(true)
-                self.setShowAlignment(true)
-              } else {
+              if (exactMatch) {
                 let consensus = ''
                 // eslint-disable-next-line @typescript-eslint/prefer-for-of
                 for (let i = 0; i < r1.length; i++) {
@@ -362,6 +350,20 @@ function stateModelFactory() {
                     { id: 'seq2', seq: r2 },
                   ],
                 })
+              } else {
+                const alignment = await launchPairwiseAlignment({
+                  seq1: r1,
+                  seq2: r2,
+                  algorithm: 'emboss_needle',
+                  onProgress: arg => {
+                    self.setProgress(arg)
+                  },
+                })
+                self.setAlignment(alignment.alignment)
+
+                // showHighlight when we are
+                self.setShowHighlight(true)
+                self.setShowAlignment(true)
               }
             } catch (e) {
               console.error(e)

@@ -20,10 +20,10 @@ import clearSelection from '../clearSelection'
 // css
 import css from '../css/molstar'
 
-if (document?.head) {
+if (document.head) {
   const style = document.createElement('style')
   style.append(css)
-  document.head?.append(style)
+  document.head.append(style)
 }
 
 const ProteinView = observer(function ({
@@ -101,19 +101,19 @@ const ProteinViewContainer = observer(function ({
     if (!plugin || !structure || structureSeqHoverPos === undefined) {
       return
     }
-    if (structureSeqHoverPos !== undefined) {
+    if (structureSeqHoverPos === undefined) {
+      console.warn('not found')
+    } else {
       highlightResidue({
         structure,
         plugin,
         selectedResidue: structureSeqHoverPos,
       })
-    } else {
-      console.warn('not found')
     }
   }, [plugin, structure, structureSeqHoverPos])
 
   return (
-    <div style={{ background: !alignment ? '#ccc' : undefined }}>
+    <div style={{ background: alignment ? undefined : '#ccc' }}>
       {error ? <ErrorMessage error={error} /> : null}
       <Header model={model} />
       <div

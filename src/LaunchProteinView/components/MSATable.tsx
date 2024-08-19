@@ -71,7 +71,9 @@ export default function MSATable({
         className={classes.margin}
         control={
           <Checkbox
-            onChange={event => setShowInFastaFormat(event.target.checked)}
+            onChange={event => {
+              setShowInFastaFormat(event.target.checked)
+            }}
             checked={showInFastaFormat}
           />
         }

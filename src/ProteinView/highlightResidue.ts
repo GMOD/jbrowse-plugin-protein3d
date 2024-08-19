@@ -16,8 +16,8 @@ export default function highlightResidue({
     selectedResidue: selectedResidue + 1,
   })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
-  plugin?.managers.interactivity.lociHighlights.clearHighlights()
-  plugin?.managers.interactivity.lociHighlights.highlight({
+  plugin.managers.interactivity.lociHighlights.clearHighlights()
+  plugin.managers.interactivity.lociHighlights.highlight({
     loci,
   })
 }

@@ -12,12 +12,12 @@ export function genomeToTranscriptMapping(feature: Feature) {
   const p2g = {} as Record<number, number | undefined>
 
   let proteinCounter = 0
-  if (strand !== -1) {
+  if (strand === -1) {
     for (const f of cds) {
       for (
-        let genomePos = f.get('start');
-        genomePos < f.get('end');
-        genomePos++
+        let genomePos = f.get('end');
+        genomePos > f.get('start');
+        genomePos--
       ) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
@@ -29,9 +29,9 @@ export function genomeToTranscriptMapping(feature: Feature) {
   } else {
     for (const f of cds) {
       for (
-        let genomePos = f.get('end');
-        genomePos > f.get('start');
-        genomePos--
+        let genomePos = f.get('start');
+        genomePos < f.get('end');
+        genomePos++
       ) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos

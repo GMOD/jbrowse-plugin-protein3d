@@ -134,7 +134,9 @@ const UserProvidedStructure = observer(function ({
           <FormControl component="fieldset">
             <RadioGroup
               value={choice}
-              onChange={event => setChoice(event.target.value)}
+              onChange={event => {
+                setChoice(event.target.value)
+              }}
             >
               <FormControlLabel value="url" control={<Radio />} label="URL" />
               <FormControlLabel value="file" control={<Radio />} label="File" />
@@ -153,7 +155,9 @@ const UserProvidedStructure = observer(function ({
               <TextField
                 label="URL"
                 value={structureURL}
-                onChange={event => setStructureURL(event.target.value)}
+                onChange={event => {
+                  setStructureURL(event.target.value)
+                }}
               />
             </div>
           ) : null}
@@ -168,7 +172,7 @@ const UserProvidedStructure = observer(function ({
                   type="file"
                   hidden
                   onChange={({ target }) => {
-                    const file = target?.files?.[0]
+                    const file = target.files?.[0]
                     if (file) {
                       setFile(file)
                     }
@@ -205,9 +209,9 @@ const UserProvidedStructure = observer(function ({
                   <Button
                     variant="contained"
                     color="primary"
-                    onClick={() =>
+                    onClick={() => {
                       setShowAllProteinSequences(!showAllProteinSequences)
-                    }
+                    }}
                   >
                     {showAllProteinSequences
                       ? 'Hide all isoform protein sequences'
@@ -233,7 +237,9 @@ const UserProvidedStructure = observer(function ({
         <Button
           variant="contained"
           color="secondary"
-          onClick={() => handleClose()}
+          onClick={() => {
+            handleClose()
+          }}
         >
           Cancel
         </Button>

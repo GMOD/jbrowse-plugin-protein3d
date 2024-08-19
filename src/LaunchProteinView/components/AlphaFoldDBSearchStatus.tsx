@@ -39,11 +39,7 @@ export default function AlphaFoldDBSearchStatus({
     : undefined
   const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
-  return !uniprotId ? (
-    <Typography>
-      Searching {getDisplayName(selectedTranscript)} for UniProt ID
-    </Typography>
-  ) : (
+  return uniprotId ? (
     <>
       <Typography>
         Found Uniprot ID:{' '}
@@ -62,7 +58,9 @@ export default function AlphaFoldDBSearchStatus({
           <Button
             variant="contained"
             color="primary"
-            onClick={() => setShowAllProteinSequences(!showAllProteinSequences)}
+            onClick={() => {
+              setShowAllProteinSequences(!showAllProteinSequences)
+            }}
           >
             {showAllProteinSequences
               ? 'Hide all isoform protein sequences'
@@ -80,5 +78,9 @@ export default function AlphaFoldDBSearchStatus({
         <NotFound uniprotId={uniprotId} />
       )}
     </>
+  ) : (
+    <Typography>
+      Searching {getDisplayName(selectedTranscript)} for UniProt ID
+    </Typography>
   )
 }

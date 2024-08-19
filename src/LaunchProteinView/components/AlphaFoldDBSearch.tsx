@@ -116,7 +116,7 @@ const AlphaFoldDBSearch = observer(function ({
             variant="h6"
             message="Looking up UniProt ID from mygene.info"
           />
-        ) : !uniprotId ? (
+        ) : (uniprotId ? null : (
           <div>
             UniProt ID not found. Search sequence on AlphaFoldDB{' '}
             <a
@@ -130,7 +130,7 @@ const AlphaFoldDBSearch = observer(function ({
             After visiting the above link, then paste the structure URL into the
             Manual tab
           </div>
-        ) : null}
+        ))}
         {isIsoformProteinSequencesLoading ? (
           <LoadingEllipses
             variant="h6"
@@ -160,7 +160,9 @@ const AlphaFoldDBSearch = observer(function ({
         <Button
           variant="contained"
           color="secondary"
-          onClick={() => handleClose()}
+          onClick={() => {
+            handleClose()
+          }}
         >
           Cancel
         </Button>

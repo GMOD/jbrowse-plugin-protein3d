@@ -20,12 +20,12 @@ export default function ProteinAlignmentHelpButton({
   return (
     <IconButton
       style={{ float: 'right' }}
-      onClick={() =>
+      onClick={() => {
         getSession(model).queueDialog(handleClose => [
           ProteinAlignmentHelpDialog,
           { handleClose },
         ])
-      }
+      }}
     >
       <Help />
     </IconButton>

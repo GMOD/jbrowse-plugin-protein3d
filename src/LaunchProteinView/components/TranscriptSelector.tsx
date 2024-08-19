@@ -31,7 +31,9 @@ export default function TranscriptSelector({
   return (
     <TextField2
       value={val}
-      onChange={event => setVal(event.target.value)}
+      onChange={event => {
+        setVal(event.target.value)
+      }}
       label="Choose transcript isoform"
       select
     >

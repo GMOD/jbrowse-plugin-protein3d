@@ -43,7 +43,7 @@ export function toStr(r: {
   return [
     `Position: ${r.structureSeqPos}`,
     r.code
-      ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code]?.singleLetterCode})`
+      ? `Letter: ${r.code} (${proteinAbbreviationMapping[r.code].singleLetterCode})`
       : '',
     r.chain ? `Chain: ${r.chain}` : '',
   ]

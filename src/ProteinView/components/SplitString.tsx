@@ -24,9 +24,9 @@ export default function SplitString({
         background:
           col !== undefined && i === col
             ? '#f698'
-            : set?.has(i) && showHighlight
+            : (set?.has(i) && showHighlight
               ? '#33ff19'
-              : undefined,
+              : undefined),
       }}
     >
       {d === ' ' ? <>&nbsp;</> : d}

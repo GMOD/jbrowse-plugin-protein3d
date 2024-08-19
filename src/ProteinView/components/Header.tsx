@@ -59,21 +59,27 @@ const InformativeHeaderArea = observer(function ({
             type: 'checkbox',
             checked: showAlignment,
             icon: Visibility,
-            onClick: () => model.setShowAlignment(!showAlignment),
+            onClick: () => {
+              model.setShowAlignment(!showAlignment)
+            },
           },
           {
             label: 'Show pairwise alignment as highlight',
             type: 'checkbox',
             checked: showHighlight,
             icon: Visibility,
-            onClick: () => model.setShowHighlight(!showHighlight),
+            onClick: () => {
+              model.setShowHighlight(!showHighlight)
+            },
           },
           {
             label: 'Zoom to base level on click',
             type: 'checkbox',
             checked: zoomToBaseLevel,
             icon: Visibility,
-            onClick: () => model.setZoomToBaseLevel(!zoomToBaseLevel),
+            onClick: () => {
+              model.setZoomToBaseLevel(!zoomToBaseLevel)
+            },
           },
         ]}
       >

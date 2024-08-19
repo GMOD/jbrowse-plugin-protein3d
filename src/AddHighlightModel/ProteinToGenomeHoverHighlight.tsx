@@ -22,7 +22,7 @@ const ProteinToGenomeHoverHighlight = observer(function ({
   const assembly = assemblyManager.get(assemblyNames[0])
   return assembly ? (
     <>
-      {p?.hoverGenomeHighlights.map((r, idx) => (
+      {p.hoverGenomeHighlights.map((r, idx) => (
         <Highlight
           key={`${JSON.stringify(r)}-${idx}`}
           start={r.start}

@@ -12,7 +12,7 @@ export function getTranscriptFeatures(feature: Feature) {
 }
 
 export function stripTrailingVersion(s?: string) {
-  return s?.replace(/\.[^/.]+$/, '')
+  return s?.replace(/\.[^./]+$/, '')
 }
 
 export function z(n: number) {

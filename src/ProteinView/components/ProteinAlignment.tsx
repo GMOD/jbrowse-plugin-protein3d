@@ -36,9 +36,9 @@ const ProteinAlignment = observer(function ({
   }
 
   const alignmentHoverPos =
-    structureSeqHoverPos !== undefined
-      ? structurePositionToAlignmentMap?.[structureSeqHoverPos]
-      : undefined
+    structureSeqHoverPos === undefined
+      ? undefined
+      : structurePositionToAlignmentMap?.[structureSeqHoverPos]
 
   function onMouseOver(alignmentPos: number) {
     const structureSeqPos = alignmentToStructurePosition[alignmentPos]
