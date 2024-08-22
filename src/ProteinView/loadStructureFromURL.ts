@@ -32,10 +32,6 @@ export async function loadStructureFromURL({
     format,
   )
   const model = await plugin.builders.structure.createModel(trajectory)
-  const seq = model.obj?.data.sequence.sequences[0].sequence.label
-    .toArray()
-    // @ts-expect-error
-    .join('')
 
   await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
@@ -45,6 +41,5 @@ export async function loadStructureFromURL({
       representationPresetParams: options?.representationParams,
     },
   )
-
-  return { seq: seq as string }
+  return { model }
 }

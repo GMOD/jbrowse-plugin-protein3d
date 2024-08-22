@@ -1,8 +1,8 @@
 import { autorun } from 'mobx'
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
-import { ElementId, Region } from '@jbrowse/core/util/types/mst'
+import { ElementId } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
-import { Instance, addDisposer, cast, types } from 'mobx-state-tree'
+import { Instance, addDisposer, types } from 'mobx-state-tree'
 import {
   SimpleFeature,
   SimpleFeatureSerialized,
@@ -20,10 +20,51 @@ import {
   structurePositionToAlignmentMap,
   transcriptPositionToAlignmentMap,
 } from '../mappings'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
+type PairwiseAlignment = ReturnType<typeof parsePairwise>
+type MaybePairwiseAlignment = PairwiseAlignment | undefined
+type StructureModel = Awaited<
+  ReturnType<PluginContext['builders']['structure']['createModel']>
+>
 
+const Structure = types
+  .model({
+    /**
+     * #property
+     */
+    url: types.maybe(types.string),
+    /**
+     * #property
+     */
+    data: types.maybe(types.string),
+  })
+  .volatile(() => ({
+    model: undefined as StructureModel | undefined,
+  }))
+  .actions(self => ({
+    /**
+     * #action
+     */
+    setModel(model: StructureModel) {
+      self.model = model
+    },
+  }))
+  .views(self => ({
+    get structureSequences() {
+      return self.model?.obj?.data.sequence.sequences.map(s => {
+        let seq = ''
+        const arr = s.sequence.label.toArray()
+        // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
+        for (let i = 0; i < arr.length; i++) {
+          seq += arr[i]!
+        }
+        return seq
+      })
+    },
+  }))
 /**
  * #stateModel Protein3dViewPlugin
  * extends
@@ -45,22 +86,9 @@ function stateModelFactory() {
         type: types.literal('ProteinView'),
         /**
          * #property
-         * url to structure file
          */
-        url: types.maybe(types.string),
-        /**
-         * #property
-         * full string for structure data
-         */
-        data: types.maybe(types.string),
-        /**
-         * #property
-         */
-        clickGenomeHighlights: types.array(Region),
-        /**
-         * #property
-         */
-        hoverGenomeHighlights: types.array(Region),
+        structures: types.array(Structure),
+
         /**
          * #property
          */
@@ -84,7 +112,7 @@ function stateModelFactory() {
         /**
          * #property
          */
-        alignment: types.frozen<ReturnType<typeof parsePairwise> | undefined>(),
+        alignment: types.frozen<MaybePairwiseAlignment>(),
 
         /**
          * #property
@@ -105,6 +133,14 @@ function stateModelFactory() {
       }),
     )
     .volatile(() => ({
+      /**
+       * #volatile
+       */
+      clickGenomeHighlights: [] as IRegion[],
+      /**
+       * #volatile
+       */
+      hoverGenomeHighlights: [] as IRegion[],
       /**
        * #volatile
        */
@@ -193,25 +229,25 @@ function stateModelFactory() {
        * #action
        */
       setClickGenomeHighlights(r: IRegion[]) {
-        self.clickGenomeHighlights = cast(r)
+        self.clickGenomeHighlights = r
       },
       /**
        * #action
        */
       clearClickGenomeHighlights() {
-        self.clickGenomeHighlights = cast([])
+        self.clickGenomeHighlights = []
       },
       /**
        * #action
        */
       setHoverGenomeHighlights(r: IRegion[]) {
-        self.hoverGenomeHighlights = cast(r)
+        self.hoverGenomeHighlights = r
       },
       /**
        * #action
        */
       clearHoverGenomeHighlights() {
-        self.hoverGenomeHighlights = cast([])
+        self.hoverGenomeHighlights = []
       },
       /**
        * #action
@@ -222,7 +258,7 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setAlignment(r?: ReturnType<typeof parsePairwise>) {
+      setAlignment(r?: PairwiseAlignment) {
         self.alignment = r
       },
       /**
@@ -407,6 +443,7 @@ function stateModelFactory() {
 }
 
 export default stateModelFactory
+
 export type JBrowsePluginProteinViewStateModel = ReturnType<
   typeof stateModelFactory
 >
