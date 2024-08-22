@@ -85,7 +85,7 @@ const AlphaFoldDBSearch = observer(function ({
   const e =
     myGeneError || isoformProteinSequencesError || remoteStructureSequenceError
 
-  const structureSequence = structureSequences?.[0]!
+  const structureSequence = structureSequences?.[0]
   useEffect(() => {
     if (isoformSequences !== undefined) {
       const ret =
