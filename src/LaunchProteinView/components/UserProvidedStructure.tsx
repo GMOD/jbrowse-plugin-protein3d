@@ -96,14 +96,15 @@ const UserProvidedStructure = observer(function ({
     view,
   })
   const protein = isoformSequences?.[userSelection ?? '']
-  const { seq: structureSequence1, error: error3 } =
+  const { sequences: structureSequences1, error: error3 } =
     useLocalStructureFileSequence({ file })
 
-  const { seq: structureSequence2, error: error4 } =
+  const { sequences: structureSequences2, error: error4 } =
     useRemoteStructureFileSequence({ url: structureURL })
   const structureName =
     file?.name ?? structureURL.slice(structureURL.lastIndexOf('/') + 1)
-  const structureSequence = structureSequence1 ?? structureSequence2
+  const structureSequences = structureSequences1 ?? structureSequences2
+  const structureSequence = structureSequences?.[0]
 
   useEffect(() => {
     if (isoformSequences !== undefined) {

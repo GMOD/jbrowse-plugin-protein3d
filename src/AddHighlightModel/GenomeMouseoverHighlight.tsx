@@ -35,7 +35,7 @@ const HoverHighlight = observer(function ({
         start={coord - 1}
         end={coord}
         refName={refName}
-        assemblyName={assemblyNames[0]}
+        assemblyName={assemblyNames[0]!}
       />
     )
   }

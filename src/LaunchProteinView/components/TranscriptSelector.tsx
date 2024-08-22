@@ -41,13 +41,13 @@ export default function TranscriptSelector({
         .filter(f => !!isoformSequences[f.id()])
         .filter(
           f =>
-            isoformSequences[f.id()].seq.replaceAll('*', '') ===
+            isoformSequences[f.id()]!.seq.replaceAll('*', '') ===
             structureSequence,
         )
         .map(f => (
           <MenuItem value={f.id()} key={f.id()}>
             {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {isoformSequences[f.id()].seq.length}aa) (matches structure
+            {isoformSequences[f.id()]!.seq.length}aa) (matches structure
             residues)
           </MenuItem>
         ))}
@@ -55,18 +55,18 @@ export default function TranscriptSelector({
         .filter(f => !!isoformSequences[f.id()])
         .filter(
           f =>
-            isoformSequences[f.id()].seq.replaceAll('*', '') !==
+            isoformSequences[f.id()]!.seq.replaceAll('*', '') !==
             structureSequence,
         )
         .sort(
           (a, b) =>
-            isoformSequences[b.id()].seq.length -
-            isoformSequences[a.id()].seq.length,
+            isoformSequences[b.id()]!.seq.length -
+            isoformSequences[a.id()]!.seq.length,
         )
         .map(f => (
           <MenuItem value={f.id()} key={f.id()}>
             {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {isoformSequences[f.id()].seq.length}aa)
+            {isoformSequences[f.id()]!.seq.length}aa)
           </MenuItem>
         ))}
       {isoforms

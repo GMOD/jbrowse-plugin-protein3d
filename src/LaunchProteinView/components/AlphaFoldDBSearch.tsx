@@ -78,13 +78,14 @@ const AlphaFoldDBSearch = observer(function ({
     ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
     : undefined
   const {
-    seq: structureSequence,
+    sequences: structureSequences,
     isLoading: isRemoteStructureSequenceLoading,
     error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
   const e =
     myGeneError || isoformProteinSequencesError || remoteStructureSequenceError
 
+  const structureSequence = structureSequences?.[0]!
   useEffect(() => {
     if (isoformSequences !== undefined) {
       const ret =
@@ -116,7 +117,7 @@ const AlphaFoldDBSearch = observer(function ({
             variant="h6"
             message="Looking up UniProt ID from mygene.info"
           />
-        ) : (uniprotId ? null : (
+        ) : uniprotId ? null : (
           <div>
             UniProt ID not found. Search sequence on AlphaFoldDB{' '}
             <a
@@ -130,7 +131,7 @@ const AlphaFoldDBSearch = observer(function ({
             After visiting the above link, then paste the structure URL into the
             Manual tab
           </div>
-        ))}
+        )}
         {isIsoformProteinSequencesLoading ? (
           <LoadingEllipses
             variant="h6"
@@ -175,10 +176,15 @@ const AlphaFoldDBSearch = observer(function ({
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',
-              url,
-              seq2: userSelectedProteinSequence?.seq,
-              feature: selectedTranscript?.toJSON(),
-              connectedViewId: view.id,
+              structures: [
+                {
+                  url,
+                  userProvidedTranscriptSequence:
+                    userSelectedProteinSequence?.seq,
+                  feature: selectedTranscript?.toJSON(),
+                  connectedViewId: view.id,
+                },
+              ],
               displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
             })
             handleClose()

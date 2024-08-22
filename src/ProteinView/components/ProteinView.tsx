@@ -33,6 +33,11 @@ const ProteinView = observer(function ({
   const { plugin, parentRef, error } = useProteinView({
     showControls,
   })
+
+  useEffect(() => {
+    model.setMolstarPluginContext(plugin)
+  }, [plugin, model])
+
   return error ? (
     <ErrorMessage error={error} />
   ) : (

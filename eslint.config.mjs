@@ -78,6 +78,7 @@ export default tseslint.config(
 
       'unicorn/no-null': 'off',
       'unicorn/prefer-spread': 'off',
+      'unicorn/no-nested-ternary': 'off',
       'unicorn/no-useless-undefined': 'off',
       'unicorn/catch-error-name': 'off',
       'unicorn/filename-case': 'off',

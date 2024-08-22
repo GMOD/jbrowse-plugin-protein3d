@@ -16,19 +16,42 @@ const ProteinViewHeader = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { alignment, showAlignment } = model
+  const { showAlignment } = model
   return (
     <div>
       <InformativeHeaderArea model={model} />
-      {showAlignment ? (
-        alignment ? (
-          <ProteinAlignment model={model} />
-        ) : (
-          <LoadingEllipses message="Loading pairwise alignment" />
-        )
-      ) : null}
+      {showAlignment
+        ? model.structures.map(s => {
+            const { alignment } = s
+
+            return alignment ? (
+              <ProteinAlignment model={s} />
+            ) : (
+              <LoadingEllipses message="Loading pairwise alignment" />
+            )
+          })
+        : null}
     </div>
   )
+})
+
+const StructureInfoHeaderArea = observer(function ({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
+  return model.structures.map((s, id) => {
+    const { clickString, hoverString } = s
+
+    return (
+      <span key={id}>
+        {[
+          clickString ? `Click: ${clickString}` : '',
+          hoverString ? `Hover: ${hoverString}` : '',
+        ].join(' ')}
+      </span>
+    )
+  })
 })
 
 const InformativeHeaderArea = observer(function ({
@@ -36,21 +59,10 @@ const InformativeHeaderArea = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const {
-    showAlignment,
-    clickString,
-    hoverString,
-    showHighlight,
-    zoomToBaseLevel,
-  } = model
+  const { showAlignment, showHighlight, zoomToBaseLevel } = model
   return (
     <div style={{ display: 'flex' }}>
-      <span>
-        {[
-          clickString ? `Click: ${clickString}` : '',
-          hoverString ? `Hover: ${hoverString}` : '',
-        ].join(' ')}
-      </span>
+      <StructureInfoHeaderArea model={model} />
       <span style={{ flexGrow: 1 }} />
       <CascadingMenuButton
         menuItems={[

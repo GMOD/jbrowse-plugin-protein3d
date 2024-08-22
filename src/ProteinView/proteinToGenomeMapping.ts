@@ -2,10 +2,7 @@ import { getSession } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import {
-  JBrowsePluginProteinStructureModel,
-  JBrowsePluginProteinViewModel,
-} from './model'
+import { JBrowsePluginProteinStructureModel } from './model'
 
 export function proteinToGenomeMapping({
   model,

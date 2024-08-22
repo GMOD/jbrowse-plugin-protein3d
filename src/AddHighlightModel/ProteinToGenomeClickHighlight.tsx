@@ -16,23 +16,25 @@ const ProteinToGenomeClickHighlight = observer(function ({
 }) {
   const { assemblyManager, views } = getSession(model)
   const { assemblyNames } = model
-  const p = views.find(f => f.type === 'ProteinView') as
+  const proteinView = views.find(f => f.type === 'ProteinView') as
     | JBrowsePluginProteinViewModel
     | undefined
   const assemblyName = assemblyNames[0]!
   const assembly = assemblyManager.get(assemblyName)
   return assembly ? (
     <>
-      {p?.clickGenomeHighlights.map((r, idx) => (
-        <Highlight
-          key={`${JSON.stringify(r)}-${idx}}`}
-          start={r.start}
-          end={r.end}
-          refName={r.refName}
-          assemblyName={assemblyName}
-          model={model}
-        />
-      ))}
+      {proteinView?.structures.map(structure =>
+        structure.clickGenomeHighlights.map((r, idx) => (
+          <Highlight
+            key={`${JSON.stringify(r)}-${idx}}`}
+            start={r.start}
+            end={r.end}
+            refName={r.refName}
+            assemblyName={assemblyName}
+            model={model}
+          />
+        )),
+      )}
     </>
   ) : null
 })

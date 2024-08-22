@@ -2,7 +2,13 @@ import { autorun } from 'mobx'
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { Region as IRegion } from '@jbrowse/core/util/types'
-import { Instance, addDisposer, getParent, types } from 'mobx-state-tree'
+import {
+  Instance,
+  addDisposer,
+  getParent,
+  getSnapshot,
+  types,
+} from 'mobx-state-tree'
 import {
   SimpleFeature,
   SimpleFeatureSerialized,
@@ -21,6 +27,8 @@ import {
   PairwiseAlignment,
 } from '../mappings'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { addStructureFromData } from './addStructureFromData'
+import { addStructureFromURL } from './addStructureFromURL'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
@@ -325,11 +333,14 @@ const Structure = types
               self.setAlignment(alignment.alignment)
 
               // showHighlight when we are
+              // @ts-expect-error
               getParent(self, 2).setShowHighlight(true)
+              // @ts-expect-error
               getParent(self, 2).setShowAlignment(true)
             }
           } catch (e) {
             console.error(e)
+            // @ts-expect-error
             getParent(self, 2).setError(e)
           }
         }),
@@ -420,7 +431,14 @@ function stateModelFactory() {
        * #volatile
        */
       progress: '',
+      /**
+       * #volatile
+       */
       error: undefined as unknown,
+      /**
+       * #volatile
+       */
+      molstarPluginContext: undefined as PluginContext | undefined,
     }))
 
     .actions(self => ({
@@ -456,6 +474,46 @@ function stateModelFactory() {
        */
       setZoomToBaseLevel(arg: boolean) {
         self.zoomToBaseLevel = arg
+      },
+      /**
+       * #action
+       */
+      setMolstarPluginContext(p?: PluginContext) {
+        self.molstarPluginContext = p
+      },
+    }))
+    .actions(self => ({
+      afterCreate() {
+        addDisposer(
+          self,
+          autorun(async () => {
+            const { structures, molstarPluginContext } = self
+            console.log({
+              structures: getSnapshot(structures),
+              molstarPluginContext,
+            })
+            if (molstarPluginContext) {
+              for (const structure of structures) {
+                try {
+                  if (structure.data) {
+                    await addStructureFromData({
+                      data: structure.data,
+                      plugin: molstarPluginContext,
+                    })
+                  } else if (structure.url) {
+                    await addStructureFromURL({
+                      url: structure.url,
+                      plugin: molstarPluginContext,
+                    })
+                  }
+                } catch (e) {
+                  self.setError(e)
+                  console.error(e)
+                }
+              }
+            }
+          }),
+        )
       },
     }))
 }

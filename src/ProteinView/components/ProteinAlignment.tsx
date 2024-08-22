@@ -44,15 +44,19 @@ const ProteinAlignment = observer(function ({
       : structurePositionToAlignmentMap?.[structureSeqHoverPos]
 
   function onMouseOver(alignmentPos: number) {
-    const structureSeqPos = alignmentToStructurePosition[alignmentPos]
-    model.setHoveredPosition({ structureSeqPos })
-    hoverProteinToGenome({ model, structureSeqPos })
+    if (alignmentToStructurePosition) {
+      const structureSeqPos = alignmentToStructurePosition[alignmentPos]!
+      model.setHoveredPosition({ structureSeqPos })
+      hoverProteinToGenome({ model, structureSeqPos })
+    }
   }
   function onClick(alignmentPos: number) {
-    const structureSeqPos = alignmentToStructurePosition[alignmentPos]
-    clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
-      console.error(e)
-    })
+    if (alignmentToStructurePosition) {
+      const structureSeqPos = alignmentToStructurePosition[alignmentPos]!
+      clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
+        console.error(e)
+      })
+    }
   }
   return (
     <div>

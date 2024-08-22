@@ -4,16 +4,16 @@ export default function SplitString({
   str,
   col,
   set,
+  showHighlight,
   onMouseOver,
   onClick,
-  showHighlight,
 }: {
   str: string
   col?: number
   set?: Set<number>
+  showHighlight: boolean
   onMouseOver?: (arg: number) => void
   onClick?: (arg: number) => void
-  showHighlight: boolean
 }) {
   return str.split('').map((d, i) => (
     <span
@@ -24,9 +24,9 @@ export default function SplitString({
         background:
           col !== undefined && i === col
             ? '#f698'
-            : (set?.has(i) && showHighlight
+            : set?.has(i) && showHighlight
               ? '#33ff19'
-              : undefined),
+              : undefined,
       }}
     >
       {d === ' ' ? <>&nbsp;</> : d}
