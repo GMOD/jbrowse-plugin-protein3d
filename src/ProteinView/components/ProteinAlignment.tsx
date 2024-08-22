@@ -3,7 +3,7 @@ import { observer } from 'mobx-react'
 import { Tooltip, Typography } from '@mui/material'
 
 // locals
-import { JBrowsePluginProteinViewModel } from '../model'
+import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   clickProteinToGenome,
@@ -14,7 +14,7 @@ import SplitString from './SplitString'
 const ProteinAlignment = observer(function ({
   model,
 }: {
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const {
     structureSeqHoverPos,
@@ -26,8 +26,8 @@ const ProteinAlignment = observer(function ({
   if (!alignment) {
     return <div>No alignment</div>
   }
-  const a0 = alignment.alns[0]!.seq as string
-  const a1 = alignment.alns[1]!.seq as string
+  const a0 = alignment.alns[0].seq
+  const a1 = alignment.alns[1].seq
   const con = alignment.consensus
   const set = new Set<number>()
   // eslint-disable-next-line unicorn/no-for-loop

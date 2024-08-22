@@ -6,27 +6,34 @@ export interface LoadStructureOptions {
   representationParams?: StructureRepresentationPresetProvider.CommonParams
 }
 
-// adapted from https://github.com/molstar/molstar/blob/ab4130d42d0ab2591f62460292ade0203207d4d2/src/apps/viewer/app.ts#L255C1-L259C6
-export async function loadStructureFromData({
-  data,
-  format = 'pdb',
+// adapted from https://github.com/molstar/molstar/blob/ab4130d42d0ab2591f62460292ade0203207d4d2/src/apps/viewer/app.ts#L230
+export async function addStructureFromURL({
+  url,
+  format = 'mmcif',
+  isBinary,
   options,
   plugin,
 }: {
-  data: string
+  url: string
   format?: BuiltInTrajectoryFormat
-  options?: LoadStructureOptions & { label?: string; dataLabel?: string }
+  isBinary?: boolean
+  options?: LoadStructureOptions & { label?: string }
   plugin: PluginContext
 }) {
-  await plugin.clear()
-
-  const _data = await plugin.builders.data.rawData({
-    data,
-    label: options?.dataLabel,
-  })
+  const data = await plugin.builders.data.download(
+    {
+      url,
+      isBinary,
+    },
+    {
+      state: {
+        isGhost: true,
+      },
+    },
+  )
 
   const trajectory = await plugin.builders.structure.parseTrajectory(
-    _data,
+    data,
     format,
   )
   const model = await plugin.builders.structure.createModel(trajectory)
@@ -39,6 +46,5 @@ export async function loadStructureFromData({
       representationPresetParams: options?.representationParams,
     },
   )
-
   return { model }
 }

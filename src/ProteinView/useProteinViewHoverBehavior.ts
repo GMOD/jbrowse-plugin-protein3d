@@ -3,7 +3,7 @@ import { getSession } from '@jbrowse/core/util'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
-import { JBrowsePluginProteinViewModel } from './model'
+import { JBrowsePluginProteinStructureModel } from './model'
 import {
   StructureElement,
   StructureProperties as Props,
@@ -15,7 +15,7 @@ export default function useProteinViewClickActionBehavior({
   model,
 }: {
   plugin?: PluginContext
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const session = getSession(model)
   useEffect(() => {

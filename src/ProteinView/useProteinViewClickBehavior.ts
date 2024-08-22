@@ -3,7 +3,7 @@ import { getSession } from '@jbrowse/core/util'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // local
-import { JBrowsePluginProteinViewModel } from './model'
+import { JBrowsePluginProteinStructureModel } from './model'
 import { clickProteinToGenome } from './proteinToGenomeMapping'
 import {
   StructureElement,
@@ -15,7 +15,7 @@ export default function useProteinViewClickActionBehavior({
   model,
 }: {
   plugin?: PluginContext
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const [error, setError] = useState<unknown>()
   const session = getSession(model)
@@ -23,7 +23,7 @@ export default function useProteinViewClickActionBehavior({
     if (!plugin) {
       return
     }
-    plugin.behaviors.interaction.click.subscribe(event => {
+    const ret = plugin.behaviors.interaction.click.subscribe(event => {
       if (StructureElement.Loci.is(event.current.loci)) {
         const loc = StructureElement.Loci.getFirstLocation(event.current.loci)
         if (loc) {
@@ -45,6 +45,10 @@ export default function useProteinViewClickActionBehavior({
         }
       }
     })
+    return () => {
+      ret.unsubscribe()
+    }
   }, [plugin, session, model])
+
   return { error }
 }

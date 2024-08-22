@@ -5,23 +5,14 @@ import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 
-// locals
-import { loadStructureFromURL } from './loadStructureFromURL'
-import { loadStructureFromData } from './loadStructureFromData'
-
 export default function useProteinView({
-  url,
-  data,
   showControls,
 }: {
-  url?: string
-  data?: string
   showControls: boolean
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
   const [error, setError] = useState<unknown>()
-  const [seq, setSeq] = useState('')
 
   useEffect(() => {
     let p: PluginContext | undefined
@@ -48,14 +39,6 @@ export default function useProteinView({
         })
         await p.initialized
         setPlugin(p)
-
-        if (url) {
-          const { seq } = await loadStructureFromURL({ url, plugin: p })
-          setSeq(seq)
-        } else if (data) {
-          const { seq } = await loadStructureFromData({ data, plugin: p })
-          setSeq(seq)
-        }
       } catch (e) {
         console.error(e)
         setError(e)
@@ -64,7 +47,16 @@ export default function useProteinView({
     return () => {
       p?.unmount()
     }
-  }, [url, data, showControls])
+  }, [showControls])
 
-  return { parentRef, error, plugin, seq }
+  return { parentRef, error, plugin }
 }
+
+//
+// if (url) {
+//   const { model } = await addStructureFromURL({ url, plugin: p })
+//   setModel(model)
+// } else if (data) {
+//   const { model } = await addStructureFromData({ data, plugin: p })
+//   setModel(model)
+// }

@@ -2,14 +2,17 @@ import { getSession } from '@jbrowse/core/util'
 import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { JBrowsePluginProteinViewModel } from './model'
+import {
+  JBrowsePluginProteinStructureModel,
+  JBrowsePluginProteinViewModel,
+} from './model'
 
 export function proteinToGenomeMapping({
   model,
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const {
     genomeToTranscriptSeqMapping,
@@ -38,7 +41,7 @@ export async function clickProteinToGenome({
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ structureSeqPos, model })
@@ -75,7 +78,7 @@ export function hoverProteinToGenome({
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ structureSeqPos, model })

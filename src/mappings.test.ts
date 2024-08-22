@@ -11,6 +11,7 @@ test('test', () => {
 })
 
 test('mapping', () => {
+  // @ts-expect-error
   const res = genomeToTranscriptSeqMapping(new SimpleFeature(feature))
   const { p2g } = res
   const aln = structureSeqVsTranscriptSeqMap(alignment)

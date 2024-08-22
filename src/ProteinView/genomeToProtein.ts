@@ -1,21 +1,17 @@
 import { getSession } from '@jbrowse/core/util'
 import { checkHovered } from './util'
-import { JBrowsePluginProteinViewModel } from './model'
+import { JBrowsePluginProteinStructureModel } from './model'
 
 export function genomeToProtein({
   model,
 }: {
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }): number | undefined {
   const { hovered } = getSession(model)
   const { genomeToTranscriptSeqMapping, connectedView } = model
-  if (
-    !connectedView?.initialized ||
+  return !connectedView?.initialized ||
     !genomeToTranscriptSeqMapping ||
     !checkHovered(hovered)
-  ) {
-    return undefined
-  }
-
-  return genomeToTranscriptSeqMapping.g2p[hovered.hoverPosition.coord]
+    ? undefined
+    : genomeToTranscriptSeqMapping.g2p[hovered.hoverPosition.coord]
 }

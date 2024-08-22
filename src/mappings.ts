@@ -1,14 +1,15 @@
 import { Feature } from '@jbrowse/core/util'
 import { genomeToTranscriptSeqMapping as g2p } from 'g2p_mapper'
-
-export interface Alignment {
-  alns: {
-    id: string
-    seq: string
-  }[]
+export interface AlignmentRow {
+  id: string
+  seq: string
+}
+export interface PairwiseAlignment {
+  consensus: string
+  alns: readonly [AlignmentRow, AlignmentRow]
 }
 
-export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
+export function structureSeqVsTranscriptSeqMap(alignment: PairwiseAlignment) {
   const structureSeq = alignment.alns[0].seq
   const transcriptSeq = alignment.alns[1].seq
   if (structureSeq.length !== transcriptSeq.length) {
@@ -54,9 +55,9 @@ export function structureSeqVsTranscriptSeqMap(alignment: Alignment) {
   }
 }
 
-export function structurePositionToAlignmentMap(alignment: Alignment) {
+export function structurePositionToAlignmentMap(alignment: PairwiseAlignment) {
   const structureSeq = alignment.alns[0].seq
-  const structurePositionToAlignment = {} as Record<string, number | undefined>
+  const structurePositionToAlignment = {} as Record<string, number>
 
   for (let i = 0, j = 0; i < structureSeq.length; i++) {
     if (structureSeq[i] !== '-') {
@@ -68,9 +69,9 @@ export function structurePositionToAlignmentMap(alignment: Alignment) {
   return structurePositionToAlignment
 }
 
-export function transcriptPositionToAlignmentMap(alignment: Alignment) {
+export function transcriptPositionToAlignmentMap(alignment: PairwiseAlignment) {
   const transcriptSeq = alignment.alns[1].seq
-  const transcriptPositionToAlignment = {} as Record<string, number | undefined>
+  const transcriptPositionToAlignment = {} as Record<string, number>
 
   for (let i = 0, j = 0; i < transcriptSeq.length; i++) {
     if (transcriptSeq[i] !== '-') {
