@@ -1,5 +1,6 @@
 import React from 'react'
 import { observer } from 'mobx-react'
+import { LoadingEllipses } from '@jbrowse/core/ui'
 import CascadingMenuButton from '@jbrowse/core/ui/CascadingMenuButton'
 
 // icons
@@ -9,7 +10,6 @@ import Visibility from '@mui/icons-material/Visibility'
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinAlignment from './ProteinAlignment'
-import { LoadingEllipses } from '@jbrowse/core/ui'
 
 const ProteinViewHeader = observer(function ({
   model,
@@ -22,13 +22,13 @@ const ProteinViewHeader = observer(function ({
       <InformativeHeaderArea model={model} />
       {showAlignment
         ? structures.map((structure, idx) => {
-            const { alignment } = structure
+            const { pairwiseAlignment } = structure
             return (
               <div key={idx}>
-                {alignment ? (
+                {pairwiseAlignment ? (
                   <ProteinAlignment key={idx} model={structure} />
                 ) : (
-                  <LoadingEllipses message="Loading pairwise alignment" />
+                  <LoadingEllipses message="Loading pairwise pairwiseAlignment" />
                 )}
               </div>
             )
@@ -70,7 +70,7 @@ const InformativeHeaderArea = observer(function ({
       <CascadingMenuButton
         menuItems={[
           {
-            label: 'Show pairwise alignment area',
+            label: 'Show pairwise pairwiseAlignment area',
             type: 'checkbox',
             checked: showAlignment,
             icon: Visibility,
@@ -79,7 +79,7 @@ const InformativeHeaderArea = observer(function ({
             },
           },
           {
-            label: 'Show pairwise alignment as highlight',
+            label: 'Show pairwise pairwiseAlignment as highlight',
             type: 'checkbox',
             checked: showHighlight,
             icon: Visibility,

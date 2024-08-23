@@ -2,15 +2,15 @@ import React from 'react'
 
 export default function SplitString({
   str,
-  col,
-  set,
+  gapSet,
+  hoveredPosition,
   showHighlight,
   onMouseOver,
   onClick,
 }: {
   str: string
-  col?: number
-  set?: Set<number>
+  gapSet?: Set<number>
+  hoveredPosition?: number
   showHighlight: boolean
   onMouseOver?: (arg: number) => void
   onClick?: (arg: number) => void
@@ -22,9 +22,9 @@ export default function SplitString({
       onClick={() => onClick?.(i)}
       style={{
         background:
-          col !== undefined && i === col
+          hoveredPosition !== undefined && i === hoveredPosition
             ? '#f698'
-            : set?.has(i) && showHighlight
+            : gapSet?.has(i) && showHighlight
               ? '#33ff19'
               : undefined,
       }}

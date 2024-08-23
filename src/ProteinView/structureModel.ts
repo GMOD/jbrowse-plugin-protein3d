@@ -12,8 +12,8 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import { checkHovered, invertMap, toStr } from './util'
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import {
-  structureSeqVsTranscriptSeqMap,
   genomeToTranscriptSeqMapping,
+  structureSeqVsTranscriptSeqMap,
   structurePositionToAlignmentMap,
   transcriptPositionToAlignmentMap,
   PairwiseAlignment,
@@ -55,7 +55,7 @@ const Structure = types
     /**
      * #property
      */
-    alignment: types.frozen<MaybePairwiseAlignment>(),
+    pairwiseAlignment: types.frozen<MaybePairwiseAlignment>(),
     /**
      * #property
      */
@@ -102,7 +102,7 @@ const Structure = types
     /**
      * #volatile
      */
-    alignmentStatus: '',
+    pairwiseAlignmentStatus: '',
     /**
      * #volatile
      */
@@ -178,13 +178,13 @@ const Structure = types
      * #action
      */
     setAlignment(r?: PairwiseAlignment) {
-      self.alignment = r
+      self.pairwiseAlignment = r
     },
     /**
      * #action
      */
     setAlignmentStatus(str: string) {
-      self.alignmentStatus = str
+      self.pairwiseAlignmentStatus = str
     },
   }))
   .views(self => ({
@@ -192,8 +192,8 @@ const Structure = types
      * #getter
      */
     get structureSeqToTranscriptSeqPosition() {
-      return self.alignment
-        ? structureSeqVsTranscriptSeqMap(self.alignment)
+      return self.pairwiseAlignment
+        ? structureSeqVsTranscriptSeqMap(self.pairwiseAlignment)
             .structureSeqToTranscriptSeqPosition
         : undefined
     },
@@ -201,8 +201,8 @@ const Structure = types
      * #getter
      */
     get transcriptSeqToStructureSeqPosition() {
-      return self.alignment
-        ? structureSeqVsTranscriptSeqMap(self.alignment)
+      return self.pairwiseAlignment
+        ? structureSeqVsTranscriptSeqMap(self.pairwiseAlignment)
             .transcriptSeqToStructureSeqPosition
         : undefined
     },
@@ -210,22 +210,22 @@ const Structure = types
      * #getter
      */
     get structurePositionToAlignmentMap() {
-      return self.alignment
-        ? structurePositionToAlignmentMap(self.alignment)
+      return self.pairwiseAlignment
+        ? structurePositionToAlignmentMap(self.pairwiseAlignment)
         : undefined
     },
     /**
      * #getter
      */
     get transcriptPositionToAlignmentMap() {
-      return self.alignment
-        ? transcriptPositionToAlignmentMap(self.alignment)
+      return self.pairwiseAlignment
+        ? transcriptPositionToAlignmentMap(self.pairwiseAlignment)
         : undefined
     },
     /**
      * #getter
      */
-    get alignmentToTranscriptPosition() {
+    get pairwiseAlignmentToTranscriptPosition() {
       return this.transcriptPositionToAlignmentMap
         ? invertMap(this.transcriptPositionToAlignmentMap)
         : undefined
@@ -233,7 +233,7 @@ const Structure = types
     /**
      * #getter
      */
-    get alignmentToStructurePosition() {
+    get pairwiseAlignmentToStructurePosition() {
       return this.structurePositionToAlignmentMap
         ? invertMap(this.structurePositionToAlignmentMap)
         : undefined
@@ -304,7 +304,7 @@ const Structure = types
             const seq1 = userProvidedTranscriptSequence
             const seq2 = structureSequences?.[0]
 
-            if (!!self.alignment || !seq1 || !seq2) {
+            if (!!self.pairwiseAlignment || !seq1 || !seq2) {
               return
             }
             const r1 = seq1.replaceAll('*', '')
@@ -323,7 +323,7 @@ const Structure = types
                 ],
               })
             } else {
-              const alignment = await launchPairwiseAlignment({
+              const pairwiseAlignment = await launchPairwiseAlignment({
                 seq1: r1,
                 seq2: r2,
                 algorithm: 'emboss_needle',
@@ -331,7 +331,7 @@ const Structure = types
                   self.setAlignmentStatus(arg)
                 },
               })
-              self.setAlignment(alignment.alignment)
+              self.setAlignment(pairwiseAlignment.pairwiseAlignment)
 
               // showHighlight when we are
               // @ts-expect-error

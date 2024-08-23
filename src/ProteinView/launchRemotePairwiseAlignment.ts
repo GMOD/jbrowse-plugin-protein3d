@@ -27,7 +27,7 @@ async function runEmbossMatcher({
   })
   const ret = await textfetch(`${base}/emboss_matcher/result/${jobId}/aln`)
   return {
-    alignment: parsePairwise(
+    pairwiseAlignment: parsePairwise(
       ret
         .split('\n')
         .filter(line => !line.startsWith('#'))
@@ -61,7 +61,7 @@ async function runEmbossNeedle({
 
   const ret = await textfetch(`${base}/emboss_needle/result/${jobId}/aln`)
   return {
-    alignment: parsePairwise(
+    pairwiseAlignment: parsePairwise(
       ret
         .split('\n')
         .filter(line => !line.startsWith('#'))
@@ -82,7 +82,7 @@ async function wait({
   while (true) {
     for (let i = 0; i < 10; i++) {
       await timeout(1000)
-      onProgress(`Re-checking alignment to PDB seq1,seq2 in... ${10 - i}`)
+      onProgress(`Re-checking pairwiseAlignment to PDB seq1,seq2 in... ${10 - i}`)
     }
     const result = await textfetch(`${base}/${algorithm}/status/${jobId}`)
 

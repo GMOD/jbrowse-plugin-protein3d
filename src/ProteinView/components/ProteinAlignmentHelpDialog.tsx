@@ -3,7 +3,6 @@ import {
   Button,
   DialogActions,
   DialogContent,
-  Divider,
   Typography,
   TypographyProps,
 } from '@mui/material'
@@ -30,17 +29,17 @@ export default function ProteinAlignmentHelpDialog({
     <Dialog open maxWidth="lg" onClose={handleClose} title="Protein alignment">
       <DialogContent>
         <Typography2>
-          This panel shows the computed alignment of the reference genome
-          sequence to the structure sequence. The structure file (PDB file,
-          mmCIF file, etc) has a stored representation of the e.g. amino acid
-          sequence but the sequence in the structure file can differ from the
-          sequence from the gene on the genome browser
+          This panel shows the computed pairwise alignment of the reference
+          genome sequence to the structure sequence. The structure file (PDB
+          file, mmCIF file, etc) has a stored representation of the e.g. amino
+          acid sequence but the sequence in the structure file can differ from
+          the sequence from the gene on the genome browser
         </Typography2>
         <Typography2>
           In order to resolve this, we align the two sequences together (using
-          EMBOSS needle) to get alignment of the genome&apos;s representation of
-          the protein and the structure file&apos;s representation of the
-          protein.
+          EMBOSS needle) to get pairwise alignment of the genome&apos;s
+          representation of the protein and the structure file&apos;s
+          representation of the protein.
         </Typography2>
         <Typography2>
           If you need a 100% fidelity protein, you can do a folding with e.g.
@@ -48,12 +47,12 @@ export default function ProteinAlignmentHelpDialog({
           sequence of the transcript
         </Typography2>
       </DialogContent>
-      <Divider />
       <DialogActions>
         <Button
           onClick={() => {
             handleClose()
           }}
+          variant="contained"
           color="primary"
         >
           Close

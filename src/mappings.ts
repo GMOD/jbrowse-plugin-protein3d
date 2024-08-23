@@ -9,9 +9,11 @@ export interface PairwiseAlignment {
   alns: readonly [AlignmentRow, AlignmentRow]
 }
 
-export function structureSeqVsTranscriptSeqMap(alignment: PairwiseAlignment) {
-  const structureSeq = alignment.alns[0].seq
-  const transcriptSeq = alignment.alns[1].seq
+export function structureSeqVsTranscriptSeqMap(
+  pairwiseAlignment: PairwiseAlignment,
+) {
+  const structureSeq = pairwiseAlignment.alns[1].seq
+  const transcriptSeq = pairwiseAlignment.alns[0].seq
   if (structureSeq.length !== transcriptSeq.length) {
     throw new Error('mismatched length')
   }
@@ -43,14 +45,17 @@ export function structureSeqVsTranscriptSeqMap(alignment: PairwiseAlignment) {
       j++
     }
   }
+
   return {
     structureSeqToTranscriptSeqPosition,
     transcriptSeqToStructureSeqPosition,
   }
 }
 
-export function structurePositionToAlignmentMap(alignment: PairwiseAlignment) {
-  const structureSeq = alignment.alns[0].seq
+export function structurePositionToAlignmentMap(
+  pairwiseAlignment: PairwiseAlignment,
+) {
+  const structureSeq = pairwiseAlignment.alns[1].seq
   const structurePositionToAlignment = {} as Record<string, number>
 
   for (let i = 0, j = 0; i < structureSeq.length; i++) {
@@ -63,8 +68,10 @@ export function structurePositionToAlignmentMap(alignment: PairwiseAlignment) {
   return structurePositionToAlignment
 }
 
-export function transcriptPositionToAlignmentMap(alignment: PairwiseAlignment) {
-  const transcriptSeq = alignment.alns[1].seq
+export function transcriptPositionToAlignmentMap(
+  pairwiseAlignment: PairwiseAlignment,
+) {
+  const transcriptSeq = pairwiseAlignment.alns[0].seq
   const transcriptPositionToAlignment = {} as Record<string, number>
 
   for (let i = 0, j = 0; i < transcriptSeq.length; i++) {
