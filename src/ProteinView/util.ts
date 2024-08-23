@@ -43,12 +43,12 @@ export function toStr({
   code,
   structureSeqPos,
 }: {
-  structureSeqPos: number
+  structureSeqPos?: number
   code?: string
   chain?: string
 }) {
   return [
-    `Position: ${structureSeqPos}`,
+    structureSeqPos === undefined ? '' : `Position: ${structureSeqPos}`,
     code
       ? `Letter: ${code} (${proteinAbbreviationMapping[code]?.singleLetterCode})`
       : '',

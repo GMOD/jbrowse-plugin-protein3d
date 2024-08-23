@@ -94,7 +94,7 @@ const Structure = types
      */
     hoverPosition: undefined as
       | {
-          structureSeqPos: number
+          structureSeqPos?: number
           code?: string
           chain?: string
         }
@@ -263,7 +263,7 @@ const Structure = types
     /**
      * #getter
      */
-    get structureSeqHoverPos(): number | undefined {
+    get structureSeqHoverPos() {
       return self.hoverPosition?.structureSeqPos
     },
 
@@ -493,16 +493,12 @@ const Structure = types
           const structure =
             molstarPluginContext?.managers.structure.hierarchy.current
               .structures[0]?.cell.obj?.data
-          if (structure) {
-            if (structureSeqHoverPos === undefined) {
-              console.warn('not found')
-            } else {
-              highlightResidue({
-                structure,
-                plugin: molstarPluginContext,
-                selectedResidue: structureSeqHoverPos,
-              })
-            }
+          if (structure && structureSeqHoverPos !== undefined) {
+            highlightResidue({
+              structure,
+              plugin: molstarPluginContext,
+              selectedResidue: structureSeqHoverPos,
+            })
           }
         }),
       )
