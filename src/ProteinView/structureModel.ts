@@ -364,9 +364,11 @@ const Structure = types
           ) {
             const { hoverPosition } = hovered
             const pos = genomeToTranscriptSeqMapping.g2p[hoverPosition.coord]
-            const c0 = pos
-              ? transcriptSeqToStructureSeqPosition?.[pos]
-              : undefined
+            const c0 =
+              pos === undefined
+                ? undefined
+                : transcriptSeqToStructureSeqPosition?.[pos]
+
             if (c0 !== undefined) {
               self.setHoveredPosition({
                 structureSeqPos: c0,

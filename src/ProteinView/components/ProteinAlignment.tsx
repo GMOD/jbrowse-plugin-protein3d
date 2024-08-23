@@ -17,10 +17,10 @@ const ProteinAlignment = observer(function ({
   model: JBrowsePluginProteinStructureModel
 }) {
   const {
-    structureSeqHoverPos,
     alignment,
-    structurePositionToAlignmentMap,
     alignmentToStructurePosition,
+    structurePositionToAlignmentMap,
+    structureSeqHoverPos,
     showHighlight,
   } = model
   if (!alignment) {

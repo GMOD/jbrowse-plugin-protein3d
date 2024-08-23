@@ -77,24 +77,19 @@ export function hoverProteinToGenome({
   structureSeqPos: number
   model: JBrowsePluginProteinStructureModel
 }) {
-  const session = getSession(model)
-  const result = proteinToGenomeMapping({ structureSeqPos, model })
+  const mappedGenomeCoordinate = proteinToGenomeMapping({
+    structureSeqPos,
+    model,
+  })
   const { genomeToTranscriptSeqMapping } = model
-  if (!genomeToTranscriptSeqMapping) {
-    return
+  if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate) {
+    model.setHoverGenomeHighlights([
+      {
+        assemblyName: 'hg38',
+        refName: genomeToTranscriptSeqMapping.refName,
+        start: mappedGenomeCoordinate[0],
+        end: mappedGenomeCoordinate[1],
+      },
+    ])
   }
-  if (!result) {
-    session.notify('Genome position not found')
-    return
-  }
-  const [s1, s2] = result
-  const { refName } = genomeToTranscriptSeqMapping
-  model.setHoverGenomeHighlights([
-    {
-      assemblyName: 'hg38',
-      refName,
-      start: s1,
-      end: s2,
-    },
-  ])
 }

@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
 import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
@@ -9,13 +8,6 @@ import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
 import useProteinView from '../useProteinView'
-import useProteinViewClickBehavior from '../useProteinViewClickBehavior'
-import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
-
-// utils
-import selectResidue from '../selectResidue'
-import highlightResidue from '../highlightResidue'
-import clearSelection from '../clearSelection'
 
 // css
 import css from '../css/molstar'

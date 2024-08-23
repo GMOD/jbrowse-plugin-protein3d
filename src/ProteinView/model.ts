@@ -9,11 +9,6 @@ import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
 import Structure from './structureModel'
 import highlightResidue from './highlightResidue'
-import {
-  StructureElement,
-  StructureProperties,
-} from 'molstar/lib/mol-model/structure'
-import { clickProteinToGenome } from './proteinToGenomeMapping'
 
 /**
  * #stateModel Protein3dViewPlugin
