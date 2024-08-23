@@ -18,14 +18,8 @@ export function structureSeqVsTranscriptSeqMap(alignment: PairwiseAlignment) {
 
   let j = 0
   let k = 0
-  const structureSeqToTranscriptSeqPosition = {} as Record<
-    string,
-    number | undefined
-  >
-  const transcriptSeqToStructureSeqPosition = {} as Record<
-    string,
-    number | undefined
-  >
+  const structureSeqToTranscriptSeqPosition = {} as Record<string, number>
+  const transcriptSeqToStructureSeqPosition = {} as Record<string, number>
 
   // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < structureSeq.length; i++) {

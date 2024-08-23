@@ -8,8 +8,8 @@ export function genomeToTranscriptMapping(feature: Feature) {
   const cds = subs
     .filter(f => f.get('type') === 'CDS')
     .sort((a, b) => strand * (a.get('start') - b.get('start')))
-  const g2p = {} as Record<number, number | undefined>
-  const p2g = {} as Record<number, number | undefined>
+  const g2p = {} as Record<number, number>
+  const p2g = {} as Record<number, number>
 
   let proteinCounter = 0
   if (strand === -1) {

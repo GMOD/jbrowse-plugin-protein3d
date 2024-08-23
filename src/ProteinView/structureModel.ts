@@ -243,14 +243,14 @@ const Structure = types
      */
     get clickString() {
       const r = self.clickPosition
-      return r ? toStr(r) : ''
+      return r === undefined ? '' : toStr(r)
     },
     /**
      * #getter
      */
     get hoverString() {
       const r = self.hoverPosition
-      return r ? toStr(r) : ''
+      return r === undefined ? '' : toStr(r)
     },
     /**
      * #getter
