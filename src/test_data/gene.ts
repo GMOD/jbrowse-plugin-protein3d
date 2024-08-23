@@ -586,9 +586,9 @@ export const feature = {
   uniqueId: '590611027-offset-601794870-0',
   parentId: '590611027-offset-601794870',
   __jbrowsefmt: {},
-}
+} as const
 
-export const alignment = {
+export const pairwiseAlignment = {
   consensus:
     '                                                                                                                                                                                                                                                                                                                                                                                                        ||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||||| ',
   alns: [
@@ -601,4 +601,4 @@ export const alignment = {
       seq: '--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAGKSLPTEKFAIRKSRRYFSSNPISLPVPALEMMYIWNGYAVIGKQPKLTDGILEIITKAEEMLEKGPENEYSVDDECLVKLLKGLCLKYLGRVQEAEENFRSISANEKKIKYDHYLIPNALLELALLLMEQDRNEEAIKLLESAKQNYKNYSMESRTHFRIQAATLQAKSSLENSSRSMVSSVSL*',
     },
   ],
-}
+} as const

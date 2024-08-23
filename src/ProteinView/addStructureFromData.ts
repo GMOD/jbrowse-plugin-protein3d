@@ -7,7 +7,7 @@ export interface LoadStructureOptions {
 }
 
 // adapted from https://github.com/molstar/molstar/blob/ab4130d42d0ab2591f62460292ade0203207d4d2/src/apps/viewer/app.ts#L255C1-L259C6
-export async function loadStructureFromData({
+export async function addStructureFromData({
   data,
   format = 'pdb',
   options,
@@ -18,8 +18,6 @@ export async function loadStructureFromData({
   options?: LoadStructureOptions & { label?: string; dataLabel?: string }
   plugin: PluginContext
 }) {
-  await plugin.clear()
-
   const _data = await plugin.builders.data.rawData({
     data,
     label: options?.dataLabel,
@@ -30,10 +28,6 @@ export async function loadStructureFromData({
     format,
   )
   const model = await plugin.builders.structure.createModel(trajectory)
-  const seq = model.obj?.data.sequence.sequences[0].sequence.label
-    .toArray()
-    // @ts-expect-error
-    .join('')
 
   await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
@@ -44,5 +38,5 @@ export async function loadStructureFromData({
     },
   )
 
-  return { seq: seq as string }
+  return { model }
 }

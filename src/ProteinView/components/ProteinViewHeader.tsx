@@ -1,5 +1,6 @@
 import React from 'react'
 import { observer } from 'mobx-react'
+import { LoadingEllipses } from '@jbrowse/core/ui'
 import CascadingMenuButton from '@jbrowse/core/ui/CascadingMenuButton'
 
 // icons
@@ -9,26 +10,51 @@ import Visibility from '@mui/icons-material/Visibility'
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinAlignment from './ProteinAlignment'
-import { LoadingEllipses } from '@jbrowse/core/ui'
 
 const ProteinViewHeader = observer(function ({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { alignment, showAlignment } = model
+  const { structures, showAlignment } = model
   return (
     <div>
       <InformativeHeaderArea model={model} />
-      {showAlignment ? (
-        alignment ? (
-          <ProteinAlignment model={model} />
-        ) : (
-          <LoadingEllipses message="Loading pairwise alignment" />
-        )
-      ) : null}
+      {showAlignment
+        ? structures.map((structure, idx) => {
+            const { pairwiseAlignment } = structure
+            return (
+              <div key={idx}>
+                {pairwiseAlignment ? (
+                  <ProteinAlignment key={idx} model={structure} />
+                ) : (
+                  <LoadingEllipses message="Loading pairwise alignment" />
+                )}
+              </div>
+            )
+          })
+        : null}
     </div>
   )
+})
+
+const StructureInfoHeaderArea = observer(function ({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
+  return model.structures.map((s, id) => {
+    const { clickString, hoverString } = s
+
+    return (
+      <span key={id}>
+        {[
+          clickString ? `Click: ${clickString}` : '',
+          hoverString ? `Hover: ${hoverString}` : '',
+        ].join(' ')}
+      </span>
+    )
+  })
 })
 
 const InformativeHeaderArea = observer(function ({
@@ -36,21 +62,10 @@ const InformativeHeaderArea = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const {
-    showAlignment,
-    clickString,
-    hoverString,
-    showHighlight,
-    zoomToBaseLevel,
-  } = model
+  const { showAlignment, showHighlight, zoomToBaseLevel } = model
   return (
     <div style={{ display: 'flex' }}>
-      <span>
-        {[
-          clickString ? `Click: ${clickString}` : '',
-          hoverString ? `Hover: ${hoverString}` : '',
-        ].join(' ')}
-      </span>
+      <StructureInfoHeaderArea model={model} />
       <span style={{ flexGrow: 1 }} />
       <CascadingMenuButton
         menuItems={[

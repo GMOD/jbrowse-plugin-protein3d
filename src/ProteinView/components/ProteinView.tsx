@@ -1,21 +1,13 @@
 import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
-import { ErrorMessage } from '@jbrowse/core/ui'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
 
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
-import Header from './Header'
+import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
 import useProteinView from '../useProteinView'
-import useProteinViewClickBehavior from '../useProteinViewClickBehavior'
-import useProteinViewHoverBehavior from '../useProteinViewHoverBehavior'
-
-// utils
-import selectResidue from '../selectResidue'
-import highlightResidue from '../highlightResidue'
-import clearSelection from '../clearSelection'
 
 // css
 import css from '../css/molstar'
@@ -29,98 +21,47 @@ const ProteinView = observer(function ({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { url, data, showControls } = model
-  const { plugin, seq, parentRef, error } = useProteinView({
-    url,
-    data,
+  const { showControls } = model
+  const { plugin, parentRef, error } = useProteinView({
     showControls,
   })
+
+  useEffect(() => {
+    model.setMolstarPluginContext(plugin)
+  }, [plugin, model])
+
   return error ? (
     <ErrorMessage error={error} />
   ) : (
-    <ProteinViewContainer
-      model={model}
-      plugin={plugin}
-      seq={seq}
-      parentRef={parentRef}
-    />
+    <ProteinViewContainer model={model} parentRef={parentRef} />
   )
 })
 
 const ProteinViewContainer = observer(function ({
   model,
-  plugin,
-  seq,
   parentRef,
 }: {
   model: JBrowsePluginProteinViewModel
-  plugin?: PluginContext
-  seq?: string
   parentRef?: React.RefObject<HTMLDivElement>
 }) {
-  const {
-    width,
-    height,
-    structureSeqToTranscriptSeqPosition,
-    seq2,
-    structureSeqHoverPos,
-    showHighlight,
-    alignment,
-  } = model
-
-  const { error } = useProteinViewClickBehavior({ plugin, model })
-  useProteinViewHoverBehavior({ plugin, model })
-
-  const structure =
-    plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
-
-  useEffect(() => {
-    model.setSeqs(seq, seq2)
-  }, [seq, model, seq2])
-
-  useEffect(() => {
-    if (!plugin || !structureSeqToTranscriptSeqPosition || !structure) {
-      return
-    }
-    if (showHighlight) {
-      for (const coord of Object.keys(structureSeqToTranscriptSeqPosition)) {
-        selectResidue({
-          structure,
-          plugin,
-          selectedResidue: +coord + 1,
-        })
-      }
-    } else {
-      clearSelection({ plugin })
-    }
-  }, [plugin, structure, showHighlight, structureSeqToTranscriptSeqPosition])
-
-  useEffect(() => {
-    if (!plugin || !structure) {
-      return
-    }
-
-    if (structureSeqHoverPos === undefined) {
-      console.warn('not found')
-    } else {
-      highlightResidue({
-        structure,
-        plugin,
-        selectedResidue: structureSeqHoverPos,
-      })
-    }
-  }, [plugin, structure, structureSeqHoverPos])
+  const { width, height, error } = model
 
   return (
-    <div style={{ background: alignment ? undefined : '#ccc' }}>
+    <div style={{ background: '#ccc' }}>
       {error ? <ErrorMessage error={error} /> : null}
-      <Header model={model} />
+      <ProteinViewHeader model={model} />
       <div
         ref={parentRef}
         style={{
           position: 'relative',
           width,
           height,
+        }}
+      />
+      <ResizeHandle
+        style={{ height: 4, background: 'grey' }}
+        onDrag={delta => {
+          model.setHeight(model.height + delta)
         }}
       />
     </div>

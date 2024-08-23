@@ -3,7 +3,7 @@ import { IconButton } from '@mui/material'
 import { getSession } from '@jbrowse/core/util'
 
 // locals
-import { JBrowsePluginProteinViewModel } from '../model'
+import { JBrowsePluginProteinStructureModel } from '../model'
 
 // icons
 import Help from '@mui/icons-material/Help'
@@ -15,7 +15,7 @@ const ProteinAlignmentHelpDialog = lazy(
 export default function ProteinAlignmentHelpButton({
   model,
 }: {
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   return (
     <IconButton

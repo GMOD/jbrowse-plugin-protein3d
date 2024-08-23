@@ -1,22 +1,21 @@
 import { getSession } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
-import { JBrowsePluginProteinViewModel } from './model'
+import { JBrowsePluginProteinStructureModel } from './model'
 
 export function proteinToGenomeMapping({
   model,
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const {
     genomeToTranscriptSeqMapping,
-    alignment,
+    pairwiseAlignment,
     structureSeqToTranscriptSeqPosition,
   } = model
-  if (!genomeToTranscriptSeqMapping || !alignment) {
+  if (!genomeToTranscriptSeqMapping || !pairwiseAlignment) {
     return undefined
   }
   const { p2g, strand } = genomeToTranscriptSeqMapping
@@ -28,6 +27,7 @@ export function proteinToGenomeMapping({
   if (s0 === undefined) {
     return undefined
   }
+
   const start = s0
   const end = start + 3 * strand
   return [Math.min(start, end), Math.max(start, end)] as const
@@ -38,17 +38,16 @@ export async function clickProteinToGenome({
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinStructureModel
 }) {
   const session = getSession(model)
   const result = proteinToGenomeMapping({ structureSeqPos, model })
-  const { genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
+  const { connectedView, genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
   const { assemblyManager } = session
   if (!genomeToTranscriptSeqMapping || result === undefined) {
     return undefined
   }
   const [s1, s2] = result
-  const lgv = session.views[0] as LinearGenomeViewModel
   const { strand, refName } = genomeToTranscriptSeqMapping
   model.setClickGenomeHighlights([
     {
@@ -58,15 +57,18 @@ export async function clickProteinToGenome({
       end: s2,
     },
   ])
-
-  if (zoomToBaseLevel) {
-    await lgv.navToLocString(
-      `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
-    )
-  } else {
-    const assembly = assemblyManager.get(lgv.assemblyNames[0]!)
-    const r = assembly?.getCanonicalRefName(refName) ?? refName
-    lgv.centerAt(s1, r)
+  if (connectedView) {
+    if (zoomToBaseLevel) {
+      await connectedView.navToLocString(
+        `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
+      )
+    } else {
+      const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)
+      connectedView.centerAt(
+        s1,
+        assembly?.getCanonicalRefName(refName) ?? refName,
+      )
+    }
   }
 }
 
@@ -74,27 +76,26 @@ export function hoverProteinToGenome({
   model,
   structureSeqPos,
 }: {
-  structureSeqPos: number
-  model: JBrowsePluginProteinViewModel
+  structureSeqPos?: number
+  model: JBrowsePluginProteinStructureModel
 }) {
-  const session = getSession(model)
-  const result = proteinToGenomeMapping({ structureSeqPos, model })
-  const { genomeToTranscriptSeqMapping } = model
-  if (!genomeToTranscriptSeqMapping) {
-    return
+  if (structureSeqPos === undefined) {
+    model.setHoverGenomeHighlights([])
+  } else {
+    const mappedGenomeCoordinate = proteinToGenomeMapping({
+      structureSeqPos,
+      model,
+    })
+    const { genomeToTranscriptSeqMapping } = model
+    if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate) {
+      model.setHoverGenomeHighlights([
+        {
+          assemblyName: 'hg38',
+          refName: genomeToTranscriptSeqMapping.refName,
+          start: mappedGenomeCoordinate[0],
+          end: mappedGenomeCoordinate[1],
+        },
+      ])
+    }
   }
-  if (!result) {
-    session.notify('Genome position not found')
-    return
-  }
-  const [s1, s2] = result
-  const { refName } = genomeToTranscriptSeqMapping
-  model.setHoverGenomeHighlights([
-    {
-      assemblyName: 'hg38',
-      refName,
-      start: s1,
-      end: s2,
-    },
-  ])
 }

@@ -53,7 +53,7 @@ function getItemId(feat: Feat) {
 // filters if successive elements share same start/end
 export function dedupe(list: Feat[]) {
   return list.filter(
-    (item, pos, ary) => !pos || getItemId(item) !== getItemId(ary[pos - 1]),
+    (item, pos, ary) => !pos || getItemId(item) !== getItemId(ary[pos - 1]!),
   )
 }
 
@@ -102,8 +102,10 @@ export async function fetchProteinSeq({
   const refName = feature.get('refName')
   const session = getSession(view)
   const { assemblyManager, rpcManager } = session
-  const [assemblyName] = view?.assemblyNames ?? []
-  const assembly = await assemblyManager.waitForAssembly(assemblyName)
+  const assemblyName = view?.assemblyNames?.[0]
+  const assembly = assemblyName
+    ? await assemblyManager.waitForAssembly(assemblyName)
+    : undefined
   if (!assembly) {
     throw new Error('assembly not found')
   }
