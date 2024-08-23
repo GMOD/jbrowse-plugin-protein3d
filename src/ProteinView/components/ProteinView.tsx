@@ -5,7 +5,7 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // locals
 import { JBrowsePluginProteinViewModel } from '../model'
-import Header from './Header'
+import ProteinViewHeader from './ProteinViewHeader'
 
 // hooks
 import useProteinView from '../useProteinView'
@@ -41,17 +41,15 @@ const ProteinView = observer(function ({
   return error ? (
     <ErrorMessage error={error} />
   ) : (
-    <ProteinViewContainer model={model} plugin={plugin} parentRef={parentRef} />
+    <ProteinViewContainer model={model} parentRef={parentRef} />
   )
 })
 
 const ProteinViewContainer = observer(function ({
   model,
-  plugin,
   parentRef,
 }: {
   model: JBrowsePluginProteinViewModel
-  plugin?: PluginContext
   parentRef?: React.RefObject<HTMLDivElement>
 }) {
   const { width, height, error } = model
@@ -59,7 +57,7 @@ const ProteinViewContainer = observer(function ({
   return (
     <div style={{ background: '#ccc' }}>
       {error ? <ErrorMessage error={error} /> : null}
-      <Header model={model} />
+      <ProteinViewHeader model={model} />
       <div
         ref={parentRef}
         style={{
