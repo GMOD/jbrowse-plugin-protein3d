@@ -176,6 +176,7 @@ const AlphaFoldDBSearch = observer(function ({
           onClick={() => {
             session.addView('ProteinView', {
               type: 'ProteinView',
+              isFloating: true,
               structures: [
                 {
                   url,
