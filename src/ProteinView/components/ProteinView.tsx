@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { observer } from 'mobx-react'
-import { ErrorMessage } from '@jbrowse/core/ui'
+import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 // locals
@@ -54,57 +54,10 @@ const ProteinViewContainer = observer(function ({
   plugin?: PluginContext
   parentRef?: React.RefObject<HTMLDivElement>
 }) {
-  const {
-    width,
-    height,
-    showHighlight,
-    // structureSeqToTranscriptSeqPosition,
-    // structureSeqHoverPos,
-    // alignment,
-  } = model
+  const { width, height, error } = model
 
-  // const { error } = useProteinViewClickBehavior({ plugin, model })
-  // useProteinViewHoverBehavior({ plugin, model })
-
-  // const structure =
-  //   plugin?.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
-
-  // useEffect(() => {
-  //   if (!plugin || !structureSeqToTranscriptSeqPosition || !structure) {
-  //     return
-  //   }
-  //   if (showHighlight) {
-  //     for (const coord of Object.keys(structureSeqToTranscriptSeqPosition)) {
-  //       selectResidue({
-  //         structure,
-  //         plugin,
-  //         selectedResidue: +coord + 1,
-  //       })
-  //     }
-  //   } else {
-  //     clearSelection({ plugin })
-  //   }
-  // }, [plugin, structure, showHighlight, structureSeqToTranscriptSeqPosition])
-  //
-  // useEffect(() => {
-  //   if (!plugin || !structure) {
-  //     return
-  //   }
-  //
-  //   if (structureSeqHoverPos === undefined) {
-  //     console.warn('not found')
-  //   } else {
-  //     highlightResidue({
-  //       structure,
-  //       plugin,
-  //       selectedResidue: structureSeqHoverPos,
-  //     })
-  //   }
-  // }, [plugin, structure, structureSeqHoverPos])
-  const error = undefined
-  const alignment = undefined
   return (
-    <div style={{ background: alignment ? undefined : '#ccc' }}>
+    <div style={{ background: '#ccc' }}>
       {error ? <ErrorMessage error={error} /> : null}
       <Header model={model} />
       <div
@@ -113,6 +66,12 @@ const ProteinViewContainer = observer(function ({
           position: 'relative',
           width,
           height,
+        }}
+      />
+      <ResizeHandle
+        style={{ height: 4, background: 'grey' }}
+        onDrag={delta => {
+          model.setHeight(model.height + delta)
         }}
       />
     </div>

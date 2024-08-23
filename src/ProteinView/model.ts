@@ -8,6 +8,12 @@ import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
 import Structure from './structureModel'
+import highlightResidue from './highlightResidue'
+import {
+  StructureElement,
+  StructureProperties,
+} from 'molstar/lib/mol-model/structure'
+import { clickProteinToGenome } from './proteinToGenomeMapping'
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -36,7 +42,7 @@ function stateModelFactory() {
         /**
          * #property
          */
-        showControls: true,
+        showControls: false,
         /**
          * #property
          */
@@ -72,6 +78,12 @@ function stateModelFactory() {
     }))
 
     .actions(self => ({
+      /**
+       * #action
+       */
+      setHeight(n: number) {
+        self.height = n
+      },
       /**
        * #action
        */
@@ -121,20 +133,55 @@ function stateModelFactory() {
             if (molstarPluginContext) {
               for (const structure of structures) {
                 try {
-                  if (structure.data) {
-                    await addStructureFromData({
-                      data: structure.data,
-                      plugin: molstarPluginContext,
-                    })
-                  } else if (structure.url) {
-                    await addStructureFromURL({
-                      url: structure.url,
-                      plugin: molstarPluginContext,
-                    })
-                  }
+                  const { model } = structure.data
+                    ? await addStructureFromData({
+                        data: structure.data,
+                        plugin: molstarPluginContext,
+                      })
+                    : structure.url
+                      ? await addStructureFromURL({
+                          url: structure.url,
+                          plugin: molstarPluginContext,
+                        })
+                      : { model: undefined }
+
+                  const sequences = model?.obj?.data.sequence.sequences.map(
+                    s => {
+                      let seq = ''
+                      const arr = s.sequence.label.toArray()
+                      // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
+                      for (let i = 0; i < arr.length; i++) {
+                        seq += arr[i]!
+                      }
+                      return seq
+                    },
+                  )
+                  structure.setSequences(sequences)
                 } catch (e) {
                   self.setError(e)
                   console.error(e)
+                }
+              }
+            }
+          }),
+        )
+
+        addDisposer(
+          self,
+          autorun(() => {
+            const { structures, molstarPluginContext } = self
+            if (molstarPluginContext) {
+              for (const [i, s0] of structures.entries()) {
+                const structure =
+                  molstarPluginContext.managers.structure.hierarchy.current
+                    .structures[i]?.cell.obj?.data
+                const pos = s0.structureSeqHoverPos
+                if (structure && pos !== undefined) {
+                  highlightResidue({
+                    structure,
+                    plugin: molstarPluginContext,
+                    selectedResidue: pos,
+                  })
                 }
               }
             }

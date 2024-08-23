@@ -45,9 +45,9 @@
     semver "^6.3.1"
 
 "@babel/generator@^7.25.0", "@babel/generator@^7.25.4", "@babel/generator@^7.7.2":
-  version "7.25.4"
-  resolved "https://registry.yarnpkg.com/@babel/generator/-/generator-7.25.4.tgz#1dc63c1c9caae9e6dc24e264eac254eb25005669"
-  integrity sha512-NFtZmZsyzDPJnk9Zg3BbTfKKc9UlHYzD0E//p2Z3B9nCwwtJW9T0gVbCz8+fBngnn4zf1Dr3IK8PHQQHq0lDQw==
+  version "7.25.5"
+  resolved "https://registry.yarnpkg.com/@babel/generator/-/generator-7.25.5.tgz#b31cf05b3fe8c32d206b6dad03bb0aacbde73450"
+  integrity sha512-abd43wyLfbWoxC6ahM8xTkqLpGB2iWBVyuKC9/srhFunCd1SDNrV1s72bBpK4hLj8KLzHBBcOblvLQZBNw9r3w==
   dependencies:
     "@babel/types" "^7.25.4"
     "@jridgewell/gen-mapping" "^0.3.5"
@@ -994,7 +994,7 @@
     csstype "^3.1.3"
     prop-types "^15.8.1"
 
-"@mui/system@^5.12.0", "@mui/system@^5.16.5", "@mui/system@^5.16.7":
+"@mui/system@^5.12.0", "@mui/system@^5.16.7":
   version "5.16.7"
   resolved "https://registry.yarnpkg.com/@mui/system/-/system-5.16.7.tgz#4583ca5bf3b38942e02c15a1e622ba869ac51393"
   integrity sha512-Jncvs/r/d/itkxh7O7opOunTqbbSSzMTHzZkNLM+FjAOg+cYAZHrPDlYe1ZGKUYORwwb2XexlWnpZp0kZ4AHuA==
@@ -1013,7 +1013,7 @@
   resolved "https://registry.yarnpkg.com/@mui/types/-/types-7.2.15.tgz#dadd232fe9a70be0d526630675dff3b110f30b53"
   integrity sha512-nbo7yPhtKJkdf9kcVOF8JZHPZTmqXjJ/tI0bdWgHg5tp9AnIN4Y7f7wm9T+0SyGYJk76+GYZ8Q5XaTYAsUHN0Q==
 
-"@mui/utils@^5.16.5", "@mui/utils@^5.16.6":
+"@mui/utils@^5.16.6":
   version "5.16.6"
   resolved "https://registry.yarnpkg.com/@mui/utils/-/utils-5.16.6.tgz#905875bbc58d3dcc24531c3314a6807aba22a711"
   integrity sha512-tWiQqlhxAt3KENNiSRL+DIn9H5xNVK6Jjf70x3PnfQPz1MPBdh7yyIcAyVBT9xiw7hP3SomRhPR7hzBMBCjqEA==
@@ -1026,25 +1026,25 @@
     react-is "^18.3.1"
 
 "@mui/x-data-grid@^7.0.0", "@mui/x-data-grid@^7.3.0":
-  version "7.13.0"
-  resolved "https://registry.yarnpkg.com/@mui/x-data-grid/-/x-data-grid-7.13.0.tgz#23629576d05e7141380c0fcd86de469ed9fe0658"
-  integrity sha512-opV4OgNqc9UoKkQ1z5Ot2AkluwiVQMo6UmDaxmT/v0k2uQ77eQvxJqbnCwYll0XjsRzPz6ehiTaK3nbhXm0sIQ==
+  version "7.14.0"
+  resolved "https://registry.yarnpkg.com/@mui/x-data-grid/-/x-data-grid-7.14.0.tgz#7188a25867b065531f73c10a02ecc3e122b8eb04"
+  integrity sha512-ddVtvFXmENHADHzO0TGV2dzUQflexsXMbxEKMq3rBmgJ9QyeiZWBEwzgDps1CzqU5vi9QyDACCcPyoAuL6t3tQ==
   dependencies:
     "@babel/runtime" "^7.25.0"
-    "@mui/system" "^5.16.5"
-    "@mui/utils" "^5.16.5"
-    "@mui/x-internals" "7.13.0"
+    "@mui/system" "^5.16.7"
+    "@mui/utils" "^5.16.6"
+    "@mui/x-internals" "7.14.0"
     clsx "^2.1.1"
     prop-types "^15.8.1"
     reselect "^4.1.8"
 
-"@mui/x-internals@7.13.0":
-  version "7.13.0"
-  resolved "https://registry.yarnpkg.com/@mui/x-internals/-/x-internals-7.13.0.tgz#80ab1ecf6ffa345a800a94b4181dae6c487b3c51"
-  integrity sha512-eUK7iykkDWU+wBfTzE/S0qh4awgVgsORfrpvuPbUp+E6qUj1Xhu9M/WKzbwz0CPFnTJZwBQ9KYrxpGXnPBEpRQ==
+"@mui/x-internals@7.14.0":
+  version "7.14.0"
+  resolved "https://registry.yarnpkg.com/@mui/x-internals/-/x-internals-7.14.0.tgz#d02ae32cc72e4f558aee771cc37a8ade9c3c53d7"
+  integrity sha512-+qWIHLgt2vgH6bKmf7IwRvS86UbZRWKAdDY/yTQJaqzCzyesUvQhD+WRxe1kpdCK8UE061S9/Ju7hLkM4kjRNA==
   dependencies:
     "@babel/runtime" "^7.25.0"
-    "@mui/utils" "^5.16.5"
+    "@mui/utils" "^5.16.6"
 
 "@nodelib/fs.scandir@2.1.5":
   version "2.1.5"
@@ -2019,9 +2019,9 @@ clsx@^2.1.0, clsx@^2.1.1:
   integrity sha512-eYm0QWBtUrBWZWG0d386OGAw16Z995PiOVo2B7bjWSbHedGl5e0ZWaq65kOGgUSNesEIDkB9ISbTg/JK9dhCZA==
 
 clustal-js@^2.0.1:
-  version "2.0.2"
-  resolved "https://registry.yarnpkg.com/clustal-js/-/clustal-js-2.0.2.tgz#db9b517c5232a3828d6d943e07f38955dc55c31e"
-  integrity sha512-50GM4CUEkvbW1ILF30TgDgaLuim0dg8S3MQfCeVk1VCJLx33IKuQHVrT7CBmhotF0T4cFbS/3LCPnCY0UcOwrg==
+  version "2.0.3"
+  resolved "https://registry.yarnpkg.com/clustal-js/-/clustal-js-2.0.3.tgz#5b221f716b122408944437e1c742f19f7518fbf5"
+  integrity sha512-AK/aAPIOMYVGYDTFF+vGwEW3UZ0tuxGnWlIdcaFOvDE6LJQn0wcornTjh1pMawrzB7U4kf1byUnX97/jQ8HTgg==
 
 co@^4.6.0:
   version "4.6.0"
@@ -2610,10 +2610,10 @@ eslint-plugin-prettier@^5.0.0:
     prettier-linter-helpers "^1.0.0"
     synckit "^0.9.1"
 
-eslint-plugin-react-hooks@next:
-  version "5.1.0-rc-1d989965-20240821"
-  resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-5.1.0-rc-1d989965-20240821.tgz#14bfccb1d7ba08c2bfa6c6d35f0b09c89773cd60"
-  integrity sha512-oGk2ScQjiE7cW6naW23S2XKyIP0BJgBhxtwAC1r68VCKpbORS3kW0l+M5FoJc86V+eZqxnYzezpz9dArD1Jg0w==
+eslint-plugin-react-hooks@^5.1.0-rc-eb3ad065-20240822:
+  version "5.1.0-rc-fb9a90fa48-20240614"
+  resolved "https://registry.yarnpkg.com/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-5.1.0-rc-fb9a90fa48-20240614.tgz#206a7ec005f0b286aaf7091f4e566083d310b189"
+  integrity sha512-xsiRwaDNF5wWNC4ZHLut+x/YcAxksUd9Rizt7LaEn3bV8VyYRpXnRJQlLOfYaVy9esk4DFP4zPPnoNVjq5Gc0w==
 
 eslint-plugin-react-refresh@^0.4.11:
   version "0.4.11"

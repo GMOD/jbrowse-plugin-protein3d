@@ -51,12 +51,3 @@ export default function useProteinView({
 
   return { parentRef, error, plugin }
 }
-
-//
-// if (url) {
-//   const { model } = await addStructureFromURL({ url, plugin: p })
-//   setModel(model)
-// } else if (data) {
-//   const { model } = await addStructureFromData({ data, plugin: p })
-//   setModel(model)
-// }

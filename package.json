@@ -48,7 +48,7 @@
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
     "eslint-plugin-react": "^7.20.3",
-    "eslint-plugin-react-hooks": "next",
+    "eslint-plugin-react-hooks": "^5.1.0-rc-eb3ad065-20240822",
     "eslint-plugin-react-refresh": "^0.4.11",
     "eslint-plugin-unicorn": "^55.0.0",
     "fp-ts": "^2.16.9",

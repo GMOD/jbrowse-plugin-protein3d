@@ -19,6 +19,17 @@ import {
   PairwiseAlignment,
 } from '../mappings'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import {
+  StructureElement,
+  StructureProperties,
+} from 'molstar/lib/mol-model/structure'
+import {
+  clickProteinToGenome,
+  hoverProteinToGenome,
+} from './proteinToGenomeMapping'
+import selectResidue from './selectResidue'
+import clearSelection from './clearSelection'
+import highlightResidue from './highlightResidue'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
@@ -92,6 +103,10 @@ const Structure = types
      * #volatile
      */
     alignmentStatus: '',
+    /**
+     * #volatile
+     */
+    structureSequences: undefined as string[] | undefined,
   }))
   .actions(self => ({
     /**
@@ -100,22 +115,12 @@ const Structure = types
     setModel(model: StructureModel) {
       self.model = model
     },
+
+    setSequences(str?: string[]) {
+      self.structureSequences = str
+    },
   }))
   .views(self => ({
-    /**
-     * #getter
-     */
-    get structureSequences() {
-      return self.model?.obj?.data.sequence.sequences.map(s => {
-        let seq = ''
-        const arr = s.sequence.label.toArray()
-        // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
-        for (let i = 0; i < arr.length; i++) {
-          seq += arr[i]!
-        }
-        return seq
-      })
-    },
     /**
      * #getter
      */
@@ -270,6 +275,7 @@ const Structure = types
       const r2 = self.structureSequences?.[0]?.replaceAll('*', '')
       return r1 === r2
     },
+
     get zoomToBaseLevel(): boolean {
       // @ts-expect-error
       return getParent(self, 2).zoomToBaseLevel
@@ -277,6 +283,10 @@ const Structure = types
     get showHighlight(): boolean {
       // @ts-expect-error
       return getParent(self, 2).showHighlight
+    },
+    get molstarPluginContext(): PluginContext | undefined {
+      // @ts-expect-error
+      return getParent(self, 2).molstarPluginContext
     },
   }))
   .actions(self => ({
@@ -293,6 +303,7 @@ const Structure = types
             } = self
             const seq1 = userProvidedTranscriptSequence
             const seq2 = structureSequences?.[0]
+
             if (!!self.alignment || !seq1 || !seq2) {
               return
             }
@@ -359,6 +370,135 @@ const Structure = types
             if (c0 !== undefined) {
               self.setHoveredPosition({
                 structureSeqPos: c0,
+              })
+            }
+          }
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const { molstarPluginContext } = self
+          if (molstarPluginContext) {
+            const ret =
+              molstarPluginContext.behaviors.interaction.click.subscribe(e => {
+                if (StructureElement.Loci.is(e.current.loci)) {
+                  const loc = StructureElement.Loci.getFirstLocation(
+                    e.current.loci,
+                  )
+                  if (loc) {
+                    const pos = StructureProperties.residue.auth_seq_id(loc)
+                    const code = StructureProperties.atom.label_comp_id(loc)
+                    const chain = StructureProperties.chain.auth_asym_id(loc)
+                    self.setHoveredPosition({
+                      structureSeqPos: pos - 1,
+                      code,
+                      chain,
+                    })
+
+                    clickProteinToGenome({
+                      model: self as JBrowsePluginProteinStructureModel,
+                      structureSeqPos: pos - 1,
+                    }).catch((e: unknown) => {
+                      console.error(e)
+                      // @ts-expect-error
+                      getParent(self, 2).setError(e)
+                    })
+                  }
+                }
+              })
+            return () => {
+              ret.unsubscribe()
+            }
+          }
+          return () => {}
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const { molstarPluginContext } = self
+          if (molstarPluginContext) {
+            const ret =
+              molstarPluginContext.behaviors.interaction.hover.subscribe(e => {
+                if (StructureElement.Loci.is(e.current.loci)) {
+                  const loc = StructureElement.Loci.getFirstLocation(
+                    e.current.loci,
+                  )
+                  if (loc) {
+                    // example code for this label
+                    // https://github.com/molstar/molstar/blob/60550cfea1f62a50a764d5714307d6d1049be71d/src/mol-theme/label.ts#L255-L264
+                    const pos = StructureProperties.residue.auth_seq_id(loc)
+                    const code = StructureProperties.atom.label_comp_id(loc)
+                    const chain = StructureProperties.chain.auth_asym_id(loc)
+                    self.setHoveredPosition({
+                      structureSeqPos: pos - 1,
+                      code,
+                      chain,
+                    })
+                    hoverProteinToGenome({
+                      model: self as JBrowsePluginProteinStructureModel,
+                      structureSeqPos: pos - 1,
+                    })
+                  }
+                }
+              })
+            return () => {
+              ret.unsubscribe()
+            }
+          }
+          return () => {}
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const {
+            showHighlight,
+            structureSeqToTranscriptSeqPosition,
+            molstarPluginContext,
+          } = self
+          const structure =
+            molstarPluginContext?.managers.structure.hierarchy.current
+              .structures[0]?.cell.obj?.data
+          if (structure && structureSeqToTranscriptSeqPosition) {
+            if (showHighlight) {
+              for (const coord of Object.keys(
+                structureSeqToTranscriptSeqPosition,
+              )) {
+                selectResidue({
+                  structure,
+                  plugin: molstarPluginContext,
+                  selectedResidue: +coord + 1,
+                })
+              }
+            } else {
+              clearSelection({
+                plugin: molstarPluginContext,
+              })
+            }
+          }
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const { structureSeqHoverPos, molstarPluginContext } = self
+          const structure =
+            molstarPluginContext?.managers.structure.hierarchy.current
+              .structures[0]?.cell.obj?.data
+          if (structure) {
+            if (structureSeqHoverPos === undefined) {
+              console.warn('not found')
+            } else {
+              highlightResidue({
+                structure,
+                plugin: molstarPluginContext,
+                selectedResidue: structureSeqHoverPos,
               })
             }
           }
