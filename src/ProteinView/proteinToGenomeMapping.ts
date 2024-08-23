@@ -48,7 +48,9 @@ export async function clickProteinToGenome({
     return undefined
   }
   const [s1, s2] = result
-  const lgv = session.views[0] as LinearGenomeViewModel
+  const lgv = session.views.find(f => f.id === model.connectedViewId) as
+    | LinearGenomeViewModel
+    | undefined
   const { strand, refName } = genomeToTranscriptSeqMapping
   model.setClickGenomeHighlights([
     {
@@ -58,15 +60,15 @@ export async function clickProteinToGenome({
       end: s2,
     },
   ])
-
-  if (zoomToBaseLevel) {
-    await lgv.navToLocString(
-      `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
-    )
-  } else {
-    const assembly = assemblyManager.get(lgv.assemblyNames[0]!)
-    const r = assembly?.getCanonicalRefName(refName) ?? refName
-    lgv.centerAt(s1, r)
+  if (lgv) {
+    if (zoomToBaseLevel) {
+      await lgv.navToLocString(
+        `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
+      )
+    } else {
+      const assembly = assemblyManager.get(lgv.assemblyNames[0]!)
+      lgv.centerAt(s1, assembly?.getCanonicalRefName(refName) ?? refName)
+    }
   }
 }
 
@@ -74,22 +76,26 @@ export function hoverProteinToGenome({
   model,
   structureSeqPos,
 }: {
-  structureSeqPos: number
+  structureSeqPos?: number
   model: JBrowsePluginProteinStructureModel
 }) {
-  const mappedGenomeCoordinate = proteinToGenomeMapping({
-    structureSeqPos,
-    model,
-  })
-  const { genomeToTranscriptSeqMapping } = model
-  if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate) {
-    model.setHoverGenomeHighlights([
-      {
-        assemblyName: 'hg38',
-        refName: genomeToTranscriptSeqMapping.refName,
-        start: mappedGenomeCoordinate[0],
-        end: mappedGenomeCoordinate[1],
-      },
-    ])
+  if (structureSeqPos === undefined) {
+    model.setHoverGenomeHighlights([])
+  } else {
+    const mappedGenomeCoordinate = proteinToGenomeMapping({
+      structureSeqPos,
+      model,
+    })
+    const { genomeToTranscriptSeqMapping } = model
+    if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate) {
+      model.setHoverGenomeHighlights([
+        {
+          assemblyName: 'hg38',
+          refName: genomeToTranscriptSeqMapping.refName,
+          start: mappedGenomeCoordinate[0],
+          end: mappedGenomeCoordinate[1],
+        },
+      ])
+    }
   }
 }

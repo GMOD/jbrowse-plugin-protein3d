@@ -45,7 +45,7 @@ const ProteinAlignment = observer(function ({
 
   function onMouseOver(alignmentPos: number) {
     if (alignmentToStructurePosition) {
-      const structureSeqPos = alignmentToStructurePosition[alignmentPos]!
+      const structureSeqPos = alignmentToStructurePosition[alignmentPos]
       model.setHoveredPosition({ structureSeqPos })
       hoverProteinToGenome({ model, structureSeqPos })
     }

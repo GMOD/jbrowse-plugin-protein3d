@@ -168,7 +168,7 @@ const Structure = types
      * #action
      */
     setHoveredPosition(arg?: {
-      structureSeqPos: number
+      structureSeqPos?: number
       chain?: string
       code?: string
     }) {
