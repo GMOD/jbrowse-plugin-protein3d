@@ -187,7 +187,12 @@ const AlphaFoldDBSearch = observer(function ({
                   connectedViewId: view.id,
                 },
               ],
-              displayName: `Protein view ${uniprotId} - ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
+              displayName: [
+                'Protein view',
+                uniprotId,
+                getGeneDisplayName(feature),
+                getTranscriptDisplayName(selectedTranscript),
+              ].join(' - '),
             })
             handleClose()
           }}
@@ -201,113 +206,140 @@ const AlphaFoldDBSearch = observer(function ({
           }
           onClick={() => {
             if (uniprotId && isSessionWithAddTracks(session)) {
-              session.addTemporaryAssembly?.({
-                name: uniprotId,
-                sequence: {
-                  type: 'ReferenceSequenceTrack',
-                  trackId: `${uniprotId}-ReferenceSequenceTrack`,
-                  sequenceType: 'pep',
-                  adapter: {
-                    type: 'UnindexedFastaAdapter',
-                    rewriteRefNames: "jexl:split(refName,'|')[1]",
-                    fastaLocation: {
-                      uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.fasta`,
-                    },
-                  },
-                },
-              })
-              ;[
-                'Alternative sequence',
-                'Beta strand',
-                'Binding site',
-                'Chain',
-                'Compositional bias',
-                'Cross-link',
-                'Disulfide bond',
-                'Domain',
-                'Glycosylation',
-                'Helix',
-                'Modified residue',
-                'Motif',
-                'Mutagenesis',
-                'Natural variant',
-                'Peptide',
-                'Region',
-                'Sequence conflict',
-                'Signal peptide',
-                'Site',
-                'Topological domain',
-                'Transmembrane',
-                'Turn',
-              ].forEach(type => {
-                const s = `${uniprotId}-${type}`
-                session.addTrackConf({
-                  type: 'FeatureTrack',
-                  trackId: s,
-                  name: type,
-                  adapter: {
-                    type: 'Gff3Adapter',
-                    gffLocation: {
-                      uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`,
-                    },
-                  },
-                  assemblyNames: [uniprotId],
-                  displays: [
-                    {
-                      displayId: `${type}-LinearBasicDisplay`,
-                      type: 'LinearBasicDisplay',
-                      jexlFilters: [`get(feature,'type')=='${type}'`],
-                    },
-                  ],
-                })
-              })
-              session.addTrackConf({
-                type: 'QuantitativeTrack',
-                trackId: 'AlphaFold confidence',
-                name: 'AlphaFold confidence',
-                adapter: {
-                  type: 'AlphaFoldConfidenceAdapter',
-                  location: {
-                    uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-confidence_v4.json`,
-                    locationType: 'UriLocation',
-                  },
-                },
-                assemblyNames: [uniprotId],
-              })
-              session.addTrackConf({
-                type: 'MultiQuantitativeTrack',
-                trackId: 'AlphaMissense scores',
-                name: 'AlphaMissense scores',
-                assemblyNames: [uniprotId],
-                adapter: {
-                  type: 'AlphaMissensePathogenicityAdapter',
-                  location: {
-                    locationType: 'UriLocation',
-                    uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-aa-substitutions.csv`,
-                  },
-                },
-                displays: [
-                  {
-                    type: 'MultiLinearWiggleDisplay',
-                    displayId: 'AlphaMissense scores-MultiLinearWiggleDisplay',
-                    defaultRendering: 'multirowdensity',
-                    renderers: {
-                      MultiDensityRenderer: {
-                        type: 'MultiDensityRenderer',
-                        bicolorPivotValue: 0.5,
+              // eslint-disable-next-line @typescript-eslint/no-floating-promises
+              ;(async () => {
+                try {
+                  session.addTemporaryAssembly?.({
+                    name: uniprotId,
+                    sequence: {
+                      type: 'ReferenceSequenceTrack',
+                      trackId: `${uniprotId}-ReferenceSequenceTrack`,
+                      sequenceType: 'pep',
+                      adapter: {
+                        type: 'UnindexedFastaAdapter',
+                        rewriteRefNames: "jexl:split(refName,'|')[1]",
+                        fastaLocation: {
+                          uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.fasta`,
+                        },
                       },
                     },
-                  },
-                ],
-              })
-              const view = session.addView('LinearGenomeView', {
-                type: 'LinearGenomeView',
-                displayName: `Protein view ${uniprotId} ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
-              }) as LinearGenomeViewModel
-              view.navToLocString(uniprotId, uniprotId).catch((e: unknown) => {
-                console.error(e)
-                session.notifyError(`${e}`, e)
-              })
+                  })
+                  const url = `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`
+                  const res = await fetch(url)
+                  if (!res.ok) {
+                    throw new Error(`HTTP ${res.status} fetching ${url}`)
+                  }
+                  const data = await res.text()
+
+                  const types = [
+                    ...new Set(
+                      data
+                        .split('\n')
+                        .filter(f => !f.startsWith('#'))
+                        .map(f => f.trim())
+                        .filter(f => !!f)
+                        .map(f => f.split('\t')[2]),
+                    ),
+                  ]
+                  types.forEach(type => {
+                    const s = `${uniprotId}-${type}`
+                    session.addTrackConf({
+                      type: 'FeatureTrack',
+                      trackId: s,
+                      name: type,
+                      adapter: {
+                        type: 'Gff3Adapter',
+                        gffLocation: {
+                          uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`,
+                        },
+                      },
+                      assemblyNames: [uniprotId],
+                      displays: [
+                        {
+                          displayId: `${type}-LinearBasicDisplay`,
+                          type: 'LinearBasicDisplay',
+                          jexlFilters: [`get(feature,'type')=='${type}'`],
+                        },
+                      ],
+                    })
+                  })
+                  session.addTrackConf({
+                    type: 'FeatureTrack',
+                    trackId: 'Antigen',
+                    name: 'Antigen',
+                    adapter: {
+                      type: 'Gff3Adapter',
+                      gffLocation: {
+                        uri: `https://www.ebi.ac.uk/proteins/api/antigen/${uniprotId}?format=gff`,
+                      },
+                    },
+                    assemblyNames: [uniprotId],
+                  })
+                  session.addTrackConf({
+                    type: 'FeatureTrack',
+                    trackId: 'Variation',
+                    name: 'Variation',
+                    adapter: {
+                      type: 'UniProtVariationAdapter',
+                      location: {
+                        uri: `https://www.ebi.ac.uk/proteins/api/variation/${uniprotId}.json`,
+                      },
+                    },
+                    assemblyNames: [uniprotId],
+                  })
+                  session.addTrackConf({
+                    type: 'QuantitativeTrack',
+                    trackId: 'AlphaFold confidence',
+                    name: 'AlphaFold confidence',
+                    adapter: {
+                      type: 'AlphaFoldConfidenceAdapter',
+                      location: {
+                        uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-confidence_v4.json`,
+                      },
+                    },
+                    assemblyNames: [uniprotId],
+                  })
+                  session.addTrackConf({
+                    type: 'MultiQuantitativeTrack',
+                    trackId: 'AlphaMissense scores',
+                    name: 'AlphaMissense scores',
+                    assemblyNames: [uniprotId],
+                    adapter: {
+                      type: 'AlphaMissensePathogenicityAdapter',
+                      location: {
+                        uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-aa-substitutions.csv`,
+                      },
+                    },
+                    displays: [
+                      {
+                        type: 'MultiLinearWiggleDisplay',
+                        displayId:
+                          'AlphaMissense scores-MultiLinearWiggleDisplay',
+                        defaultRendering: 'multirowdensity',
+                        renderers: {
+                          MultiDensityRenderer: {
+                            type: 'MultiDensityRenderer',
+                            bicolorPivotValue: 0.5,
+                          },
+                        },
+                      },
+                    ],
+                  })
+                  const view = session.addView('LinearGenomeView', {
+                    type: 'LinearGenomeView',
+                    displayName: [
+                      'Protein view',
+                      uniprotId,
+                      getGeneDisplayName(feature),
+                      getTranscriptDisplayName(selectedTranscript),
+                    ].join(' - '),
+                  }) as LinearGenomeViewModel
+                  await view.navToLocString(uniprotId, uniprotId)
+                } catch (e) {
+                  console.error(e)
+                  session.notifyError(`${e}`, e)
+                }
+              })()
             }
             handleClose()
           }}

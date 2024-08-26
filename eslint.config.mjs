@@ -70,6 +70,7 @@ export default tseslint.config(
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/no-empty-function': 'off',
+      '@typescript-eslint/no-deprecated': 'off',
 
       'unicorn/no-array-for-each': 'off',
       'unicorn/no-null': 'off',
