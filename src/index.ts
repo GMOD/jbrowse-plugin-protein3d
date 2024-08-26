@@ -6,6 +6,8 @@ import { version } from '../package.json'
 import ProteinViewF from './ProteinView'
 import LaunchProteinViewF from './LaunchProteinView'
 import AddHighlightModelF from './AddHighlightModel'
+import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
+import AlphaMissensePathogenicityAdapterF from './AlphaMissensePathogenicityAdapter'
 
 export default class ProteinViewer extends Plugin {
   name = 'ProteinViewer'
@@ -15,6 +17,8 @@ export default class ProteinViewer extends Plugin {
     ProteinViewF(pluginManager)
     LaunchProteinViewF(pluginManager)
     AddHighlightModelF(pluginManager)
+    AlphaFoldConfidenceAdapterF(pluginManager)
+    AlphaMissensePathogenicityAdapterF(pluginManager)
   }
 
   configure(_pluginManager: PluginManager) {}
