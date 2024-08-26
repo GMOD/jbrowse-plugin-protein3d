@@ -31,12 +31,16 @@ function extendStateModel(stateModel: IAnyModelType) {
             ...(feature
               ? [
                   {
-                    label: 'Launch 3-D protein view',
+                    label: 'Launch protein view',
                     icon: AddIcon,
                     onClick: () => {
                       getSession(track).queueDialog(handleClose => [
                         LaunchProteinViewDialog,
-                        { model: track, handleClose, feature },
+                        {
+                          model: track,
+                          handleClose,
+                          feature,
+                        },
                       ])
                     },
                   },

@@ -71,6 +71,7 @@ export default tseslint.config(
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/no-empty-function': 'off',
 
+      'unicorn/no-array-for-each': 'off',
       'unicorn/no-null': 'off',
       'unicorn/prefer-spread': 'off',
       'unicorn/no-nested-ternary': 'off',
