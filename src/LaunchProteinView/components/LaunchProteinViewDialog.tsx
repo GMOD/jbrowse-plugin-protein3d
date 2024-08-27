@@ -6,6 +6,7 @@ import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 // locals
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
 import UserProvidedStructure from './UserProvidedStructure'
+import ManualUniProtIDEntry from './ManualUniProtIDEntry'
 import TabPanel from './TabPanel'
 
 export default function LaunchProteinViewDialog({
@@ -22,10 +23,10 @@ export default function LaunchProteinViewDialog({
     <Dialog
       maxWidth="xl"
       title="Launch protein view"
+      open
       onClose={() => {
         handleClose()
       }}
-      open
     >
       <Tabs
         value={choice}
@@ -33,8 +34,9 @@ export default function LaunchProteinViewDialog({
           setChoice(val)
         }}
       >
-        <Tab value={0} label="Automatic lookup" />
-        <Tab value={1} label="Manual" />
+        <Tab value={0} label="Automatic UniProt lookup" />
+        <Tab value={1} label="Manual UniProt entry" />
+        <Tab value={2} label="Open file manually" />
       </Tabs>
       <TabPanel value={choice} index={0}>
         <AlphaFoldDBSearch
@@ -44,6 +46,13 @@ export default function LaunchProteinViewDialog({
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
+        <ManualUniProtIDEntry
+          model={model}
+          feature={feature}
+          handleClose={handleClose}
+        />
+      </TabPanel>
+      <TabPanel value={choice} index={2}>
         <UserProvidedStructure
           model={model}
           feature={feature}

@@ -7,12 +7,10 @@ import ProteinToGenomeClickHighlight from './ProteinToGenomeClickHighlight'
 import ProteinToGenomeHoverHighlight from './ProteinToGenomeHoverHighlight'
 import GenomeMouseoverHighlight from './GenomeMouseoverHighlight'
 
-type LGV = LinearGenomeViewModel
-
 const HighlightComponents = observer(function Highlight({
   model,
 }: {
-  model: LGV
+  model: LinearGenomeViewModel
 }) {
   return (
     <>

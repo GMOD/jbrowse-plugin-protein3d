@@ -1,6 +1,12 @@
 import React, { useEffect, useState } from 'react'
 import { observer } from 'mobx-react'
-import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  Button,
+  DialogActions,
+  DialogContent,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 import {
   AbstractTrackModel,
@@ -14,20 +20,17 @@ import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 // locals
 import {
-  getDisplayName,
-  getGeneDisplayName,
   getId,
+  getGeneDisplayName,
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from './util'
 
 // components
 import TranscriptSelector from './TranscriptSelector'
-import HelpButton from './HelpButton'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 
 // hooks
-import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 
@@ -38,7 +41,7 @@ const useStyles = makeStyles()(theme => ({
   },
 }))
 
-const AlphaFoldDBSearch = observer(function ({
+const ManualUniProtIDEntry = observer(function ({
   feature,
   model,
   handleClose,
@@ -65,16 +68,7 @@ const AlphaFoldDBSearch = observer(function ({
     view,
   })
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
-  const {
-    uniprotId,
-    isLoading: isMyGeneLoading,
-    error: myGeneError,
-  } = useMyGeneInfoUniprotIdLookup({
-    id: selectedTranscript
-      ? getDisplayName(selectedTranscript)
-      : getDisplayName(feature),
-  })
-
+  const [uniprotId, setUniprotId] = useState('')
   const url = uniprotId
     ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
     : undefined
@@ -83,8 +77,7 @@ const AlphaFoldDBSearch = observer(function ({
     isLoading: isRemoteStructureSequenceLoading,
     error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
-  const e =
-    myGeneError || isoformProteinSequencesError || remoteStructureSequenceError
+  const e = isoformProteinSequencesError || remoteStructureSequenceError
 
   const structureSequence = structureSequences?.[0]
   useEffect(() => {
@@ -103,36 +96,21 @@ const AlphaFoldDBSearch = observer(function ({
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
-        <Typography>
-          Automatically find AlphaFoldDB entry for given transcript via gene ID
-          lookup <HelpButton />
-        </Typography>
+        <Typography>Manually enter a UniProt ID</Typography>
         {isRemoteStructureSequenceLoading ? (
           <LoadingEllipses
             variant="h6"
             message="Loading sequence from remote structure file"
           />
         ) : null}
-        {isMyGeneLoading ? (
-          <LoadingEllipses
-            variant="h6"
-            message="Looking up UniProt ID from mygene.info"
-          />
-        ) : uniprotId ? null : (
-          <div>
-            UniProt ID not found. Search sequence on AlphaFoldDB{' '}
-            <a
-              href={`https://alphafold.ebi.ac.uk/search/sequence/${userSelectedProteinSequence?.seq.replaceAll('*', '')}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              here
-            </a>{' '}
-            <br />
-            After visiting the above link, then paste the structure URL into the
-            Manual tab
-          </div>
-        )}
+
+        <TextField
+          label="UniProt ID"
+          value={uniprotId}
+          onChange={event => {
+            setUniprotId(event.target.value)
+          }}
+        />
         {isIsoformProteinSequencesLoading ? (
           <LoadingEllipses
             variant="h6"
@@ -351,4 +329,4 @@ const AlphaFoldDBSearch = observer(function ({
   )
 })
 
-export default AlphaFoldDBSearch
+export default ManualUniProtIDEntry

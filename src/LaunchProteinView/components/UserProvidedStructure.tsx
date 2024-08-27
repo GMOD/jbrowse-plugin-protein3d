@@ -267,7 +267,7 @@ const UserProvidedStructure = observer(function ({
             })()
           }}
         >
-          Submit
+          Launch 3-D protein structure view
         </Button>
       </DialogActions>
     </>
