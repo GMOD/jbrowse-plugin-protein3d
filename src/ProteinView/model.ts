@@ -78,6 +78,7 @@ function stateModelFactory() {
        */
       setHeight(n: number) {
         self.height = n
+        return n
       },
       /**
        * #action

@@ -61,7 +61,7 @@ const ProteinViewContainer = observer(function ({
       <ResizeHandle
         style={{ height: 4, background: 'grey' }}
         onDrag={delta => {
-          model.setHeight(model.height + delta)
+          return model.setHeight(model.height + delta)
         }}
       />
     </div>
