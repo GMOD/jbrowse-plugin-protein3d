@@ -256,7 +256,7 @@ const AlphaFoldDBSearch = observer(function ({
                       assemblyNames: [uniprotId],
                       displays: [
                         {
-                          displayId: `${type}-LinearBasicDisplay`,
+                          displayId: `${s}-LinearBasicDisplay`,
                           type: 'LinearBasicDisplay',
                           jexlFilters: [`get(feature,'type')=='${type}'`],
                         },
@@ -265,7 +265,7 @@ const AlphaFoldDBSearch = observer(function ({
                   })
                   session.addTrackConf({
                     type: 'FeatureTrack',
-                    trackId: 'Antigen',
+                    trackId: `${uniprotId}-Antigen`,
                     name: 'Antigen',
                     adapter: {
                       type: 'Gff3Adapter',
@@ -277,7 +277,7 @@ const AlphaFoldDBSearch = observer(function ({
                   })
                   session.addTrackConf({
                     type: 'FeatureTrack',
-                    trackId: 'Variation',
+                    trackId: `${uniprotId}-Variation`,
                     name: 'Variation',
                     adapter: {
                       type: 'UniProtVariationAdapter',
@@ -289,7 +289,7 @@ const AlphaFoldDBSearch = observer(function ({
                   })
                   session.addTrackConf({
                     type: 'QuantitativeTrack',
-                    trackId: 'AlphaFold confidence',
+                    trackId: `${uniprotId}-AlphaFold-confidence`,
                     name: 'AlphaFold confidence',
                     adapter: {
                       type: 'AlphaFoldConfidenceAdapter',
@@ -301,7 +301,7 @@ const AlphaFoldDBSearch = observer(function ({
                   })
                   session.addTrackConf({
                     type: 'MultiQuantitativeTrack',
-                    trackId: 'AlphaMissense scores',
+                    trackId: `${uniprotId}-AlphaMissense-scores`,
                     name: 'AlphaMissense scores',
                     assemblyNames: [uniprotId],
                     adapter: {
@@ -313,8 +313,7 @@ const AlphaFoldDBSearch = observer(function ({
                     displays: [
                       {
                         type: 'MultiLinearWiggleDisplay',
-                        displayId:
-                          'AlphaMissense scores-MultiLinearWiggleDisplay',
+                        displayId: `${uniprotId}-AlphaMissense-scores-MultiLinearWiggleDisplay`,
                         defaultRendering: 'multirowdensity',
                         renderers: {
                           MultiDensityRenderer: {
