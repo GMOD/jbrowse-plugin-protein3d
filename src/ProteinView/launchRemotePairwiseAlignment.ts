@@ -82,7 +82,9 @@ async function wait({
   while (true) {
     for (let i = 0; i < 10; i++) {
       await timeout(1000)
-      onProgress(`Re-checking pairwiseAlignment to PDB seq1,seq2 in... ${10 - i}`)
+      onProgress(
+        `Re-checking pairwiseAlignment to PDB seq1,seq2 in... ${10 - i}`,
+      )
     }
     const result = await textfetch(`${base}/${algorithm}/status/${jobId}`)
 

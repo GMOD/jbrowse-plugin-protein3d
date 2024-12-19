@@ -33,6 +33,7 @@ const ProteinView = observer(function ({
   return error ? (
     <ErrorMessage error={error} />
   ) : (
+    // @ts-expect-error
     <ProteinViewContainer model={model} parentRef={parentRef} />
   )
 })

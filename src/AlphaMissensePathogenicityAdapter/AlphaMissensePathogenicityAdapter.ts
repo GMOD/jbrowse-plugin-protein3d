@@ -80,7 +80,7 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
     return []
   }
 
-  public getFeatures(query: Region, opts: BaseOptions = {}) {
+  public getFeatures(query: Region, _opts: BaseOptions = {}) {
     return ObservableCreate<Feature>(async observer => {
       const { start, end, refName } = query
       const data = await this.loadData()
@@ -90,7 +90,7 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
         }
       }
       observer.complete()
-    }, opts.signal)
+    })
   }
 
   public async getSources() {

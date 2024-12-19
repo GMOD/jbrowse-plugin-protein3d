@@ -82,7 +82,7 @@ export default class UniProtVariationAdapter extends BaseFeatureDataAdapter {
     return []
   }
 
-  public getFeatures(query: Region, opts: BaseOptions = {}) {
+  public getFeatures(query: Region, _opts: BaseOptions = {}) {
     return ObservableCreate<Feature>(async observer => {
       const { start, end, refName } = query
       const data = await this.loadData()
@@ -92,7 +92,7 @@ export default class UniProtVariationAdapter extends BaseFeatureDataAdapter {
         }
       }
       observer.complete()
-    }, opts.signal)
+    })
   }
 
   public freeResources(): void {}

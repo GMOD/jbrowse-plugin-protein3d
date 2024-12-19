@@ -5,7 +5,7 @@ import prettyBytes from 'pretty-bytes'
 
 function createGlobalMap(jbrowseGlobals) {
   const globalMap = {}
-  for (const global of jbrowseGlobals) {
+  for (const global of [...jbrowseGlobals, 'react-dom/client']) {
     globalMap[global] = {
       varName: `JBrowseExports["${global}"]`,
       type: 'cjs',
