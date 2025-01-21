@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
-import { observer } from 'mobx-react'
+
 import { Tooltip, Typography } from '@mui/material'
+import { observer } from 'mobx-react'
 
 // locals
 import { JBrowsePluginProteinStructureModel } from '../model'

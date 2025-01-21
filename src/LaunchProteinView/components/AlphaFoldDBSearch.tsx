@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { observer } from 'mobx-react'
-import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
+
+import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import {
   AbstractTrackModel,
   Feature,
@@ -9,10 +8,16 @@ import {
   getSession,
   isSessionWithAddTracks,
 } from '@jbrowse/core/util'
-import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
+import { observer } from 'mobx-react'
+import { makeStyles } from 'tss-react/mui'
 
-// locals
+import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
+import HelpButton from './HelpButton'
+import TranscriptSelector from './TranscriptSelector'
+import useIsoformProteinSequences from './useIsoformProteinSequences'
+import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
+import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 import {
   getDisplayName,
   getGeneDisplayName,
@@ -21,15 +26,7 @@ import {
   getTranscriptFeatures,
 } from './util'
 
-// components
-import TranscriptSelector from './TranscriptSelector'
-import HelpButton from './HelpButton'
-import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
-
-// hooks
-import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
-import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
-import useIsoformProteinSequences from './useIsoformProteinSequences'
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {

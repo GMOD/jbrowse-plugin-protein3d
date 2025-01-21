@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react'
+
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
+
 import { addStructureFromData } from '../../ProteinView/addStructureFromData'
 
 async function structureFileSequenceFetcher(

@@ -1,12 +1,9 @@
 import React from 'react'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  Typography,
-  TypographyProps,
-} from '@mui/material'
+
 import { Dialog } from '@jbrowse/core/ui'
+import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
+
+import type { TypographyProps } from '@mui/material'
 
 function Typography2({ children }: TypographyProps) {
   return (

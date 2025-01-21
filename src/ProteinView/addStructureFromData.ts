@@ -1,6 +1,6 @@
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
-import { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 import { StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset'
+import { type BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 
 export interface LoadStructureOptions {
   representationParams?: StructureRepresentationPresetProvider.CommonParams

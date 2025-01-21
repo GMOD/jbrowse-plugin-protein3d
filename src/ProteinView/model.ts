@@ -1,14 +1,13 @@
-import { autorun } from 'mobx'
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
-import { Instance, addDisposer, types } from 'mobx-state-tree'
+import { autorun } from 'mobx'
+import { type Instance, addDisposer, types } from 'mobx-state-tree'
+import { type PluginContext } from 'molstar/lib/mol-plugin/context'
 
-// locals
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
-import Structure from './structureModel'
 import highlightResidue from './highlightResidue'
+import Structure from './structureModel'
 
 /**
  * #stateModel Protein3dViewPlugin

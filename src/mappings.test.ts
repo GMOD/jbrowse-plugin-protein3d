@@ -1,9 +1,10 @@
+import { SimpleFeature } from '@jbrowse/core/util'
 import { expect, test } from 'vitest'
+
 import {
   genomeToTranscriptSeqMapping,
   structureSeqVsTranscriptSeqMap,
 } from './mappings'
-import { SimpleFeature } from '@jbrowse/core/util'
 import { feature, pairwiseAlignment } from './test_data/gene'
 
 test('test', () => {

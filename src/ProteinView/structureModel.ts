@@ -1,35 +1,35 @@
-import { autorun } from 'mobx'
-import { Region as IRegion } from '@jbrowse/core/util/types'
-import { Instance, addDisposer, getParent, types } from 'mobx-state-tree'
 import {
   SimpleFeature,
   SimpleFeatureSerialized,
   getSession,
 } from '@jbrowse/core/util'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-
-// locals
-import { checkHovered, invertMap, toStr } from './util'
-import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
-import {
-  genomeToTranscriptSeqMapping,
-  structureSeqVsTranscriptSeqMap,
-  structurePositionToAlignmentMap,
-  transcriptPositionToAlignmentMap,
-  PairwiseAlignment,
-} from '../mappings'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { Region as IRegion } from '@jbrowse/core/util/types'
+import { autorun } from 'mobx'
+import { type Instance, addDisposer, getParent, types } from 'mobx-state-tree'
 import {
   StructureElement,
   StructureProperties,
 } from 'molstar/lib/mol-model/structure'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
+
+import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
+import {
+  PairwiseAlignment,
+  genomeToTranscriptSeqMapping,
+  structurePositionToAlignmentMap,
+  structureSeqVsTranscriptSeqMap,
+  transcriptPositionToAlignmentMap,
+} from '../mappings'
+import clearSelection from './clearSelection'
+import highlightResidue from './highlightResidue'
 import {
   clickProteinToGenome,
   hoverProteinToGenome,
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
-import clearSelection from './clearSelection'
-import highlightResidue from './highlightResidue'
+import { checkHovered, invertMap, toStr } from './util'
+
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined

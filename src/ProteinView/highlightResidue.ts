@@ -1,5 +1,6 @@
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { Structure, StructureSelection } from 'molstar/lib/mol-model/structure'
+import { PluginContext } from 'molstar/lib/mol-plugin/context'
+
 import { getMolstarStructureSelection } from './util'
 
 export default function highlightResidue({

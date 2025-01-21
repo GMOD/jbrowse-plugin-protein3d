@@ -1,13 +1,11 @@
 import React from 'react'
-import { observer } from 'mobx-react'
+
 import { LoadingEllipses } from '@jbrowse/core/ui'
 import CascadingMenuButton from '@jbrowse/core/ui/CascadingMenuButton'
-
-// icons
 import MenuIcon from '@mui/icons-material/Menu'
 import Visibility from '@mui/icons-material/Visibility'
+import { observer } from 'mobx-react'
 
-// locals
 import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinAlignment from './ProteinAlignment'
 

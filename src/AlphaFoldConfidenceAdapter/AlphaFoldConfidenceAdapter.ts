@@ -2,14 +2,14 @@ import {
   BaseFeatureDataAdapter,
   BaseOptions,
 } from '@jbrowse/core/data_adapters/BaseAdapter'
+import {
+  Feature,
+  Region,
+  SimpleFeature,
+  doesIntersect2,
+} from '@jbrowse/core/util'
 import { openLocation } from '@jbrowse/core/util/io'
 import { ObservableCreate } from '@jbrowse/core/util/rxjs'
-import {
-  Region,
-  Feature,
-  doesIntersect2,
-  SimpleFeature,
-} from '@jbrowse/core/util'
 
 export default class AlphaFoldConfidenceAdapter extends BaseFeatureDataAdapter {
   public static capabilities = ['getFeatures', 'getRefNames']

@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
+
 import { Dialog } from '@jbrowse/core/ui'
-import { Tab, Tabs } from '@mui/material'
 import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
+import { Tab, Tabs } from '@mui/material'
 
 // locals
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
-import UserProvidedStructure from './UserProvidedStructure'
 import ManualUniProtIDEntry from './ManualUniProtIDEntry'
 import TabPanel from './TabPanel'
+import UserProvidedStructure from './UserProvidedStructure'
 
 export default function LaunchProteinViewDialog({
   handleClose,

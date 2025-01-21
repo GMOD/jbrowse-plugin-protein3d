@@ -1,16 +1,12 @@
 import React, { useEffect } from 'react'
-import { observer } from 'mobx-react'
-import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
 
-// locals
+import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
+import { observer } from 'mobx-react'
+
 import { JBrowsePluginProteinViewModel } from '../model'
 import ProteinViewHeader from './ProteinViewHeader'
-
-// hooks
-import useProteinView from '../useProteinView'
-
-// css
 import css from '../css/molstar'
+import useProteinView from '../useProteinView'
 
 const style = document.createElement('style')
 style.append(css)

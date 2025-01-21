@@ -1,6 +1,7 @@
 import { getSession } from '@jbrowse/core/util'
-import { checkHovered } from './util'
+
 import { JBrowsePluginProteinStructureModel } from './model'
+import { checkHovered } from './util'
 
 export function genomeToProtein({
   model,

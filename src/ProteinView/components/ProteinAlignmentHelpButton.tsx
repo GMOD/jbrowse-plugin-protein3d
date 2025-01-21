@@ -1,12 +1,13 @@
 import React, { lazy } from 'react'
-import { IconButton } from '@mui/material'
+
 import { getSession } from '@jbrowse/core/util'
+import Help from '@mui/icons-material/Help'
+import { IconButton } from '@mui/material'
 
 // locals
 import { JBrowsePluginProteinStructureModel } from '../model'
 
 // icons
-import Help from '@mui/icons-material/Help'
 
 const ProteinAlignmentHelpDialog = lazy(
   () => import('./ProteinAlignmentHelpDialog'),

@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
-import { Checkbox, FormControlLabel, TextField } from '@mui/material'
+
 import { Feature, max } from '@jbrowse/core/util'
+import { Checkbox, FormControlLabel, TextField } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 // locals

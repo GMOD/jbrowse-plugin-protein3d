@@ -1,9 +1,13 @@
 import React from 'react'
-import { MenuItem, TextField, TextFieldProps } from '@mui/material'
+
 import { Feature } from '@jbrowse/core/util'
+import { MenuItem, TextField } from '@mui/material'
+
+import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+
+import type { TextFieldProps } from '@mui/material'
 
 // locals
-import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
 function TextField2({ children, ...rest }: TextFieldProps) {
   return (

@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
 // molstar
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'

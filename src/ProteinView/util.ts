@@ -1,6 +1,7 @@
 import { Feature } from '@jbrowse/core/util'
 import { Structure } from 'molstar/lib/mol-model/structure'
 import { Script } from 'molstar/lib/mol-script/script'
+
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 
 export function checkHovered(hovered: unknown): hovered is {

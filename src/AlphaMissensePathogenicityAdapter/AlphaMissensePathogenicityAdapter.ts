@@ -2,16 +2,16 @@ import {
   BaseFeatureDataAdapter,
   BaseOptions,
 } from '@jbrowse/core/data_adapters/BaseAdapter'
-import { openLocation } from '@jbrowse/core/util/io'
-import { ObservableCreate } from '@jbrowse/core/util/rxjs'
 import {
-  Region,
   Feature,
-  doesIntersect2,
+  Region,
   SimpleFeature,
+  doesIntersect2,
   max,
   min,
 } from '@jbrowse/core/util'
+import { openLocation } from '@jbrowse/core/util/io'
+import { ObservableCreate } from '@jbrowse/core/util/rxjs'
 
 export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAdapter {
   public static capabilities = ['getFeatures', 'getRefNames']

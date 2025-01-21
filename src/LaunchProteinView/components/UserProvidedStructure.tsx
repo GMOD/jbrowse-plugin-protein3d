@@ -1,28 +1,33 @@
 import React, { useEffect, useState } from 'react'
-import { observer } from 'mobx-react'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  FormControlLabel,
-  FormControl,
-  Link,
-  Radio,
-  RadioGroup,
-  TextField,
-  Typography,
-} from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
+
+import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import {
   AbstractTrackModel,
   Feature,
   getContainingView,
   getSession,
 } from '@jbrowse/core/util'
-import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import {
+  Button,
+  DialogActions,
+  DialogContent,
+  FormControl,
+  FormControlLabel,
+  Link,
+  Radio,
+  RadioGroup,
+  TextField,
+  Typography,
+} from '@mui/material'
+import { observer } from 'mobx-react'
+import { makeStyles } from 'tss-react/mui'
 
-// locals
+import HelpButton from './HelpButton'
+import MSATable from './MSATable'
+import TranscriptSelector from './TranscriptSelector'
+import useIsoformProteinSequences from './useIsoformProteinSequences'
+import useLocalStructureFileSequence from './useLocalStructureFileSequence'
+import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 import {
   getGeneDisplayName,
   getId,
@@ -30,15 +35,7 @@ import {
   getTranscriptFeatures,
 } from './util'
 
-// components
-import TranscriptSelector from './TranscriptSelector'
-import MSATable from './MSATable'
-import HelpButton from './HelpButton'
-
-// hooks
-import useIsoformProteinSequences from './useIsoformProteinSequences'
-import useLocalStructureFileSequence from './useLocalStructureFileSequence'
-import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()(theme => ({
   dialogContent: {

@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
+
 import { Feature } from '@jbrowse/core/util'
 
 // locals
-import { getTranscriptFeatures } from './util'
 import { fetchProteinSeq } from './calculateProteinSequence'
+import { getTranscriptFeatures } from './util'
 
 export default function useIsoformProteinSequences({
   feature,
