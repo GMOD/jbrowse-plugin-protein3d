@@ -55,12 +55,10 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
   }
 
   private async loadData(_opts: BaseOptions = {}) {
-    if (!this.feats) {
-      this.feats = this.loadDataP().catch((e: unknown) => {
-        this.feats = undefined
-        throw e
-      })
-    }
+    this.feats ??= this.loadDataP().catch((e: unknown) => {
+      this.feats = undefined
+      throw e
+    })
 
     return this.feats
   }

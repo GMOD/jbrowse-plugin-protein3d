@@ -20,7 +20,7 @@ export function z(n: number) {
 }
 
 export function getDisplayName(f: Feature): string {
-  return f.get('name') || f.get('id')
+  return f.get('name') ?? f.get('id')
 }
 
 export function getId(val?: Feature): string {
@@ -30,13 +30,13 @@ export function getId(val?: Feature): string {
 export function getTranscriptDisplayName(val?: Feature): string {
   return val === undefined
     ? ''
-    : [val.get('name') || val.get('id')].filter(f => !!f).join(' ')
+    : [val.get('name') ?? val.get('id')].filter(f => !!f).join(' ')
 }
 
 export function getGeneDisplayName(val?: Feature): string {
   return val === undefined
     ? ''
-    : [val.get('gene_name') || val.get('name') || val.get('id')]
+    : [val.get('gene_name') ?? val.get('name') ?? val.get('id')]
         .filter(f => !!f)
         .join(' ')
 }

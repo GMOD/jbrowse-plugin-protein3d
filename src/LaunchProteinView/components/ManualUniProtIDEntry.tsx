@@ -74,7 +74,7 @@ const ManualUniProtIDEntry = observer(function ({
     isLoading: isRemoteStructureSequenceLoading,
     error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
-  const e = isoformProteinSequencesError || remoteStructureSequenceError
+  const e = isoformProteinSequencesError ?? remoteStructureSequenceError
 
   const structureSequence = structureSequences?.[0]
   useEffect(() => {

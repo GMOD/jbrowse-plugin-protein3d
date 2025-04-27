@@ -21,9 +21,7 @@ export function genomeToTranscriptMapping(feature: Feature) {
       ) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
-        if (!p2g[proteinPos]) {
-          p2g[proteinPos] = genomePos
-        }
+        p2g[proteinPos] ??= genomePos
       }
     }
   } else {
@@ -35,9 +33,7 @@ export function genomeToTranscriptMapping(feature: Feature) {
       ) {
         const proteinPos = Math.floor(proteinCounter++ / 3)
         g2p[genomePos] = proteinPos
-        if (!p2g[proteinPos]) {
-          p2g[proteinPos] = genomePos
-        }
+        p2g[proteinPos] ??= genomePos
       }
     }
   }

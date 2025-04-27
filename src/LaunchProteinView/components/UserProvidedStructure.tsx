@@ -115,7 +115,7 @@ const UserProvidedStructure = observer(function ({
     }
   }, [options, structureSequence, isoformSequences])
 
-  const e = error || error2 || error3 || error4
+  const e = error ?? error2 ?? error3 ?? error4
   return (
     <>
       <DialogContent className={classes.dialogContent}>

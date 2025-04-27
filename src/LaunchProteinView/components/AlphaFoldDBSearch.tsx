@@ -81,7 +81,7 @@ const AlphaFoldDBSearch = observer(function ({
     error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
   const e =
-    myGeneError || isoformProteinSequencesError || remoteStructureSequenceError
+    myGeneError ?? isoformProteinSequencesError ?? remoteStructureSequenceError
 
   const structureSequence = structureSequences?.[0]
   useEffect(() => {
