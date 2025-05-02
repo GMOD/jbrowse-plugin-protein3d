@@ -4,6 +4,9 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import JbrowseGlobals from '@jbrowse/core/ReExports/list.js'
 import prettyBytes from 'pretty-bytes'
 
+const PORT = process.env.PORT ? +process.env.PORT : 9000
+const PORT2 = PORT + 400
+
 function createGlobalMap(jbrowseGlobals) {
   const globalMap = {}
   for (const global of [...jbrowseGlobals, 'react-dom/client']) {
@@ -87,9 +90,9 @@ if (process.env.NODE_ENV === 'production') {
       },
     ],
   })
-  let { hosts, port } = await ctx.serve({
+  let { hosts } = await ctx.serve({
     servedir: '.',
-    port: 9001,
+    port: PORT2,
   })
 
   http
@@ -97,7 +100,7 @@ if (process.env.NODE_ENV === 'production') {
       const proxyReq = http.request(
         {
           hostname: hosts[0],
-          port: 9001,
+          port: PORT2,
           path: req.url,
           method: req.method,
           headers: req.headers,
@@ -117,9 +120,9 @@ if (process.env.NODE_ENV === 'production') {
       // Forward the body of the request to esbuild
       req.pipe(proxyReq, { end: true })
     })
-    .listen(9000)
+    .listen(PORT)
 
-  console.log(`Serving at http://${hosts[0]}:9000`)
+  console.log(`Serving at http://${hosts[0]}:${PORT}`)
 
   await ctx.watch()
   console.log('Watching files...')
