@@ -48,7 +48,7 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
           variant: variant!,
           start: +coord,
           end: +coord + 1,
-          score: +score!,
+          score: 1 - +score!,
           am_class: am_class!,
         }
       })
@@ -84,7 +84,13 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
       const data = await this.loadData()
       for (const f of data) {
         if (doesIntersect2(f.start, f.end, start, end)) {
-          observer.next(new SimpleFeature({ ...f, refName, source: f.variant }))
+          observer.next(
+            new SimpleFeature({
+              ...f,
+              refName,
+              source: f.variant,
+            }),
+          )
         }
       }
       observer.complete()

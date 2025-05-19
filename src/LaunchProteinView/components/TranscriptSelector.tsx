@@ -7,8 +7,6 @@ import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
 import type { TextFieldProps } from '@mui/material'
 
-// locals
-
 function TextField2({ children, ...rest }: TextFieldProps) {
   return (
     <div>

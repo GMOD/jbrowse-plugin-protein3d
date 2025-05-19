@@ -9,7 +9,6 @@ import LaunchProteinViewDialog from './components/LaunchProteinViewDialog'
 
 import type { IAnyModelType } from 'mobx-state-tree'
 
-
 function isDisplay(elt: { name: string }): elt is DisplayType {
   return elt.name === 'LinearBasicDisplay'
 }

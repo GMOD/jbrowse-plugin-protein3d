@@ -6,8 +6,6 @@ import HighlightComponents from './HighlightComponents'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-// locals
-
 export default function AddHighlightModelF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
     'LinearGenomeView-TracksContainerComponent',

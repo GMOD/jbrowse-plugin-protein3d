@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 import { Feature } from '@jbrowse/core/util'
 import { Button, Link, Typography } from '@mui/material'
 
-// locals
 import MSATable from './MSATable'
 import { getDisplayName } from './util'
 

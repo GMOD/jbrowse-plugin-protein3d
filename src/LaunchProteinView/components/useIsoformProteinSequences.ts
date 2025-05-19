@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 
 import { Feature } from '@jbrowse/core/util'
 
-// locals
 import { fetchProteinSeq } from './calculateProteinSequence'
 import { getTranscriptFeatures } from './util'
 

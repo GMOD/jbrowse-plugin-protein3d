@@ -1,6 +1,5 @@
 import { getSession } from '@jbrowse/core/util'
 
-// locals
 import { JBrowsePluginProteinStructureModel } from './model'
 
 export function proteinToGenomeMapping({

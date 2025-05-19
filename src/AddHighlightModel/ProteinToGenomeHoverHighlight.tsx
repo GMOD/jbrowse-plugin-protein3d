@@ -3,7 +3,6 @@ import React from 'react'
 import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
-// locals
 import Highlight from './Highlight'
 import { JBrowsePluginProteinViewModel } from '../ProteinView/model'
 

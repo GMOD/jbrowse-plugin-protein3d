@@ -4,7 +4,6 @@ import { Dialog } from '@jbrowse/core/ui'
 import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 
-// locals
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
 import ManualUniProtIDEntry from './ManualUniProtIDEntry'
 import TabPanel from './TabPanel'

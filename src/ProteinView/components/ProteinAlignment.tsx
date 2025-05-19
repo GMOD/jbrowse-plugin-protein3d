@@ -3,7 +3,6 @@ import React, { useEffect, useState } from 'react'
 import { Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 
-// locals
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {

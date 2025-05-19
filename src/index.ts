@@ -1,7 +1,6 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 
-// locals
 import { version } from '../package.json'
 import AddHighlightModelF from './AddHighlightModel'
 import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
