@@ -48,7 +48,7 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
           variant: variant!,
           start: +coord,
           end: +coord + 1,
-          score: 1 - +score!,
+          score: +score!,
           am_class: am_class!,
         }
       })

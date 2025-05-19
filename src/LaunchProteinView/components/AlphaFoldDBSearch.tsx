@@ -316,6 +316,8 @@ const AlphaFoldDBSearch = observer(function ({
                           MultiDensityRenderer: {
                             type: 'MultiDensityRenderer',
                             bicolorPivotValue: 0.5,
+                            posColor: 'red',
+                            negColor: 'blue',
                           },
                         },
                       },
