@@ -6,14 +6,22 @@ import {
   getSession,
   isSessionWithAddTracks,
 } from '@jbrowse/core/util'
-import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  Button,
+  DialogActions,
+  DialogContent,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
+  TextField,
+} from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
-import HelpButton from './HelpButton'
 import TranscriptSelector from './TranscriptSelector'
-import { launchLinearProteinAnnotationView } from './launchLinearProteinAnnotationView'
+import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
@@ -28,12 +36,42 @@ import {
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-const useStyles = makeStyles()(theme => ({
+const useStyles = makeStyles()({
   dialogContent: {
-    marginTop: theme.spacing(6),
     width: '80em',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 20,
   },
-}))
+})
+
+function UniProtIDNotFoundMessage() {
+  return (
+    <div>
+      UniProt ID not found. You can try manually searching on{' '}
+      <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noreferrer">
+        AlphaFoldDB
+      </a>{' '}
+      for your gene. After visiting the above link, you can switch to "Open file
+      manually" and paste in the mmCIF link
+    </div>
+  )
+}
+
+function EnterUniProtID() {
+  return (
+    <div>
+      Please enter a valid UniProt ID. You can search for UniProt IDs at{' '}
+      <a href="https://www.uniprot.org/" target="_blank" rel="noreferrer">
+        UniProt.org
+      </a>{' '}
+      or{' '}
+      <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noreferrer">
+        AlphaFoldDB
+      </a>
+    </div>
+  )
+}
 
 const AlphaFoldDBSearch = observer(function ({
   feature,
@@ -46,6 +84,8 @@ const AlphaFoldDBSearch = observer(function ({
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
+  const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
+  const [manualUniprotId, setManualUniprotId] = useState<string>('')
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -63,7 +103,7 @@ const AlphaFoldDBSearch = observer(function ({
   })
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
   const {
-    uniprotId,
+    uniprotId: autoUniprotId,
     isLoading: isMyGeneLoading,
     error: myGeneError,
   } = useMyGeneInfoUniprotIdLookup({
@@ -71,6 +111,9 @@ const AlphaFoldDBSearch = observer(function ({
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
   })
+
+  // Use either the automatically looked up UniProt ID or the manually entered one
+  const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
 
   const url = uniprotId
     ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
@@ -80,6 +123,7 @@ const AlphaFoldDBSearch = observer(function ({
     isLoading: isRemoteStructureSequenceLoading,
     error: remoteStructureSequenceError,
   } = useRemoteStructureFileSequence({ url })
+
   const e =
     myGeneError ?? isoformProteinSequencesError ?? remoteStructureSequenceError
 
@@ -96,47 +140,77 @@ const AlphaFoldDBSearch = observer(function ({
     }
   }, [options, structureSequence, isoformSequences])
 
+  const loadingStatus1 = isRemoteStructureSequenceLoading
+    ? 'Loading sequence from remote structure file'
+    : ''
+  const loadingStatus2 = isMyGeneLoading
+    ? 'Looking up UniProt ID from mygene.info'
+    : ''
+  const loadingStatus3 = isIsoformProteinSequencesLoading
+    ? 'Loading protein sequences from transcript isoforms'
+    : ''
+  const loadingStatuses = [
+    loadingStatus1,
+    loadingStatus2,
+    loadingStatus3,
+  ].filter(f => !!f)
+
   return (
     <>
       <DialogContent className={classes.dialogContent}>
         {e ? <ErrorMessage error={e} /> : null}
-        <Typography>
-          Automatically find AlphaFoldDB entry for given transcript via gene ID
-          lookup <HelpButton />
-        </Typography>
-        {isRemoteStructureSequenceLoading ? (
-          <LoadingEllipses
-            variant="h6"
-            message="Loading sequence from remote structure file"
+
+        <FormControl component="fieldset">
+          <RadioGroup
+            row
+            value={lookupMode}
+            onChange={event => {
+              setLookupMode(event.target.value as 'auto' | 'manual')
+            }}
+          >
+            <FormControlLabel
+              value="auto"
+              control={<Radio />}
+              label="Automatic UniProt ID lookup"
+            />
+            <FormControlLabel
+              value="manual"
+              control={<Radio />}
+              label="Manual UniProt ID entry"
+            />
+          </RadioGroup>
+        </FormControl>
+
+        {lookupMode === 'manual' && (
+          <TextField
+            label="UniProt ID"
+            variant="outlined"
+            value={manualUniprotId}
+            onChange={e => {
+              setManualUniprotId(e.target.value)
+            }}
+            placeholder="Enter UniProt ID (e.g. P68871)"
+            helperText="Enter a valid UniProt ID to load the corresponding protein structure"
           />
-        ) : null}
-        {isMyGeneLoading ? (
-          <LoadingEllipses
-            variant="h6"
-            message="Looking up UniProt ID from mygene.info"
-          />
-        ) : uniprotId ? null : (
-          <div>
-            UniProt ID not found. Search sequence on AlphaFoldDB{' '}
-            <a
-              href={`https://alphafold.ebi.ac.uk/search/sequence/${userSelectedProteinSequence?.seq.replaceAll('*', '')}`}
-              target="_blank"
-              rel="noreferrer"
-            >
-              here
-            </a>{' '}
-            <br />
-            After visiting the above link, then paste the structure URL into the
-            Manual tab
-          </div>
         )}
-        {isIsoformProteinSequencesLoading ? (
-          <LoadingEllipses
-            variant="h6"
-            message="Loading protein sequences from transcript isoforms"
-          />
-        ) : null}
-        {isoformSequences && structureSequence && selectedTranscript ? (
+        {loadingStatuses.length > 0
+          ? loadingStatuses.map(l => (
+              <LoadingEllipses key={l} variant="h6" message={l} />
+            ))
+          : null}
+
+        {lookupMode === 'auto' ? (
+          isMyGeneLoading || autoUniprotId ? null : (
+            <UniProtIDNotFoundMessage />
+          )
+        ) : (
+          !manualUniprotId && <EnterUniProtID />
+        )}
+
+        {isoformSequences &&
+        structureSequence &&
+        selectedTranscript &&
+        uniprotId ? (
           <>
             <TranscriptSelector
               val={userSelection ?? ''}
@@ -202,18 +276,21 @@ const AlphaFoldDBSearch = observer(function ({
             !uniprotId || !userSelectedProteinSequence || !selectedTranscript
           }
           onClick={() => {
-            if (
-              uniprotId &&
-              isSessionWithAddTracks(session) &&
-              selectedTranscript
-            ) {
+            if (uniprotId && isSessionWithAddTracks(session)) {
               // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              launchLinearProteinAnnotationView({
-                session,
-                uniprotId,
-                feature,
-                selectedTranscript,
-              })
+              ;(async () => {
+                try {
+                  await launchProteinAnnotationView({
+                    session,
+                    selectedTranscript,
+                    feature,
+                    uniprotId,
+                  })
+                } catch (e) {
+                  console.error(e)
+                  session.notifyError(`${e}`, e)
+                }
+              })()
             }
             handleClose()
           }}

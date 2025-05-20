@@ -44,27 +44,6 @@ export default function MSATable({
     ),
   ])
 
-  const l1 = [
-    `${sname.padEnd(maxKeyLen)}${exactMatchIsoformAndStructureSeq ? '*' : ' '} ${structureSequence}`,
-    exactMatchIsoformAndStructureSeq
-      ? `${getTranscriptDisplayName(exactMatchIsoformAndStructureSeq[1].feature).padEnd(maxKeyLen)}* ${exactMatchIsoformAndStructureSeq[1].seq}`
-      : undefined,
-    ...Object.entries(removedStars)
-      .map(
-        ([_, val]) =>
-          `${getTranscriptDisplayName(val.feature).padEnd(maxKeyLen)}  ${val.seq}`,
-      )
-      .filter(([k]) => k !== exactMatchIsoformAndStructureSeq?.[0]),
-  ]
-    .filter(f => !!f)
-    .join('\n')
-
-  const l2 = [
-    `>${sname}\n${structureSequence}`,
-    ...Object.values(removedStars).map(
-      ({ feature, seq }) => `>${getTranscriptDisplayName(feature)}\n${seq}`,
-    ),
-  ].join('\n')
   return (
     <>
       <FormControlLabel
@@ -85,11 +64,36 @@ export default function MSATable({
         minRows={5}
         maxRows={10}
         fullWidth
-        value={showInFastaFormat ? l2 : l1}
-        InputProps={{
-          readOnly: true,
-          classes: {
-            input: classes.textAreaFont,
+        value={
+          showInFastaFormat
+            ? [
+                `>${sname}\n${structureSequence}`,
+                ...Object.values(removedStars).map(
+                  ({ feature, seq }) =>
+                    `>${getTranscriptDisplayName(feature)}\n${seq}`,
+                ),
+              ].join('\n')
+            : [
+                `${sname.padEnd(maxKeyLen)}${exactMatchIsoformAndStructureSeq ? '*' : ' '} ${structureSequence}`,
+                exactMatchIsoformAndStructureSeq
+                  ? `${getTranscriptDisplayName(exactMatchIsoformAndStructureSeq[1].feature).padEnd(maxKeyLen)}* ${exactMatchIsoformAndStructureSeq[1].seq}`
+                  : undefined,
+                ...Object.entries(removedStars)
+                  .map(
+                    ([_, val]) =>
+                      `${getTranscriptDisplayName(val.feature).padEnd(maxKeyLen)}  ${val.seq}`,
+                  )
+                  .filter(([k]) => k !== exactMatchIsoformAndStructureSeq?.[0]),
+              ]
+                .filter(f => !!f)
+                .join('\n')
+        }
+        slotProps={{
+          input: {
+            readOnly: true,
+            classes: {
+              input: classes.textAreaFont,
+            },
           },
         }}
       />
