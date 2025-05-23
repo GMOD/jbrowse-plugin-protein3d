@@ -13,7 +13,6 @@ import {
   DialogContent,
   FormControl,
   FormControlLabel,
-  Link,
   Radio,
   RadioGroup,
   TextField,
@@ -34,6 +33,7 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from './util'
+import ExternalLink from '../../components/ExternalLink'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -54,9 +54,9 @@ function HelpText() {
     <div style={{ marginBottom: 20 }}>
       Manually supply a protein structure (PDB, mmCIF, etc) for a given
       transcript. You can open the file from the result of running, for example,{' '}
-      <Link target="_blank" href="https://github.com/sokrypton/ColabFold">
+      <ExternalLink href="https://github.com/sokrypton/ColabFold">
         ColabFold
-      </Link>
+      </ExternalLink>
       . This plugin will align the protein sequence calculated from the genome
       to the protein sequence embedded in the structure file which allows for
       slight differences in these two representations.

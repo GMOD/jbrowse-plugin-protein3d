@@ -1,21 +1,21 @@
 import React, { useState } from 'react'
 
 import { Feature } from '@jbrowse/core/util'
-import { Button, Link, Typography } from '@mui/material'
+import { Button, Typography } from '@mui/material'
 
 import MSATable from './MSATable'
 import { getDisplayName } from './util'
+import ExternalLink from '../../components/ExternalLink'
 
 function NotFound({ uniprotId }: { uniprotId: string }) {
   return (
     <Typography>
       No structure found for this UniProtID in AlphaFoldDB{' '}
-      <Link
-        target="_blank"
+      <ExternalLink
         href={`https://alphafold.ebi.ac.uk/search/text/${uniprotId}`}
       >
         (search for results)
-      </Link>
+      </ExternalLink>
     </Typography>
   )
 }
@@ -41,18 +41,14 @@ export default function AlphaFoldDBSearchStatus({
 
   return uniprotId ? (
     <>
-      <Typography>
-        Found Uniprot ID:{' '}
-        <a href={url2} target="_blank" rel="noreferrer">
-          {uniprotId}
-        </a>
-      </Typography>
-      <Typography>
-        AlphaFoldDB link:{' '}
-        <a href={url} target="_blank" rel="noreferrer">
-          {url}
-        </a>
-      </Typography>
+      <div>
+        <Typography>
+          UniProt link: <ExternalLink href={url2}>{uniprotId}</ExternalLink>
+        </Typography>
+        <Typography>
+          AlphaFoldDB link: <ExternalLink href={url}>{url}</ExternalLink>
+        </Typography>
+      </div>
       {structureSequence ? (
         <div style={{ margin: 20 }}>
           <Button

@@ -32,6 +32,7 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from './util'
+import ExternalLink from '../../components/ExternalLink'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -62,13 +63,10 @@ function EnterUniProtID() {
   return (
     <div>
       Please enter a valid UniProt ID. You can search for UniProt IDs at{' '}
-      <a href="https://www.uniprot.org/" target="_blank" rel="noreferrer">
-        UniProt.org
-      </a>{' '}
-      or{' '}
-      <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noreferrer">
+      <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink> or{' '}
+      <ExternalLink href="https://alphafold.ebi.ac.uk/">
         AlphaFoldDB
-      </a>
+      </ExternalLink>
     </div>
   )
 }
@@ -182,20 +180,22 @@ const AlphaFoldDBSearch = observer(function ({
         </FormControl>
 
         {lookupMode === 'manual' && (
-          <TextField
-            label="UniProt ID"
-            variant="outlined"
-            value={manualUniprotId}
-            onChange={e => {
-              setManualUniprotId(e.target.value)
-            }}
-            placeholder="Enter UniProt ID (e.g. P68871)"
-            helperText="Enter a valid UniProt ID to load the corresponding protein structure"
-          />
+          <div>
+            <TextField
+              label="UniProt ID"
+              variant="outlined"
+              placeholder="Enter UniProt ID (e.g. P68871)"
+              helperText="Enter a valid UniProt ID to load the corresponding protein structure"
+              value={manualUniprotId}
+              onChange={e => {
+                setManualUniprotId(e.target.value)
+              }}
+            />
+          </div>
         )}
         {loadingStatuses.length > 0
           ? loadingStatuses.map(l => (
-              <LoadingEllipses key={l} variant="h6" message={l} />
+              <LoadingEllipses key={l} variant="subtitle2" message={l} />
             ))
           : null}
 
