@@ -1,6 +1,6 @@
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
-import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export async function launchLinearProteinAnnotationView({
@@ -9,7 +9,7 @@ export async function launchLinearProteinAnnotationView({
   feature,
   selectedTranscript,
 }: {
-  session: AbstractSessionModel
+  session: SessionWithAddTracks
   uniprotId: string
   feature: Feature
   selectedTranscript: Feature

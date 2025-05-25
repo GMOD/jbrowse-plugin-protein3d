@@ -1,4 +1,4 @@
-import { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
@@ -10,7 +10,7 @@ export async function launchProteinAnnotationView({
   selectedTranscript,
   uniprotId,
 }: {
-  session: AbstractSessionModel
+  session: SessionWithAddTracks
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
