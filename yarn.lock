@@ -427,12 +427,12 @@
   resolved "https://registry.yarnpkg.com/@gmod/abortable-promise-cache/-/abortable-promise-cache-3.0.4.tgz#5ecb44e40cf128e9f44f7c25e1406facdcaede9b"
   integrity sha512-kxRJj5fyRKFuZDp/YvnHeadYCV2EEUKyH2T4a2Iz9O7T/thOWWHUDiiD/Mg6WZP/RNNDIcfSHl/xVHHy/+j8qg==
 
-"@gmod/bgzf-filehandle@^3.0.2":
-  version "3.0.5"
-  resolved "https://registry.yarnpkg.com/@gmod/bgzf-filehandle/-/bgzf-filehandle-3.0.5.tgz#f8fd14137e0e07e407d6e064331efbd38415d0bf"
-  integrity sha512-w6tzT/zhTIZGHXrrK3M/xJ0XpWygAat/E6VeiWwWBk1nhEzcPZCFVVTmECqBrwoV57spOI0sm6a2uz1WH3+0JA==
+"@gmod/bgzf-filehandle@^4.0.0":
+  version "4.0.0"
+  resolved "https://registry.yarnpkg.com/@gmod/bgzf-filehandle/-/bgzf-filehandle-4.0.0.tgz#2f0a37d225ea29b7a2d237813cdc38c192a6ca7b"
+  integrity sha512-phGO9zUj/Lj03UJWc1GXy5eOIuUrUGi4Wah6BJmKTsrfSESKkW6TJem4SJ5/H+iWcwldNcmmtqKbkR+Lr2yCCw==
   dependencies:
-    generic-filehandle2 "^2.0.1"
+    generic-filehandle2 "^2.0.5"
     pako "^1.0.11"
 
 "@gmod/http-range-fetcher@^5.0.0":
@@ -482,14 +482,14 @@
     wrap-ansi "^8.1.0"
     wrap-ansi-cjs "npm:wrap-ansi@^7.0.0"
 
-"@jbrowse/core@^3.0.1", "@jbrowse/core@^3.4.0":
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/@jbrowse/core/-/core-3.4.0.tgz#91f290a627fcd7e394cf2e84269a71bfec2775dc"
-  integrity sha512-jeXoPfHPO1H+Ji6YHob9uEHtPnKIna319sBZXmtc7oHMfqa941U2NB5S79MtuPTNVaOMueGcL35u7xi+nsWNTg==
+"@jbrowse/core@^3.0.1", "@jbrowse/core@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@jbrowse/core/-/core-3.5.0.tgz#52abc3e2e1262e516ee2be48aa04ac55042e3392"
+  integrity sha512-ghiCg8u/ZoX2uLaPapQJpTMg2leOYpQLw4hpEDy4A8tY3QTFBG25nmAU2godWQRQHuL5A6J+gnlAtljEgp5eGA==
   dependencies:
     "@floating-ui/react" "^0.27.0"
     "@gmod/abortable-promise-cache" "^3.0.1"
-    "@gmod/bgzf-filehandle" "^3.0.2"
+    "@gmod/bgzf-filehandle" "^4.0.0"
     "@gmod/http-range-fetcher" "^5.0.0"
     "@leeoniya/ufuzzy" "^1.0.18"
     "@mui/icons-material" "^7.0.0"
@@ -520,11 +520,11 @@
     tss-react "^4.0.0"
 
 "@jbrowse/plugin-linear-genome-view@^3.0.1":
-  version "3.4.0"
-  resolved "https://registry.yarnpkg.com/@jbrowse/plugin-linear-genome-view/-/plugin-linear-genome-view-3.4.0.tgz#9c90a2788526938feb2665c038710b265ca8ecf0"
-  integrity sha512-vhFY2OvPHBkqm12OxEjPFyDo7phcdJC3THfVTccInhrVx5tpFmwux28OIlWEC+u7JyyRw6xjwDRWsMWGpedTwA==
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@jbrowse/plugin-linear-genome-view/-/plugin-linear-genome-view-3.5.0.tgz#6adfa0a1a3d4dc4fe9d4e319c1bbf3dcac26318b"
+  integrity sha512-QQcLCHIhj/f1zt+RZG/N+eUFBjIXv1AmCIaPpSe67tAfNhaoRgjqeDRmXeuDegnNJR1LzbRrWj4cGbAr6YRhpg==
   dependencies:
-    "@jbrowse/core" "^3.4.0"
+    "@jbrowse/core" "^3.5.0"
     "@mui/icons-material" "^7.0.0"
     "@mui/material" "^7.0.0"
     "@types/file-saver" "^2.0.1"
@@ -2536,7 +2536,7 @@ g2p_mapper@^1.0.3:
   resolved "https://registry.yarnpkg.com/g2p_mapper/-/g2p_mapper-1.0.7.tgz#0ab2d90091fc6645cdf0d2367cdebd444473c7d6"
   integrity sha512-6jgkWZZ+vi08flXx6byllexAk7LUa/TWDFz8jVgWDC6V610xM8r2y4DWjCU0RPD0wnDhrptHZ263YRQCxnkz1Q==
 
-generic-filehandle2@^2.0.1:
+generic-filehandle2@^2.0.1, generic-filehandle2@^2.0.5:
   version "2.0.7"
   resolved "https://registry.yarnpkg.com/generic-filehandle2/-/generic-filehandle2-2.0.7.tgz#0165be9f09f181911c160d793fe2f1711bc947cf"
   integrity sha512-CIH5A41LAy+swTaVxIOqY6B/gDulAUeDBFzc31E23BN/thgLK/Kum3E399KBqpe5D7Mo4oMZuKrhpqrefAZ1XA==
