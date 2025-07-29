@@ -26,7 +26,7 @@
     "buffer": "^6.0.3",
     "clustal-js": "^2.0.1",
     "g2p_mapper": "^1.0.3",
-    "molstar": "^4.0.0"
+    "molstar": "^5.0.0-dev.1"
   },
   "devDependencies": {
     "@emotion/react": "^11.13.0",
