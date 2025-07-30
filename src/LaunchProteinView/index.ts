@@ -24,9 +24,12 @@ function extendStateModel(stateModel: IAnyModelType) {
         contextMenuItems() {
           const feature = self.contextMenuFeature
           const track = getContainingTrack(self)
+          const showProteinMenuItem =
+            feature &&
+            ['gene', 'mRNA', 'transcript'].includes(feature.get('type'))
           return [
             ...superContextMenuItems(),
-            ...(feature
+            ...(showProteinMenuItem
               ? [
                   {
                     label: 'Launch protein view',
