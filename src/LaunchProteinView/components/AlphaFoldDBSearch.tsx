@@ -22,6 +22,7 @@ import { makeStyles } from 'tss-react/mui'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
 import { launchProteinAnnotationView } from './launchProteinAnnotationView'
+import useAlphaFoldUrl from './useAlphaFoldUrl'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
@@ -113,9 +114,11 @@ const AlphaFoldDBSearch = observer(function ({
   // Use either the automatically looked up UniProt ID or the manually entered one
   const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
 
-  const url = uniprotId
-    ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
-    : undefined
+  const {
+    url,
+    isLoading: isAlphaFoldUrlLoading,
+    error: alphaFoldUrlError,
+  } = useAlphaFoldUrl({ uniprotId })
   const {
     sequences: structureSequences,
     isLoading: isRemoteStructureSequenceLoading,
@@ -123,7 +126,10 @@ const AlphaFoldDBSearch = observer(function ({
   } = useRemoteStructureFileSequence({ url })
 
   const e =
-    myGeneError ?? isoformProteinSequencesError ?? remoteStructureSequenceError
+    myGeneError ??
+    isoformProteinSequencesError ??
+    remoteStructureSequenceError ??
+    alphaFoldUrlError
 
   const structureSequence = structureSequences?.[0]
   useEffect(() => {
@@ -147,10 +153,14 @@ const AlphaFoldDBSearch = observer(function ({
   const loadingStatus3 = isIsoformProteinSequencesLoading
     ? 'Loading protein sequences from transcript isoforms'
     : ''
+  const loadingStatus4 = isAlphaFoldUrlLoading
+    ? 'Fetching AlphaFold structure URL'
+    : ''
   const loadingStatuses = [
     loadingStatus1,
     loadingStatus2,
     loadingStatus3,
+    loadingStatus4,
   ].filter(f => !!f)
 
   return (

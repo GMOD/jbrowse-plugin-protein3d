@@ -42,7 +42,7 @@ export function revlist(list: Feat[], seqlen: number) {
       start: seqlen - sub.end,
       end: seqlen - sub.start,
     }))
-    .sort((a, b) => a.start - b.start)
+    .toSorted((a, b) => a.start - b.start)
 }
 
 // filter items if they have the same "ID" or location
@@ -74,7 +74,7 @@ export function getProteinSequence({
   }
   const cds = dedupe(
     f.subfeatures
-      .sort((a, b) => a.start - b.start)
+      .toSorted((a, b) => a.start - b.start)
       .map(sub => ({
         ...sub,
         start: sub.start - f.start,

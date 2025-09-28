@@ -35,11 +35,16 @@ export default tseslint.config(
   ...tseslint.configs.strictTypeChecked,
   importPlugin.flatConfigs.recommended,
   eslintPluginReact.configs.flat.recommended,
+
   {
+    files: ['src/**/*.{js,jsx,ts,tsx}'],
     plugins: {
       'react-hooks': eslintPluginReactHooks,
     },
-    rules: eslintPluginReactHooks.configs.recommended.rules,
+    rules: {
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
+    },
   },
   eslintPluginUnicorn.configs.recommended,
   {

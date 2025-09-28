@@ -7,7 +7,7 @@ export function genomeToTranscriptMapping(feature: Feature) {
   const subs = feature.children() ?? []
   const cds = subs
     .filter(f => f.get('type') === 'CDS')
-    .sort((a, b) => strand * (a.get('start') - b.get('start')))
+    .toSorted((a, b) => strand * (a.get('start') - b.get('start')))
   const g2p = {} as Record<number, number>
   const p2g = {} as Record<number, number>
 

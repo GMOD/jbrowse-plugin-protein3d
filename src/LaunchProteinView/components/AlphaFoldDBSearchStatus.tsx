@@ -5,6 +5,7 @@ import { Button, Typography } from '@mui/material'
 
 import MSATable from './MSATable'
 import { getDisplayName } from './util'
+import useAlphaFoldUrl from './useAlphaFoldUrl'
 import ExternalLink from '../../components/ExternalLink'
 
 function NotFound({ uniprotId }: { uniprotId: string }) {
@@ -31,9 +32,7 @@ export default function AlphaFoldDBSearchStatus({
   structureSequence?: string
   isoformSequences: Record<string, { feature: Feature; seq: string }>
 }) {
-  const url = uniprotId
-    ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v4.cif`
-    : undefined
+  const { url } = useAlphaFoldUrl({ uniprotId })
   const url2 = uniprotId
     ? `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
     : undefined

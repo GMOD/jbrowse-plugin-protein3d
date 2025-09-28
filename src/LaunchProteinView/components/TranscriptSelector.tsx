@@ -60,7 +60,7 @@ export default function TranscriptSelector({
             isoformSequences[f.id()]!.seq.replaceAll('*', '') !==
             structureSequence,
         )
-        .sort(
+        .toSorted(
           (a, b) =>
             isoformSequences[b.id()]!.seq.length -
             isoformSequences[a.id()]!.seq.length,
