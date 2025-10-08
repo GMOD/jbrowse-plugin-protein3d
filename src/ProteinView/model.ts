@@ -6,6 +6,7 @@ import { type PluginContext } from 'molstar/lib/mol-plugin/context'
 
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
+import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
 
@@ -140,17 +141,9 @@ function stateModelFactory() {
                         })
                       : { model: undefined }
 
-                  const sequences = model?.obj?.data.sequence.sequences.map(
-                    s => {
-                      let seq = ''
-                      const arr = s.sequence.label.toArray()
-                      // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
-                      for (let i = 0; i < arr.length; i++) {
-                        seq += arr[i]!
-                      }
-                      return seq
-                    },
-                  )
+                  const sequences = model
+                    ? extractStructureSequences(model)
+                    : undefined
                   structure.setSequences(sequences)
                 } catch (e) {
                   self.setError(e)

@@ -4,6 +4,7 @@ import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 
 import { addStructureFromData } from '../../ProteinView/addStructureFromData'
+import { extractStructureSequences } from '../../ProteinView/extractStructureSequences'
 
 async function structureFileSequenceFetcher(
   file: File,
@@ -21,15 +22,7 @@ async function structureFileSequenceFetcher(
       plugin: p,
       format,
     })
-    return model.obj?.data.sequence.sequences.map(s => {
-      let seq = ''
-      const arr = s.sequence.label.toArray()
-      // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
-      for (let i = 0; i < arr.length; i++) {
-        seq += arr[i]!
-      }
-      return seq
-    })
+    return extractStructureSequences(model)
   } finally {
     p.unmount()
     ret.remove()
