@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import useSWR from 'swr'
 
 import { jsonfetch } from '../../fetchUtils'
 
@@ -8,34 +8,17 @@ interface AlphaFoldPrediction {
 }
 
 export default function useAlphaFoldUrl({ uniprotId }: { uniprotId?: string }) {
-  const [result, setResult] = useState<AlphaFoldPrediction[]>()
-  const [error, setError] = useState<unknown>()
-  const [isLoading, setLoading] = useState(false)
-
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        if (uniprotId) {
-          setLoading(true)
-          const res = await jsonfetch(
-            `https://alphafold.ebi.ac.uk/api/prediction/${uniprotId}`,
-          )
-          setResult(res)
-        }
-      } catch (e) {
-        console.error(e)
-        setError(e)
-      } finally {
-        setLoading(false)
-      }
-    })()
-  }, [uniprotId])
+  const { data, error, isLoading } = useSWR<AlphaFoldPrediction[]>(
+    uniprotId
+      ? `https://alphafold.ebi.ac.uk/api/prediction/${uniprotId}`
+      : null,
+    jsonfetch,
+  )
 
   return {
     isLoading,
-    url: result?.[0]?.cifUrl,
-    predictions: result,
+    url: data?.[0]?.cifUrl,
+    predictions: data,
     error,
   }
 }

@@ -1,6 +1,5 @@
-import { useEffect, useState } from 'react'
-
 import { Feature } from '@jbrowse/core/util'
+import useSWR from 'swr'
 
 import { fetchProteinSeq } from './calculateProteinSequence'
 import { getTranscriptFeatures } from './util'
@@ -12,30 +11,22 @@ export default function useIsoformProteinSequences({
   feature: Feature
   view?: { assemblyNames?: string[] }
 }) {
-  const [error, setError] = useState<unknown>()
-  const [isoformSequences, setIsoformSequences] =
-    useState<Record<string, { feature: Feature; seq: string }>>()
-  const [isLoading, setLoading] = useState(false)
-  useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
-      try {
-        setLoading(true)
-        const ret = [] as [string, { feature: Feature; seq: string }][]
-        for (const f of getTranscriptFeatures(feature)) {
-          const seq = await fetchProteinSeq({ view, feature: f })
-          if (seq) {
-            ret.push([f.id(), { feature: f, seq }])
-          }
+  const { data, error, isLoading } = useSWR<
+    Record<string, { feature: Feature; seq: string }>
+  >(
+    // Use feature ID and view assembly names as the cache key
+    ['isoform-sequences', feature.id(), view?.assemblyNames?.[0]],
+    async () => {
+      const ret = [] as [string, { feature: Feature; seq: string }][]
+      for (const f of getTranscriptFeatures(feature)) {
+        const seq = await fetchProteinSeq({ view, feature: f })
+        if (seq) {
+          ret.push([f.id(), { feature: f, seq }])
         }
-        setIsoformSequences(Object.fromEntries(ret))
-      } catch (e) {
-        console.error(e)
-        setError(e)
-      } finally {
-        setLoading(false)
       }
-    })()
-  }, [feature, view])
-  return { isLoading, isoformSequences, error }
+      return Object.fromEntries(ret)
+    },
+  )
+
+  return { isLoading, isoformSequences: data, error }
 }
