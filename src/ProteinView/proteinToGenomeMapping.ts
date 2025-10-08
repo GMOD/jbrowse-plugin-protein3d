@@ -48,9 +48,13 @@ export async function clickProteinToGenome({
   }
   const [s1, s2] = result
   const { strand, refName } = genomeToTranscriptSeqMapping
+  const assemblyName = connectedView?.assemblyNames[0]
+  if (!assemblyName) {
+    return undefined
+  }
   model.setClickGenomeHighlights([
     {
-      assemblyName: 'hg38',
+      assemblyName,
       refName,
       start: s1,
       end: s2,
@@ -85,11 +89,12 @@ export function hoverProteinToGenome({
       structureSeqPos,
       model,
     })
-    const { genomeToTranscriptSeqMapping } = model
-    if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate) {
+    const { genomeToTranscriptSeqMapping, connectedView } = model
+    const assemblyName = connectedView?.assemblyNames[0]
+    if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate && assemblyName) {
       model.setHoverGenomeHighlights([
         {
-          assemblyName: 'hg38',
+          assemblyName,
           refName: genomeToTranscriptSeqMapping.refName,
           start: mappedGenomeCoordinate[0],
           end: mappedGenomeCoordinate[1],
