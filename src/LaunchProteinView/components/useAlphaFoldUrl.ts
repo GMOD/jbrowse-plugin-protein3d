@@ -2,7 +2,7 @@ import useSWR from 'swr'
 
 import { jsonfetch } from '../../fetchUtils'
 
-interface AlphaFoldPrediction {
+export interface AlphaFoldPrediction {
   cifUrl: string
   plddtDocUrl: string
   sequence: string

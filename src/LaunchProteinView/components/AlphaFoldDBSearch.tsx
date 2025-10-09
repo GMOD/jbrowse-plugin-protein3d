@@ -1,38 +1,21 @@
 import React, { useEffect, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import {
-  getContainingView,
-  getSession,
-  isSessionWithAddTracks,
-} from '@jbrowse/core/util'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  TextField,
-} from '@mui/material'
+import { getContainingView, getSession } from '@jbrowse/core/util'
+import { DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
+import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
+import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
-import { launchProteinAnnotationView } from './launchProteinAnnotationView'
-import useAlphaFoldUrl from './useAlphaFoldUrl'
+import UniProtIdInput from './UniProtIdInput'
+import useAlphaFoldData from './useAlphaFoldData'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
+import useLoadingStatuses from './useLoadingStatuses'
 import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
-import {
-  getDisplayName,
-  getGeneDisplayName,
-  getId,
-  getTranscriptDisplayName,
-  getTranscriptFeatures,
-} from './util'
-import ExternalLink from '../../components/ExternalLink'
+import { getDisplayName, getId, getTranscriptFeatures } from './util'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -52,31 +35,6 @@ const useStyles = makeStyles()({
   },
 })
 
-function UniProtIDNotFoundMessage() {
-  return (
-    <div>
-      UniProt ID not found. You can try manually searching on{' '}
-      <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noreferrer">
-        AlphaFoldDB
-      </a>{' '}
-      for your gene. After visiting the above link, you can switch to "Open file
-      manually" and paste in the mmCIF link
-    </div>
-  )
-}
-
-function EnterUniProtID() {
-  return (
-    <div>
-      Please enter a valid UniProt ID. You can search for UniProt IDs at{' '}
-      <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink> or{' '}
-      <ExternalLink href="https://alphafold.ebi.ac.uk/">
-        AlphaFoldDB
-      </ExternalLink>
-    </div>
-  )
-}
-
 const AlphaFoldDBSearch = observer(function ({
   feature,
   model,
@@ -88,26 +46,27 @@ const AlphaFoldDBSearch = observer(function ({
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
+  const view = getContainingView(model) as LinearGenomeViewModel
+
+  // State for UniProt ID lookup
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  const [selectedAlphaFoldEntry, setSelectedAlphaFoldEntry] =
-    useState<number>(0)
 
-  // check if we are looking at a 'two-level' or 'three-level' feature by
-  // finding exon/CDS subfeatures. we want to select from transcript names
+  // Transcript selection
   const options = getTranscriptFeatures(feature)
   const [userSelection, setUserSelection] = useState<string>()
-  const view = getContainingView(model) as LinearGenomeViewModel
   const selectedTranscript = options.find(val => getId(val) === userSelection)
+
+  // Load isoform sequences
   const {
     isoformSequences,
     isLoading: isIsoformProteinSequencesLoading,
     error: isoformProteinSequencesError,
-  } = useIsoformProteinSequences({
-    feature,
-    view,
-  })
+  } = useIsoformProteinSequences({ feature, view })
+
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
+
+  // Auto-lookup UniProt ID
   const {
     uniprotId: autoUniprotId,
     isLoading: isMyGeneLoading,
@@ -118,111 +77,63 @@ const AlphaFoldDBSearch = observer(function ({
       : getDisplayName(feature),
   })
 
-  // Use either the automatically looked up UniProt ID or the manually entered one
   const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
 
+  // AlphaFold data and selection
   const {
     predictions,
     isLoading: isAlphaFoldUrlLoading,
     error: alphaFoldUrlError,
-  } = useAlphaFoldUrl({ uniprotId })
+    selectedEntryIndex,
+    setSelectedEntryIndex,
+    url,
+    confidenceUrl,
+    structureSequence,
+  } = useAlphaFoldData({ uniprotId })
 
-  // Get the currently selected AlphaFold entry
-  const selectedPrediction = predictions?.[selectedAlphaFoldEntry]
-  const url = selectedPrediction?.cifUrl
-  const confidenceUrl = selectedPrediction?.plddtDocUrl
-  const structureSequence = selectedPrediction?.sequence
+  // Aggregate errors and loading statuses
+  const error = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
+  const loadingStatuses = useLoadingStatuses({
+    isMyGeneLoading,
+    isIsoformProteinSequencesLoading,
+    isAlphaFoldUrlLoading,
+  })
 
-  const e = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
-
-  // Auto-select first AlphaFold entry when predictions load
-  useEffect(() => {
-    if (predictions && predictions.length > 0) {
-      setSelectedAlphaFoldEntry(0)
-    }
-  }, [predictions])
-
+  // Auto-select transcript based on structure sequence match
   useEffect(() => {
     if (isoformSequences !== undefined) {
-      const ret =
+      const matchingTranscript =
         options.find(
           f =>
-            isoformSequences[f.id()]?.seq.replaceAll('*', '') ==
+            isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
             structureSequence,
         ) ?? options.find(f => !!isoformSequences[f.id()])
-      setUserSelection(ret?.id())
+      setUserSelection(matchingTranscript?.id())
     }
   }, [options, structureSequence, isoformSequences])
-
-  const loadingStatus2 = isMyGeneLoading
-    ? 'Looking up UniProt ID from mygene.info'
-    : ''
-  const loadingStatus3 = isIsoformProteinSequencesLoading
-    ? 'Loading protein sequences from transcript isoforms'
-    : ''
-  const loadingStatus4 = isAlphaFoldUrlLoading
-    ? 'Fetching AlphaFold structure URL'
-    : ''
-  const loadingStatuses = [
-    loadingStatus2,
-    loadingStatus3,
-    loadingStatus4,
-  ].filter(f => !!f)
 
   return (
     <>
       <DialogContent className={classes.dialogContent}>
-        {e ? <ErrorMessage error={e} /> : null}
+        {error ? <ErrorMessage error={error} /> : null}
 
-        <FormControl component="fieldset">
-          <RadioGroup
-            row
-            value={lookupMode}
-            onChange={event => {
-              setLookupMode(event.target.value as 'auto' | 'manual')
-            }}
-          >
-            <FormControlLabel
-              value="auto"
-              control={<Radio />}
-              label="Automatic UniProt ID lookup"
+        <UniProtIdInput
+          lookupMode={lookupMode}
+          onLookupModeChange={setLookupMode}
+          manualUniprotId={manualUniprotId}
+          onManualUniprotIdChange={setManualUniprotId}
+          autoUniprotId={autoUniprotId}
+          isLoading={isMyGeneLoading}
+        />
+
+        {loadingStatuses.length > 0 &&
+          loadingStatuses.map(status => (
+            <LoadingEllipses
+              key={status}
+              variant="subtitle2"
+              message={status}
             />
-            <FormControlLabel
-              value="manual"
-              control={<Radio />}
-              label="Manual UniProt ID entry"
-            />
-          </RadioGroup>
-        </FormControl>
-
-        {lookupMode === 'manual' && (
-          <div>
-            <TextField
-              label="UniProt ID"
-              variant="outlined"
-              placeholder="Enter UniProt ID (e.g. P68871)"
-              helperText="Enter a valid UniProt ID to load the corresponding protein structure"
-              value={manualUniprotId}
-              onChange={e => {
-                setManualUniprotId(e.target.value)
-              }}
-            />
-          </div>
-        )}
-
-        {loadingStatuses.length > 0
-          ? loadingStatuses.map(l => (
-              <LoadingEllipses key={l} variant="subtitle2" message={l} />
-            ))
-          : null}
-
-        {lookupMode === 'auto' ? (
-          isMyGeneLoading || autoUniprotId ? null : (
-            <UniProtIDNotFoundMessage />
-          )
-        ) : (
-          !manualUniprotId && <EnterUniProtID />
-        )}
+          ))}
 
         {isoformSequences &&
         structureSequence &&
@@ -238,32 +149,12 @@ const AlphaFoldDBSearch = observer(function ({
                 isoforms={options}
                 isoformSequences={isoformSequences}
               />
-              {predictions && predictions.length > 1 && (
-                <div>
-                  <TextField
-                    select
-                    label="AlphaFold Structure Entry"
-                    value={selectedAlphaFoldEntry}
-                    onChange={e => {
-                      setSelectedAlphaFoldEntry(Number(e.target.value))
-                    }}
-                    helperText="Select an AlphaFold structure entry (isoform)"
-                    SelectProps={{
-                      native: true,
-                    }}
-                  >
-                    {predictions
-                      .sort(
-                        (a, b) =>
-                          a.modelEntityId.length - b.modelEntityId.length,
-                      )
-                      .map((prediction, index) => (
-                        <option key={index} value={index}>
-                          {prediction.modelEntityId}
-                        </option>
-                      ))}
-                  </TextField>
-                </div>
+              {predictions && (
+                <AlphaFoldEntrySelector
+                  predictions={predictions}
+                  selectedEntryIndex={selectedEntryIndex}
+                  onSelectionChange={setSelectedEntryIndex}
+                />
               )}
             </div>
             <AlphaFoldDBSearchStatus
@@ -277,74 +168,17 @@ const AlphaFoldDBSearch = observer(function ({
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button
-          variant="contained"
-          color="secondary"
-          onClick={() => {
-            handleClose()
-          }}
-        >
-          Cancel
-        </Button>
-        <Button
-          variant="contained"
-          color="primary"
-          disabled={
-            !uniprotId || !userSelectedProteinSequence || !selectedTranscript
-          }
-          onClick={() => {
-            session.addView('ProteinView', {
-              type: 'ProteinView',
-              isFloating: true,
-              structures: [
-                {
-                  url,
-                  userProvidedTranscriptSequence:
-                    userSelectedProteinSequence?.seq,
-                  feature: selectedTranscript?.toJSON(),
-                  connectedViewId: view.id,
-                },
-              ],
-              displayName: [
-                'Protein view',
-                uniprotId,
-                getGeneDisplayName(feature),
-                getTranscriptDisplayName(selectedTranscript),
-              ].join(' - '),
-            })
-            handleClose()
-          }}
-        >
-          Launch 3-D protein structure view
-        </Button>
-        <Button
-          variant="contained"
-          disabled={
-            !uniprotId || !userSelectedProteinSequence || !selectedTranscript
-          }
-          onClick={() => {
-            if (uniprotId && isSessionWithAddTracks(session)) {
-              // eslint-disable-next-line @typescript-eslint/no-floating-promises
-              ;(async () => {
-                try {
-                  await launchProteinAnnotationView({
-                    session,
-                    selectedTranscript,
-                    feature,
-                    uniprotId,
-                    confidenceUrl,
-                  })
-                } catch (e) {
-                  console.error(e)
-                  session.notifyError(`${e}`, e)
-                }
-              })()
-            }
-            handleClose()
-          }}
-        >
-          Launch 1-D protein annotation view
-        </Button>
+        <ProteinViewActions
+          handleClose={handleClose}
+          uniprotId={uniprotId}
+          userSelectedProteinSequence={userSelectedProteinSequence}
+          selectedTranscript={selectedTranscript}
+          url={url}
+          confidenceUrl={confidenceUrl}
+          feature={feature}
+          view={view}
+          session={session}
+        />
       </DialogActions>
     </>
   )
