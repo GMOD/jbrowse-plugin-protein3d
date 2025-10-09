@@ -44,6 +44,12 @@ const useStyles = makeStyles()({
     flexDirection: 'column',
     gap: 20,
   },
+  selectorsRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 20,
+    alignItems: 'flex-start',
+  },
 })
 
 function UniProtIDNotFoundMessage() {
@@ -84,7 +90,8 @@ const AlphaFoldDBSearch = observer(function ({
   const session = getSession(model)
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  const [selectedAlphaFoldEntry, setSelectedAlphaFoldEntry] = useState<number>(0)
+  const [selectedAlphaFoldEntry, setSelectedAlphaFoldEntry] =
+    useState<number>(0)
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -203,27 +210,6 @@ const AlphaFoldDBSearch = observer(function ({
           </div>
         )}
 
-        {predictions && predictions.length > 1 && (
-          <TextField
-            select
-            label="AlphaFold Structure Entry"
-            value={selectedAlphaFoldEntry}
-            onChange={e => {
-              setSelectedAlphaFoldEntry(Number(e.target.value))
-            }}
-            helperText="Select an AlphaFold structure entry (isoform)"
-            SelectProps={{
-              native: true,
-            }}
-          >
-            {predictions.map((prediction, index) => (
-              <option key={index} value={index}>
-                {prediction.modelEntityId}
-              </option>
-            ))}
-          </TextField>
-        )}
-
         {loadingStatuses.length > 0
           ? loadingStatuses.map(l => (
               <LoadingEllipses key={l} variant="subtitle2" message={l} />
@@ -243,14 +229,43 @@ const AlphaFoldDBSearch = observer(function ({
         selectedTranscript &&
         uniprotId ? (
           <>
-            <TranscriptSelector
-              val={userSelection ?? ''}
-              setVal={setUserSelection}
-              structureSequence={structureSequence}
-              feature={feature}
-              isoforms={options}
-              isoformSequences={isoformSequences}
-            />
+            <div className={classes.selectorsRow}>
+              <TranscriptSelector
+                val={userSelection ?? ''}
+                setVal={setUserSelection}
+                structureSequence={structureSequence}
+                feature={feature}
+                isoforms={options}
+                isoformSequences={isoformSequences}
+              />
+              {predictions && predictions.length > 1 && (
+                <div>
+                  <TextField
+                    select
+                    label="AlphaFold Structure Entry"
+                    value={selectedAlphaFoldEntry}
+                    onChange={e => {
+                      setSelectedAlphaFoldEntry(Number(e.target.value))
+                    }}
+                    helperText="Select an AlphaFold structure entry (isoform)"
+                    SelectProps={{
+                      native: true,
+                    }}
+                  >
+                    {predictions
+                      .sort(
+                        (a, b) =>
+                          a.modelEntityId.length - b.modelEntityId.length,
+                      )
+                      .map((prediction, index) => (
+                        <option key={index} value={index}>
+                          {prediction.modelEntityId}
+                        </option>
+                      ))}
+                  </TextField>
+                </div>
+              )}
+            </div>
             <AlphaFoldDBSearchStatus
               uniprotId={uniprotId}
               selectedTranscript={selectedTranscript}
