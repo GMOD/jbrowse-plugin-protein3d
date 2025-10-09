@@ -319,11 +319,11 @@ const Structure = types
       }[] = []
 
       for (let i = 0; i < con.length; i++) {
-        const element = con[i]!
+        const element = con[i]
         result.push({
-          top: a0[i] || '',
-          middle: element || '',
-          bottom: a1[i] || '',
+          top: a0[i] ?? '',
+          middle: element ?? '',
+          bottom: a1[i] ?? '',
         })
       }
       return result

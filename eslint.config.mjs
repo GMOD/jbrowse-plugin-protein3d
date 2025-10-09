@@ -46,7 +46,6 @@ export default defineConfig(
       'react-hooks/exhaustive-deps': 'warn',
     },
   },
-  eslintPluginUnicorn.configs.recommended,
   {
     // in main config for TSX/JSX source files
     plugins: {

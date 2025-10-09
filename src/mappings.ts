@@ -23,7 +23,6 @@ export function structureSeqVsTranscriptSeqMap(
   const structureSeqToTranscriptSeqPosition = {} as Record<string, number>
   const transcriptSeqToStructureSeqPosition = {} as Record<string, number>
 
-  // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < structureSeq.length; i++) {
     const c1 = structureSeq[i]
     const c2 = transcriptSeq[i]

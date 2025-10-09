@@ -25,7 +25,7 @@ export function extractStructureSequences(
   return model.obj?.data.sequence.sequences.map(s => {
     const arr = s.sequence.label.toArray()
     let seq = ''
-    // eslint-disable-next-line unicorn/no-for-loop,@typescript-eslint/prefer-for-of
+    // eslint-disable-next-line @typescript-eslint/prefer-for-of
     for (let i = 0; i < arr.length; i++) {
       seq += arr[i]!
     }

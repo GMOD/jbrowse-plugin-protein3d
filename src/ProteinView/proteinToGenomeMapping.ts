@@ -82,18 +82,16 @@ export async function clickProteinToGenome({
 
   const region = createGenomeRegion({ assemblyName, refName, start, end })
   model.setClickGenomeHighlights([region])
-  if (connectedView) {
-    if (zoomToBaseLevel) {
-      await connectedView.navToLocString(
-        `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
-      )
-    } else {
-      const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)
-      connectedView.centerAt(
-        start,
-        assembly?.getCanonicalRefName(refName) ?? refName,
-      )
-    }
+  if (zoomToBaseLevel) {
+    await connectedView.navToLocString(
+      `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
+    )
+  } else {
+    const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)
+    connectedView.centerAt(
+      start,
+      assembly?.getCanonicalRefName(refName) ?? refName,
+    )
   }
 }
 
