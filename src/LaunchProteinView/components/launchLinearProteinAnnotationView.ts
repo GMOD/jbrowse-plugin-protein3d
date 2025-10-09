@@ -1,4 +1,5 @@
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { textfetch } from '../../fetchUtils'
 
 import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -8,11 +9,13 @@ export async function launchLinearProteinAnnotationView({
   uniprotId,
   feature,
   selectedTranscript,
+  confidenceUrl,
 }: {
   session: SessionWithAddTracks
   uniprotId: string
   feature: Feature
   selectedTranscript: Feature
+  confidenceUrl: string
 }) {
   try {
     session.addTemporaryAssembly?.({
@@ -30,26 +33,18 @@ export async function launchLinearProteinAnnotationView({
         },
       },
     })
-    const url = `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`
-    const res = await fetch(url)
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status} fetching ${url}`)
-    }
-    const data = await res.text()
-
-    const types = [
+    const trackConfigs = [
       ...new Set(
-        data
+        (await textfetch(`https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`))
           .split('\n')
           .filter(f => !f.startsWith('#'))
           .map(f => f.trim())
           .filter(f => !!f)
           .map(f => f.split('\t')[2]),
       ),
-    ]
-    types.forEach(type => {
+    ].map(type => {
       const s = `${uniprotId}-${type}`
-      session.addTrackConf({
+      return {
         type: 'FeatureTrack',
         trackId: s,
         name: type,
@@ -67,8 +62,11 @@ export async function launchLinearProteinAnnotationView({
             jexlFilters: [`get(feature,'type')=='${type}'`],
           },
         ],
-      })
+      }
     })
+    for (const trackConf of trackConfigs) {
+      session.addTrackConf(trackConf)
+    }
     session.addTrackConf({
       type: 'FeatureTrack',
       trackId: `${uniprotId}-Antigen`,
@@ -100,7 +98,7 @@ export async function launchLinearProteinAnnotationView({
       adapter: {
         type: 'AlphaFoldConfidenceAdapter',
         location: {
-          uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-confidence_v4.json`,
+          uri: confidenceUrl,
         },
       },
       assemblyNames: [uniprotId],

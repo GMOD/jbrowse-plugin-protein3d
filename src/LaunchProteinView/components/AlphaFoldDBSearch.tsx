@@ -116,6 +116,7 @@ const AlphaFoldDBSearch = observer(function ({
 
   const {
     url,
+    confidenceUrl,
     isLoading: isAlphaFoldUrlLoading,
     error: alphaFoldUrlError,
   } = useAlphaFoldUrl({ uniprotId })
@@ -295,6 +296,7 @@ const AlphaFoldDBSearch = observer(function ({
                     selectedTranscript,
                     feature,
                     uniprotId,
+                    confidenceUrl,
                   })
                 } catch (e) {
                   console.error(e)

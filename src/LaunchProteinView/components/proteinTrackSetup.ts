@@ -28,11 +28,15 @@ export async function fetchUniProtFeatureTypes(
 /**
  * Adds UniProt feature tracks for each feature type
  */
-export function addUniProtFeatureTracks(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-  featureTypes: string[],
-) {
+export function addUniProtFeatureTracks({
+  session,
+  uniprotId,
+  featureTypes,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+  featureTypes: string[]
+}) {
   featureTypes.forEach(type => {
     const trackId = `${uniprotId}-${type}`
     session.addTrackConf({
@@ -60,10 +64,13 @@ export function addUniProtFeatureTracks(
 /**
  * Adds antigen annotation track from EBI
  */
-export function addAntigenTrack(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-) {
+export function addAntigenTrack({
+  session,
+  uniprotId,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+}) {
   session.addTrackConf({
     type: 'FeatureTrack',
     trackId: `${uniprotId}-Antigen`,
@@ -81,10 +88,13 @@ export function addAntigenTrack(
 /**
  * Adds variation track from EBI
  */
-export function addVariationTrack(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-) {
+export function addVariationTrack({
+  session,
+  uniprotId,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+}) {
   session.addTrackConf({
     type: 'FeatureTrack',
     trackId: `${uniprotId}-Variation`,
@@ -102,31 +112,41 @@ export function addVariationTrack(
 /**
  * Adds AlphaFold confidence track
  */
-export function addAlphaFoldConfidenceTrack(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-) {
-  session.addTrackConf({
-    type: 'QuantitativeTrack',
-    trackId: `${uniprotId}-AlphaFold-confidence`,
-    name: 'AlphaFold confidence',
-    adapter: {
-      type: 'AlphaFoldConfidenceAdapter',
-      location: {
-        uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-confidence_v4.json`,
+export function addAlphaFoldConfidenceTrack({
+  session,
+  uniprotId,
+  confidenceUrl,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+  confidenceUrl: string | undefined
+}) {
+  if (confidenceUrl) {
+    session.addTrackConf({
+      type: 'QuantitativeTrack',
+      trackId: `${uniprotId}-AlphaFold-confidence`,
+      name: 'AlphaFold confidence',
+      adapter: {
+        type: 'AlphaFoldConfidenceAdapter',
+        location: {
+          uri: confidenceUrl,
+        },
       },
-    },
-    assemblyNames: [uniprotId],
-  })
+      assemblyNames: [uniprotId],
+    })
+  }
 }
 
 /**
  * Adds AlphaMissense pathogenicity scores track
  */
-export function addAlphaMissenseTrack(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-) {
+export function addAlphaMissenseTrack({
+  session,
+  uniprotId,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+}) {
   session.addTrackConf({
     type: 'MultiQuantitativeTrack',
     trackId: `${uniprotId}-AlphaMissense-scores`,
@@ -159,14 +179,36 @@ export function addAlphaMissenseTrack(
 /**
  * Adds all protein annotation tracks for a given UniProt ID
  */
-export async function addAllProteinTracks(
-  session: SessionWithAddTracks,
-  uniprotId: string,
-) {
+export async function addAllProteinTracks({
+  session,
+  uniprotId,
+  confidenceUrl,
+}: {
+  session: SessionWithAddTracks
+  uniprotId: string
+  confidenceUrl: string | undefined
+}) {
   const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
-  addUniProtFeatureTracks(session, uniprotId, featureTypes)
-  addAntigenTrack(session, uniprotId)
-  addVariationTrack(session, uniprotId)
-  addAlphaFoldConfidenceTrack(session, uniprotId)
-  addAlphaMissenseTrack(session, uniprotId)
+  addUniProtFeatureTracks({
+    session,
+    uniprotId,
+    featureTypes,
+  })
+  addAntigenTrack({
+    session,
+    uniprotId,
+  })
+  addVariationTrack({
+    session,
+    uniprotId,
+  })
+  addAlphaFoldConfidenceTrack({
+    session,
+    uniprotId,
+    confidenceUrl,
+  })
+  addAlphaMissenseTrack({
+    session,
+    uniprotId,
+  })
 }
