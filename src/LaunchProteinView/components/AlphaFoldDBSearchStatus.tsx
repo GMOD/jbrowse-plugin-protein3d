@@ -4,7 +4,6 @@ import { Feature } from '@jbrowse/core/util'
 import { Button, Typography } from '@mui/material'
 
 import MSATable from './MSATable'
-import useAlphaFoldUrl from './useAlphaFoldUrl'
 import { getDisplayName } from './util'
 import ExternalLink from '../../components/ExternalLink'
 
@@ -26,13 +25,14 @@ export default function AlphaFoldDBSearchStatus({
   selectedTranscript,
   structureSequence,
   isoformSequences,
+  url,
 }: {
   uniprotId?: string
   selectedTranscript: Feature
   structureSequence?: string
   isoformSequences: Record<string, { feature: Feature; seq: string }>
+  url?: string
 }) {
-  const { url } = useAlphaFoldUrl({ uniprotId })
   const url2 = uniprotId
     ? `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
     : undefined

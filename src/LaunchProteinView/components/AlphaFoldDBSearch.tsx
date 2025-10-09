@@ -25,7 +25,6 @@ import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import useAlphaFoldUrl from './useAlphaFoldUrl'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
-import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
 import {
   getDisplayName,
   getGeneDisplayName,
@@ -85,6 +84,7 @@ const AlphaFoldDBSearch = observer(function ({
   const session = getSession(model)
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
+  const [selectedAlphaFoldEntry, setSelectedAlphaFoldEntry] = useState<number>(0)
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -115,24 +115,26 @@ const AlphaFoldDBSearch = observer(function ({
   const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
 
   const {
-    url,
-    confidenceUrl,
+    predictions,
     isLoading: isAlphaFoldUrlLoading,
     error: alphaFoldUrlError,
   } = useAlphaFoldUrl({ uniprotId })
-  const {
-    sequences: structureSequences,
-    isLoading: isRemoteStructureSequenceLoading,
-    error: remoteStructureSequenceError,
-  } = useRemoteStructureFileSequence({ url })
 
-  const e =
-    myGeneError ??
-    isoformProteinSequencesError ??
-    remoteStructureSequenceError ??
-    alphaFoldUrlError
+  // Get the currently selected AlphaFold entry
+  const selectedPrediction = predictions?.[selectedAlphaFoldEntry]
+  const url = selectedPrediction?.cifUrl
+  const confidenceUrl = selectedPrediction?.plddtDocUrl
+  const structureSequence = selectedPrediction?.sequence
 
-  const structureSequence = structureSequences?.[0]
+  const e = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
+
+  // Auto-select first AlphaFold entry when predictions load
+  useEffect(() => {
+    if (predictions && predictions.length > 0) {
+      setSelectedAlphaFoldEntry(0)
+    }
+  }, [predictions])
+
   useEffect(() => {
     if (isoformSequences !== undefined) {
       const ret =
@@ -145,9 +147,6 @@ const AlphaFoldDBSearch = observer(function ({
     }
   }, [options, structureSequence, isoformSequences])
 
-  const loadingStatus1 = isRemoteStructureSequenceLoading
-    ? 'Loading sequence from remote structure file'
-    : ''
   const loadingStatus2 = isMyGeneLoading
     ? 'Looking up UniProt ID from mygene.info'
     : ''
@@ -158,7 +157,6 @@ const AlphaFoldDBSearch = observer(function ({
     ? 'Fetching AlphaFold structure URL'
     : ''
   const loadingStatuses = [
-    loadingStatus1,
     loadingStatus2,
     loadingStatus3,
     loadingStatus4,
@@ -204,6 +202,28 @@ const AlphaFoldDBSearch = observer(function ({
             />
           </div>
         )}
+
+        {predictions && predictions.length > 1 && (
+          <TextField
+            select
+            label="AlphaFold Structure Entry"
+            value={selectedAlphaFoldEntry}
+            onChange={e => {
+              setSelectedAlphaFoldEntry(Number(e.target.value))
+            }}
+            helperText="Select an AlphaFold structure entry (isoform)"
+            SelectProps={{
+              native: true,
+            }}
+          >
+            {predictions.map((prediction, index) => (
+              <option key={index} value={index}>
+                {prediction.modelEntityId}
+              </option>
+            ))}
+          </TextField>
+        )}
+
         {loadingStatuses.length > 0
           ? loadingStatuses.map(l => (
               <LoadingEllipses key={l} variant="subtitle2" message={l} />
@@ -236,6 +256,7 @@ const AlphaFoldDBSearch = observer(function ({
               selectedTranscript={selectedTranscript}
               structureSequence={structureSequence}
               isoformSequences={isoformSequences}
+              url={url}
             />
           </>
         ) : null}
