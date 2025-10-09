@@ -107,6 +107,10 @@ const Structure = types
      * #volatile
      */
     structureSequences: undefined as string[] | undefined,
+    /**
+     * #volatile
+     */
+    pairwiseAlignmentHoverPos: undefined as number | undefined,
   }))
   .actions(self => ({
     /**
@@ -173,6 +177,12 @@ const Structure = types
       code?: string
     }) {
       self.hoverPosition = arg
+    },
+    /**
+     * #action
+     */
+    setPairwiseAlignmentHoverPos(pos?: number) {
+      self.pairwiseAlignmentHoverPos = pos
     },
     /**
      * #action
@@ -274,6 +284,33 @@ const Structure = types
       const r1 = self.userProvidedTranscriptSequence.replaceAll('*', '')
       const r2 = self.structureSequences?.[0]?.replaceAll('*', '')
       return r1 === r2
+    },
+
+    /**
+     * #getter
+     * Alignment data without hover state - only recomputes when alignment changes
+     */
+    get alignmentData() {
+      if (!self.pairwiseAlignment) {
+        return []
+      }
+      const a0 = self.pairwiseAlignment.alns[0].seq
+      const a1 = self.pairwiseAlignment.alns[1].seq
+      const con = self.pairwiseAlignment.consensus
+      const result: Array<{
+        top: string
+        middle: string
+        bottom: string
+      }> = []
+
+      for (let i = 0; i < con.length; i++) {
+        result.push({
+          top: a0[i] || '',
+          middle: con[i] || '',
+          bottom: a1[i] || '',
+        })
+      }
+      return result
     },
 
     get zoomToBaseLevel(): boolean {
@@ -500,6 +537,18 @@ const Structure = types
               selectedResidue: structureSeqHoverPos,
             })
           }
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const { structureSeqHoverPos, structurePositionToAlignmentMap } = self
+          self.setPairwiseAlignmentHoverPos(
+            structureSeqHoverPos === undefined
+              ? undefined
+              : structurePositionToAlignmentMap?.[structureSeqHoverPos],
+          )
         }),
       )
     },
