@@ -38,5 +38,10 @@ export function genomeToTranscriptMapping(feature: Feature) {
     }
   }
 
-  return { g2p, p2g, refName, strand }
+  return {
+    g2p,
+    p2g,
+    refName,
+    strand,
+  }
 }

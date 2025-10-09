@@ -11,6 +11,9 @@ import {
   hoverProteinToGenome,
 } from '../proteinToGenomeMapping'
 
+const HOVER_BACKGROUND_COLOR = '#f698'
+const GAP_HIGHLIGHT_COLOR = '#33ff19'
+
 const useStyles = makeStyles()({
   column: {
     display: 'inline-block',
@@ -20,23 +23,17 @@ const useStyles = makeStyles()({
     display: 'block',
     textAlign: 'center',
   },
-  hovered: {
-    background: '#f698',
-  },
-  gapHighlight: {
-    background: '#33ff19',
-  },
   columnHovered: {
     display: 'inline-block',
     cursor: 'pointer',
-    background: '#f698',
+    background: HOVER_BACKGROUND_COLOR,
   },
   columnGapHighlight: {
     display: 'inline-block',
     cursor: 'pointer',
-    background: '#33ff19',
+    background: GAP_HIGHLIGHT_COLOR,
   },
-  pre: {
+  alignmentContainer: {
     fontSize: 9,
     fontFamily: 'monospace',
     margin: 8,
@@ -46,49 +43,56 @@ const useStyles = makeStyles()({
   },
 })
 
-// Memoized column component - React.memo prevents re-rendering when props don't change
-const AlignmentColumn = React.memo(
-  React.forwardRef<
-    HTMLDivElement,
-    {
-      item: { top: string; middle: string; bottom: string }
-      index: number
-      classes: Record<string, string>
-      isGap: boolean
-      showHighlight: boolean
-      isHovered: boolean
-      onMouseOver: (i: number) => void
-      onClick: (i: number) => void
-    }
-  >(function AlignmentColumn(
-    { item, index, classes, isGap, showHighlight, isHovered, onMouseOver, onClick },
-    ref,
-  ) {
-    const className = isHovered
-      ? classes.columnHovered
-      : isGap && showHighlight
-        ? classes.columnGapHighlight
-        : classes.column
+type AlignmentItem = {
+  top: string
+  middle: string
+  bottom: string
+}
 
-    return (
-      <div
-        ref={ref}
-        className={className}
-        onMouseOver={() => onMouseOver(index)}
-        onClick={() => onClick(index)}
-      >
-        <span className={classes.letter}>
-          {item.top === ' ' ? <>&nbsp;</> : item.top}
-        </span>
-        <span className={classes.letter}>
-          {item.middle === ' ' ? <>&nbsp;</> : item.middle}
-        </span>
-        <span className={classes.letter}>
-          {item.bottom === ' ' ? <>&nbsp;</> : item.bottom}
-        </span>
-      </div>
-    )
-  }),
+interface AlignmentColumnProps {
+  item: AlignmentItem
+  index: number
+  classes: Record<string, string>
+  isGap: boolean
+  showHighlight: boolean
+  isHovered: boolean
+  onMouseOver: (i: number) => void
+  onClick: (i: number) => void
+}
+
+/**
+ * Renders a single column of the alignment (one position across all three sequences)
+ * Memoized to prevent unnecessary re-renders
+ */
+const AlignmentColumn = React.memo(
+  React.forwardRef<HTMLDivElement, AlignmentColumnProps>(
+    function AlignmentColumn(
+      { item, index, classes, isGap, showHighlight, isHovered, onMouseOver, onClick },
+      ref,
+    ) {
+      const getColumnClassName = () => {
+        if (isHovered) return classes.columnHovered
+        if (isGap && showHighlight) return classes.columnGapHighlight
+        return classes.column
+      }
+
+      const renderLetter = (char: string) =>
+        char === ' ' ? <>&nbsp;</> : char
+
+      return (
+        <div
+          ref={ref}
+          className={getColumnClassName()}
+          onMouseOver={() => onMouseOver(index)}
+          onClick={() => onClick(index)}
+        >
+          <span className={classes.letter}>{renderLetter(item.top)}</span>
+          <span className={classes.letter}>{renderLetter(item.middle)}</span>
+          <span className={classes.letter}>{renderLetter(item.bottom)}</span>
+        </div>
+      )
+    },
+  ),
 )
 
 const ProteinAlignment = observer(function ({
@@ -104,22 +108,30 @@ const ProteinAlignment = observer(function ({
     showHighlight,
   } = model
 
-  // Refs for each column
   const columnRefs = useRef<(HTMLDivElement | null)[]>([])
   const containerRef = useRef<HTMLDivElement>(null)
   const isMouseInContainer = useRef(false)
 
-  if (alignmentData.length === 0) {
-    return <div>No pairwiseAlignment</div>
-  }
+  // Compute which positions represent aligned/matching residues (marked with '|')
+  const gapSet = useMemo(() => {
+    const alignedPositions = new Set<number>()
+    for (let i = 0; i < alignmentData.length; i++) {
+      const consensusChar = alignmentData[i]!.middle
+      if (consensusChar === '|') {
+        alignedPositions.add(i)
+      }
+    }
+    return alignedPositions
+  }, [alignmentData])
 
-  // Scroll to hovered position only if mouse is not in the alignment area
+  // Auto-scroll to hovered column when hover originates from outside the alignment
   useEffect(() => {
-    if (
+    const shouldAutoScroll =
       !isMouseInContainer.current &&
       pairwiseAlignmentHoverPos !== undefined &&
       columnRefs.current[pairwiseAlignmentHoverPos]
-    ) {
+
+    if (shouldAutoScroll) {
       columnRefs.current[pairwiseAlignmentHoverPos]?.scrollIntoView({
         behavior: 'smooth',
         block: 'nearest',
@@ -128,24 +140,17 @@ const ProteinAlignment = observer(function ({
     }
   }, [pairwiseAlignmentHoverPos])
 
-  // Memoize gapSet so it's only recomputed when alignment changes
-  const gapSet = useMemo(() => {
-    const set = new Set<number>()
-    for (let i = 0; i < alignmentData.length; i++) {
-      const letter = alignmentData[i]!.middle
-      if (letter === '|') {
-        set.add(i)
-      }
-    }
-    return set
-  }, [alignmentData])
+  if (alignmentData.length === 0) {
+    return <div>No pairwiseAlignment</div>
+  }
 
-  // Memoize callbacks to prevent recreation on every render
-  const onMouseOver = useCallback(
-    (i: number) => {
-      model.setPairwiseAlignmentHoverPos(i)
+  const handleColumnMouseOver = useCallback(
+    (alignmentPosition: number) => {
+      model.setPairwiseAlignmentHoverPos(alignmentPosition)
+
       if (pairwiseAlignmentToStructurePosition) {
-        const structureSeqPos = pairwiseAlignmentToStructurePosition[i]
+        const structureSeqPos =
+          pairwiseAlignmentToStructurePosition[alignmentPosition]
         model.setHoveredPosition({ structureSeqPos })
         hoverProteinToGenome({ model, structureSeqPos })
       }
@@ -153,11 +158,11 @@ const ProteinAlignment = observer(function ({
     [model, pairwiseAlignmentToStructurePosition],
   )
 
-  const onClick = useCallback(
-    (pairwiseAlignmentPos: number) => {
+  const handleColumnClick = useCallback(
+    (alignmentPosition: number) => {
       if (pairwiseAlignmentToStructurePosition) {
         const structureSeqPos =
-          pairwiseAlignmentToStructurePosition[pairwiseAlignmentPos]!
+          pairwiseAlignmentToStructurePosition[alignmentPosition]!
         clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
           console.error(e)
         })
@@ -166,11 +171,11 @@ const ProteinAlignment = observer(function ({
     [model, pairwiseAlignmentToStructurePosition],
   )
 
-  const onMouseEnter = useCallback(() => {
+  const handleContainerMouseEnter = useCallback(() => {
     isMouseInContainer.current = true
   }, [])
 
-  const onMouseLeave = useCallback(() => {
+  const handleContainerMouseLeave = useCallback(() => {
     isMouseInContainer.current = false
     model.setHoveredPosition(undefined)
     model.clearHoverGenomeHighlights()
@@ -185,9 +190,9 @@ const ProteinAlignment = observer(function ({
       </Typography>
       <div
         ref={containerRef}
-        className={classes.pre}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
+        className={classes.alignmentContainer}
+        onMouseEnter={handleContainerMouseEnter}
+        onMouseLeave={handleContainerMouseLeave}
       >
         {alignmentData.map((item, i) => (
           <AlignmentColumn
@@ -201,8 +206,8 @@ const ProteinAlignment = observer(function ({
             isGap={gapSet.has(i)}
             showHighlight={showHighlight}
             isHovered={i === pairwiseAlignmentHoverPos}
-            onMouseOver={onMouseOver}
-            onClick={onClick}
+            onMouseOver={handleColumnMouseOver}
+            onClick={handleColumnClick}
           />
         ))}
       </div>

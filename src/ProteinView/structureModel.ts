@@ -400,7 +400,8 @@ const Structure = types
             checkHovered(hovered)
           ) {
             const { hoverPosition } = hovered
-            const pos = genomeToTranscriptSeqMapping.g2p[hoverPosition.coord]
+            const pos =
+              genomeToTranscriptSeqMapping.g2p[hoverPosition.coord - 1]
             const c0 =
               pos === undefined
                 ? undefined
