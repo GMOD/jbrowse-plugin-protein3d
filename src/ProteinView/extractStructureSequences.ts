@@ -4,7 +4,7 @@ interface StructureModel {
   obj?: {
     data: {
       sequence: {
-        sequences: Array<{
+        sequences: ReadonlyArray<{
           sequence: {
             label: {
               toArray(): ArrayLike<string>

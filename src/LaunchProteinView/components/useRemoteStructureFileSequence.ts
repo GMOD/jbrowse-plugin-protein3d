@@ -16,7 +16,7 @@ export default function useRemoteStructureFileSequence({
 }: {
   url?: string
 }) {
-  const { data, error, isLoading } = useSWR<string[]>(
+  const { data, error, isLoading } = useSWR<string[] | undefined>(
     url ? ['remote-structure', url] : null,
     async () => {
       if (!url) {

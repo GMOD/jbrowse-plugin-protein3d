@@ -23,7 +23,7 @@ export default function useLocalStructureFileSequence({
 }: {
   file?: File
 }) {
-  const { data, error, isLoading } = useSWR<string[]>(
+  const { data, error, isLoading } = useSWR<string[] | undefined>(
     file ? ['local-structure', file.name, file.size, file.lastModified] : null,
     async () => {
       if (!file) {

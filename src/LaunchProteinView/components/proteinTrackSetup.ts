@@ -20,7 +20,7 @@ export async function fetchUniProtFeatureTypes(
         .filter(f => !f.startsWith('#'))
         .map(f => f.trim())
         .filter(f => !!f)
-        .map(f => f.split('\t')[2]),
+        .map(f => f.split('\t')[2]!),
     ),
   ]
 }
