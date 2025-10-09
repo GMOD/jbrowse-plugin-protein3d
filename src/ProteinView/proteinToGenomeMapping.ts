@@ -1,7 +1,12 @@
 import { getSession } from '@jbrowse/core/util'
+import { Region } from '@jbrowse/core/util/types'
 
 import { JBrowsePluginProteinStructureModel } from './model'
 
+/**
+ * Maps a protein structure position to genome coordinates
+ * @returns [start, end] tuple of genome coordinates, or undefined if mapping fails
+ */
 export function proteinToGenomeMapping({
   model,
   structureSeqPos,
@@ -14,22 +19,44 @@ export function proteinToGenomeMapping({
     pairwiseAlignment,
     structureSeqToTranscriptSeqPosition,
   } = model
+
   if (!genomeToTranscriptSeqMapping || !pairwiseAlignment) {
     return undefined
   }
+
   const { p2g, strand } = genomeToTranscriptSeqMapping
-  const r1 = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
-  if (r1 === undefined) {
-    return undefined
-  }
-  const s0 = p2g[r1]
-  if (s0 === undefined) {
+  const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
+
+  if (transcriptPos === undefined) {
     return undefined
   }
 
-  const start = s0
+  const genomePos = p2g[transcriptPos]
+  if (genomePos === undefined) {
+    return undefined
+  }
+
+  // Calculate codon range (3 bases per amino acid)
+  const start = genomePos
   const end = start + 3 * strand
   return [Math.min(start, end), Math.max(start, end)] as const
+}
+
+/**
+ * Creates a genome region object for highlighting
+ */
+function createGenomeRegion({
+  assemblyName,
+  refName,
+  start,
+  end,
+}: {
+  assemblyName: string
+  refName: string
+  start: number
+  end: number
+}): Region {
+  return { assemblyName, refName, start, end }
 }
 
 export async function clickProteinToGenome({
@@ -46,29 +73,24 @@ export async function clickProteinToGenome({
   if (!genomeToTranscriptSeqMapping || result === undefined) {
     return undefined
   }
-  const [s1, s2] = result
+  const [start, end] = result
   const { strand, refName } = genomeToTranscriptSeqMapping
   const assemblyName = connectedView?.assemblyNames[0]
   if (!assemblyName) {
     return undefined
   }
-  model.setClickGenomeHighlights([
-    {
-      assemblyName,
-      refName,
-      start: s1,
-      end: s2,
-    },
-  ])
+
+  const region = createGenomeRegion({ assemblyName, refName, start, end })
+  model.setClickGenomeHighlights([region])
   if (connectedView) {
     if (zoomToBaseLevel) {
       await connectedView.navToLocString(
-        `${refName}:${s1}-${s2}${strand === -1 ? '[rev]' : ''}`,
+        `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
       )
     } else {
       const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)
       connectedView.centerAt(
-        s1,
+        start,
         assembly?.getCanonicalRefName(refName) ?? refName,
       )
     }
@@ -84,22 +106,21 @@ export function hoverProteinToGenome({
 }) {
   if (structureSeqPos === undefined) {
     model.setHoverGenomeHighlights([])
-  } else {
-    const mappedGenomeCoordinate = proteinToGenomeMapping({
-      structureSeqPos,
-      model,
+    return
+  }
+
+  const mappedCoords = proteinToGenomeMapping({ structureSeqPos, model })
+  const { genomeToTranscriptSeqMapping, connectedView } = model
+  const assemblyName = connectedView?.assemblyNames[0]
+
+  if (genomeToTranscriptSeqMapping && mappedCoords && assemblyName) {
+    const [start, end] = mappedCoords
+    const region = createGenomeRegion({
+      assemblyName,
+      refName: genomeToTranscriptSeqMapping.refName,
+      start,
+      end,
     })
-    const { genomeToTranscriptSeqMapping, connectedView } = model
-    const assemblyName = connectedView?.assemblyNames[0]
-    if (genomeToTranscriptSeqMapping && mappedGenomeCoordinate && assemblyName) {
-      model.setHoverGenomeHighlights([
-        {
-          assemblyName,
-          refName: genomeToTranscriptSeqMapping.refName,
-          start: mappedGenomeCoordinate[0],
-          end: mappedGenomeCoordinate[1],
-        },
-      ])
-    }
+    model.setHoverGenomeHighlights([region])
   }
 }

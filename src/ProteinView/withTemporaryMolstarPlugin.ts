@@ -1,5 +1,5 @@
-import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { type PluginContext } from 'molstar/lib/mol-plugin/context'
+import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 
 /**

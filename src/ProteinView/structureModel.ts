@@ -38,6 +38,21 @@ type StructureModel = Awaited<
   ReturnType<PluginContext['builders']['structure']['createModel']>
 >
 
+/**
+ * Extracts position information from a MolStar structure location
+ * @returns Object with 0-based position, residue code, and chain ID
+ */
+function extractLocationInfo(location: StructureElement.Location) {
+  const pos = StructureProperties.residue.auth_seq_id(location)
+  const code = StructureProperties.atom.label_comp_id(location)
+  const chain = StructureProperties.chain.auth_asym_id(location)
+  return {
+    structureSeqPos: pos - 1, // Convert to 0-based
+    code,
+    chain,
+  }
+}
+
 const Structure = types
   .model({
     /**
@@ -297,16 +312,17 @@ const Structure = types
       const a0 = self.pairwiseAlignment.alns[0].seq
       const a1 = self.pairwiseAlignment.alns[1].seq
       const con = self.pairwiseAlignment.consensus
-      const result: Array<{
+      const result: {
         top: string
         middle: string
         bottom: string
-      }> = []
+      }[] = []
 
       for (let i = 0; i < con.length; i++) {
+        const element = con[i]!
         result.push({
           top: a0[i] || '',
-          middle: con[i] || '',
+          middle: element || '',
           bottom: a1[i] || '',
         })
       }
@@ -428,18 +444,12 @@ const Structure = types
                     e.current.loci,
                   )
                   if (loc) {
-                    const pos = StructureProperties.residue.auth_seq_id(loc)
-                    const code = StructureProperties.atom.label_comp_id(loc)
-                    const chain = StructureProperties.chain.auth_asym_id(loc)
-                    self.setHoveredPosition({
-                      structureSeqPos: pos - 1,
-                      code,
-                      chain,
-                    })
+                    const locationInfo = extractLocationInfo(loc)
+                    self.setHoveredPosition(locationInfo)
 
                     clickProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,
-                      structureSeqPos: pos - 1,
+                      structureSeqPos: locationInfo.structureSeqPos,
                     }).catch((e: unknown) => {
                       console.error(e)
                       // @ts-expect-error
@@ -468,19 +478,11 @@ const Structure = types
                     e.current.loci,
                   )
                   if (loc) {
-                    // example code for this label
-                    // https://github.com/molstar/molstar/blob/60550cfea1f62a50a764d5714307d6d1049be71d/src/mol-theme/label.ts#L255-L264
-                    const pos = StructureProperties.residue.auth_seq_id(loc)
-                    const code = StructureProperties.atom.label_comp_id(loc)
-                    const chain = StructureProperties.chain.auth_asym_id(loc)
-                    self.setHoveredPosition({
-                      structureSeqPos: pos - 1,
-                      code,
-                      chain,
-                    })
+                    const locationInfo = extractLocationInfo(loc)
+                    self.setHoveredPosition(locationInfo)
                     hoverProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,
-                      structureSeqPos: pos - 1,
+                      structureSeqPos: locationInfo.structureSeqPos,
                     })
                   }
                 }

@@ -4,7 +4,6 @@ import importPlugin from 'eslint-plugin-import'
 import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
-import eslintPluginUnicorn from 'eslint-plugin-unicorn'
 import tseslint from 'typescript-eslint'
 
 export default defineConfig(
@@ -117,14 +116,6 @@ export default defineConfig(
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-deprecated': 'off',
 
-      'unicorn/no-array-for-each': 'off',
-      'unicorn/no-null': 'off',
-      'unicorn/prefer-spread': 'off',
-      'unicorn/no-nested-ternary': 'off',
-      'unicorn/no-useless-undefined': 'off',
-      'unicorn/catch-error-name': 'off',
-      'unicorn/filename-case': 'off',
-      'unicorn/prevent-abbreviations': 'off',
       'react-refresh/only-export-components': 'warn',
       'react/no-unescaped-entities': 'off',
       'react/prop-types': 'off',

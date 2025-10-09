@@ -1,7 +1,7 @@
 import useSWR from 'swr'
 
-import { jsonfetch } from '../../fetchUtils'
 import { stripTrailingVersion } from './util'
+import { jsonfetch } from '../../fetchUtils'
 
 interface MyGeneInfoResults {
   hits?: {

@@ -1,4 +1,4 @@
-import React, { useMemo, useCallback, useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
@@ -43,7 +43,7 @@ const useStyles = makeStyles()({
   },
 })
 
-type AlignmentItem = {
+interface AlignmentItem {
   top: string
   middle: string
   bottom: string
@@ -67,24 +67,40 @@ interface AlignmentColumnProps {
 const AlignmentColumn = React.memo(
   React.forwardRef<HTMLDivElement, AlignmentColumnProps>(
     function AlignmentColumn(
-      { item, index, classes, isGap, showHighlight, isHovered, onMouseOver, onClick },
+      {
+        item,
+        index,
+        classes,
+        isGap,
+        showHighlight,
+        isHovered,
+        onMouseOver,
+        onClick,
+      },
       ref,
     ) {
       const getColumnClassName = () => {
-        if (isHovered) return classes.columnHovered
-        if (isGap && showHighlight) return classes.columnGapHighlight
+        if (isHovered) {
+          return classes.columnHovered
+        }
+        if (isGap && showHighlight) {
+          return classes.columnGapHighlight
+        }
         return classes.column
       }
 
-      const renderLetter = (char: string) =>
-        char === ' ' ? <>&nbsp;</> : char
+      const renderLetter = (char: string) => (char === ' ' ? <>&nbsp;</> : char)
 
       return (
         <div
           ref={ref}
           className={getColumnClassName()}
-          onMouseOver={() => onMouseOver(index)}
-          onClick={() => onClick(index)}
+          onMouseOver={() => {
+            onMouseOver(index)
+          }}
+          onClick={() => {
+            onClick(index)
+          }}
         >
           <span className={classes.letter}>{renderLetter(item.top)}</span>
           <span className={classes.letter}>{renderLetter(item.middle)}</span>
@@ -115,8 +131,8 @@ const ProteinAlignment = observer(function ({
   // Compute which positions represent aligned/matching residues (marked with '|')
   const gapSet = useMemo(() => {
     const alignedPositions = new Set<number>()
-    for (let i = 0; i < alignmentData.length; i++) {
-      const consensusChar = alignmentData[i]!.middle
+    for (const [i, alignmentDatum] of alignmentData.entries()) {
+      const consensusChar = alignmentDatum.middle
       if (consensusChar === '|') {
         alignedPositions.add(i)
       }

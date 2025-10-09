@@ -1,16 +1,14 @@
-import type { StructureElement } from 'molstar/lib/mol-model/structure'
-
 interface StructureModel {
   obj?: {
     data: {
       sequence: {
-        sequences: ReadonlyArray<{
+        sequences: readonly {
           sequence: {
             label: {
               toArray(): ArrayLike<string>
             }
           }
-        }>
+        }[]
       }
     }
   }

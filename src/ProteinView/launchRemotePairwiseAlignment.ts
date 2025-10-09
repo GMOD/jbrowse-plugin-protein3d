@@ -2,7 +2,21 @@ import { parsePairwise } from 'clustal-js'
 
 import { textfetch, timeout } from '../fetchUtils'
 
-const base = `https://www.ebi.ac.uk/Tools/services/rest`
+const EBI_REST_BASE_URL = 'https://www.ebi.ac.uk/Tools/services/rest'
+
+/**
+ * Parses alignment result by removing comment lines and parsing with clustal-js
+ */
+function parseAlignmentResult(result: string) {
+  return {
+    pairwiseAlignment: parsePairwise(
+      result
+        .split('\n')
+        .filter(line => !line.startsWith('#'))
+        .join('\n'),
+    ),
+  }
+}
 
 async function runEmbossMatcher({
   seq1,
@@ -13,7 +27,8 @@ async function runEmbossMatcher({
   seq2: string
   onProgress: (arg: string) => void
 }) {
-  const jobId = await textfetch(`${base}/emboss_matcher/run`, {
+  const algorithm = 'emboss_matcher'
+  const jobId = await textfetch(`${EBI_REST_BASE_URL}/${algorithm}/run`, {
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
@@ -21,20 +36,12 @@ async function runEmbossMatcher({
       bsequence: `>b\n${seq2}`,
     }),
   })
-  await wait({
-    jobId,
-    algorithm: 'emboss_matcher',
-    onProgress,
-  })
-  const ret = await textfetch(`${base}/emboss_matcher/result/${jobId}/aln`)
-  return {
-    pairwiseAlignment: parsePairwise(
-      ret
-        .split('\n')
-        .filter(line => !line.startsWith('#'))
-        .join('\n'),
-    ),
-  }
+  await wait({ jobId, algorithm, onProgress })
+
+  const result = await textfetch(
+    `${EBI_REST_BASE_URL}/${algorithm}/result/${jobId}/aln`,
+  )
+  return parseAlignmentResult(result)
 }
 
 async function runEmbossNeedle({
@@ -46,7 +53,8 @@ async function runEmbossNeedle({
   seq2: string
   onProgress: (arg: string) => void
 }) {
-  const jobId = await textfetch(`${base}/emboss_needle/run`, {
+  const algorithm = 'emboss_needle'
+  const jobId = await textfetch(`${EBI_REST_BASE_URL}/${algorithm}/run`, {
     method: 'POST',
     body: new URLSearchParams({
       email: 'colin.diesh@gmail.com',
@@ -54,22 +62,16 @@ async function runEmbossNeedle({
       bsequence: `>b\n${seq2}`,
     }),
   })
-  await wait({
-    jobId,
-    algorithm: 'emboss_needle',
-    onProgress,
-  })
+  await wait({ jobId, algorithm, onProgress })
 
-  const ret = await textfetch(`${base}/emboss_needle/result/${jobId}/aln`)
-  return {
-    pairwiseAlignment: parsePairwise(
-      ret
-        .split('\n')
-        .filter(line => !line.startsWith('#'))
-        .join('\n'),
-    ),
-  }
+  const result = await textfetch(
+    `${EBI_REST_BASE_URL}/${algorithm}/result/${jobId}/aln`,
+  )
+  return parseAlignmentResult(result)
 }
+/**
+ * Polls the EBI REST API until the alignment job completes
+ */
 async function wait({
   onProgress,
   jobId,
@@ -79,20 +81,27 @@ async function wait({
   algorithm: string
   onProgress: (arg: string) => void
 }) {
+  const POLL_INTERVAL_MS = 1000
+  const COUNTDOWN_SECONDS = 10
+
   // eslint-disable-next-line  @typescript-eslint/no-unnecessary-condition
   while (true) {
-    for (let i = 0; i < 10; i++) {
-      await timeout(1000)
+    // Countdown before next status check
+    for (let i = 0; i < COUNTDOWN_SECONDS; i++) {
+      await timeout(POLL_INTERVAL_MS)
       onProgress(
-        `Re-checking pairwiseAlignment to PDB seq1,seq2 in... ${10 - i}`,
+        `Re-checking pairwiseAlignment to PDB seq1,seq2 in... ${COUNTDOWN_SECONDS - i}`,
       )
     }
-    const result = await textfetch(`${base}/${algorithm}/status/${jobId}`)
 
-    if (result === 'FINISHED') {
+    const status = await textfetch(
+      `${EBI_REST_BASE_URL}/${algorithm}/status/${jobId}`,
+    )
+
+    if (status === 'FINISHED') {
       break
-    } else if (result.includes('FAILED')) {
-      throw new Error('Remote returned FAILED')
+    } else if (status.includes('FAILED')) {
+      throw new Error(`Alignment job failed with status: ${status}`)
     }
   }
 }
