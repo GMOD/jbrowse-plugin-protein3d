@@ -1,7 +1,6 @@
 import { getSession } from '@jbrowse/core/util'
-import { Region } from '@jbrowse/core/util/types'
 
-import { JBrowsePluginProteinStructureModel } from './model'
+import type { JBrowsePluginProteinStructureModel } from './model'
 
 /**
  * Maps a protein structure position to genome coordinates
@@ -25,7 +24,8 @@ export function proteinToGenomeMapping({
   }
 
   const { p2g, strand } = genomeToTranscriptSeqMapping
-  const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
+  const transcriptPos =
+    structureSeqToTranscriptSeqPosition?.[structureSeqPos + 1]
 
   if (transcriptPos === undefined) {
     return undefined
@@ -40,23 +40,6 @@ export function proteinToGenomeMapping({
   const start = genomePos
   const end = start + 3 * strand
   return [Math.min(start, end), Math.max(start, end)] as const
-}
-
-/**
- * Creates a genome region object for highlighting
- */
-function createGenomeRegion({
-  assemblyName,
-  refName,
-  start,
-  end,
-}: {
-  assemblyName: string
-  refName: string
-  start: number
-  end: number
-}): Region {
-  return { assemblyName, refName, start, end }
 }
 
 export async function clickProteinToGenome({
@@ -80,8 +63,14 @@ export async function clickProteinToGenome({
     return undefined
   }
 
-  const region = createGenomeRegion({ assemblyName, refName, start, end })
-  model.setClickGenomeHighlights([region])
+  model.setClickGenomeHighlights([
+    {
+      assemblyName,
+      refName,
+      start,
+      end,
+    },
+  ])
   if (zoomToBaseLevel) {
     await connectedView.navToLocString(
       `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
@@ -107,18 +96,22 @@ export function hoverProteinToGenome({
     return
   }
 
-  const mappedCoords = proteinToGenomeMapping({ structureSeqPos, model })
+  const mappedCoords = proteinToGenomeMapping({
+    structureSeqPos,
+    model,
+  })
   const { genomeToTranscriptSeqMapping, connectedView } = model
   const assemblyName = connectedView?.assemblyNames[0]
 
   if (genomeToTranscriptSeqMapping && mappedCoords && assemblyName) {
     const [start, end] = mappedCoords
-    const region = createGenomeRegion({
-      assemblyName,
-      refName: genomeToTranscriptSeqMapping.refName,
-      start,
-      end,
-    })
-    model.setHoverGenomeHighlights([region])
+    model.setHoverGenomeHighlights([
+      {
+        assemblyName,
+        refName: genomeToTranscriptSeqMapping.refName,
+        start,
+        end,
+      },
+    ])
   }
 }

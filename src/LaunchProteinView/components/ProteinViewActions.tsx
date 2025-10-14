@@ -6,7 +6,7 @@ import { Button } from '@mui/material'
 import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 
-import type { Feature } from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 interface ProteinViewActionsProps {
@@ -18,7 +18,7 @@ interface ProteinViewActionsProps {
   confidenceUrl?: string
   feature: Feature
   view: LinearGenomeViewModel
-  session: any
+  session: AbstractSessionModel
 }
 
 /**
@@ -39,7 +39,9 @@ export default function ProteinViewActions({
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
   const handleLaunch3DView = () => {
-    if (!selectedTranscript) return
+    if (!selectedTranscript) {
+      return
+    }
 
     session.addView('ProteinView', {
       type: 'ProteinView',

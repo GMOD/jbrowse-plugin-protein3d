@@ -19,7 +19,7 @@ export default function AlphaFoldEntrySelector({
   onSelectionChange,
 }: AlphaFoldEntrySelectorProps) {
   // Only show if there are multiple predictions
-  if (!predictions || predictions.length <= 1) {
+  if (predictions.length <= 1) {
     return null
   }
 
