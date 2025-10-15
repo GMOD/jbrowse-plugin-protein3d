@@ -1,8 +1,7 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react'
+import React, { useEffect, useState } from 'react'
 
-import { Typography } from '@mui/material'
+import { Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
-import { makeStyles } from 'tss-react/mui'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
@@ -10,222 +9,125 @@ import {
   clickProteinToGenome,
   hoverProteinToGenome,
 } from '../proteinToGenomeMapping'
-
-const HOVER_BACKGROUND_COLOR = '#f698'
-const GAP_HIGHLIGHT_COLOR = '#33ff19'
-
-const useStyles = makeStyles()({
-  column: {
-    display: 'inline-block',
-    cursor: 'pointer',
-  },
-  letter: {
-    display: 'block',
-    textAlign: 'center',
-  },
-  columnHovered: {
-    display: 'inline-block',
-    cursor: 'pointer',
-    background: HOVER_BACKGROUND_COLOR,
-  },
-  columnGapHighlight: {
-    display: 'inline-block',
-    cursor: 'pointer',
-    background: GAP_HIGHLIGHT_COLOR,
-  },
-  alignmentContainer: {
-    fontSize: 9,
-    fontFamily: 'monospace',
-    margin: 8,
-    paddingBottom: 8,
-    overflow: 'auto',
-    whiteSpace: 'nowrap',
-  },
-})
-
-interface AlignmentItem {
-  top: string
-  middle: string
-  bottom: string
-}
-
-interface AlignmentColumnProps {
-  item: AlignmentItem
-  index: number
-  classes: Record<string, string>
-  isGap: boolean
-  showHighlight: boolean
-  isHovered: boolean
-  onMouseOver: (i: number) => void
-  onClick: (i: number) => void
-}
-
-/**
- * Renders a single column of the alignment (one position across all three sequences)
- * Memoized to prevent unnecessary re-renders
- */
-const AlignmentColumn = React.memo(
-  React.forwardRef<HTMLDivElement, AlignmentColumnProps>(
-    function AlignmentColumn(
-      {
-        item,
-        index,
-        classes,
-        isGap,
-        showHighlight,
-        isHovered,
-        onMouseOver,
-        onClick,
-      },
-      ref,
-    ) {
-      const getColumnClassName = () => {
-        if (isHovered) {
-          return classes.columnHovered
-        }
-        if (isGap && showHighlight) {
-          return classes.columnGapHighlight
-        }
-        return classes.column
-      }
-
-      const renderLetter = (char: string) => (char === ' ' ? <>&nbsp;</> : char)
-
-      return (
-        <div
-          ref={ref}
-          className={getColumnClassName()}
-          onMouseOver={() => {
-            onMouseOver(index)
-          }}
-          onClick={() => {
-            onClick(index)
-          }}
-        >
-          <span className={classes.letter}>{renderLetter(item.top)}</span>
-          <span className={classes.letter}>{renderLetter(item.middle)}</span>
-          <span className={classes.letter}>{renderLetter(item.bottom)}</span>
-        </div>
-      )
-    },
-  ),
-)
+import SplitString from './SplitString'
 
 const ProteinAlignment = observer(function ({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { classes } = useStyles()
   const {
-    alignmentData,
-    pairwiseAlignmentHoverPos,
+    pairwiseAlignment,
     pairwiseAlignmentToStructurePosition,
+    structurePositionToAlignmentMap,
+    structureSeqHoverPos,
     showHighlight,
   } = model
 
-  const columnRefs = useRef<(HTMLDivElement | null)[]>([])
-  const containerRef = useRef<HTMLDivElement>(null)
-  const isMouseInContainer = useRef(false)
+  const [pairwiseAlignmentHoverPos, setPairwiseAlignmentHoverPos] =
+    useState<number>()
 
-  // Compute which positions represent aligned/matching residues (marked with '|')
-  const gapSet = useMemo(() => {
-    const alignedPositions = new Set<number>()
-    for (const [i, alignmentDatum] of alignmentData.entries()) {
-      const consensusChar = alignmentDatum.middle
-      if (consensusChar === '|') {
-        alignedPositions.add(i)
-      }
-    }
-    return alignedPositions
-  }, [alignmentData])
-
-  // Auto-scroll to hovered column when hover originates from outside the alignment
   useEffect(() => {
-    const shouldAutoScroll =
-      !isMouseInContainer.current &&
-      pairwiseAlignmentHoverPos !== undefined &&
-      columnRefs.current[pairwiseAlignmentHoverPos]
+    setPairwiseAlignmentHoverPos(
+      structureSeqHoverPos === undefined
+        ? undefined
+        : structurePositionToAlignmentMap?.[structureSeqHoverPos],
+    )
+  }, [structurePositionToAlignmentMap, structureSeqHoverPos])
 
-    if (shouldAutoScroll) {
-      columnRefs.current[pairwiseAlignmentHoverPos]?.scrollIntoView({
-        behavior: 'smooth',
-        block: 'nearest',
-        inline: 'center',
-      })
-    }
-  }, [pairwiseAlignmentHoverPos])
-
-  if (alignmentData.length === 0) {
+  if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
   }
+  const a0 = pairwiseAlignment.alns[0].seq
+  const a1 = pairwiseAlignment.alns[1].seq
+  const con = pairwiseAlignment.consensus
+  const gapSet = new Set<number>()
+  // eslint-disable-next-line unicorn/no-for-loop
+  for (let i = 0; i < con.length; i++) {
+    const letter = con[i]
+    if (letter === '|') {
+      gapSet.add(i)
+    }
+  }
 
-  const handleColumnMouseOver = useCallback(
-    (alignmentPosition: number) => {
-      model.setPairwiseAlignmentHoverPos(alignmentPosition)
-
-      if (pairwiseAlignmentToStructurePosition) {
-        const structureSeqPos =
-          pairwiseAlignmentToStructurePosition[alignmentPosition]
-        model.setHoveredPosition({ structureSeqPos })
-        hoverProteinToGenome({ model, structureSeqPos })
-      }
-    },
-    [model, pairwiseAlignmentToStructurePosition],
-  )
-
-  const handleColumnClick = useCallback(
-    (alignmentPosition: number) => {
-      if (pairwiseAlignmentToStructurePosition) {
-        const structureSeqPos =
-          pairwiseAlignmentToStructurePosition[alignmentPosition]!
-        clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
-          console.error(e)
-        })
-      }
-    },
-    [model, pairwiseAlignmentToStructurePosition],
-  )
-
-  const handleContainerMouseEnter = useCallback(() => {
-    isMouseInContainer.current = true
-  }, [])
-
-  const handleContainerMouseLeave = useCallback(() => {
-    isMouseInContainer.current = false
-    model.setHoveredPosition(undefined)
-    model.clearHoverGenomeHighlights()
-  }, [model])
+  function onMouseOver(p: number) {
+    setPairwiseAlignmentHoverPos(p)
+    if (pairwiseAlignmentToStructurePosition) {
+      const structureSeqPos = pairwiseAlignmentToStructurePosition[p]
+      model.setHoveredPosition({ structureSeqPos })
+      hoverProteinToGenome({ model, structureSeqPos })
+    }
+  }
+  function onClick(pairwiseAlignmentPos: number) {
+    if (pairwiseAlignmentToStructurePosition) {
+      const structureSeqPos =
+        pairwiseAlignmentToStructurePosition[pairwiseAlignmentPos]!
+      clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
+        console.error(e)
+      })
+    }
+  }
   return (
     <div>
       <ProteinAlignmentHelpButton model={model} />
 
       <Typography>
         Alignment of the protein structure file&apos;s sequence with the
-        selected transcript&apos;s sequence. Green is the aligned portion
+        selected transcript&apos;s sequence.{' '}
+        {showHighlight ? 'Green is the aligned portion' : null}
       </Typography>
       <div
-        ref={containerRef}
-        className={classes.alignmentContainer}
-        onMouseEnter={handleContainerMouseEnter}
-        onMouseLeave={handleContainerMouseLeave}
+        style={{
+          fontSize: 9,
+          fontFamily: 'monospace',
+          cursor: 'pointer',
+          margin: 8,
+          paddingBottom: 8,
+          overflow: 'auto',
+          whiteSpace: 'nowrap',
+        }}
+        onMouseLeave={() => {
+          model.setHoveredPosition(undefined)
+          model.clearHoverGenomeHighlights()
+        }}
       >
-        {alignmentData.map((item, i) => (
-          <AlignmentColumn
-            key={i}
-            ref={el => {
-              columnRefs.current[i] = el
-            }}
-            item={item}
-            index={i}
-            classes={classes}
-            isGap={gapSet.has(i)}
+        <div>
+          <Tooltip title="This is the sequence of the protein from the reference genome transcript">
+            <span>GENOME&nbsp;</span>
+          </Tooltip>
+          <SplitString
+            str={a0}
             showHighlight={showHighlight}
-            isHovered={i === pairwiseAlignmentHoverPos}
-            onMouseOver={handleColumnMouseOver}
-            onClick={handleColumnClick}
+            hoveredPosition={pairwiseAlignmentHoverPos}
+            gapSet={gapSet}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
           />
-        ))}
+        </div>
+        <div>
+          <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+          <SplitString
+            showHighlight={showHighlight}
+            str={con}
+            hoveredPosition={pairwiseAlignmentHoverPos}
+            gapSet={gapSet}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
+          />
+        </div>
+        <div>
+          <Tooltip title="This is the sequence of the protein from the structure file">
+            <span>STRUCT&nbsp;</span>
+          </Tooltip>
+          <SplitString
+            str={a1}
+            hoveredPosition={pairwiseAlignmentHoverPos}
+            showHighlight={showHighlight}
+            gapSet={gapSet}
+            onMouseOver={onMouseOver}
+            onClick={onClick}
+          />
+        </div>
       </div>
     </div>
   )

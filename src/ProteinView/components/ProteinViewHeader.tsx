@@ -77,7 +77,7 @@ const InformativeHeaderArea = observer(function ({
             },
           },
           {
-            label: 'Show pairwise alignment as highlight',
+            label: 'Show pairwise alignment as green highlight',
             type: 'checkbox',
             checked: showHighlight,
             icon: Visibility,
