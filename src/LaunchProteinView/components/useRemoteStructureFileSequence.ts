@@ -29,6 +29,11 @@ export default function useRemoteStructureFileSequence({
       }
       return seq
     },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   )
 
   return { error, isLoading, sequences: data }

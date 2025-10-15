@@ -29,12 +29,9 @@ export default function AlphaFoldEntrySelector({
         select
         label="AlphaFold Structure Entry"
         value={selectedEntryIndex}
+        helperText="Select an AlphaFold structure entry (isoform)"
         onChange={e => {
           onSelectionChange(Number(e.target.value))
-        }}
-        helperText="Select an AlphaFold structure entry (isoform)"
-        SelectProps={{
-          native: true,
         }}
       >
         {predictions

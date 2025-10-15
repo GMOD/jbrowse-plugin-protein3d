@@ -17,6 +17,11 @@ export default function useMyGeneInfo({ id }: { id: string }) {
       ? `https://mygene.info/v3/query?q=${stripTrailingVersion(id)}&fields=uniprot,symbol`
       : null,
     jsonfetch,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   )
 
   return {

@@ -26,6 +26,11 @@ export default function useIsoformProteinSequences({
       }
       return Object.fromEntries(ret)
     },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   )
 
   return { isLoading, isoformSequences: data, error }

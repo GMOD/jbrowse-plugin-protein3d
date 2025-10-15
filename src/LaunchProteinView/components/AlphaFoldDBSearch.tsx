@@ -8,7 +8,6 @@ import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
-import AlphaFoldModeSelector from './AlphaFoldModeSelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
@@ -127,14 +126,6 @@ const AlphaFoldDBSearch = observer(function ({
           autoUniprotId={autoUniprotId}
           isLoading={isMyGeneLoading}
         />
-
-        {uniprotId ? (
-          <AlphaFoldModeSelector
-            useApiSearch={useApiSearch}
-            onChange={setUseApiSearch}
-            disabled={isAlphaFoldUrlLoading}
-          />
-        ) : null}
 
         {loadingStatuses.length > 0 &&
           loadingStatuses.map(status => (

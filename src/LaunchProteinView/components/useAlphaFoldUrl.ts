@@ -15,6 +15,11 @@ export default function useAlphaFoldUrl({ uniprotId }: { uniprotId?: string }) {
       ? `https://alphafold.ebi.ac.uk/api/prediction/${uniprotId}`
       : null,
     jsonfetch,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   )
 
   return {

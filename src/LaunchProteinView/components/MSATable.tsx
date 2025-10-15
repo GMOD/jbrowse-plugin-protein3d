@@ -4,8 +4,8 @@ import { Feature, max } from '@jbrowse/core/util'
 import { TextField } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
-import { getTranscriptDisplayName } from './util'
 import Checkbox2 from './Checkbox2'
+import { getTranscriptDisplayName } from './util'
 
 const useStyles = makeStyles()({
   textAreaFont: {

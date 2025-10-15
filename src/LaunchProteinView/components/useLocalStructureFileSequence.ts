@@ -40,6 +40,11 @@ export default function useLocalStructureFileSequence({
       }
       return seq
     },
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      revalidateIfStale: false,
+    },
   )
 
   return { error, isLoading, sequences: data }
