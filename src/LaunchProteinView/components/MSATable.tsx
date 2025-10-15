@@ -1,18 +1,16 @@
 import React, { useState } from 'react'
 
 import { Feature, max } from '@jbrowse/core/util'
-import { Checkbox, FormControlLabel, TextField } from '@mui/material'
+import { TextField } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 import { getTranscriptDisplayName } from './util'
+import Checkbox2 from './Checkbox2'
 
 const useStyles = makeStyles()({
   textAreaFont: {
     fontFamily: 'Courier New',
     whiteSpace: 'pre',
-  },
-  margin: {
-    marginLeft: 20,
   },
 })
 
@@ -46,17 +44,12 @@ export default function MSATable({
 
   return (
     <>
-      <FormControlLabel
-        className={classes.margin}
-        control={
-          <Checkbox
-            onChange={event => {
-              setShowInFastaFormat(event.target.checked)
-            }}
-            checked={showInFastaFormat}
-          />
-        }
+      <Checkbox2
+        onChange={event => {
+          setShowInFastaFormat(event.target.checked)
+        }}
         label="Show in FASTA format?"
+        checked={showInFastaFormat}
       />
       <TextField
         variant="outlined"

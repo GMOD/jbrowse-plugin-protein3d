@@ -8,6 +8,7 @@ import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
+import AlphaFoldModeSelector from './AlphaFoldModeSelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
@@ -51,6 +52,7 @@ const AlphaFoldDBSearch = observer(function ({
   // State for UniProt ID lookup
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
+  const [useApiSearch, setUseApiSearch] = useState(false)
 
   // Transcript selection
   const options = getTranscriptFeatures(feature)
@@ -89,7 +91,7 @@ const AlphaFoldDBSearch = observer(function ({
     url,
     confidenceUrl,
     structureSequence,
-  } = useAlphaFoldData({ uniprotId })
+  } = useAlphaFoldData({ uniprotId, useApiSearch })
 
   // Aggregate errors and loading statuses
   const error = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
@@ -125,6 +127,14 @@ const AlphaFoldDBSearch = observer(function ({
           autoUniprotId={autoUniprotId}
           isLoading={isMyGeneLoading}
         />
+
+        {uniprotId ? (
+          <AlphaFoldModeSelector
+            useApiSearch={useApiSearch}
+            onChange={setUseApiSearch}
+            disabled={isAlphaFoldUrlLoading}
+          />
+        ) : null}
 
         {loadingStatuses.length > 0 &&
           loadingStatuses.map(status => (
