@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
@@ -27,6 +27,9 @@ const ProteinAlignment = observer(function ({
   const [pairwiseAlignmentHoverPos, setPairwiseAlignmentHoverPos] =
     useState<number>()
 
+  const containerRef = useRef<HTMLDivElement>(null)
+  const isMouseInContainer = useRef(false)
+
   useEffect(() => {
     setPairwiseAlignmentHoverPos(
       structureSeqHoverPos === undefined
@@ -35,6 +38,26 @@ const ProteinAlignment = observer(function ({
     )
   }, [structurePositionToAlignmentMap, structureSeqHoverPos])
 
+  // Auto-scroll to hovered position when hover originates from outside the alignment
+  useEffect(() => {
+    const shouldAutoScroll =
+      !isMouseInContainer.current &&
+      pairwiseAlignmentHoverPos !== undefined &&
+      containerRef.current
+
+    if (shouldAutoScroll) {
+      // Calculate approximate scroll position (monospace font, ~6px per character at fontSize 9)
+      const charWidth = 6
+      const scrollPosition = pairwiseAlignmentHoverPos * charWidth
+      const containerWidth = containerRef.current!.clientWidth
+
+      containerRef.current!.scrollTo({
+        left: scrollPosition - containerWidth / 2,
+        behavior: 'smooth',
+      })
+    }
+  }, [pairwiseAlignmentHoverPos])
+
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
   }
@@ -42,7 +65,6 @@ const ProteinAlignment = observer(function ({
   const a1 = pairwiseAlignment.alns[1].seq
   const con = pairwiseAlignment.consensus
   const gapSet = new Set<number>()
-  // eslint-disable-next-line unicorn/no-for-loop
   for (let i = 0; i < con.length; i++) {
     const letter = con[i]
     if (letter === '|') {
@@ -50,23 +72,40 @@ const ProteinAlignment = observer(function ({
     }
   }
 
-  function onMouseOver(p: number) {
-    setPairwiseAlignmentHoverPos(p)
-    if (pairwiseAlignmentToStructurePosition) {
-      const structureSeqPos = pairwiseAlignmentToStructurePosition[p]
-      model.setHoveredPosition({ structureSeqPos })
-      hoverProteinToGenome({ model, structureSeqPos })
-    }
-  }
-  function onClick(pairwiseAlignmentPos: number) {
-    if (pairwiseAlignmentToStructurePosition) {
-      const structureSeqPos =
-        pairwiseAlignmentToStructurePosition[pairwiseAlignmentPos]!
-      clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
-        console.error(e)
-      })
-    }
-  }
+  const onMouseOver = useCallback(
+    (p: number) => {
+      setPairwiseAlignmentHoverPos(p)
+      if (pairwiseAlignmentToStructurePosition) {
+        const structureSeqPos = pairwiseAlignmentToStructurePosition[p]
+        model.setHoveredPosition({ structureSeqPos })
+        hoverProteinToGenome({ model, structureSeqPos })
+      }
+    },
+    [pairwiseAlignmentToStructurePosition, model],
+  )
+
+  const onClick = useCallback(
+    (pairwiseAlignmentPos: number) => {
+      if (pairwiseAlignmentToStructurePosition) {
+        const structureSeqPos =
+          pairwiseAlignmentToStructurePosition[pairwiseAlignmentPos]!
+        clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
+          console.error(e)
+        })
+      }
+    },
+    [pairwiseAlignmentToStructurePosition, model],
+  )
+
+  const handleContainerMouseEnter = useCallback(() => {
+    isMouseInContainer.current = true
+  }, [])
+
+  const handleContainerMouseLeave = useCallback(() => {
+    isMouseInContainer.current = false
+    model.setHoveredPosition(undefined)
+    model.clearHoverGenomeHighlights()
+  }, [model])
   return (
     <div>
       <ProteinAlignmentHelpButton model={model} />
@@ -77,6 +116,7 @@ const ProteinAlignment = observer(function ({
         {showHighlight ? 'Green is the aligned portion' : null}
       </Typography>
       <div
+        ref={containerRef}
         style={{
           fontSize: 9,
           fontFamily: 'monospace',
@@ -86,10 +126,8 @@ const ProteinAlignment = observer(function ({
           overflow: 'auto',
           whiteSpace: 'nowrap',
         }}
-        onMouseLeave={() => {
-          model.setHoveredPosition(undefined)
-          model.clearHoverGenomeHighlights()
-        }}
+        onMouseEnter={handleContainerMouseEnter}
+        onMouseLeave={handleContainerMouseLeave}
       >
         <div>
           <Tooltip title="This is the sequence of the protein from the reference genome transcript">

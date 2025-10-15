@@ -51,7 +51,8 @@ const AlphaFoldDBSearch = observer(function ({
   // State for UniProt ID lookup
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  const [useApiSearch, setUseApiSearch] = useState(false)
+  // hardcoded right now
+  const useApiSearch = false
 
   // Transcript selection
   const options = getTranscriptFeatures(feature)
