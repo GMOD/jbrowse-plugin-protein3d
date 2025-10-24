@@ -19,7 +19,10 @@ export default function useIsoformProteinSequences({
     async () => {
       const ret = [] as [string, { feature: Feature; seq: string }][]
       for (const f of getTranscriptFeatures(feature)) {
-        const seq = await fetchProteinSeq({ view, feature: f })
+        const seq = await fetchProteinSeq({
+          view,
+          feature: f,
+        })
         if (seq) {
           ret.push([f.id(), { feature: f, seq }])
         }
