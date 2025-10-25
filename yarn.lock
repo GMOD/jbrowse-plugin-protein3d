@@ -3969,9 +3969,9 @@ mobx@^6.0.0:
   integrity sha512-UczzB+0nnwGotYSgllfARAqWCJ5e/skuV2K/l+Zyck/H6pJIhLXuBnz+6vn2i211o7DtbE78HQtsYEKICHGI+g==
 
 molstar@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/molstar/-/molstar-5.0.0.tgz#2713efa540ebafd423c41d9c073880178d5fb148"
-  integrity sha512-JMdML3PP724WoxFDS3+nKacPbBT4prwrpMAkTGnsBel/JHqCJKTDDbUOc3O/VnvMRAKtnAF2NFC4iG0Bha1CwA==
+  version "5.1.2"
+  resolved "https://registry.yarnpkg.com/molstar/-/molstar-5.1.2.tgz#6756461383c4ba842f1de45ff1d1f604a0c1ab7b"
+  integrity sha512-LAbIXXodl7BS13OtdnEKpUrrv/8fpvmeAZYgb1YaJwrQMEkCKlTgVhP6oYwXpiAKW09yfK0z9RjEIUASgjr9GQ==
   dependencies:
     "@types/argparse" "^2.0.17"
     "@types/benchmark" "^2.1.5"

@@ -24,8 +24,7 @@ export function proteinToGenomeMapping({
   }
 
   const { p2g, strand } = genomeToTranscriptSeqMapping
-  const transcriptPos =
-    structureSeqToTranscriptSeqPosition?.[structureSeqPos + 1]
+  const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
 
   if (transcriptPos === undefined) {
     return undefined
