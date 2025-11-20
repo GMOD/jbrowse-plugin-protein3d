@@ -34,6 +34,7 @@ import {
   getTranscriptFeatures,
 } from '../utils/util'
 import ExternalLink from '../../components/ExternalLink'
+import { AlignmentAlgorithm } from '../../ProteinView/types'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -68,10 +69,12 @@ const UserProvidedStructure = observer(function ({
   feature,
   model,
   handleClose,
+  alignmentAlgorithm,
 }: {
   feature: Feature
   model: AbstractTrackModel
   handleClose: () => void
+  alignmentAlgorithm: AlignmentAlgorithm
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
@@ -249,6 +252,7 @@ const UserProvidedStructure = observer(function ({
               try {
                 session.addView('ProteinView', {
                   type: 'ProteinView',
+                  alignmentAlgorithm,
                   seq2: protein,
                   feature: selectedTranscript?.toJSON(),
                   connectedViewId: view.id,

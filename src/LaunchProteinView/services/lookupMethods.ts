@@ -13,6 +13,6 @@ export async function lookupUniProtIdViaMyGeneInfo(
   geneId: string,
 ): Promise<string | undefined> {
   const url = `https://mygene.info/v3/query?q=${stripTrailingVersion(geneId)}&fields=uniprot,symbol`
-  const data = await jsonfetch<MyGeneInfoResults>(url)
+  const data = (await jsonfetch(url)) as MyGeneInfoResults
   return data?.hits?.[0]?.uniprot?.['Swiss-Prot']
 }

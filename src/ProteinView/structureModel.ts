@@ -28,6 +28,7 @@ import {
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
 import { checkHovered, invertMap, toStr } from './util'
+import { AlignmentAlgorithm } from './types'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -299,7 +300,7 @@ const Structure = types
       // @ts-expect-error
       return getParent(self, 2).showHighlight
     },
-    get alignmentAlgorithm(): string {
+    get alignmentAlgorithm(): AlignmentAlgorithm {
       // @ts-expect-error
       return getParent(self, 2).alignmentAlgorithm
     },

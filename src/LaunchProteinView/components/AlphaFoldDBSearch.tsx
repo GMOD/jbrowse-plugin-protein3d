@@ -50,10 +50,12 @@ const AlphaFoldDBSearch = observer(function ({
   feature,
   model,
   handleClose,
+  alignmentAlgorithm,
 }: {
   feature: Feature
   model: AbstractTrackModel
   handleClose: () => void
+  alignmentAlgorithm: AlignmentAlgorithm
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
@@ -64,8 +66,6 @@ const AlphaFoldDBSearch = observer(function ({
     'auto',
   )
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  const [alignmentAlgorithm, setAlignmentAlgorithm] =
-    useState<AlignmentAlgorithm>(DEFAULT_ALIGNMENT_ALGORITHM)
   // hardcoded right now
   const useApiSearch = false
 
@@ -216,7 +216,6 @@ const AlphaFoldDBSearch = observer(function ({
           view={view}
           session={session}
           alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
         />
       </DialogActions>
     </>
