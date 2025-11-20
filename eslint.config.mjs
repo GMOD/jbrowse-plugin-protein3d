@@ -13,6 +13,7 @@ export default defineConfig(
       'eslint.config.mjs',
       'esbuild-watch.mjs',
       'esbuild.mjs',
+      'vitest.config.ts',
     ],
   },
   {
