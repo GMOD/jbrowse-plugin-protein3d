@@ -2,7 +2,7 @@ import React from 'react'
 
 import { TextField } from '@mui/material'
 
-import type { AlphaFoldPrediction } from './useAlphaFoldUrl'
+import type { AlphaFoldPrediction } from '../hooks/useAlphaFoldUrl'
 
 interface AlphaFoldEntrySelectorProps {
   predictions: AlphaFoldPrediction[]

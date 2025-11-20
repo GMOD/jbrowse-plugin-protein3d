@@ -1,4 +1,4 @@
-import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 import { textfetch } from '../../fetchUtils'
 
 import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'

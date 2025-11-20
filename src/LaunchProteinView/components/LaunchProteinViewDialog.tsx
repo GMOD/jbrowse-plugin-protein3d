@@ -5,6 +5,9 @@ import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
+import AlignmentSettingsButton, {
+  getStoredAlignmentAlgorithm,
+} from './AlignmentSettingsButton'
 import HelpButton from './HelpButton'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
@@ -19,13 +22,21 @@ export default function LaunchProteinViewDialog({
   model: AbstractTrackModel
 }) {
   const [choice, setChoice] = useState(0)
+  const [alignmentAlgorithm, setAlignmentAlgorithm] = useState(
+    getStoredAlignmentAlgorithm(),
+  )
+
   return (
     <Dialog
       maxWidth="xl"
       title="Launch protein view"
       titleNode={
         <>
-          Launch protein view <HelpButton />
+          Launch protein view <HelpButton />{' '}
+          <AlignmentSettingsButton
+            value={alignmentAlgorithm}
+            onChange={setAlignmentAlgorithm}
+          />
         </>
       }
       open
@@ -47,6 +58,7 @@ export default function LaunchProteinViewDialog({
           model={model}
           feature={feature}
           handleClose={handleClose}
+          alignmentAlgorithm={alignmentAlgorithm}
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
@@ -54,6 +66,7 @@ export default function LaunchProteinViewDialog({
           model={model}
           feature={feature}
           handleClose={handleClose}
+          alignmentAlgorithm={alignmentAlgorithm}
         />
       </TabPanel>
     </Dialog>

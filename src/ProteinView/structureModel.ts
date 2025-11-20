@@ -28,6 +28,7 @@ import {
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
 import { checkHovered, invertMap, toStr } from './util'
+import { AlignmentAlgorithm } from './types'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -299,6 +300,10 @@ const Structure = types
       // @ts-expect-error
       return getParent(self, 2).showHighlight
     },
+    get alignmentAlgorithm(): AlignmentAlgorithm {
+      // @ts-expect-error
+      return getParent(self, 2).alignmentAlgorithm
+    },
     get molstarPluginContext(): PluginContext | undefined {
       // @ts-expect-error
       return getParent(self, 2).molstarPluginContext
@@ -315,6 +320,7 @@ const Structure = types
               userProvidedTranscriptSequence,
               structureSequences,
               exactMatch,
+              alignmentAlgorithm,
             } = self
             const seq1 = userProvidedTranscriptSequence
             const seq2 = structureSequences?.[0]
@@ -341,7 +347,7 @@ const Structure = types
               const pairwiseAlignment = await launchPairwiseAlignment({
                 seq1: r1,
                 seq2: r2,
-                algorithm: 'emboss_needle',
+                algorithm: alignmentAlgorithm,
                 onProgress: arg => {
                   self.setAlignmentStatus(arg)
                 },

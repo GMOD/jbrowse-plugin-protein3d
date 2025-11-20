@@ -11,11 +11,22 @@ import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
-import useAlphaFoldData from './useAlphaFoldData'
-import useIsoformProteinSequences from './useIsoformProteinSequences'
-import useLoadingStatuses from './useLoadingStatuses'
-import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
-import { getDisplayName, getId, getTranscriptFeatures } from './util'
+import useAlphaFoldData from '../hooks/useAlphaFoldData'
+import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
+import useLoadingStatuses from '../hooks/useLoadingStatuses'
+import useLookupUniProtId, {
+  lookupUniProtIdViaMyGeneInfo,
+} from '../hooks/useLookupUniProtId'
+import {
+  getDisplayName,
+  getId,
+  getTranscriptFeatures,
+  getUniProtIdFromFeature,
+} from '../utils/util'
+import {
+  AlignmentAlgorithm,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from '../../ProteinView/types'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -39,17 +50,21 @@ const AlphaFoldDBSearch = observer(function ({
   feature,
   model,
   handleClose,
+  alignmentAlgorithm,
 }: {
   feature: Feature
   model: AbstractTrackModel
   handleClose: () => void
+  alignmentAlgorithm: AlignmentAlgorithm
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
   const view = getContainingView(model) as LinearGenomeViewModel
 
   // State for UniProt ID lookup
-  const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
+  const [lookupMode, setLookupMode] = useState<'auto' | 'manual' | 'feature'>(
+    'auto',
+  )
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
   // hardcoded right now
   const useApiSearch = false
@@ -68,18 +83,37 @@ const AlphaFoldDBSearch = observer(function ({
 
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
 
-  // Auto-lookup UniProt ID
+  // Check for UniProt ID from feature attributes
+  const featureUniprotId = getUniProtIdFromFeature(
+    selectedTranscript ?? feature,
+  )
+
+  // Auto-lookup UniProt ID (only when not using feature mode)
   const {
     uniprotId: autoUniprotId,
-    isLoading: isMyGeneLoading,
-    error: myGeneError,
-  } = useMyGeneInfoUniprotIdLookup({
+    isLoading: isLookupLoading,
+    error: lookupError,
+  } = useLookupUniProtId({
     id: selectedTranscript
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
+    providedUniprotId: featureUniprotId,
+    lookupMethod: lookupUniProtIdViaMyGeneInfo,
   })
 
-  const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
+  const uniprotId =
+    lookupMode === 'feature'
+      ? featureUniprotId
+      : lookupMode === 'auto'
+        ? autoUniprotId
+        : manualUniprotId
+
+  // Auto-select 'feature' mode if a feature UniProt ID is found
+  useEffect(() => {
+    if (featureUniprotId && lookupMode === 'auto') {
+      setLookupMode('feature')
+    }
+  }, [featureUniprotId, lookupMode])
 
   // AlphaFold data and selection
   const {
@@ -94,9 +128,9 @@ const AlphaFoldDBSearch = observer(function ({
   } = useAlphaFoldData({ uniprotId, useApiSearch })
 
   // Aggregate errors and loading statuses
-  const error = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
+  const error = lookupError ?? isoformProteinSequencesError ?? alphaFoldUrlError
   const loadingStatuses = useLoadingStatuses({
-    isMyGeneLoading,
+    isLookupLoading,
     isIsoformProteinSequencesLoading,
     isAlphaFoldUrlLoading,
   })
@@ -125,7 +159,8 @@ const AlphaFoldDBSearch = observer(function ({
           manualUniprotId={manualUniprotId}
           onManualUniprotIdChange={setManualUniprotId}
           autoUniprotId={autoUniprotId}
-          isLoading={isMyGeneLoading}
+          featureUniprotId={featureUniprotId}
+          isLoading={isLookupLoading}
         />
 
         {loadingStatuses.length > 0 &&
@@ -180,6 +215,7 @@ const AlphaFoldDBSearch = observer(function ({
           feature={feature}
           view={view}
           session={session}
+          alignmentAlgorithm={alignmentAlgorithm}
         />
       </DialogActions>
     </>

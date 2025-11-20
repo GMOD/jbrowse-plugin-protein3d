@@ -1,8 +1,8 @@
 import { Feature } from '@jbrowse/core/util'
 import useSWR from 'swr'
 
-import { fetchProteinSeq } from './calculateProteinSequence'
-import { getTranscriptFeatures } from './util'
+import { fetchProteinSeq } from '../utils/calculateProteinSequence'
+import { getTranscriptFeatures } from '../utils/util'
 
 export default function useIsoformProteinSequences({
   feature,

@@ -9,6 +9,11 @@ import { addStructureFromURL } from './addStructureFromURL'
 import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
+import {
+  AlignmentAlgorithm,
+  ALIGNMENT_ALGORITHMS,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from './types'
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -55,6 +60,17 @@ function stateModelFactory() {
          * #property
          */
         showAlignment: false,
+        /**
+         * #property
+         */
+        alignmentAlgorithm: types.optional(
+          types.enumeration('AlignmentAlgorithm', [
+            ALIGNMENT_ALGORITHMS.MATCHER,
+            ALIGNMENT_ALGORITHMS.NEEDLE,
+            ALIGNMENT_ALGORITHMS.WATER,
+          ]),
+          DEFAULT_ALIGNMENT_ALGORITHM,
+        ),
       }),
     )
     .volatile(() => ({
@@ -112,6 +128,12 @@ function stateModelFactory() {
        */
       setZoomToBaseLevel(arg: boolean) {
         self.zoomToBaseLevel = arg
+      },
+      /**
+       * #action
+       */
+      setAlignmentAlgorithm(algorithm: AlignmentAlgorithm) {
+        self.alignmentAlgorithm = algorithm
       },
       /**
        * #action
