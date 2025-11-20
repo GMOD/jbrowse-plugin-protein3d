@@ -11,6 +11,7 @@ import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
+import { AlignmentAlgorithm } from '../../ProteinView/types'
 import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
@@ -23,10 +24,6 @@ import {
   getTranscriptFeatures,
   getUniProtIdFromFeature,
 } from '../utils/util'
-import {
-  AlignmentAlgorithm,
-  DEFAULT_ALIGNMENT_ALGORITHM,
-} from '../../ProteinView/types'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

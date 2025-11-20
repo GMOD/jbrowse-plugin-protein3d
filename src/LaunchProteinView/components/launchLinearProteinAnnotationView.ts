@@ -1,5 +1,5 @@
-import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 import { textfetch } from '../../fetchUtils'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
 import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

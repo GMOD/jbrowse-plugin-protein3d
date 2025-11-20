@@ -1,7 +1,7 @@
 import { parsePairwise } from 'clustal-js'
 
 import { textfetch, timeout } from '../fetchUtils'
-import { AlignmentAlgorithm, ALIGNMENT_ALGORITHMS } from './types'
+import { AlignmentAlgorithm } from './types'
 
 const EBI_REST_BASE_URL = 'https://www.ebi.ac.uk/Tools/services/rest'
 

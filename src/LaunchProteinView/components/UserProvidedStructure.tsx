@@ -24,6 +24,8 @@ import { makeStyles } from 'tss-react/mui'
 import HelpButton from './HelpButton'
 import MSATable from './MSATable'
 import TranscriptSelector from './TranscriptSelector'
+import { AlignmentAlgorithm } from '../../ProteinView/types'
+import ExternalLink from '../../components/ExternalLink'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
 import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
@@ -33,8 +35,6 @@ import {
   getTranscriptDisplayName,
   getTranscriptFeatures,
 } from '../utils/util'
-import ExternalLink from '../../components/ExternalLink'
-import { AlignmentAlgorithm } from '../../ProteinView/types'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

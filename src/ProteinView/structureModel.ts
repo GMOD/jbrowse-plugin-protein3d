@@ -27,8 +27,8 @@ import {
   hoverProteinToGenome,
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
-import { checkHovered, invertMap, toStr } from './util'
 import { AlignmentAlgorithm } from './types'
+import { checkHovered, invertMap, toStr } from './util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

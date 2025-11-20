@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 
+import SettingsIcon from '@mui/icons-material/Settings'
 import {
   Button,
   Dialog,
@@ -14,35 +15,15 @@ import {
   RadioGroup,
   Typography,
 } from '@mui/material'
-import SettingsIcon from '@mui/icons-material/Settings'
 
 import {
-  AlignmentAlgorithm,
   ALIGNMENT_ALGORITHMS,
-  DEFAULT_ALIGNMENT_ALGORITHM,
+  AlignmentAlgorithm,
 } from '../../ProteinView/types'
 
-const STORAGE_KEY = 'jbrowse-protein3d-alignment-algorithm'
-
-export function getStoredAlignmentAlgorithm(): AlignmentAlgorithm {
-  const stored = localStorage.getItem(STORAGE_KEY)
-  if (
-    stored === ALIGNMENT_ALGORITHMS.MATCHER ||
-    stored === ALIGNMENT_ALGORITHMS.NEEDLE ||
-    stored === ALIGNMENT_ALGORITHMS.WATER
-  ) {
-    return stored as AlignmentAlgorithm
-  }
-  return DEFAULT_ALIGNMENT_ALGORITHM
-}
-
-function setStoredAlignmentAlgorithm(algorithm: AlignmentAlgorithm) {
-  localStorage.setItem(STORAGE_KEY, algorithm)
-}
-
 interface AlignmentSettingsButtonProps {
-  value?: AlignmentAlgorithm
-  onChange?: (algorithm: AlignmentAlgorithm) => void
+  value: AlignmentAlgorithm
+  onChange: (algorithm: AlignmentAlgorithm) => void
 }
 
 export default function AlignmentSettingsButton({
@@ -50,28 +31,26 @@ export default function AlignmentSettingsButton({
   onChange,
 }: AlignmentSettingsButtonProps) {
   const [open, setOpen] = useState(false)
-  const [algorithm, setAlgorithm] = useState<AlignmentAlgorithm>(
-    value ?? getStoredAlignmentAlgorithm(),
-  )
+  const [tempAlgorithm, setTempAlgorithm] = useState<AlignmentAlgorithm>(value)
+
+  const handleOpen = () => {
+    setTempAlgorithm(value)
+    setOpen(true)
+  }
 
   const handleSave = () => {
-    setStoredAlignmentAlgorithm(algorithm)
-    onChange?.(algorithm)
+    onChange(tempAlgorithm)
     setOpen(false)
   }
 
   const handleCancel = () => {
-    setAlgorithm(getStoredAlignmentAlgorithm())
+    setTempAlgorithm(value)
     setOpen(false)
   }
 
   return (
     <>
-      <IconButton
-        onClick={() => setOpen(true)}
-        size="small"
-        title="Alignment settings"
-      >
+      <IconButton onClick={handleOpen} size="small" title="Alignment settings">
         <SettingsIcon />
       </IconButton>
 
@@ -86,9 +65,9 @@ export default function AlignmentSettingsButton({
           <FormControl component="fieldset">
             <FormLabel component="legend">Algorithm</FormLabel>
             <RadioGroup
-              value={algorithm}
+              value={tempAlgorithm}
               onChange={event => {
-                setAlgorithm(event.target.value as AlignmentAlgorithm)
+                setTempAlgorithm(event.target.value as AlignmentAlgorithm)
               }}
             >
               <FormControlLabel

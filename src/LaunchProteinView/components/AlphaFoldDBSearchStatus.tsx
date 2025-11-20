@@ -4,8 +4,8 @@ import { Feature } from '@jbrowse/core/util'
 import { Button, Typography } from '@mui/material'
 
 import MSATable from './MSATable'
-import { getDisplayName } from '../utils/util'
 import ExternalLink from '../../components/ExternalLink'
+import { getDisplayName } from '../utils/util'
 
 function NotFound({ uniprotId }: { uniprotId: string }) {
   return (

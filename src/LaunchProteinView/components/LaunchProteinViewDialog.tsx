@@ -4,13 +4,16 @@ import { Dialog } from '@jbrowse/core/ui'
 import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 
+import AlignmentSettingsButton from './AlignmentSettingsButton'
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
-import AlignmentSettingsButton, {
-  getStoredAlignmentAlgorithm,
-} from './AlignmentSettingsButton'
 import HelpButton from './HelpButton'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
+import {
+  AlignmentAlgorithm,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from '../../ProteinView/types'
+import { useLocalStorage } from '../hooks/useLocalStorage'
 
 export default function LaunchProteinViewDialog({
   handleClose,
@@ -22,9 +25,11 @@ export default function LaunchProteinViewDialog({
   model: AbstractTrackModel
 }) {
   const [choice, setChoice] = useState(0)
-  const [alignmentAlgorithm, setAlignmentAlgorithm] = useState(
-    getStoredAlignmentAlgorithm(),
-  )
+  const [alignmentAlgorithm, setAlignmentAlgorithm] =
+    useLocalStorage<AlignmentAlgorithm>(
+      'jbrowse-protein3d-alignment-algorithm',
+      DEFAULT_ALIGNMENT_ALGORITHM,
+    )
 
   return (
     <Dialog

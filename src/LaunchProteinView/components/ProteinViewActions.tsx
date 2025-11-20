@@ -4,8 +4,8 @@ import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button } from '@mui/material'
 
 import { launchProteinAnnotationView } from './launchProteinAnnotationView'
-import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

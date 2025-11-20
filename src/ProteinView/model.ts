@@ -10,8 +10,8 @@ import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
 import {
-  AlignmentAlgorithm,
   ALIGNMENT_ALGORITHMS,
+  AlignmentAlgorithm,
   DEFAULT_ALIGNMENT_ALGORITHM,
 } from './types'
 
