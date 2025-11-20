@@ -1,10 +1,21 @@
 import React from 'react'
 
 import { isSessionWithAddTracks } from '@jbrowse/core/util'
-import { Button } from '@mui/material'
+import {
+  Button,
+  FormControl,
+  FormControlLabel,
+  FormLabel,
+  Radio,
+  RadioGroup,
+} from '@mui/material'
 
 import { launchProteinAnnotationView } from './launchProteinAnnotationView'
-import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
+import {
+  AlignmentAlgorithm,
+  ALIGNMENT_ALGORITHMS,
+} from '../../ProteinView/types'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -19,6 +30,8 @@ interface ProteinViewActionsProps {
   feature: Feature
   view: LinearGenomeViewModel
   session: AbstractSessionModel
+  alignmentAlgorithm: AlignmentAlgorithm
+  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }
 
 /**
@@ -34,6 +47,8 @@ export default function ProteinViewActions({
   feature,
   view,
   session,
+  alignmentAlgorithm,
+  onAlignmentAlgorithmChange,
 }: ProteinViewActionsProps) {
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
@@ -46,6 +61,7 @@ export default function ProteinViewActions({
     session.addView('ProteinView', {
       type: 'ProteinView',
       isFloating: true,
+      alignmentAlgorithm,
       structures: [
         {
           url,
@@ -87,6 +103,33 @@ export default function ProteinViewActions({
 
   return (
     <>
+      <FormControl component="fieldset" sx={{ mr: 2 }}>
+        <FormLabel component="legend">Alignment algorithm</FormLabel>
+        <RadioGroup
+          row
+          value={alignmentAlgorithm}
+          onChange={event => {
+            onAlignmentAlgorithmChange(event.target.value as AlignmentAlgorithm)
+          }}
+        >
+          <FormControlLabel
+            value={ALIGNMENT_ALGORITHMS.MATCHER}
+            control={<Radio />}
+            label="MATCHER (local, default)"
+          />
+          <FormControlLabel
+            value={ALIGNMENT_ALGORITHMS.WATER}
+            control={<Radio />}
+            label="WATER (local)"
+          />
+          <FormControlLabel
+            value={ALIGNMENT_ALGORITHMS.NEEDLE}
+            control={<Radio />}
+            label="NEEDLE (global)"
+          />
+        </RadioGroup>
+      </FormControl>
+      <span style={{ flexGrow: 1 }} />
       <Button
         variant="contained"
         color="secondary"

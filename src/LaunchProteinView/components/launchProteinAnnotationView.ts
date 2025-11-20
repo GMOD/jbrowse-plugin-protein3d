@@ -2,7 +2,7 @@ import { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 
 import { setupProteinAssembly } from './proteinAssemblySetup'
 import { addAllProteinTracks } from './proteinTrackSetup'
-import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

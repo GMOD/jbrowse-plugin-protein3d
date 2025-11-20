@@ -1,12 +1,10 @@
 import { parsePairwise } from 'clustal-js'
 
 import { textfetch, timeout } from '../fetchUtils'
+import { AlignmentAlgorithm, ALIGNMENT_ALGORITHMS } from './types'
 
 const EBI_REST_BASE_URL = 'https://www.ebi.ac.uk/Tools/services/rest'
 
-/**
- * Parses alignment result by removing comment lines and parsing with clustal-js
- */
 function parseAlignmentResult(result: string) {
   return {
     pairwiseAlignment: parsePairwise(
@@ -18,42 +16,17 @@ function parseAlignmentResult(result: string) {
   }
 }
 
-async function runEmbossMatcher({
+async function runEmbossAlignment({
+  algorithm,
   seq1,
   seq2,
   onProgress,
 }: {
+  algorithm: AlignmentAlgorithm
   seq1: string
   seq2: string
   onProgress: (arg: string) => void
 }) {
-  const algorithm = 'emboss_matcher'
-  const jobId = await textfetch(`${EBI_REST_BASE_URL}/${algorithm}/run`, {
-    method: 'POST',
-    body: new URLSearchParams({
-      email: 'colin.diesh@gmail.com',
-      asequence: `>a\n${seq1}`,
-      bsequence: `>b\n${seq2}`,
-    }),
-  })
-  await wait({ jobId, algorithm, onProgress })
-
-  const result = await textfetch(
-    `${EBI_REST_BASE_URL}/${algorithm}/result/${jobId}/aln`,
-  )
-  return parseAlignmentResult(result)
-}
-
-async function runEmbossNeedle({
-  seq1,
-  seq2,
-  onProgress,
-}: {
-  seq1: string
-  seq2: string
-  onProgress: (arg: string) => void
-}) {
-  const algorithm = 'emboss_needle'
   const jobId = await textfetch(`${EBI_REST_BASE_URL}/${algorithm}/run`, {
     method: 'POST',
     body: new URLSearchParams({
@@ -112,17 +85,11 @@ export async function launchPairwiseAlignment({
   seq2,
   onProgress,
 }: {
-  algorithm: string
+  algorithm: AlignmentAlgorithm
   seq1: string
   seq2: string
   onProgress: (arg: string) => void
 }) {
-  onProgress(`Launching ${algorithm} MSA...`)
-  if (algorithm === 'emboss_matcher') {
-    return runEmbossMatcher({ seq1, seq2, onProgress })
-  } else if (algorithm === 'emboss_needle') {
-    return runEmbossNeedle({ seq1, seq2, onProgress })
-  } else {
-    throw new Error('unknown algorithm')
-  }
+  onProgress(`Launching ${algorithm} alignment...`)
+  return runEmbossAlignment({ algorithm, seq1, seq2, onProgress })
 }

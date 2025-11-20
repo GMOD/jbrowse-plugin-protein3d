@@ -41,7 +41,7 @@ export function getGeneDisplayName(val?: Feature): string {
         .join(' ')
 }
 
-export function getUniprotIdFromFeature(f?: Feature): string | undefined {
+export function getUniProtIdFromFeature(f?: Feature): string | undefined {
   if (!f) {
     return undefined
   }

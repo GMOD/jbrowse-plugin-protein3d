@@ -1,6 +1,6 @@
 import useSWR from 'swr'
 
-import { lookupUniProtIdViaMyGeneInfo } from './lookupMethods'
+import { lookupUniProtIdViaMyGeneInfo } from '../services/lookupMethods'
 
 export default function useLookupUniProtId({
   id,

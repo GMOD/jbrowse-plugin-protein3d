@@ -11,18 +11,22 @@ import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
-import useAlphaFoldData from './useAlphaFoldData'
-import useIsoformProteinSequences from './useIsoformProteinSequences'
-import useLoadingStatuses from './useLoadingStatuses'
+import useAlphaFoldData from '../hooks/useAlphaFoldData'
+import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
+import useLoadingStatuses from '../hooks/useLoadingStatuses'
 import useLookupUniProtId, {
   lookupUniProtIdViaMyGeneInfo,
-} from './useLookupUniProtId'
+} from '../hooks/useLookupUniProtId'
 import {
   getDisplayName,
   getId,
   getTranscriptFeatures,
-  getUniprotIdFromFeature,
-} from './util'
+  getUniProtIdFromFeature,
+} from '../utils/util'
+import {
+  AlignmentAlgorithm,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from '../../ProteinView/types'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -60,6 +64,8 @@ const AlphaFoldDBSearch = observer(function ({
     'auto',
   )
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
+  const [alignmentAlgorithm, setAlignmentAlgorithm] =
+    useState<AlignmentAlgorithm>(DEFAULT_ALIGNMENT_ALGORITHM)
   // hardcoded right now
   const useApiSearch = false
 
@@ -78,7 +84,7 @@ const AlphaFoldDBSearch = observer(function ({
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
 
   // Check for UniProt ID from feature attributes
-  const featureUniprotId = getUniprotIdFromFeature(
+  const featureUniprotId = getUniProtIdFromFeature(
     selectedTranscript ?? feature,
   )
 
@@ -209,6 +215,8 @@ const AlphaFoldDBSearch = observer(function ({
           feature={feature}
           view={view}
           session={session}
+          alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
         />
       </DialogActions>
     </>

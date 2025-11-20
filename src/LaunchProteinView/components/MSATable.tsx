@@ -5,7 +5,7 @@ import { TextField } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 import Checkbox2 from './Checkbox2'
-import { getTranscriptDisplayName } from './util'
+import { getTranscriptDisplayName } from '../utils/util'
 
 const useStyles = makeStyles()({
   textAreaFont: {

@@ -3,7 +3,7 @@ import React from 'react'
 import { Feature } from '@jbrowse/core/util'
 import { MenuItem, TextField } from '@mui/material'
 
-import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
 import type { TextFieldProps } from '@mui/material'
 

@@ -299,6 +299,10 @@ const Structure = types
       // @ts-expect-error
       return getParent(self, 2).showHighlight
     },
+    get alignmentAlgorithm(): string {
+      // @ts-expect-error
+      return getParent(self, 2).alignmentAlgorithm
+    },
     get molstarPluginContext(): PluginContext | undefined {
       // @ts-expect-error
       return getParent(self, 2).molstarPluginContext
@@ -315,6 +319,7 @@ const Structure = types
               userProvidedTranscriptSequence,
               structureSequences,
               exactMatch,
+              alignmentAlgorithm,
             } = self
             const seq1 = userProvidedTranscriptSequence
             const seq2 = structureSequences?.[0]
@@ -341,7 +346,7 @@ const Structure = types
               const pairwiseAlignment = await launchPairwiseAlignment({
                 seq1: r1,
                 seq2: r2,
-                algorithm: 'emboss_needle',
+                algorithm: alignmentAlgorithm,
                 onProgress: arg => {
                   self.setAlignmentStatus(arg)
                 },

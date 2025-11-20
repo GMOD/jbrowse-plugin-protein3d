@@ -24,15 +24,15 @@ import { makeStyles } from 'tss-react/mui'
 import HelpButton from './HelpButton'
 import MSATable from './MSATable'
 import TranscriptSelector from './TranscriptSelector'
-import useIsoformProteinSequences from './useIsoformProteinSequences'
-import useLocalStructureFileSequence from './useLocalStructureFileSequence'
-import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
+import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
+import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
+import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
 import {
   getGeneDisplayName,
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
-} from './util'
+} from '../utils/util'
 import ExternalLink from '../../components/ExternalLink'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

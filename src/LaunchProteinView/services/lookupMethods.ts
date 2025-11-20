@@ -1,4 +1,4 @@
-import { stripTrailingVersion } from './util'
+import { stripTrailingVersion } from '../utils/util'
 import { jsonfetch } from '../../fetchUtils'
 
 interface MyGeneInfoResults {
