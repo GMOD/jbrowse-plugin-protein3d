@@ -10,7 +10,7 @@ import {
 
 import ExternalLink from '../../components/ExternalLink'
 
-type LookupMode = 'auto' | 'manual'
+type LookupMode = 'auto' | 'manual' | 'feature'
 
 interface UniProtIdInputProps {
   lookupMode: LookupMode
@@ -18,6 +18,7 @@ interface UniProtIdInputProps {
   manualUniprotId: string
   onManualUniprotIdChange: (id: string) => void
   autoUniprotId?: string
+  featureUniprotId?: string
   isLoading: boolean
 }
 
@@ -55,6 +56,7 @@ export default function UniProtIdInput({
   manualUniprotId,
   onManualUniprotIdChange,
   autoUniprotId,
+  featureUniprotId,
   isLoading,
 }: UniProtIdInputProps) {
   return (
@@ -67,6 +69,13 @@ export default function UniProtIdInput({
             onLookupModeChange(event.target.value as LookupMode)
           }}
         >
+          {featureUniprotId && (
+            <FormControlLabel
+              value="feature"
+              control={<Radio />}
+              label={`Use feature UniProt ID (${featureUniprotId})`}
+            />
+          )}
           <FormControlLabel
             value="auto"
             control={<Radio />}
@@ -99,9 +108,9 @@ export default function UniProtIdInput({
         isLoading || autoUniprotId ? null : (
           <UniProtIDNotFoundMessage />
         )
-      ) : (
+      ) : lookupMode === 'manual' ? (
         !manualUniprotId && <EnterUniProtID />
-      )}
+      ) : null}
     </>
   )
 }

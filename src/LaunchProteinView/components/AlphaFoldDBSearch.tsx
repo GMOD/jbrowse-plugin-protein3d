@@ -56,7 +56,9 @@ const AlphaFoldDBSearch = observer(function ({
   const view = getContainingView(model) as LinearGenomeViewModel
 
   // State for UniProt ID lookup
-  const [lookupMode, setLookupMode] = useState<'auto' | 'manual'>('auto')
+  const [lookupMode, setLookupMode] = useState<'auto' | 'manual' | 'feature'>(
+    'auto',
+  )
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
   // hardcoded right now
   const useApiSearch = false
@@ -80,7 +82,7 @@ const AlphaFoldDBSearch = observer(function ({
     selectedTranscript ?? feature,
   )
 
-  // Auto-lookup UniProt ID
+  // Auto-lookup UniProt ID (only when not using feature mode)
   const {
     uniprotId: autoUniprotId,
     isLoading: isLookupLoading,
@@ -93,7 +95,19 @@ const AlphaFoldDBSearch = observer(function ({
     lookupMethod: lookupUniProtIdViaMyGeneInfo,
   })
 
-  const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
+  const uniprotId =
+    lookupMode === 'feature'
+      ? featureUniprotId
+      : lookupMode === 'auto'
+        ? autoUniprotId
+        : manualUniprotId
+
+  // Auto-select 'feature' mode if a feature UniProt ID is found
+  useEffect(() => {
+    if (featureUniprotId && lookupMode === 'auto') {
+      setLookupMode('feature')
+    }
+  }, [featureUniprotId, lookupMode])
 
   // AlphaFold data and selection
   const {
@@ -139,6 +153,7 @@ const AlphaFoldDBSearch = observer(function ({
           manualUniprotId={manualUniprotId}
           onManualUniprotIdChange={setManualUniprotId}
           autoUniprotId={autoUniprotId}
+          featureUniprotId={featureUniprotId}
           isLoading={isLookupLoading}
         />
 

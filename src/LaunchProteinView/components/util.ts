@@ -45,5 +45,5 @@ export function getUniprotIdFromFeature(f?: Feature): string | undefined {
   if (!f) {
     return undefined
   }
-  return f.get('uniprot') ?? f.get('uniprotId')
+  return f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid')
 }
