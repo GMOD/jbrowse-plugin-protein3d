@@ -40,3 +40,10 @@ export function getGeneDisplayName(val?: Feature): string {
         .filter(f => !!f)
         .join(' ')
 }
+
+export function getUniprotIdFromFeature(f?: Feature): string | undefined {
+  if (!f) {
+    return undefined
+  }
+  return f.get('uniprot') ?? f.get('uniprotId')
+}

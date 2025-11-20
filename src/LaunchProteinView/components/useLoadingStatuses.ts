@@ -2,18 +2,18 @@
  * Custom hook to aggregate loading statuses from multiple sources
  */
 export default function useLoadingStatuses({
-  isMyGeneLoading,
+  isLookupLoading,
   isIsoformProteinSequencesLoading,
   isAlphaFoldUrlLoading,
 }: {
-  isMyGeneLoading: boolean
+  isLookupLoading: boolean
   isIsoformProteinSequencesLoading: boolean
   isAlphaFoldUrlLoading: boolean
 }): string[] {
   const statuses: string[] = []
 
-  if (isMyGeneLoading) {
-    statuses.push('Looking up UniProt ID from mygene.info')
+  if (isLookupLoading) {
+    statuses.push('Looking up UniProt ID')
   }
 
   if (isIsoformProteinSequencesLoading) {

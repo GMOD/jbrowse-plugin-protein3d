@@ -50,6 +50,32 @@
   "tracks": [
     {
       "type": "FeatureTrack",
+      "trackId": "genes_with_uniprot",
+      "name": "Genes with UniProt IDs",
+      "category": ["Annotation"],
+      "adapter": {
+        "type": "Gff3Adapter",
+        "gffLocation": {
+          "uri": "example_data/genes_with_uniprot.gff3",
+          "locationType": "UriLocation"
+        }
+      },
+      "assemblyNames": ["hg38"],
+      "displays": [
+        {
+          "type": "LinearBasicDisplay",
+          "displayId": "genes_with_uniprot_linear",
+          "renderer": {
+            "type": "SvgFeatureRenderer",
+            "labels": {
+              "name": "jexl:get(feature,'name') || get(feature,'gene_name')"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "type": "FeatureTrack",
       "trackId": "gencode.v44.annotation.sorted.gff3",
       "name": "GENCODE v44",
       "category": ["Annotation"],

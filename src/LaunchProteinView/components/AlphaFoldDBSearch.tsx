@@ -14,8 +14,15 @@ import UniProtIdInput from './UniProtIdInput'
 import useAlphaFoldData from './useAlphaFoldData'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useLoadingStatuses from './useLoadingStatuses'
-import useMyGeneInfoUniprotIdLookup from './useMyGeneInfoUniprotIdLookup'
-import { getDisplayName, getId, getTranscriptFeatures } from './util'
+import useLookupUniProtId, {
+  lookupUniProtIdViaMyGeneInfo,
+} from './useLookupUniProtId'
+import {
+  getDisplayName,
+  getId,
+  getTranscriptFeatures,
+  getUniprotIdFromFeature,
+} from './util'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -68,15 +75,22 @@ const AlphaFoldDBSearch = observer(function ({
 
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
 
+  // Check for UniProt ID from feature attributes
+  const featureUniprotId = getUniprotIdFromFeature(
+    selectedTranscript ?? feature,
+  )
+
   // Auto-lookup UniProt ID
   const {
     uniprotId: autoUniprotId,
-    isLoading: isMyGeneLoading,
-    error: myGeneError,
-  } = useMyGeneInfoUniprotIdLookup({
+    isLoading: isLookupLoading,
+    error: lookupError,
+  } = useLookupUniProtId({
     id: selectedTranscript
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
+    providedUniprotId: featureUniprotId,
+    lookupMethod: lookupUniProtIdViaMyGeneInfo,
   })
 
   const uniprotId = lookupMode === 'auto' ? autoUniprotId : manualUniprotId
@@ -94,9 +108,9 @@ const AlphaFoldDBSearch = observer(function ({
   } = useAlphaFoldData({ uniprotId, useApiSearch })
 
   // Aggregate errors and loading statuses
-  const error = myGeneError ?? isoformProteinSequencesError ?? alphaFoldUrlError
+  const error = lookupError ?? isoformProteinSequencesError ?? alphaFoldUrlError
   const loadingStatuses = useLoadingStatuses({
-    isMyGeneLoading,
+    isLookupLoading,
     isIsoformProteinSequencesLoading,
     isAlphaFoldUrlLoading,
   })
@@ -125,7 +139,7 @@ const AlphaFoldDBSearch = observer(function ({
           manualUniprotId={manualUniprotId}
           onManualUniprotIdChange={setManualUniprotId}
           autoUniprotId={autoUniprotId}
-          isLoading={isMyGeneLoading}
+          isLoading={isLookupLoading}
         />
 
         {loadingStatuses.length > 0 &&
