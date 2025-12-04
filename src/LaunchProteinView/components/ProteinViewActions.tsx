@@ -10,34 +10,27 @@ import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-interface ProteinViewActionsProps {
-  handleClose: () => void
-  uniprotId?: string
-  userSelectedProteinSequence?: { seq: string }
-  selectedTranscript?: Feature
-  url?: string
-  confidenceUrl?: string
-  feature: Feature
-  view: LinearGenomeViewModel
-  session: AbstractSessionModel
-  alignmentAlgorithm: AlignmentAlgorithm
-}
-
-/**
- * Component for the dialog action buttons (Cancel, Launch 3D, Launch 1D)
- */
 export default function ProteinViewActions({
   handleClose,
   uniprotId,
   userSelectedProteinSequence,
   selectedTranscript,
   url,
-  confidenceUrl,
   feature,
   view,
   session,
   alignmentAlgorithm,
-}: ProteinViewActionsProps) {
+}: {
+  handleClose: () => void
+  uniprotId?: string
+  userSelectedProteinSequence?: { seq: string }
+  selectedTranscript?: Feature
+  url?: string
+  feature: Feature
+  view: LinearGenomeViewModel
+  session: AbstractSessionModel
+  alignmentAlgorithm: AlignmentAlgorithm
+}) {
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
@@ -78,7 +71,6 @@ export default function ProteinViewActions({
             selectedTranscript,
             feature,
             uniprotId,
-            confidenceUrl,
           })
         } catch (e) {
           console.error(e)

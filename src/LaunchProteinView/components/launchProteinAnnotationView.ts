@@ -15,23 +15,14 @@ export async function launchProteinAnnotationView({
   feature,
   selectedTranscript,
   uniprotId,
-  confidenceUrl,
 }: {
   session: SessionWithAddTracks
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
-  confidenceUrl?: string
 }) {
-  // Set up the protein assembly
   setupProteinAssembly(session, uniprotId)
-
-  // Add all annotation tracks
-  await addAllProteinTracks({
-    session,
-    uniprotId,
-    confidenceUrl,
-  })
+  await addAllProteinTracks({ session, uniprotId })
 
   // Create and navigate to the view
   const view = session.addView('LinearGenomeView', {

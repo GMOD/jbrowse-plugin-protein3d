@@ -7,17 +7,14 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
-import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
 import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
-import useLoadingStatuses from '../hooks/useLoadingStatuses'
-import useLookupUniProtId, {
-  lookupUniProtIdViaMyGeneInfo,
-} from '../hooks/useLookupUniProtId'
+import useLookupUniProtId from '../hooks/useLookupUniProtId'
+import { lookupUniProtIdViaMyGeneInfo } from '../services/lookupMethods'
 import {
   getDisplayName,
   getId,
@@ -34,12 +31,6 @@ const useStyles = makeStyles()({
     display: 'flex',
     flexDirection: 'column',
     gap: 20,
-  },
-  selectorsRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 20,
-    alignItems: 'flex-start',
   },
 })
 
@@ -62,9 +53,7 @@ const AlphaFoldDBSearch = observer(function ({
   const [lookupMode, setLookupMode] = useState<'auto' | 'manual' | 'feature'>(
     'auto',
   )
-  const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  // hardcoded right now
-  const useApiSearch = false
+  const [manualUniprotId, setManualUniprotId] = useState('')
 
   // Transcript selection
   const options = getTranscriptFeatures(feature)
@@ -112,25 +101,21 @@ const AlphaFoldDBSearch = observer(function ({
     }
   }, [featureUniprotId, lookupMode])
 
-  // AlphaFold data and selection
+  // AlphaFold data
   const {
-    predictions,
     isLoading: isAlphaFoldUrlLoading,
     error: alphaFoldUrlError,
-    selectedEntryIndex,
-    setSelectedEntryIndex,
     url,
-    confidenceUrl,
     structureSequence,
-  } = useAlphaFoldData({ uniprotId, useApiSearch })
+  } = useAlphaFoldData({ uniprotId })
 
-  // Aggregate errors and loading statuses
   const error = lookupError ?? isoformProteinSequencesError ?? alphaFoldUrlError
-  const loadingStatuses = useLoadingStatuses({
-    isLookupLoading,
-    isIsoformProteinSequencesLoading,
-    isAlphaFoldUrlLoading,
-  })
+  const loadingStatuses = [
+    isLookupLoading && 'Looking up UniProt ID',
+    isIsoformProteinSequencesLoading &&
+      'Loading protein sequences from transcript isoforms',
+    isAlphaFoldUrlLoading && 'Fetching AlphaFold structure URL',
+  ].filter(Boolean)
 
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
@@ -174,23 +159,14 @@ const AlphaFoldDBSearch = observer(function ({
         selectedTranscript &&
         uniprotId ? (
           <>
-            <div className={classes.selectorsRow}>
-              <TranscriptSelector
-                val={userSelection ?? ''}
-                setVal={setUserSelection}
-                structureSequence={structureSequence}
-                feature={feature}
-                isoforms={options}
-                isoformSequences={isoformSequences}
-              />
-              {predictions && (
-                <AlphaFoldEntrySelector
-                  predictions={predictions}
-                  selectedEntryIndex={selectedEntryIndex}
-                  onSelectionChange={setSelectedEntryIndex}
-                />
-              )}
-            </div>
+            <TranscriptSelector
+              val={userSelection ?? ''}
+              setVal={setUserSelection}
+              structureSequence={structureSequence}
+              feature={feature}
+              isoforms={options}
+              isoformSequences={isoformSequences}
+            />
             <AlphaFoldDBSearchStatus
               uniprotId={uniprotId}
               selectedTranscript={selectedTranscript}
@@ -208,7 +184,6 @@ const AlphaFoldDBSearch = observer(function ({
           userSelectedProteinSequence={userSelectedProteinSequence}
           selectedTranscript={selectedTranscript}
           url={url}
-          confidenceUrl={confidenceUrl}
           feature={feature}
           view={view}
           session={session}
