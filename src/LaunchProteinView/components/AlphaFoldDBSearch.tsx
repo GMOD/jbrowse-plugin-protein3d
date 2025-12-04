@@ -80,10 +80,10 @@ const AlphaFoldDBSearch = observer(function ({
 
   const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
 
-  // Check for UniProt ID from feature attributes
-  const featureUniprotId = getUniProtIdFromFeature(
-    selectedTranscript ?? feature,
-  )
+  // Check for UniProt ID from feature attributes (check transcript first, fall back to parent)
+  const featureUniprotId =
+    getUniProtIdFromFeature(selectedTranscript) ??
+    getUniProtIdFromFeature(feature)
 
   // Auto-lookup UniProt ID (only when not using feature mode)
   const {
