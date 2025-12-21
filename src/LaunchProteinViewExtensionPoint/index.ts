@@ -15,6 +15,10 @@ export default function LaunchProteinViewExtensionPointF(
       connectedViewId,
       alignmentAlgorithm,
       displayName,
+      height,
+      showControls,
+      showHighlight,
+      zoomToBaseLevel,
     }: {
       session: AbstractSessionModel
       url?: string
@@ -23,6 +27,10 @@ export default function LaunchProteinViewExtensionPointF(
       connectedViewId?: string
       alignmentAlgorithm?: string
       displayName?: string
+      height?: number
+      showControls?: boolean
+      showHighlight?: boolean
+      zoomToBaseLevel?: boolean
     }) => {
       if (!url) {
         throw new Error('No URL provided when launching protein view')
@@ -32,10 +40,15 @@ export default function LaunchProteinViewExtensionPointF(
         type: 'ProteinView',
         alignmentAlgorithm,
         displayName,
+        height,
+        showControls,
+        showHighlight,
+        zoomToBaseLevel,
         structures: [
           {
             url,
-            userProvidedTranscriptSequence: userProvidedTranscriptSequence ?? '',
+            userProvidedTranscriptSequence:
+              userProvidedTranscriptSequence ?? '',
             feature,
             connectedViewId,
           },

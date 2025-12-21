@@ -13,13 +13,12 @@ export default defineConfig(
       'eslint.config.mjs',
       'esbuild-watch.mjs',
       'esbuild.mjs',
-      'vitest.config.ts',
     ],
   },
   {
     languageOptions: {
       parserOptions: {
-        project: ['./tsconfig.json'],
+        project: ['./tsconfig.lint.json'],
         tsconfigRootDir: import.meta.dirname,
       },
     },
