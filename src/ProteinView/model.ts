@@ -15,6 +15,15 @@ import {
   DEFAULT_ALIGNMENT_ALGORITHM,
 } from './types'
 
+export interface ProteinViewInitState {
+  structures?: {
+    url?: string
+    data?: string
+  }[]
+  showControls?: boolean
+  showAlignment?: boolean
+}
+
 /**
  * #stateModel Protein3dViewPlugin
  * extends
@@ -71,6 +80,21 @@ function stateModelFactory() {
           ]),
           DEFAULT_ALIGNMENT_ALGORITHM,
         ),
+
+        /**
+         * #property
+         * used for loading the protein view via session snapshots, e.g.
+         * {
+         *   "type": "ProteinView",
+         *   "init": {
+         *     "structures": [
+         *       { "url": "https://files.rcsb.org/download/1A2B.pdb" }
+         *     ],
+         *     "showControls": true
+         *   }
+         * }
+         */
+        init: types.frozen<ProteinViewInitState | undefined>(),
       }),
     )
     .volatile(() => ({
@@ -141,9 +165,54 @@ function stateModelFactory() {
       setMolstarPluginContext(p?: PluginContext) {
         self.molstarPluginContext = p
       },
+      /**
+       * #action
+       */
+      setInit(arg?: ProteinViewInitState) {
+        self.init = arg
+      },
+      /**
+       * #action
+       */
+      addStructure(structure: { url?: string; data?: string }) {
+        self.structures.push(
+          Structure.create({
+            url: structure.url,
+            data: structure.data,
+            userProvidedTranscriptSequence: '',
+          }),
+        )
+      },
     }))
     .actions(self => ({
       afterAttach() {
+        // process init parameter for loading structures from session snapshots
+        addDisposer(
+          self,
+          autorun(() => {
+            const { init } = self
+            if (init) {
+              const { structures, showControls, showAlignment } = init
+
+              if (structures) {
+                for (const structure of structures) {
+                  self.addStructure(structure)
+                }
+              }
+
+              if (showControls !== undefined) {
+                self.setShowControls(showControls)
+              }
+
+              if (showAlignment !== undefined) {
+                self.setShowAlignment(showAlignment)
+              }
+
+              self.setInit(undefined)
+            }
+          }),
+        )
+
         addDisposer(
           self,
           autorun(async () => {

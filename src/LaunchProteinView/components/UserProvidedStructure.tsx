@@ -250,15 +250,20 @@ const UserProvidedStructure = observer(function ({
             // eslint-disable-next-line @typescript-eslint/no-floating-promises
             ;(async () => {
               try {
+                const structureData = file ? await file.text() : undefined
                 session.addView('ProteinView', {
                   type: 'ProteinView',
                   alignmentAlgorithm,
-                  seq2: protein,
-                  feature: selectedTranscript?.toJSON(),
-                  connectedViewId: view.id,
                   displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
-                  ...(file ? { data: await file.text() } : {}),
-                  ...(structureURL ? { url: structureURL } : {}),
+                  structures: [
+                    {
+                      url: structureURL || undefined,
+                      data: structureData,
+                      connectedViewId: view.id,
+                      feature: selectedTranscript?.toJSON(),
+                      userProvidedTranscriptSequence: protein?.seq ?? '',
+                    },
+                  ],
                 })
                 handleClose()
               } catch (e) {
