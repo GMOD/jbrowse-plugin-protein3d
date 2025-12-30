@@ -24,7 +24,7 @@
   "dependencies": {
     "@mui/icons-material": "^7.0.1",
     "buffer": "^6.0.3",
-    "clustal-js": "^2.0.1",
+    "clustal-js": "^2.0.10",
     "g2p_mapper": "^1.0.3",
     "molstar": "^5.4.1",
     "swr": "^2.2.5"
@@ -39,8 +39,8 @@
     "@mui/system": "^7.0.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.6",
-    "@typescript-eslint/eslint-plugin": "^8.47.0",
-    "@typescript-eslint/parser": "^8.47.0",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
     "esbuild": "^0.27.0",
     "eslint": "^9.0.0",
     "eslint-plugin-import": "^2.31.0",
@@ -61,7 +61,7 @@
     "rxjs": "^7.0.0",
     "tss-react": "^4.9.4",
     "typescript": "^5.3.3",
-    "typescript-eslint": "^8.47.0",
+    "typescript-eslint": "^8.51.0",
     "vitest": "^4.0.10"
   },
   "author": "Colin <colin.diesh@gmail.com>",

@@ -1,8 +1,8 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
+import Visibility from '@mui/icons-material/Visibility'
 import { autorun } from 'mobx'
-import { type Instance, addDisposer, types } from 'mobx-state-tree'
-import { type PluginContext } from 'molstar/lib/mol-plugin/context'
+import { addDisposer, types } from 'mobx-state-tree'
 
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
@@ -15,6 +15,8 @@ import {
   DEFAULT_ALIGNMENT_ALGORITHM,
 } from './types'
 
+import type { Instance } from 'mobx-state-tree'
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 export interface ProteinViewInitState {
   structures?: {
     url?: string
@@ -68,7 +70,7 @@ function stateModelFactory() {
         /**
          * #property
          */
-        showAlignment: false,
+        showAlignment: true,
         /**
          * #property
          */
@@ -266,6 +268,39 @@ function stateModelFactory() {
             }
           }),
         )
+      },
+    }))
+    .views(self => ({
+      menuItems() {
+        return [
+          {
+            label: 'Show pairwise alignment area',
+            type: 'checkbox',
+            checked: self.showAlignment,
+            icon: Visibility,
+            onClick: () => {
+              self.setShowAlignment(!self.showAlignment)
+            },
+          },
+          {
+            label: 'Show pairwise alignment as green highlight',
+            type: 'checkbox',
+            checked: self.showHighlight,
+            icon: Visibility,
+            onClick: () => {
+              self.setShowHighlight(!self.showHighlight)
+            },
+          },
+          {
+            label: 'Zoom to base level on click',
+            type: 'checkbox',
+            checked: self.zoomToBaseLevel,
+            icon: Visibility,
+            onClick: () => {
+              self.setZoomToBaseLevel(!self.zoomToBaseLevel)
+            },
+          },
+        ]
       },
     }))
 }

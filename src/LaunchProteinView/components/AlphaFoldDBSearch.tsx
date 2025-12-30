@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
@@ -67,7 +67,7 @@ const AlphaFoldDBSearch = observer(function ({
   const useApiSearch = false
 
   // Transcript selection
-  const options = getTranscriptFeatures(feature)
+  const options = useMemo(() => getTranscriptFeatures(feature), [feature])
   const [userSelection, setUserSelection] = useState<string>()
   const selectedTranscript = options.find(val => getId(val) === userSelection)
 
@@ -134,7 +134,7 @@ const AlphaFoldDBSearch = observer(function ({
 
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
-    if (isoformSequences !== undefined) {
+    if (isoformSequences !== undefined && userSelection === undefined) {
       const matchingTranscript =
         options.find(
           f =>
@@ -143,7 +143,7 @@ const AlphaFoldDBSearch = observer(function ({
         ) ?? options.find(f => !!isoformSequences[f.id()])
       setUserSelection(matchingTranscript?.id())
     }
-  }, [options, structureSequence, isoformSequences])
+  }, [options, structureSequence, isoformSequences, userSelection])
 
   return (
     <>

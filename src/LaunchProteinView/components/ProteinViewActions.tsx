@@ -59,10 +59,12 @@ export default function ProteinViewActions({
         },
       ],
       displayName: [
-        'Protein view',
-        uniprotId,
-        getGeneDisplayName(feature),
-        getTranscriptDisplayName(selectedTranscript),
+        ...new Set([
+          'Protein view',
+          uniprotId,
+          getGeneDisplayName(feature),
+          getTranscriptDisplayName(selectedTranscript),
+        ]),
       ].join(' - '),
     })
     handleClose()

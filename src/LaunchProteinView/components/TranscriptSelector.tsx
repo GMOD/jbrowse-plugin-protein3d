@@ -5,16 +5,6 @@ import { MenuItem, TextField } from '@mui/material'
 
 import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
-import type { TextFieldProps } from '@mui/material'
-
-function TextField2({ children, ...rest }: TextFieldProps) {
-  return (
-    <div>
-      <TextField {...rest}>{children}</TextField>
-    </div>
-  )
-}
-
 export default function TranscriptSelector({
   val,
   setVal,
@@ -30,8 +20,30 @@ export default function TranscriptSelector({
   structureSequence: string
   isoformSequences: Record<string, { feature: Feature; seq: string }>
 }) {
+  const geneName = getGeneDisplayName(feature)
+  const matches: Feature[] = []
+  const nonMatches: Feature[] = []
+  const noData: Feature[] = []
+
+  for (const f of isoforms) {
+    const entry = isoformSequences[f.id()]
+    if (!entry) {
+      noData.push(f)
+    } else if (entry.seq.replaceAll('*', '') === structureSequence) {
+      matches.push(f)
+    } else {
+      nonMatches.push(f)
+    }
+  }
+
+  nonMatches.sort(
+    (a, b) =>
+      isoformSequences[b.id()]!.seq.length -
+      isoformSequences[a.id()]!.seq.length,
+  )
+
   return (
-    <TextField2
+    <TextField
       value={val}
       onChange={event => {
         setVal(event.target.value)
@@ -39,46 +51,23 @@ export default function TranscriptSelector({
       label="Choose transcript isoform"
       select
     >
-      {isoforms
-        .filter(f => !!isoformSequences[f.id()])
-        .filter(
-          f =>
-            isoformSequences[f.id()]!.seq.replaceAll('*', '') ===
-            structureSequence,
-        )
-        .map(f => (
-          <MenuItem value={f.id()} key={f.id()}>
-            {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {isoformSequences[f.id()]!.seq.length}aa) (matches structure
-            residues)
-          </MenuItem>
-        ))}
-      {isoforms
-        .filter(f => !!isoformSequences[f.id()])
-        .filter(
-          f =>
-            isoformSequences[f.id()]!.seq.replaceAll('*', '') !==
-            structureSequence,
-        )
-        .toSorted(
-          (a, b) =>
-            isoformSequences[b.id()]!.seq.length -
-            isoformSequences[a.id()]!.seq.length,
-        )
-        .map(f => (
-          <MenuItem value={f.id()} key={f.id()}>
-            {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (
-            {isoformSequences[f.id()]!.seq.length}aa)
-          </MenuItem>
-        ))}
-      {isoforms
-        .filter(f => !isoformSequences[f.id()])
-        .map(f => (
-          <MenuItem value={f.id()} key={f.id()} disabled>
-            {getGeneDisplayName(feature)} - {getTranscriptDisplayName(f)} (no
-            data)
-          </MenuItem>
-        ))}
-    </TextField2>
+      {matches.map(f => (
+        <MenuItem value={f.id()} key={f.id()}>
+          {geneName} - {getTranscriptDisplayName(f)} (
+          {isoformSequences[f.id()]!.seq.length}aa) (matches structure residues)
+        </MenuItem>
+      ))}
+      {nonMatches.map(f => (
+        <MenuItem value={f.id()} key={f.id()}>
+          {geneName} - {getTranscriptDisplayName(f)} (
+          {isoformSequences[f.id()]!.seq.length}aa)
+        </MenuItem>
+      ))}
+      {noData.map(f => (
+        <MenuItem value={f.id()} key={f.id()} disabled>
+          {geneName} - {getTranscriptDisplayName(f)} (no data)
+        </MenuItem>
+      ))}
+    </TextField>
   )
 }

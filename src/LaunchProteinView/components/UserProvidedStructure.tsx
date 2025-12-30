@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import {
@@ -88,7 +88,7 @@ const UserProvidedStructure = observer(function ({
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
-  const options = getTranscriptFeatures(feature)
+  const options = useMemo(() => getTranscriptFeatures(feature), [feature])
   const view = getContainingView(model) as LGV
   const selectedTranscript = options.find(val => getId(val) === userSelection)
   const { isoformSequences, error } = useIsoformProteinSequences({
@@ -107,7 +107,7 @@ const UserProvidedStructure = observer(function ({
   const structureSequence = structureSequences?.[0]
 
   useEffect(() => {
-    if (isoformSequences !== undefined) {
+    if (isoformSequences !== undefined && userSelection === undefined) {
       const ret =
         options.find(
           f =>
@@ -116,7 +116,7 @@ const UserProvidedStructure = observer(function ({
         ) ?? options.find(f => !!isoformSequences[f.id()])
       setUserSelection(ret?.id())
     }
-  }, [options, structureSequence, isoformSequences])
+  }, [options, structureSequence, isoformSequences, userSelection])
 
   const e = error ?? error2 ?? error3 ?? error4
   return (

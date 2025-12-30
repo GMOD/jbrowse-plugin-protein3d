@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 
 // molstar
 import { GeometryExport } from 'molstar/lib/extensions/geo-export'
+import { PluginConfig } from 'molstar/lib/mol-plugin/config'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { PluginSpec } from 'molstar/lib/mol-plugin/spec'
 import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
@@ -48,6 +49,7 @@ export default function useProteinView({
                 showControls,
               },
             },
+            config: [[PluginConfig.Viewport.ShowExpand, false]],
           },
         })
         await p.initialized

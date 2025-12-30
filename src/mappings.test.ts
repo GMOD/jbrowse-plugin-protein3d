@@ -26,10 +26,11 @@ test('mapping', () => {
   expect(s2[395]).toBe('A')
   // maps the 392 position in the "pdb version of the protein" to the 0th
   // position in the genome version of the protein, and then maps that back to
-  // the genome
+  // the genome. For reverse strand, p2g[0] is the highest position in the
+  // first codon (end-1 of first CDS, since intervals are half-open [start, end))
   const p0 = aln.transcriptSeqToStructureSeqPosition[392]!
   const g0 = p2g[p0]
   expect(p0).toBe(0)
-  expect(g0).toBe(51_296_155)
+  expect(g0).toBe(51_296_154)
   expect(res).toMatchSnapshot()
 })

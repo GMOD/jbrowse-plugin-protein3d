@@ -6,13 +6,18 @@ import { AlignmentAlgorithm } from './types'
 const EBI_REST_BASE_URL = 'https://www.ebi.ac.uk/Tools/services/rest'
 
 function parseAlignmentResult(result: string) {
+  const filtered = result
+    .split('\n')
+    .filter(line => !/^\s*\d+\s*$/.test(line))
+    .join('\n')
+    .trim()
+
+  if (!filtered) {
+    throw new Error('Empty alignment result from server')
+  }
+
   return {
-    pairwiseAlignment: parsePairwise(
-      result
-        .split('\n')
-        .filter(line => !line.startsWith('#'))
-        .join('\n'),
-    ),
+    pairwiseAlignment: parsePairwise(filtered),
   }
 }
 

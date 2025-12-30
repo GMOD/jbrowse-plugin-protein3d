@@ -20,6 +20,7 @@ export default function useLookupUniProtId({
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
+      keepPreviousData: true,
     },
   )
 
