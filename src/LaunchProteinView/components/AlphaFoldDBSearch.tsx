@@ -43,7 +43,7 @@ const useStyles = makeStyles()({
   },
 })
 
-const AlphaFoldDBSearch = observer(function ({
+const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   feature,
   model,
   handleClose,

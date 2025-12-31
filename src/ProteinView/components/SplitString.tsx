@@ -1,35 +1,138 @@
-import React from 'react'
+import React, { useCallback, useRef } from 'react'
 
-export default function SplitString({
-  str,
-  gapSet,
-  hoveredPosition,
-  showHighlight,
-  onMouseOver,
-  onClick,
-}: {
-  str: string
-  gapSet?: Set<number>
-  hoveredPosition?: number
-  showHighlight: boolean
-  onMouseOver?: (arg: number) => void
-  onClick?: (arg: number) => void
-}) {
-  return str.split('').map((d, i) => (
+import { observer } from 'mobx-react'
+
+import type { JBrowsePluginProteinStructureModel } from '../model'
+
+const CHAR_WIDTH = 6
+
+const CharacterSpans = observer(function CharacterSpans({ str }: { str: string }) {
+  return str.split('').map((char, i) => (
     <span
-      key={`${d}-${i}`}
-      onMouseOver={() => onMouseOver?.(i)}
-      onClick={() => onClick?.(i)}
+      key={i}
       style={{
-        background:
-          hoveredPosition !== undefined && i === hoveredPosition
-            ? '#f698'
-            : gapSet?.has(i) && showHighlight
-              ? '#33ff19'
-              : undefined,
+        position: 'absolute',
+        left: i * CHAR_WIDTH,
+        width: CHAR_WIDTH,
       }}
     >
-      {d === ' ' ? <>&nbsp;</> : d}
+      {char === ' ' ? '\u00A0' : char}
     </span>
   ))
-}
+})
+
+const GapOverlays = observer(function GapOverlays({
+  model,
+}: {
+  model: JBrowsePluginProteinStructureModel
+}) {
+  const { showHighlight, alignmentGapSet } = model
+  if (!showHighlight || !alignmentGapSet) {
+    return null
+  }
+  return [...alignmentGapSet].map(i => (
+    <span
+      key={i}
+      style={{
+        position: 'absolute',
+        left: i * CHAR_WIDTH,
+        top: 0,
+        width: CHAR_WIDTH,
+        height: '100%',
+        background: '#33ff19',
+        pointerEvents: 'none',
+      }}
+    />
+  ))
+})
+
+const HoverHighlight = observer(function HoverHighlight({
+  model,
+  strLength,
+}: {
+  model: JBrowsePluginProteinStructureModel
+  strLength: number
+}) {
+  const { alignmentHoverPos } = model
+  const showHoverHighlight =
+    alignmentHoverPos !== undefined &&
+    alignmentHoverPos >= 0 &&
+    alignmentHoverPos < strLength
+
+  if (!showHoverHighlight) {
+    return null
+  }
+  return (
+    <span
+      style={{
+        position: 'absolute',
+        left: alignmentHoverPos * CHAR_WIDTH,
+        top: 0,
+        width: CHAR_WIDTH,
+        height: '100%',
+        background: '#f698',
+        pointerEvents: 'none',
+      }}
+    />
+  )
+})
+
+const SplitString = observer(function SplitString({
+  model,
+  str,
+}: {
+  model: JBrowsePluginProteinStructureModel
+  str: string
+}) {
+  const containerRef = useRef<HTMLSpanElement>(null)
+
+  const getCharIndexFromEvent = useCallback((e: React.MouseEvent) => {
+    const container = containerRef.current
+    if (!container) {
+      return -1
+    }
+    const rect = container.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    return Math.floor(x / CHAR_WIDTH)
+  }, [])
+
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const index = getCharIndexFromEvent(e)
+      if (index >= 0 && index < str.length) {
+        model.hoverAlignmentPosition(index)
+      }
+    },
+    [getCharIndexFromEvent, str.length, model],
+  )
+
+  const handleClick = useCallback(
+    (e: React.MouseEvent) => {
+      const index = getCharIndexFromEvent(e)
+      if (index >= 0 && index < str.length) {
+        model.clickAlignmentPosition(index)
+      }
+    },
+    [getCharIndexFromEvent, str.length, model],
+  )
+
+  return (
+    <span
+      ref={containerRef}
+      style={{
+        position: 'relative',
+        display: 'inline-block',
+        width: str.length * CHAR_WIDTH,
+        height: '1em',
+      }}
+      onMouseMove={handleMouseMove}
+      onClick={handleClick}
+    >
+      <CharacterSpans str={str} />
+      <GapOverlays model={model} />
+      <HoverHighlight model={model} strLength={str.length} />
+    </span>
+  )
+})
+
+export default SplitString

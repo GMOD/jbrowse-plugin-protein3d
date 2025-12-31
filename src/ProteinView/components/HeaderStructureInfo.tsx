@@ -4,7 +4,7 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinViewModel } from '../model'
 
-const HeaderStructureInfo = observer(function ({
+const HeaderStructureInfo = observer(function HeaderStructureInfo({
   model,
 }: {
   model: JBrowsePluginProteinViewModel

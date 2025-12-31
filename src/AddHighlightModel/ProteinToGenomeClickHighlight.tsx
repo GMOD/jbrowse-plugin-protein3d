@@ -10,7 +10,7 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 type LGV = LinearGenomeViewModel
 
-const ProteinToGenomeClickHighlight = observer(function ({
+const ProteinToGenomeClickHighlight = observer(function ProteinToGenomeClickHighlight({
   model,
 }: {
   model: LGV

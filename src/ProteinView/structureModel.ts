@@ -203,6 +203,37 @@ const Structure = types
       self.pairwiseAlignmentStatus = str
     },
   }))
+  .actions(self => ({
+    /**
+     * #action
+     */
+    hoverAlignmentPosition(alignmentPos: number) {
+      const structureSeqPos =
+        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+      self.setHoveredPosition({ structureSeqPos })
+      if (structureSeqPos !== undefined) {
+        hoverProteinToGenome({
+          model: self as JBrowsePluginProteinStructureModel,
+          structureSeqPos,
+        })
+      }
+    },
+    /**
+     * #action
+     */
+    clickAlignmentPosition(alignmentPos: number) {
+      const structureSeqPos =
+        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+      if (structureSeqPos !== undefined) {
+        clickProteinToGenome({
+          model: self as JBrowsePluginProteinStructureModel,
+          structureSeqPos,
+        }).catch((e: unknown) => {
+          console.error(e)
+        })
+      }
+    },
+  }))
   .views(self => ({
     /**
      * #getter
@@ -281,6 +312,33 @@ const Structure = types
      */
     get structureSeqHoverPos() {
       return self.hoverPosition?.structureSeqPos
+    },
+
+    /**
+     * #getter
+     */
+    get alignmentHoverPos() {
+      const pos = this.structureSeqHoverPos
+      return pos === undefined
+        ? undefined
+        : this.structurePositionToAlignmentMap?.[pos]
+    },
+
+    /**
+     * #getter
+     */
+    get alignmentGapSet() {
+      const con = self.pairwiseAlignment?.consensus
+      if (!con) {
+        return undefined
+      }
+      const gapSet = new Set<number>()
+      for (let i = 0; i < con.length; i++) {
+        if (con[i] === '|') {
+          gapSet.add(i)
+        }
+      }
+      return gapSet
     },
 
     /**

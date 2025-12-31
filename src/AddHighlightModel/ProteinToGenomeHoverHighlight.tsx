@@ -8,7 +8,7 @@ import { JBrowsePluginProteinViewModel } from '../ProteinView/model'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-const ProteinToGenomeHoverHighlight = observer(function ({
+const ProteinToGenomeHoverHighlight = observer(function ProteinToGenomeHoverHighlight({
   model,
 }: {
   model: LinearGenomeViewModel

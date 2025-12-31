@@ -19,6 +19,7 @@ export default function useAlphaFoldUrl({ uniprotId }: { uniprotId?: string }) {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
+      keepPreviousData: true,
     },
   )
 

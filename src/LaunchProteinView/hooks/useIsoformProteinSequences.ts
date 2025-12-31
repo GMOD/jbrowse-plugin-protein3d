@@ -33,6 +33,7 @@ export default function useIsoformProteinSequences({
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
       revalidateIfStale: false,
+      keepPreviousData: true,
     },
   )
 

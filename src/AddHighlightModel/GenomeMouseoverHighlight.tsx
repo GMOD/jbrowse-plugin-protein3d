@@ -8,7 +8,7 @@ import { checkHovered } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-const GenomeMouseoverHighlight = observer(function ({
+const GenomeMouseoverHighlight = observer(function GenomeMouseoverHighlight({
   model,
 }: {
   model: LinearGenomeViewModel

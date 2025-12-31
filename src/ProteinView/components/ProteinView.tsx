@@ -12,7 +12,7 @@ const style = document.createElement('style')
 style.append(css)
 document.head.append(style)
 
-const ProteinView = observer(function ({
+const ProteinView = observer(function ProteinView({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
@@ -34,7 +34,7 @@ const ProteinView = observer(function ({
   )
 })
 
-const ProteinViewContainer = observer(function ({
+const ProteinViewContainer = observer(function ProteinViewContainer({
   model,
   parentRef,
 }: {

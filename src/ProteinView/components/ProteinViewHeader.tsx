@@ -7,7 +7,7 @@ import { JBrowsePluginProteinViewModel } from '../model'
 import HeaderStructureInfo from './HeaderStructureInfo'
 import ProteinAlignment from './ProteinAlignment'
 
-const ProteinViewHeader = observer(function ({
+const ProteinViewHeader = observer(function ProteinViewHeader({
   model,
 }: {
   model: JBrowsePluginProteinViewModel

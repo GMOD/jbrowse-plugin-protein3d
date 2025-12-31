@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import {
@@ -29,6 +29,7 @@ import ExternalLink from '../../components/ExternalLink'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
 import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
+import useTranscriptSelection from '../hooks/useTranscriptSelection'
 import {
   getGeneDisplayName,
   getId,
@@ -65,7 +66,7 @@ function HelpText() {
   )
 }
 
-const UserProvidedStructure = observer(function ({
+const UserProvidedStructure = observer(function UserProvidedStructure({
   feature,
   model,
   handleClose,
@@ -83,40 +84,33 @@ const UserProvidedStructure = observer(function ({
   const [choice, setChoice] = useState('file')
   const [error2, setError] = useState<unknown>()
   const [structureURL, setStructureURL] = useState('')
-  const [userSelection, setUserSelection] = useState<string>()
   const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = useMemo(() => getTranscriptFeatures(feature), [feature])
   const view = getContainingView(model) as LGV
-  const selectedTranscript = options.find(val => getId(val) === userSelection)
   const { isoformSequences, error } = useIsoformProteinSequences({
     feature,
     view,
   })
-  const protein = isoformSequences?.[userSelection ?? '']
   const { sequences: structureSequences1, error: error3 } =
     useLocalStructureFileSequence({ file })
-
   const { sequences: structureSequences2, error: error4 } =
     useRemoteStructureFileSequence({ url: structureURL })
+
   const structureName =
     file?.name ?? structureURL.slice(structureURL.lastIndexOf('/') + 1)
   const structureSequences = structureSequences1 ?? structureSequences2
   const structureSequence = structureSequences?.[0]
 
-  useEffect(() => {
-    if (isoformSequences !== undefined && userSelection === undefined) {
-      const ret =
-        options.find(
-          f =>
-            isoformSequences[f.id()]?.seq.replaceAll('*', '') ==
-            structureSequence,
-        ) ?? options.find(f => !!isoformSequences[f.id()])
-      setUserSelection(ret?.id())
-    }
-  }, [options, structureSequence, isoformSequences, userSelection])
+  const { userSelection, setUserSelection } = useTranscriptSelection({
+    options,
+    isoformSequences,
+    structureSequence,
+  })
+  const selectedTranscript = options.find(val => getId(val) === userSelection)
+  const protein = isoformSequences?.[userSelection ?? '']
 
   const e = error ?? error2 ?? error3 ?? error4
   return (

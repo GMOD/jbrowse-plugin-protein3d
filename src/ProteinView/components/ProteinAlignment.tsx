@@ -1,54 +1,31 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
-import {
-  clickProteinToGenome,
-  hoverProteinToGenome,
-} from '../proteinToGenomeMapping'
 import SplitString from './SplitString'
 
-const ProteinAlignment = observer(function ({
+const ProteinAlignment = observer(function ProteinAlignment({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const {
-    pairwiseAlignment,
-    pairwiseAlignmentToStructurePosition,
-    structurePositionToAlignmentMap,
-    structureSeqHoverPos,
-    showHighlight,
-  } = model
-
-  const [pairwiseAlignmentHoverPos, setPairwiseAlignmentHoverPos] =
-    useState<number>()
+  const { pairwiseAlignment, alignmentHoverPos, showHighlight } = model
 
   const containerRef = useRef<HTMLDivElement>(null)
   const isMouseInContainer = useRef(false)
 
   useEffect(() => {
-    setPairwiseAlignmentHoverPos(
-      structureSeqHoverPos === undefined
-        ? undefined
-        : structurePositionToAlignmentMap?.[structureSeqHoverPos],
-    )
-  }, [structurePositionToAlignmentMap, structureSeqHoverPos])
-
-  // Auto-scroll to hovered position when hover originates from outside the alignment
-  useEffect(() => {
     const shouldAutoScroll =
       !isMouseInContainer.current &&
-      pairwiseAlignmentHoverPos !== undefined &&
+      alignmentHoverPos !== undefined &&
       containerRef.current
 
     if (shouldAutoScroll) {
-      // Calculate approximate scroll position (monospace font, ~6px per character at fontSize 9)
       const charWidth = 6
-      const scrollPosition = pairwiseAlignmentHoverPos * charWidth
+      const scrollPosition = alignmentHoverPos * charWidth
       const containerWidth = containerRef.current!.clientWidth
 
       containerRef.current!.scrollTo({
@@ -56,7 +33,7 @@ const ProteinAlignment = observer(function ({
         behavior: 'smooth',
       })
     }
-  }, [pairwiseAlignmentHoverPos])
+  }, [alignmentHoverPos])
 
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
@@ -64,38 +41,6 @@ const ProteinAlignment = observer(function ({
   const a0 = pairwiseAlignment.alns[0].seq
   const a1 = pairwiseAlignment.alns[1].seq
   const con = pairwiseAlignment.consensus
-  const gapSet = new Set<number>()
-  for (let i = 0; i < con.length; i++) {
-    const letter = con[i]
-    if (letter === '|') {
-      gapSet.add(i)
-    }
-  }
-
-  const onMouseOver = useCallback(
-    (p: number) => {
-      setPairwiseAlignmentHoverPos(p)
-      if (pairwiseAlignmentToStructurePosition) {
-        const structureSeqPos = pairwiseAlignmentToStructurePosition[p]
-        model.setHoveredPosition({ structureSeqPos })
-        hoverProteinToGenome({ model, structureSeqPos })
-      }
-    },
-    [pairwiseAlignmentToStructurePosition, model],
-  )
-
-  const onClick = useCallback(
-    (pairwiseAlignmentPos: number) => {
-      if (pairwiseAlignmentToStructurePosition) {
-        const structureSeqPos =
-          pairwiseAlignmentToStructurePosition[pairwiseAlignmentPos]!
-        clickProteinToGenome({ model, structureSeqPos }).catch((e: unknown) => {
-          console.error(e)
-        })
-      }
-    },
-    [pairwiseAlignmentToStructurePosition, model],
-  )
 
   const handleContainerMouseEnter = useCallback(() => {
     isMouseInContainer.current = true
@@ -106,6 +51,7 @@ const ProteinAlignment = observer(function ({
     model.setHoveredPosition(undefined)
     model.clearHoverGenomeHighlights()
   }, [model])
+
   return (
     <div>
       <ProteinAlignmentHelpButton model={model} />
@@ -133,38 +79,17 @@ const ProteinAlignment = observer(function ({
           <Tooltip title="This is the sequence of the protein from the reference genome transcript">
             <span>GENOME&nbsp;</span>
           </Tooltip>
-          <SplitString
-            str={a0}
-            showHighlight={showHighlight}
-            hoveredPosition={pairwiseAlignmentHoverPos}
-            gapSet={gapSet}
-            onMouseOver={onMouseOver}
-            onClick={onClick}
-          />
+          <SplitString model={model} str={a0} />
         </div>
         <div>
           <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-          <SplitString
-            showHighlight={showHighlight}
-            str={con}
-            hoveredPosition={pairwiseAlignmentHoverPos}
-            gapSet={gapSet}
-            onMouseOver={onMouseOver}
-            onClick={onClick}
-          />
+          <SplitString model={model} str={con} />
         </div>
         <div>
           <Tooltip title="This is the sequence of the protein from the structure file">
             <span>STRUCT&nbsp;</span>
           </Tooltip>
-          <SplitString
-            str={a1}
-            hoveredPosition={pairwiseAlignmentHoverPos}
-            showHighlight={showHighlight}
-            gapSet={gapSet}
-            onMouseOver={onMouseOver}
-            onClick={onClick}
-          />
+          <SplitString model={model} str={a1} />
         </div>
       </div>
     </div>
