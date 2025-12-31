@@ -224,28 +224,19 @@ const HoverMarker = observer(function HoverMarker({
   )
 })
 
-const FeatureTypeTrack = observer(function FeatureTypeTrack({
+const FeatureTypeLabel = observer(function FeatureTypeLabel({
   type,
-  features,
-  model,
-  sequenceLength,
-  offsetLeft,
+  labelWidth,
 }: {
   type: string
-  features: UniProtFeature[]
-  model: JBrowsePluginProteinStructureModel
-  sequenceLength: number
-  offsetLeft: number
+  labelWidth: number
 }) {
-  const trackWidth = sequenceLength * CHAR_WIDTH + offsetLeft
-
   return (
-    <div
-      style={{ display: 'flex', alignItems: 'center', marginBottom: TRACK_GAP }}
-    >
+    <Tooltip title={type} placement="left">
       <div
         style={{
-          width: offsetLeft - 4,
+          height: TRACK_HEIGHT + TRACK_GAP,
+          width: labelWidth - 4,
           fontSize: 9,
           fontFamily: 'monospace',
           textAlign: 'right',
@@ -254,41 +245,130 @@ const FeatureTypeTrack = observer(function FeatureTypeTrack({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}
-        title={type}
       >
         {type}
       </div>
-      <div
-        style={{
-          position: 'relative',
-          height: TRACK_HEIGHT,
-          width: trackWidth - offsetLeft,
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        {features.map((feature, idx) => (
-          <FeatureBar
-            key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
-            feature={feature}
-            model={model}
-            offsetLeft={0}
-          />
-        ))}
-        <HoverMarker model={model} offsetLeft={0} />
-      </div>
+    </Tooltip>
+  )
+})
+
+const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
+  features,
+  model,
+  sequenceLength,
+}: {
+  features: UniProtFeature[]
+  model: JBrowsePluginProteinStructureModel
+  sequenceLength: number
+}) {
+  const trackWidth = sequenceLength * CHAR_WIDTH
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        height: TRACK_HEIGHT,
+        width: trackWidth,
+        backgroundColor: '#f5f5f5',
+        marginBottom: TRACK_GAP,
+      }}
+    >
+      {features.map((feature, idx) => (
+        <FeatureBar
+          key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
+          feature={feature}
+          model={model}
+          offsetLeft={0}
+        />
+      ))}
+      <HoverMarker model={model} offsetLeft={0} />
     </div>
   )
 })
 
+interface FeatureTrackData {
+  featureTypes: string[]
+  groupedFeatures: FeaturesByType
+  sequenceLength: number
+}
+
+export function useProteinFeatureTrackData(
+  model: JBrowsePluginProteinStructureModel,
+  uniprotId: string | undefined,
+): {
+  data: FeatureTrackData | undefined
+  isLoading: boolean
+  error: unknown
+} {
+  const { features, isLoading, error } = useUniProtFeatures(uniprotId)
+  const { pairwiseAlignment } = model
+
+  if (!uniprotId || isLoading || error || !features || !pairwiseAlignment) {
+    return { data: undefined, isLoading, error }
+  }
+
+  const sequenceLength = pairwiseAlignment.alns[0].seq.replace(/-/g, '').length
+  const groupedFeatures = groupFeaturesByType(features)
+  const featureTypes = Object.keys(groupedFeatures)
+
+  return {
+    data: { featureTypes, groupedFeatures, sequenceLength },
+    isLoading: false,
+    error: undefined,
+  }
+}
+
+export const ProteinFeatureTrackLabels = observer(
+  function ProteinFeatureTrackLabels({
+    data,
+    labelWidth,
+  }: {
+    data: FeatureTrackData
+    labelWidth: number
+  }) {
+    return (
+      <>
+        {data.featureTypes.map(type => (
+          <FeatureTypeLabel key={type} type={type} labelWidth={labelWidth} />
+        ))}
+      </>
+    )
+  },
+)
+
+export const ProteinFeatureTrackContent = observer(
+  function ProteinFeatureTrackContent({
+    data,
+    model,
+  }: {
+    data: FeatureTrackData
+    model: JBrowsePluginProteinStructureModel
+  }) {
+    return (
+      <>
+        {data.featureTypes.map(type => (
+          <FeatureTypeTrackContent
+            key={type}
+            features={data.groupedFeatures[type]!}
+            model={model}
+            sequenceLength={data.sequenceLength}
+          />
+        ))}
+      </>
+    )
+  },
+)
+
 const ProteinFeatureTrack = observer(function ProteinFeatureTrack({
   model,
   uniprotId,
+  labelWidth,
 }: {
   model: JBrowsePluginProteinStructureModel
   uniprotId: string | undefined
+  labelWidth: number
 }) {
-  const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const { pairwiseAlignment } = model
+  const { data, isLoading, error } = useProteinFeatureTrackData(model, uniprotId)
 
   if (!uniprotId) {
     return null
@@ -314,35 +394,22 @@ const ProteinFeatureTrack = observer(function ProteinFeatureTrack({
     )
   }
 
-  if (!features || features.length === 0) {
+  if (!data || data.featureTypes.length === 0) {
     return null
   }
-
-  if (!pairwiseAlignment) {
-    return null
-  }
-
-  const sequenceLength = pairwiseAlignment.alns[0].seq.replace(/-/g, '').length
-  const groupedFeatures = groupFeaturesByType(features)
-  // Match the "GENOME " label width (7 chars * 6px)
-  const offsetLeft = 42
 
   return (
-    <div style={{ marginTop: 8 }}>
+    <div style={{ marginTop: 8, marginLeft: 8 }}>
       <Typography variant="body2" style={{ fontSize: 10, marginBottom: 4 }}>
         UniProt Features (click to highlight on structure)
       </Typography>
-      <div style={{ minWidth: sequenceLength * CHAR_WIDTH + offsetLeft }}>
-        {Object.entries(groupedFeatures).map(([type, typeFeatures]) => (
-          <FeatureTypeTrack
-            key={type}
-            type={type}
-            features={typeFeatures}
-            model={model}
-            sequenceLength={sequenceLength}
-            offsetLeft={offsetLeft}
-          />
-        ))}
+      <div style={{ display: 'flex' }}>
+        <div style={{ flexShrink: 0, width: labelWidth }}>
+          <ProteinFeatureTrackLabels data={data} labelWidth={labelWidth} />
+        </div>
+        <div style={{ overflow: 'auto', flex: 1 }}>
+          <ProteinFeatureTrackContent data={data} model={model} />
+        </div>
       </div>
     </div>
   )

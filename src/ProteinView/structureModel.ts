@@ -528,8 +528,6 @@ const Structure = types
               self.setAlignmentStatus('')
 
               // @ts-expect-error
-              getParent(self, 2).setShowHighlight(true)
-              // @ts-expect-error
               getParent(self, 2).setShowAlignment(true)
             }
           } catch (e) {
