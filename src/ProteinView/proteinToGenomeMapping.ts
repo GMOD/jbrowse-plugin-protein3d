@@ -1,4 +1,5 @@
 import { getSession } from '@jbrowse/core/util'
+import { getCodonRange } from 'g2p_mapper'
 
 import type { JBrowsePluginProteinStructureModel } from './model'
 
@@ -30,15 +31,7 @@ export function proteinToGenomeMapping({
     return undefined
   }
 
-  const genomePos = p2g[transcriptPos]
-  if (genomePos === undefined) {
-    return undefined
-  }
-
-  // Calculate codon range (3 bases per amino acid)
-  const start = genomePos
-  const end = start + 3 * strand
-  return [Math.min(start, end), Math.max(start, end)] as const
+  return getCodonRange(p2g, transcriptPos, strand)
 }
 
 export async function clickProteinToGenome({

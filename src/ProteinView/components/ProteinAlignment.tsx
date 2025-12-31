@@ -8,20 +8,25 @@ import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import SplitString from './SplitString'
 
-const AutoScroller = observer(function AutoScroller({
+const ProteinAlignment = observer(function ProteinAlignment({
   model,
-  containerRef,
 }: {
   model: JBrowsePluginProteinStructureModel
-  containerRef: React.RefObject<HTMLDivElement | null>
 }) {
+  const { pairwiseAlignment, showHighlight } = model
+  const containerRef = useRef<HTMLDivElement>(null)
+
   useEffect(
     () =>
       reaction(
         () => model.alignmentHoverPos,
         alignmentHoverPos => {
           const container = containerRef.current
-          if (model.isMouseInAlignment || alignmentHoverPos === undefined || !container) {
+          if (
+            model.isMouseInAlignment ||
+            alignmentHoverPos === undefined ||
+            !container
+          ) {
             return
           }
           const charWidth = 6
@@ -35,25 +40,6 @@ const AutoScroller = observer(function AutoScroller({
     [model, containerRef],
   )
 
-  return null
-})
-
-const ProteinAlignment = observer(function ProteinAlignment({
-  model,
-}: {
-  model: JBrowsePluginProteinStructureModel
-}) {
-  const { pairwiseAlignment, showHighlight } = model
-
-  const containerRef = useRef<HTMLDivElement>(null)
-
-  if (!pairwiseAlignment) {
-    return <div>No pairwiseAlignment</div>
-  }
-  const a0 = pairwiseAlignment.alns[0].seq
-  const a1 = pairwiseAlignment.alns[1].seq
-  const con = pairwiseAlignment.consensus
-
   const handleContainerMouseEnter = useCallback(() => {
     model.setIsMouseInAlignment(true)
   }, [model])
@@ -64,9 +50,16 @@ const ProteinAlignment = observer(function ProteinAlignment({
     model.clearHoverGenomeHighlights()
   }, [model])
 
+  if (!pairwiseAlignment) {
+    return <div>No pairwiseAlignment</div>
+  }
+
+  const a0 = pairwiseAlignment.alns[0].seq
+  const a1 = pairwiseAlignment.alns[1].seq
+  const con = pairwiseAlignment.consensus
+
   return (
     <div>
-      <AutoScroller model={model} containerRef={containerRef} />
       <ProteinAlignmentHelpButton model={model} />
 
       <Typography>

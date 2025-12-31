@@ -22,6 +22,7 @@ import {
 } from '../mappings'
 import clearSelection from './clearSelection'
 import highlightResidue from './highlightResidue'
+import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
   hoverProteinToGenome,
@@ -213,37 +214,6 @@ const Structure = types
       self.isMouseInAlignment = val
     },
   }))
-  .actions(self => ({
-    /**
-     * #action
-     */
-    hoverAlignmentPosition(alignmentPos: number) {
-      const structureSeqPos =
-        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      self.setHoveredPosition({ structureSeqPos })
-      if (structureSeqPos !== undefined) {
-        hoverProteinToGenome({
-          model: self as JBrowsePluginProteinStructureModel,
-          structureSeqPos,
-        })
-      }
-    },
-    /**
-     * #action
-     */
-    clickAlignmentPosition(alignmentPos: number) {
-      const structureSeqPos =
-        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      if (structureSeqPos !== undefined) {
-        clickProteinToGenome({
-          model: self as JBrowsePluginProteinStructureModel,
-          structureSeqPos,
-        }).catch((e: unknown) => {
-          console.error(e)
-        })
-      }
-    },
-  }))
   .views(self => ({
     /**
      * #getter
@@ -307,7 +277,16 @@ const Structure = types
      */
     get hoverString() {
       const r = self.hoverPosition
-      return r === undefined ? '' : toStr(r)
+      if (r === undefined) {
+        return ''
+      }
+      const base = toStr(r)
+      const structureLetter = this.hoverStructureLetter
+      const genomeLetter = this.hoverGenomeLetter
+      if (genomeLetter && structureLetter && genomeLetter !== structureLetter) {
+        return `${base}, Genome: ${genomeLetter}`
+      }
+      return base
     },
     /**
      * #getter
@@ -336,19 +315,47 @@ const Structure = types
 
     /**
      * #getter
+     * Returns the single-letter amino acid code from the structure at hover position
      */
-    get alignmentGapSet() {
+    get hoverStructureLetter() {
+      const code = self.hoverPosition?.code
+      return code
+        ? proteinAbbreviationMapping[code]?.singleLetterCode
+        : undefined
+    },
+
+    /**
+     * #getter
+     * Returns the single-letter amino acid code from the genome/transcript at hover position
+     */
+    get hoverGenomeLetter() {
+      const structurePos = this.structureSeqHoverPos
+      if (structurePos === undefined) {
+        return undefined
+      }
+      const transcriptPos =
+        this.structureSeqToTranscriptSeqPosition?.[structurePos]
+      if (transcriptPos === undefined) {
+        return undefined
+      }
+      return self.userProvidedTranscriptSequence[transcriptPos]
+    },
+
+    /**
+     * #getter
+     */
+    get alignmentMatchSet() {
       const con = self.pairwiseAlignment?.consensus
       if (!con) {
         return undefined
       }
-      const gapSet = new Set<number>()
+      const matchSet = new Set<number>()
       for (let i = 0; i < con.length; i++) {
-        if (con[i] === '|') {
-          gapSet.add(i)
+        if (con[i] === '|' || con[i] === ':') {
+          matchSet.add(i)
         }
       }
-      return gapSet
+      return matchSet
     },
 
     /**
@@ -375,6 +382,39 @@ const Structure = types
     get molstarPluginContext(): PluginContext | undefined {
       // @ts-expect-error
       return getParent(self, 2).molstarPluginContext
+    },
+  }))
+  .actions(self => ({
+    /**
+     * #action
+     */
+    hoverAlignmentPosition(alignmentPos: number) {
+      const structureSeqPos =
+        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+      self.setHoveredPosition({
+        structureSeqPos,
+      })
+      if (structureSeqPos !== undefined) {
+        hoverProteinToGenome({
+          model: self as JBrowsePluginProteinStructureModel,
+          structureSeqPos,
+        })
+      }
+    },
+    /**
+     * #action
+     */
+    clickAlignmentPosition(alignmentPos: number) {
+      const structureSeqPos =
+        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+      if (structureSeqPos !== undefined) {
+        clickProteinToGenome({
+          model: self as JBrowsePluginProteinStructureModel,
+          structureSeqPos,
+        }).catch((e: unknown) => {
+          console.error(e)
+        })
+      }
     },
   }))
   .actions(self => ({

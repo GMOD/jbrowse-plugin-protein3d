@@ -2,25 +2,17 @@ import React, { useMemo, useRef } from 'react'
 
 import { observer } from 'mobx-react'
 
+import { throttle } from './throttle'
+
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const CHAR_WIDTH = 6
 
-function throttle<T extends (...args: Parameters<T>) => void>(
-  func: T,
-  limit: number,
-): T {
-  let lastCall = 0
-  return ((...args: Parameters<T>) => {
-    const now = Date.now()
-    if (now - lastCall >= limit) {
-      lastCall = now
-      func(...args)
-    }
-  }) as T
-}
-
-const CharacterSpans = observer(function CharacterSpans({ str }: { str: string }) {
+const CharacterSpans = observer(function CharacterSpans({
+  str,
+}: {
+  str: string
+}) {
   return str.split('').map((char, i) => (
     <span
       key={i}
@@ -35,29 +27,28 @@ const CharacterSpans = observer(function CharacterSpans({ str }: { str: string }
   ))
 })
 
-const GapOverlays = observer(function GapOverlays({
+const MatchOverlays = observer(function MatchOverlays({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { showHighlight, alignmentGapSet } = model
-  if (!showHighlight || !alignmentGapSet) {
-    return null
-  }
-  return [...alignmentGapSet].map(i => (
-    <span
-      key={i}
-      style={{
-        position: 'absolute',
-        left: i * CHAR_WIDTH,
-        top: 0,
-        width: CHAR_WIDTH,
-        height: '100%',
-        background: '#33ff19',
-        pointerEvents: 'none',
-      }}
-    />
-  ))
+  const { showHighlight, alignmentMatchSet } = model
+  return !showHighlight || !alignmentMatchSet
+    ? null
+    : [...alignmentMatchSet].map(i => (
+        <span
+          key={i}
+          style={{
+            position: 'absolute',
+            left: i * CHAR_WIDTH,
+            top: 0,
+            width: CHAR_WIDTH,
+            height: '100%',
+            background: '#33ff19a0',
+            pointerEvents: 'none',
+          }}
+        />
+      ))
 })
 
 const HoverHighlight = observer(function HoverHighlight({
@@ -73,10 +64,7 @@ const HoverHighlight = observer(function HoverHighlight({
     alignmentHoverPos >= 0 &&
     alignmentHoverPos < strLength
 
-  if (!showHoverHighlight) {
-    return null
-  }
-  return (
+  return !showHoverHighlight ? null : (
     <span
       style={{
         position: 'absolute',
@@ -114,7 +102,7 @@ const SplitString = observer(function SplitString({
           model.hoverAlignmentPosition(index)
         }
       }, 16),
-    [str.length, model],
+    [str, model],
   )
 
   const handleClick = useMemo(
@@ -145,8 +133,8 @@ const SplitString = observer(function SplitString({
       onMouseMove={handleMouseMove}
       onClick={handleClick}
     >
+      <MatchOverlays model={model} />
       <CharacterSpans str={str} />
-      <GapOverlays model={model} />
       <HoverHighlight model={model} strLength={str.length} />
     </span>
   )

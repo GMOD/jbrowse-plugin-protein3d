@@ -9,11 +9,11 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  return model.structures.map((s, id) => {
-    const { clickString, hoverString } = s
-
+  const { structures } = model
+  return structures.map((structure, idx) => {
+    const { clickString, hoverString } = structure
     return (
-      <span key={id}>
+      <span key={`${clickString}-${hoverString}-${idx}`}>
         {[
           clickString ? `Click: ${clickString}` : '',
           hoverString ? `Hover: ${hoverString}` : '',
