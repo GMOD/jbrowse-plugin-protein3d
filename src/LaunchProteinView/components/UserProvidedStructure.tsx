@@ -234,7 +234,10 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
       </DialogContent>
       <DialogActions>
         {protein?.seq.replaceAll('*', '') !== structureSequence ? (
-          <Typography variant="body2" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+          <Typography
+            variant="body2"
+            sx={{ mr: 2, display: 'flex', alignItems: 'center' }}
+          >
             Transcript and structure sequences differ, will run{' '}
             {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ??
               alignmentAlgorithm}{' '}

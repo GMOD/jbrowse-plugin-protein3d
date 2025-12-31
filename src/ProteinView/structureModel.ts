@@ -218,6 +218,22 @@ const Structure = types
   .views(self => ({
     /**
      * #getter
+     * Extracts UniProt ID from AlphaFold URL if available
+     */
+    get uniprotId() {
+      const { url } = self
+      if (!url) {
+        return undefined
+      }
+      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v4.cif
+      const match = /AF-([A-Z0-9]+)-F\d+/.exec(url)
+      if (match) {
+        return match[1]
+      }
+      return undefined
+    },
+    /**
+     * #getter
      */
     get structureSeqToTranscriptSeqPosition() {
       return self.pairwiseAlignment
@@ -408,6 +424,14 @@ const Structure = types
     get molstarPluginContext(): PluginContext | undefined {
       // @ts-expect-error
       return getParent(self, 2).molstarPluginContext
+    },
+    /**
+     * #getter
+     * Returns the Molstar structure object for the current structure
+     */
+    get molstarStructure() {
+      return this.molstarPluginContext?.managers.structure.hierarchy.current
+        .structures[0]?.cell.obj?.data
     },
   }))
   .actions(self => ({

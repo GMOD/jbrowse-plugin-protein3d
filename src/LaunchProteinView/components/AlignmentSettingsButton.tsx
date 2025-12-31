@@ -80,8 +80,8 @@ export default function AlignmentSettingsButton({
                 color="text.secondary"
                 sx={{ ml: 4, mt: -1, mb: 1 }}
               >
-                End-to-end alignment. Runs instantly in browser. Recommended
-                for most use cases.
+                End-to-end alignment. Runs instantly in browser. Recommended for
+                most use cases.
               </Typography>
 
               <FormControlLabel

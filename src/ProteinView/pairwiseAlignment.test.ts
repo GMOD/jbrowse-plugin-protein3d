@@ -2,8 +2,8 @@ import { expect, test } from 'vitest'
 
 import {
   needlemanWunsch,
-  smithWaterman,
   runLocalAlignment,
+  smithWaterman,
 } from './pairwiseAlignment'
 
 test('needlemanWunsch - identical sequences', () => {
@@ -54,7 +54,11 @@ test('runLocalAlignment - returns PairwiseAlignment format', () => {
 })
 
 test('runLocalAlignment - consensus marks gaps correctly', () => {
-  const result = runLocalAlignment('MKAYLSMFG', 'MKAAYLSMFG', 'needleman_wunsch')
+  const result = runLocalAlignment(
+    'MKAYLSMFG',
+    'MKAAYLSMFG',
+    'needleman_wunsch',
+  )
   expect(result.consensus).not.toContain('|||||||||')
   expect(result.consensus).toContain(' ')
 })

@@ -6,6 +6,7 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
+import ProteinFeatureTrack from './ProteinFeatureTrack'
 import SplitString from './SplitString'
 
 const ProteinAlignment = observer(function ProteinAlignment({
@@ -98,6 +99,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           <SplitString model={model} str={a1} />
         </div>
       </div>
+      <ProteinFeatureTrack model={model} uniprotId={model.uniprotId} />
     </div>
   )
 })

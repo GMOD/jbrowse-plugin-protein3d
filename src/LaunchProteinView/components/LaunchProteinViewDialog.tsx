@@ -4,7 +4,6 @@ import { Dialog } from '@jbrowse/core/ui'
 import { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 
-import AlignmentSettingsButton from './AlignmentSettingsButton'
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
 import HelpButton from './HelpButton'
 import TabPanel from './TabPanel'
@@ -37,11 +36,7 @@ export default function LaunchProteinViewDialog({
       title="Launch protein view"
       titleNode={
         <>
-          Launch protein view <HelpButton />{' '}
-          <AlignmentSettingsButton
-            value={alignmentAlgorithm}
-            onChange={setAlignmentAlgorithm}
-          />
+          Launch protein view <HelpButton />
         </>
       }
       open

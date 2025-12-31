@@ -3,8 +3,8 @@ import React from 'react'
 import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button, Typography } from '@mui/material'
 
-import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import AlignmentSettingsButton from './AlignmentSettingsButton'
+import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import {
   ALIGNMENT_ALGORITHM_LABELS,
   AlignmentAlgorithm,
@@ -102,7 +102,10 @@ export default function ProteinViewActions({
   return (
     <>
       {sequencesMatch === false ? (
-        <Typography variant="body2" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+        <Typography
+          variant="body2"
+          sx={{ mr: 2, display: 'flex', alignItems: 'center' }}
+        >
           Transcript and structure sequences differ, will run{' '}
           {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ?? alignmentAlgorithm}{' '}
           alignment
