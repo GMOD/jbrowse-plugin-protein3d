@@ -108,6 +108,10 @@ function stateModelFactory() {
        * #volatile
        */
       showManualAlignmentDialog: false,
+      /**
+       * #volatile
+       */
+      showAddStructureDialog: false,
     }))
 
     .actions(self => ({
@@ -168,6 +172,12 @@ function stateModelFactory() {
        */
       setShowManualAlignmentDialog(val: boolean) {
         self.showManualAlignmentDialog = val
+      },
+      /**
+       * #action
+       */
+      setShowAddStructureDialog(val: boolean) {
+        self.showAddStructureDialog = val
       },
       /**
        * #action
@@ -306,6 +316,12 @@ function stateModelFactory() {
             label: 'Import manual alignment...',
             onClick: () => {
               self.setShowManualAlignmentDialog(true)
+            },
+          },
+          {
+            label: 'Add structure...',
+            onClick: () => {
+              self.setShowAddStructureDialog(true)
             },
           },
         ]
