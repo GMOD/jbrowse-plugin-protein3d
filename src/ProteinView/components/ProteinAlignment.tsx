@@ -98,8 +98,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
           </Tooltip>
           <SplitString model={model} str={a1} />
         </div>
+        <ProteinFeatureTrack model={model} uniprotId={model.uniprotId} />
       </div>
-      <ProteinFeatureTrack model={model} uniprotId={model.uniprotId} />
     </div>
   )
 })

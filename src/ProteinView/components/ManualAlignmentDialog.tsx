@@ -9,8 +9,8 @@ import {
   TextField,
   Typography,
 } from '@mui/material'
-import { observer } from 'mobx-react'
 import { parsePairwise } from 'clustal-js'
+import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinViewModel } from '../model'
 
