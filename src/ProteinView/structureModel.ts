@@ -123,6 +123,10 @@ const Structure = types
      * #volatile
      */
     structureSequences: undefined as string[] | undefined,
+    /**
+     * #volatile
+     */
+    isMouseInAlignment: false,
   }))
   .actions(self => ({
     /**
@@ -201,6 +205,12 @@ const Structure = types
      */
     setAlignmentStatus(str: string) {
       self.pairwiseAlignmentStatus = str
+    },
+    /**
+     * #action
+     */
+    setIsMouseInAlignment(val: boolean) {
+      self.isMouseInAlignment = val
     },
   }))
   .actions(self => ({

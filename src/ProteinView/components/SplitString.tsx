@@ -1,10 +1,24 @@
-import React, { useCallback, useRef } from 'react'
+import React, { useMemo, useRef } from 'react'
 
 import { observer } from 'mobx-react'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const CHAR_WIDTH = 6
+
+function throttle<T extends (...args: Parameters<T>) => void>(
+  func: T,
+  limit: number,
+): T {
+  let lastCall = 0
+  return ((...args: Parameters<T>) => {
+    const now = Date.now()
+    if (now - lastCall >= limit) {
+      lastCall = now
+      func(...args)
+    }
+  }) as T
+}
 
 const CharacterSpans = observer(function CharacterSpans({ str }: { str: string }) {
   return str.split('').map((char, i) => (
@@ -86,34 +100,37 @@ const SplitString = observer(function SplitString({
 }) {
   const containerRef = useRef<HTMLSpanElement>(null)
 
-  const getCharIndexFromEvent = useCallback((e: React.MouseEvent) => {
-    const container = containerRef.current
-    if (!container) {
-      return -1
-    }
-    const rect = container.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    return Math.floor(x / CHAR_WIDTH)
-  }, [])
-
-  const handleMouseMove = useCallback(
-    (e: React.MouseEvent) => {
-      const index = getCharIndexFromEvent(e)
-      if (index >= 0 && index < str.length) {
-        model.hoverAlignmentPosition(index)
-      }
-    },
-    [getCharIndexFromEvent, str.length, model],
+  const handleMouseMove = useMemo(
+    () =>
+      throttle((e: React.MouseEvent) => {
+        const container = containerRef.current
+        if (!container) {
+          return
+        }
+        const rect = container.getBoundingClientRect()
+        const x = e.clientX - rect.left
+        const index = Math.floor(x / CHAR_WIDTH)
+        if (index >= 0 && index < str.length) {
+          model.hoverAlignmentPosition(index)
+        }
+      }, 16),
+    [str.length, model],
   )
 
-  const handleClick = useCallback(
-    (e: React.MouseEvent) => {
-      const index = getCharIndexFromEvent(e)
+  const handleClick = useMemo(
+    () => (e: React.MouseEvent) => {
+      const container = containerRef.current
+      if (!container) {
+        return
+      }
+      const rect = container.getBoundingClientRect()
+      const x = e.clientX - rect.left
+      const index = Math.floor(x / CHAR_WIDTH)
       if (index >= 0 && index < str.length) {
         model.clickAlignmentPosition(index)
       }
     },
-    [getCharIndexFromEvent, str.length, model],
+    [str.length, model],
   )
 
   return (

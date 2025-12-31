@@ -18,6 +18,7 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
           clickString ? `Click: ${clickString}` : '',
           hoverString ? `Hover: ${hoverString}` : '',
         ].join(' ')}
+        &nbsp;
       </span>
     )
   })

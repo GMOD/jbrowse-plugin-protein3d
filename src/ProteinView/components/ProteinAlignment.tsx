@@ -1,39 +1,51 @@
 import React, { useCallback, useEffect, useRef } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
+import { reaction } from 'mobx'
 import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import SplitString from './SplitString'
 
+const AutoScroller = observer(function AutoScroller({
+  model,
+  containerRef,
+}: {
+  model: JBrowsePluginProteinStructureModel
+  containerRef: React.RefObject<HTMLDivElement | null>
+}) {
+  useEffect(
+    () =>
+      reaction(
+        () => model.alignmentHoverPos,
+        alignmentHoverPos => {
+          const container = containerRef.current
+          if (model.isMouseInAlignment || alignmentHoverPos === undefined || !container) {
+            return
+          }
+          const charWidth = 6
+          const scrollPosition = alignmentHoverPos * charWidth
+          container.scrollTo({
+            left: scrollPosition - container.clientWidth / 2,
+            behavior: 'smooth',
+          })
+        },
+      ),
+    [model, containerRef],
+  )
+
+  return null
+})
+
 const ProteinAlignment = observer(function ProteinAlignment({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { pairwiseAlignment, alignmentHoverPos, showHighlight } = model
+  const { pairwiseAlignment, showHighlight } = model
 
   const containerRef = useRef<HTMLDivElement>(null)
-  const isMouseInContainer = useRef(false)
-
-  useEffect(() => {
-    const shouldAutoScroll =
-      !isMouseInContainer.current &&
-      alignmentHoverPos !== undefined &&
-      containerRef.current
-
-    if (shouldAutoScroll) {
-      const charWidth = 6
-      const scrollPosition = alignmentHoverPos * charWidth
-      const containerWidth = containerRef.current!.clientWidth
-
-      containerRef.current!.scrollTo({
-        left: scrollPosition - containerWidth / 2,
-        behavior: 'smooth',
-      })
-    }
-  }, [alignmentHoverPos])
 
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
@@ -43,17 +55,18 @@ const ProteinAlignment = observer(function ProteinAlignment({
   const con = pairwiseAlignment.consensus
 
   const handleContainerMouseEnter = useCallback(() => {
-    isMouseInContainer.current = true
-  }, [])
+    model.setIsMouseInAlignment(true)
+  }, [model])
 
   const handleContainerMouseLeave = useCallback(() => {
-    isMouseInContainer.current = false
+    model.setIsMouseInAlignment(false)
     model.setHoveredPosition(undefined)
     model.clearHoverGenomeHighlights()
   }, [model])
 
   return (
     <div>
+      <AutoScroller model={model} containerRef={containerRef} />
       <ProteinAlignmentHelpButton model={model} />
 
       <Typography>
