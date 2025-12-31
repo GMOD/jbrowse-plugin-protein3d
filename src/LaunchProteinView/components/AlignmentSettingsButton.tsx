@@ -63,7 +63,44 @@ export default function AlignmentSettingsButton({
           </Typography>
 
           <FormControl component="fieldset">
-            <FormLabel component="legend">Algorithm</FormLabel>
+            <FormLabel component="legend">Local (in-browser)</FormLabel>
+            <RadioGroup
+              value={tempAlgorithm}
+              onChange={event => {
+                setTempAlgorithm(event.target.value as AlignmentAlgorithm)
+              }}
+            >
+              <FormControlLabel
+                value={ALIGNMENT_ALGORITHMS.NEEDLEMAN_WUNSCH}
+                control={<Radio />}
+                label="Needleman-Wunsch (global alignment)"
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 4, mt: -1, mb: 1 }}
+              >
+                End-to-end alignment. Runs instantly in browser. Recommended
+                for most use cases.
+              </Typography>
+
+              <FormControlLabel
+                value={ALIGNMENT_ALGORITHMS.SMITH_WATERMAN}
+                control={<Radio />}
+                label="Smith-Waterman (local alignment)"
+              />
+              <Typography
+                variant="caption"
+                color="text.secondary"
+                sx={{ ml: 4, mt: -1, mb: 1 }}
+              >
+                Finds best matching region. Runs instantly in browser.
+              </Typography>
+            </RadioGroup>
+
+            <FormLabel component="legend" sx={{ mt: 2 }}>
+              Remote (EBI EMBOSS API)
+            </FormLabel>
             <RadioGroup
               value={tempAlgorithm}
               onChange={event => {
@@ -73,43 +110,41 @@ export default function AlignmentSettingsButton({
               <FormControlLabel
                 value={ALIGNMENT_ALGORITHMS.MATCHER}
                 control={<Radio />}
-                label="MATCHER (local alignment, default)"
+                label="EMBOSS MATCHER (local alignment)"
               />
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ ml: 4, mt: -1, mb: 1 }}
               >
-                Best for sequences with different lengths or partial matches.
-                Recommended for most use cases.
+                Finds multiple non-overlapping local alignments. Requires
+                network.
               </Typography>
 
               <FormControlLabel
                 value={ALIGNMENT_ALGORITHMS.WATER}
                 control={<Radio />}
-                label="WATER (local alignment, Smith-Waterman)"
+                label="EMBOSS WATER (local alignment)"
               />
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ ml: 4, mt: -1, mb: 1 }}
               >
-                Classic local alignment algorithm, finds best matching region
-                regardless of length differences.
+                Classic Smith-Waterman via EBI. Requires network.
               </Typography>
 
               <FormControlLabel
                 value={ALIGNMENT_ALGORITHMS.NEEDLE}
                 control={<Radio />}
-                label="NEEDLE (global alignment, Needleman-Wunsch)"
+                label="EMBOSS NEEDLE (global alignment)"
               />
               <Typography
                 variant="caption"
                 color="text.secondary"
                 sx={{ ml: 4, mt: -1, mb: 1 }}
               >
-                End-to-end alignment for sequences of similar length. Use when
-                sequences should align completely.
+                Needleman-Wunsch via EBI. Requires network.
               </Typography>
             </RadioGroup>
           </FormControl>

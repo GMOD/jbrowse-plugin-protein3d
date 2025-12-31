@@ -64,6 +64,7 @@ export default function LaunchProteinViewDialog({
           feature={feature}
           handleClose={handleClose}
           alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
@@ -72,6 +73,7 @@ export default function LaunchProteinViewDialog({
           feature={feature}
           handleClose={handleClose}
           alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
         />
       </TabPanel>
     </Dialog>

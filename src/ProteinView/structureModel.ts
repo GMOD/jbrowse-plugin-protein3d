@@ -13,6 +13,7 @@ import {
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
+import { runLocalAlignment } from './pairwiseAlignment'
 import {
   PairwiseAlignment,
   genomeToTranscriptSeqMapping,
@@ -280,13 +281,31 @@ const Structure = types
       if (r === undefined) {
         return ''
       }
-      const base = toStr(r)
       const structureLetter = this.hoverStructureLetter
       const genomeLetter = this.hoverGenomeLetter
-      if (genomeLetter && structureLetter && genomeLetter !== structureLetter) {
-        return `${base}, Genome: ${genomeLetter}`
+      const parts = []
+
+      // Position (1-based)
+      if (r.structureSeqPos !== undefined) {
+        parts.push(`Position: ${r.structureSeqPos + 1}`)
       }
-      return base
+
+      // Structure letter
+      if (structureLetter) {
+        parts.push(`Structure: ${structureLetter}`)
+      }
+
+      // Genome letter (only if different from structure)
+      if (genomeLetter && structureLetter && genomeLetter !== structureLetter) {
+        parts.push(`Genome: ${genomeLetter}`)
+      }
+
+      // Chain (if available from Molstar)
+      if (r.chain) {
+        parts.push(`Chain: ${r.chain}`)
+      }
+
+      return parts.join(', ')
     },
     /**
      * #getter
@@ -318,10 +337,17 @@ const Structure = types
      * Returns the single-letter amino acid code from the structure at hover position
      */
     get hoverStructureLetter() {
+      // Use 3-letter code from Molstar if available (when hovering 3D structure)
       const code = self.hoverPosition?.code
-      return code
-        ? proteinAbbreviationMapping[code]?.singleLetterCode
-        : undefined
+      if (code) {
+        return proteinAbbreviationMapping[code]?.singleLetterCode
+      }
+      // Fall back to structure sequence (when hovering alignment)
+      const structurePos = this.structureSeqHoverPos
+      if (structurePos !== undefined && self.structureSequences?.[0]) {
+        return self.structureSequences[0][structurePos]
+      }
+      return undefined
     },
 
     /**
@@ -451,6 +477,23 @@ const Structure = types
                   { id: 'seq2', seq: r2 },
                 ],
               })
+            } else if (
+              alignmentAlgorithm === 'needleman_wunsch' ||
+              alignmentAlgorithm === 'smith_waterman'
+            ) {
+              self.setAlignmentStatus('Running local alignment...')
+              const pairwiseAlignment = runLocalAlignment(
+                r1,
+                r2,
+                alignmentAlgorithm,
+              )
+              self.setAlignment(pairwiseAlignment)
+              self.setAlignmentStatus('')
+
+              // @ts-expect-error
+              getParent(self, 2).setShowHighlight(true)
+              // @ts-expect-error
+              getParent(self, 2).setShowAlignment(true)
             } else {
               const pairwiseAlignment = await launchPairwiseAlignment({
                 seq1: r1,
@@ -462,7 +505,6 @@ const Structure = types
               })
               self.setAlignment(pairwiseAlignment.pairwiseAlignment)
 
-              // showHighlight when we are
               // @ts-expect-error
               getParent(self, 2).setShowHighlight(true)
               // @ts-expect-error

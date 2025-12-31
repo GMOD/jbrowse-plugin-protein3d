@@ -1,10 +1,14 @@
 import React from 'react'
 
 import { isSessionWithAddTracks } from '@jbrowse/core/util'
-import { Button } from '@mui/material'
+import { Button, Typography } from '@mui/material'
 
 import { launchProteinAnnotationView } from './launchProteinAnnotationView'
-import { AlignmentAlgorithm } from '../../ProteinView/types'
+import AlignmentSettingsButton from './AlignmentSettingsButton'
+import {
+  ALIGNMENT_ALGORITHM_LABELS,
+  AlignmentAlgorithm,
+} from '../../ProteinView/types'
 import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
@@ -21,6 +25,8 @@ interface ProteinViewActionsProps {
   view: LinearGenomeViewModel
   session: AbstractSessionModel
   alignmentAlgorithm: AlignmentAlgorithm
+  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
+  sequencesMatch?: boolean
 }
 
 /**
@@ -37,6 +43,8 @@ export default function ProteinViewActions({
   view,
   session,
   alignmentAlgorithm,
+  onAlignmentAlgorithmChange,
+  sequencesMatch,
 }: ProteinViewActionsProps) {
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
@@ -93,6 +101,17 @@ export default function ProteinViewActions({
 
   return (
     <>
+      {sequencesMatch === false ? (
+        <Typography variant="body2" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+          Transcript and structure sequences differ, will run{' '}
+          {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ?? alignmentAlgorithm}{' '}
+          alignment
+          <AlignmentSettingsButton
+            value={alignmentAlgorithm}
+            onChange={onAlignmentAlgorithmChange}
+          />
+        </Typography>
+      ) : null}
       <Button
         variant="contained"
         color="secondary"

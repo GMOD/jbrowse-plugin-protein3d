@@ -48,11 +48,13 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   model,
   handleClose,
   alignmentAlgorithm,
+  onAlignmentAlgorithmChange,
 }: {
   feature: Feature
   model: AbstractTrackModel
   handleClose: () => void
   alignmentAlgorithm: AlignmentAlgorithm
+  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
@@ -135,13 +137,19 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
     if (isoformSequences !== undefined && userSelection === undefined) {
-      const matchingTranscript =
-        options.find(
-          f =>
-            isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
-            structureSequence,
-        ) ?? options.find(f => !!isoformSequences[f.id()])
-      setUserSelection(matchingTranscript?.id())
+      const exactMatch = options.find(
+        f =>
+          isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
+          structureSequence,
+      )
+      const longestWithData = options
+        .filter(f => !!isoformSequences[f.id()])
+        .sort(
+          (a, b) =>
+            isoformSequences[b.id()]!.seq.length -
+            isoformSequences[a.id()]!.seq.length,
+        )[0]
+      setUserSelection((exactMatch ?? longestWithData)?.id())
     }
   }, [options, structureSequence, isoformSequences, userSelection])
 
@@ -213,6 +221,11 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           view={view}
           session={session}
           alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
+          sequencesMatch={
+            userSelectedProteinSequence?.seq.replaceAll('*', '') ===
+            structureSequence
+          }
         />
       </DialogActions>
     </>

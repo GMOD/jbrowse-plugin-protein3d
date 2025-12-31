@@ -19,13 +19,19 @@ export default function useTranscriptSelection({
       structureSequence !== undefined &&
       userSelection === undefined
     ) {
-      const match =
-        options.find(
-          f =>
-            isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
-            structureSequence,
-        ) ?? options.find(f => !!isoformSequences[f.id()])
-      setUserSelection(match?.id())
+      const exactMatch = options.find(
+        f =>
+          isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
+          structureSequence,
+      )
+      const longestWithData = options
+        .filter(f => !!isoformSequences[f.id()])
+        .sort(
+          (a, b) =>
+            isoformSequences[b.id()]!.seq.length -
+            isoformSequences[a.id()]!.seq.length,
+        )[0]
+      setUserSelection((exactMatch ?? longestWithData)?.id())
     }
   }, [options, structureSequence, isoformSequences, userSelection])
 

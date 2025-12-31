@@ -36,6 +36,11 @@ export default function TranscriptSelector({
     }
   }
 
+  matches.sort(
+    (a, b) =>
+      isoformSequences[b.id()]!.seq.length -
+      isoformSequences[a.id()]!.seq.length,
+  )
   nonMatches.sort(
     (a, b) =>
       isoformSequences[b.id()]!.seq.length -

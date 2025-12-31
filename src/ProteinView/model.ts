@@ -9,11 +9,7 @@ import { addStructureFromURL } from './addStructureFromURL'
 import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
-import {
-  ALIGNMENT_ALGORITHMS,
-  AlignmentAlgorithm,
-  DEFAULT_ALIGNMENT_ALGORITHM,
-} from './types'
+import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
 import type { Instance } from 'mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -75,11 +71,7 @@ function stateModelFactory() {
          * #property
          */
         alignmentAlgorithm: types.optional(
-          types.enumeration('AlignmentAlgorithm', [
-            ALIGNMENT_ALGORITHMS.MATCHER,
-            ALIGNMENT_ALGORITHMS.NEEDLE,
-            ALIGNMENT_ALGORITHMS.WATER,
-          ]),
+          types.string,
           DEFAULT_ALIGNMENT_ALGORITHM,
         ),
 

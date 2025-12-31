@@ -21,10 +21,14 @@ import {
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
+import AlignmentSettingsButton from './AlignmentSettingsButton'
 import HelpButton from './HelpButton'
 import MSATable from './MSATable'
 import TranscriptSelector from './TranscriptSelector'
-import { AlignmentAlgorithm } from '../../ProteinView/types'
+import {
+  ALIGNMENT_ALGORITHM_LABELS,
+  AlignmentAlgorithm,
+} from '../../ProteinView/types'
 import ExternalLink from '../../components/ExternalLink'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
@@ -71,11 +75,13 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   model,
   handleClose,
   alignmentAlgorithm,
+  onAlignmentAlgorithmChange,
 }: {
   feature: Feature
   model: AbstractTrackModel
   handleClose: () => void
   alignmentAlgorithm: AlignmentAlgorithm
+  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
@@ -227,6 +233,18 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         </div>
       </DialogContent>
       <DialogActions>
+        {protein?.seq.replaceAll('*', '') !== structureSequence ? (
+          <Typography variant="body2" sx={{ mr: 2, display: 'flex', alignItems: 'center' }}>
+            Transcript and structure sequences differ, will run{' '}
+            {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ??
+              alignmentAlgorithm}{' '}
+            alignment
+            <AlignmentSettingsButton
+              value={alignmentAlgorithm}
+              onChange={onAlignmentAlgorithmChange}
+            />
+          </Typography>
+        ) : null}
         <Button
           variant="contained"
           color="secondary"
