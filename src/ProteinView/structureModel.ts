@@ -12,7 +12,6 @@ import {
 } from 'molstar/lib/mol-model/structure'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-import { launchPairwiseAlignment } from './launchRemotePairwiseAlignment'
 import { runLocalAlignment } from './pairwiseAlignment'
 import {
   PairwiseAlignment,
@@ -437,6 +436,23 @@ const Structure = types
   .actions(self => ({
     /**
      * #action
+     * Highlight a residue from an external source (e.g., MSA view)
+     * This triggers the visual highlight in Molstar without updating internal state
+     */
+    highlightFromExternal(structureSeqPos: number) {
+      const structure = self.molstarStructure
+      const plugin = self.molstarPluginContext
+      if (structure && plugin) {
+        highlightResidue({
+          structure,
+          selectedResidue: structureSeqPos,
+          plugin,
+        })
+      }
+    },
+
+    /**
+     * #action
      */
     hoverAlignmentPosition(alignmentPos: number) {
       const structureSeqPos =
@@ -501,11 +517,8 @@ const Structure = types
                   { id: 'seq2', seq: r2 },
                 ],
               })
-            } else if (
-              alignmentAlgorithm === 'needleman_wunsch' ||
-              alignmentAlgorithm === 'smith_waterman'
-            ) {
-              self.setAlignmentStatus('Running local alignment...')
+            } else {
+              self.setAlignmentStatus('Running alignment...')
               const pairwiseAlignment = runLocalAlignment(
                 r1,
                 r2,
@@ -513,21 +526,6 @@ const Structure = types
               )
               self.setAlignment(pairwiseAlignment)
               self.setAlignmentStatus('')
-
-              // @ts-expect-error
-              getParent(self, 2).setShowHighlight(true)
-              // @ts-expect-error
-              getParent(self, 2).setShowAlignment(true)
-            } else {
-              const pairwiseAlignment = await launchPairwiseAlignment({
-                seq1: r1,
-                seq2: r2,
-                algorithm: alignmentAlgorithm,
-                onProgress: arg => {
-                  self.setAlignmentStatus(arg)
-                },
-              })
-              self.setAlignment(pairwiseAlignment.pairwiseAlignment)
 
               // @ts-expect-error
               getParent(self, 2).setShowHighlight(true)

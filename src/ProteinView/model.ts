@@ -104,6 +104,10 @@ function stateModelFactory() {
        * #volatile
        */
       molstarPluginContext: undefined as PluginContext | undefined,
+      /**
+       * #volatile
+       */
+      showManualAlignmentDialog: false,
     }))
 
     .actions(self => ({
@@ -158,6 +162,12 @@ function stateModelFactory() {
        */
       setMolstarPluginContext(p?: PluginContext) {
         self.molstarPluginContext = p
+      },
+      /**
+       * #action
+       */
+      setShowManualAlignmentDialog(val: boolean) {
+        self.showManualAlignmentDialog = val
       },
       /**
        * #action
@@ -290,6 +300,12 @@ function stateModelFactory() {
             icon: Visibility,
             onClick: () => {
               self.setZoomToBaseLevel(!self.zoomToBaseLevel)
+            },
+          },
+          {
+            label: 'Import manual alignment...',
+            onClick: () => {
+              self.setShowManualAlignmentDialog(true)
             },
           },
         ]
