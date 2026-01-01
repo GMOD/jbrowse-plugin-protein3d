@@ -47,3 +47,26 @@ export function getUniProtIdFromFeature(f?: Feature): string | undefined {
   }
   return f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid')
 }
+
+export function selectBestTranscript({
+  options,
+  isoformSequences,
+  structureSequence,
+}: {
+  options: Feature[]
+  isoformSequences: Record<string, { feature: Feature; seq: string }>
+  structureSequence: string | undefined
+}) {
+  const exactMatch = options.find(
+    f =>
+      isoformSequences[f.id()]?.seq.replaceAll('*', '') === structureSequence,
+  )
+  const longestWithData = options
+    .filter(f => !!isoformSequences[f.id()])
+    .sort(
+      (a, b) =>
+        isoformSequences[b.id()]!.seq.length -
+        isoformSequences[a.id()]!.seq.length,
+    )[0]
+  return exactMatch ?? longestWithData
+}

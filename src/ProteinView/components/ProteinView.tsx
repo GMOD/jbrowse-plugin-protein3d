@@ -4,6 +4,7 @@ import { ErrorMessage, ResizeHandle } from '@jbrowse/core/ui'
 import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinViewModel } from '../model'
+import ManualAlignmentDialog from './ManualAlignmentDialog'
 import ProteinViewHeader from './ProteinViewHeader'
 import css from '../css/molstar'
 import useProteinView from '../useProteinView'
@@ -61,6 +62,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
           return model.setHeight(model.height + delta)
         }}
       />
+      <ManualAlignmentDialog model={model} />
     </div>
   )
 })

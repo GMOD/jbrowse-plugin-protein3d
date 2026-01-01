@@ -3,6 +3,8 @@ import React from 'react'
 import { observer } from 'mobx-react'
 
 import GenomeMouseoverHighlight from './GenomeMouseoverHighlight'
+import GenomeTo1DProteinHoverHighlight from './GenomeTo1DProteinHoverHighlight'
+import Protein1DToGenomeHoverHighlight from './Protein1DToGenomeHoverHighlight'
 import ProteinToGenomeClickHighlight from './ProteinToGenomeClickHighlight'
 import ProteinToGenomeHoverHighlight from './ProteinToGenomeHoverHighlight'
 
@@ -17,6 +19,8 @@ const HighlightComponents = observer(function Highlight({
     <>
       <ProteinToGenomeClickHighlight model={model} />
       <ProteinToGenomeHoverHighlight model={model} />
+      <Protein1DToGenomeHoverHighlight model={model} />
+      <GenomeTo1DProteinHoverHighlight model={model} />
       <GenomeMouseoverHighlight model={model} />
     </>
   )

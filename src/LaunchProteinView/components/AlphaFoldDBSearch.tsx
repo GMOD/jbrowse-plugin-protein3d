@@ -23,6 +23,7 @@ import {
   getId,
   getTranscriptFeatures,
   getUniProtIdFromFeature,
+  selectBestTranscript,
 } from '../utils/util'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
@@ -137,19 +138,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
     if (isoformSequences !== undefined && userSelection === undefined) {
-      const exactMatch = options.find(
-        f =>
-          isoformSequences[f.id()]?.seq.replaceAll('*', '') ===
-          structureSequence,
-      )
-      const longestWithData = options
-        .filter(f => !!isoformSequences[f.id()])
-        .sort(
-          (a, b) =>
-            isoformSequences[b.id()]!.seq.length -
-            isoformSequences[a.id()]!.seq.length,
-        )[0]
-      setUserSelection((exactMatch ?? longestWithData)?.id())
+      const best = selectBestTranscript({
+        options,
+        isoformSequences,
+        structureSequence,
+      })
+      setUserSelection(best?.id())
     }
   }, [options, structureSequence, isoformSequences, userSelection])
 

@@ -6,16 +6,28 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
-import ProteinFeatureTrack from './ProteinFeatureTrack'
+import {
+  ProteinFeatureTrackContent,
+  ProteinFeatureTrackLabels,
+  useProteinFeatureTrackData,
+} from './ProteinFeatureTrack'
 import SplitString from './SplitString'
+
+const LABEL_WIDTH = 50
+const ROW_HEIGHT = 14
 
 const ProteinAlignment = observer(function ProteinAlignment({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { pairwiseAlignment, showHighlight } = model
+  const { pairwiseAlignment, showHighlight, uniprotId } = model
   const containerRef = useRef<HTMLDivElement>(null)
+  const {
+    data: featureData,
+    isLoading: featureLoading,
+    error: featureError,
+  } = useProteinFeatureTrackData(model, uniprotId)
 
   useEffect(
     () =>
@@ -69,37 +81,75 @@ const ProteinAlignment = observer(function ProteinAlignment({
         {showHighlight ? 'Green is the aligned portion' : null}
       </Typography>
       <div
-        ref={containerRef}
         style={{
+          display: 'flex',
           fontSize: 9,
           fontFamily: 'monospace',
           cursor: 'pointer',
           margin: 8,
           paddingBottom: 8,
-          overflow: 'auto',
-          whiteSpace: 'nowrap',
         }}
         onMouseEnter={handleContainerMouseEnter}
         onMouseLeave={handleContainerMouseLeave}
       >
-        <div>
-          <Tooltip title="This is the sequence of the protein from the reference genome transcript">
-            <span>GENOME&nbsp;</span>
-          </Tooltip>
-          <SplitString model={model} str={a0} />
+        <div
+          style={{
+            flexShrink: 0,
+            width: LABEL_WIDTH,
+            textAlign: 'right',
+            paddingRight: 4,
+          }}
+        >
+          <div style={{ height: ROW_HEIGHT }}>
+            <Tooltip title="This is the sequence of the protein from the reference genome transcript">
+              <span>GENOME</span>
+            </Tooltip>
+          </div>
+          <div style={{ height: ROW_HEIGHT }}>&nbsp;</div>
+          <div style={{ height: ROW_HEIGHT }}>
+            <Tooltip title="This is the sequence of the protein from the structure file">
+              <span>STRUCT</span>
+            </Tooltip>
+          </div>
+          {featureLoading ? (
+            <div style={{ height: ROW_HEIGHT, fontSize: 8, color: '#666' }}>
+              Loading...
+            </div>
+          ) : featureError ? (
+            <Tooltip title={`${featureError}`}>
+              <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
+                Error
+              </div>
+            </Tooltip>
+          ) : featureData ? (
+            <ProteinFeatureTrackLabels
+              data={featureData}
+              labelWidth={LABEL_WIDTH}
+            />
+          ) : null}
         </div>
-        <div>
-          <span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-          <SplitString model={model} str={con} />
-        </div>
-        <div>
-          <Tooltip title="This is the sequence of the protein from the structure file">
-            <span>STRUCT&nbsp;</span>
-          </Tooltip>
-          <SplitString model={model} str={a1} />
+        <div
+          ref={containerRef}
+          style={{
+            overflow: 'auto',
+            whiteSpace: 'nowrap',
+            flex: 1,
+          }}
+        >
+          <div style={{ height: ROW_HEIGHT }}>
+            <SplitString model={model} str={a0} />
+          </div>
+          <div style={{ height: ROW_HEIGHT }}>
+            <SplitString model={model} str={con} />
+          </div>
+          <div style={{ height: ROW_HEIGHT }}>
+            <SplitString model={model} str={a1} />
+          </div>
+          {featureData ? (
+            <ProteinFeatureTrackContent data={featureData} model={model} />
+          ) : null}
         </div>
       </div>
-      <ProteinFeatureTrack model={model} uniprotId={model.uniprotId} />
     </div>
   )
 })

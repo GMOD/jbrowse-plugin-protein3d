@@ -3,6 +3,7 @@ import { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 import { setupProteinAssembly } from './proteinAssemblySetup'
 import { addAllProteinTracks } from './proteinTrackSetup'
 import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
+import { protein1DViewRegistry } from '../../Protein1DViewRegistry'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -16,12 +17,14 @@ export async function launchProteinAnnotationView({
   selectedTranscript,
   uniprotId,
   confidenceUrl,
+  connectedViewId,
 }: {
   session: SessionWithAddTracks
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
   confidenceUrl?: string
+  connectedViewId?: string
 }) {
   // Set up the protein assembly
   setupProteinAssembly(session, uniprotId)
@@ -43,6 +46,16 @@ export async function launchProteinAnnotationView({
       getTranscriptDisplayName(selectedTranscript),
     ].join(' - '),
   }) as LinearGenomeViewModel
+
+  // Register the 1D view for linked highlighting
+  if (connectedViewId && selectedTranscript) {
+    protein1DViewRegistry.register({
+      viewId: view.id,
+      connectedViewId,
+      feature: selectedTranscript.toJSON(),
+      uniprotId,
+    })
+  }
 
   await view.navToLocString(uniprotId, uniprotId)
 }
