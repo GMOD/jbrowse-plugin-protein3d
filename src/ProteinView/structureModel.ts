@@ -453,6 +453,15 @@ const Structure = types
 
     /**
      * #action
+     * Clear highlight from an external source
+     */
+    clearHighlightFromExternal() {
+      const plugin = self.molstarPluginContext
+      plugin?.managers.interactivity.lociHighlights.clearHighlights()
+    },
+
+    /**
+     * #action
      */
     hoverAlignmentPosition(alignmentPos: number) {
       const structureSeqPos =

@@ -18,6 +18,10 @@ interface GenomeToTranscriptMapping {
   refName: string
 }
 
+interface SessionWithViews {
+  views: { id: string }[]
+}
+
 class Protein1DViewRegistry {
   views = observable.map<string, Protein1DViewInfo>()
 
@@ -25,6 +29,7 @@ class Protein1DViewRegistry {
     makeObservable(this, {
       register: action,
       unregister: action,
+      cleanupStaleViews: action,
       entries: computed,
     })
   }
@@ -37,11 +42,23 @@ class Protein1DViewRegistry {
     this.views.delete(viewId)
   }
 
+  cleanupStaleViews(session: SessionWithViews) {
+    const activeViewIds = new Set(session.views.map(v => v.id))
+    for (const viewId of this.views.keys()) {
+      if (!activeViewIds.has(viewId)) {
+        this.views.delete(viewId)
+      }
+    }
+  }
+
   get(viewId: string) {
     return this.views.get(viewId)
   }
 
-  getByUniprotId(uniprotId: string) {
+  getByUniprotId(uniprotId: string, session?: SessionWithViews) {
+    if (session) {
+      this.cleanupStaleViews(session)
+    }
     for (const info of this.views.values()) {
       if (info.uniprotId === uniprotId) {
         return info
@@ -57,8 +74,9 @@ class Protein1DViewRegistry {
   getGenomeHighlightForProteinPosition(
     uniprotId: string,
     proteinPos: number,
+    session?: SessionWithViews,
   ): { refName: string; start: number; end: number } | undefined {
-    const info = this.getByUniprotId(uniprotId)
+    const info = this.getByUniprotId(uniprotId, session)
     if (!info) {
       return undefined
     }

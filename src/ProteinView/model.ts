@@ -9,6 +9,7 @@ import { addStructureFromURL } from './addStructureFromURL'
 import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
+import { superposeStructures } from './superposeStructures'
 import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
 import type { Instance } from 'mobx-state-tree'
@@ -196,6 +197,50 @@ function stateModelFactory() {
             userProvidedTranscriptSequence: '',
           }),
         )
+      },
+    }))
+    .actions(self => ({
+      /**
+       * #action
+       */
+      async addStructureAndSuperpose(structure: { url?: string; data?: string }) {
+        const { molstarPluginContext } = self
+        if (!molstarPluginContext) {
+          return
+        }
+
+        const newStructure = Structure.create({
+          url: structure.url,
+          data: structure.data,
+          userProvidedTranscriptSequence: '',
+        })
+        self.structures.push(newStructure)
+
+        try {
+          const { model } = structure.data
+            ? await addStructureFromData({
+                data: structure.data,
+                plugin: molstarPluginContext,
+              })
+            : structure.url
+              ? await addStructureFromURL({
+                  url: structure.url,
+                  plugin: molstarPluginContext,
+                })
+              : { model: undefined }
+
+          const sequences = model
+            ? extractStructureSequences(model)
+            : undefined
+          newStructure.setSequences(sequences)
+
+          if (self.structures.length > 1) {
+            await superposeStructures(molstarPluginContext)
+          }
+        } catch (e) {
+          self.setError(e)
+          console.error(e)
+        }
       },
     }))
     .actions(self => ({

@@ -25,6 +25,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
 }) {
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
+  const [uniprotId, setUniprotId] = useState('')
   const [choice, setChoice] = useState('pdb')
   const [structureURL, setStructureURL] = useState('')
   const [error, setError] = useState<unknown>()
@@ -33,6 +34,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
   const handleClose = () => {
     setFile(undefined)
     setPdbId('')
+    setUniprotId('')
     setStructureURL('')
     setError(undefined)
     model.setShowAddStructureDialog(false)
@@ -46,12 +48,15 @@ const AddStructureDialog = observer(function AddStructureDialog({
       if (choice === 'pdb' && pdbId) {
         url = `https://files.rcsb.org/download/${pdbId}.cif`
       }
+      if (choice === 'uniprot' && uniprotId) {
+        url = `https://alphafold.ebi.ac.uk/files/AF-${uniprotId.toUpperCase()}-F1-model_v6.cif`
+      }
       if (choice === 'file' && file) {
         data = await file.text()
       }
 
       if (url || data) {
-        model.addStructure({ url: url || undefined, data })
+        await model.addStructureAndSuperpose({ url: url || undefined, data })
         handleClose()
       }
     } catch (e) {
@@ -67,7 +72,8 @@ const AddStructureDialog = observer(function AddStructureDialog({
   const canAdd =
     (choice === 'url' && structureURL) ||
     (choice === 'file' && file) ||
-    (choice === 'pdb' && pdbId)
+    (choice === 'pdb' && pdbId) ||
+    (choice === 'uniprot' && uniprotId)
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
@@ -86,6 +92,11 @@ const AddStructureDialog = observer(function AddStructureDialog({
             }}
           >
             <FormControlLabel value="pdb" control={<Radio />} label="PDB ID" />
+            <FormControlLabel
+              value="uniprot"
+              control={<Radio />}
+              label="UniProt ID (AlphaFold)"
+            />
             <FormControlLabel value="url" control={<Radio />} label="URL" />
             <FormControlLabel value="file" control={<Radio />} label="File" />
           </RadioGroup>
@@ -100,6 +111,20 @@ const AddStructureDialog = observer(function AddStructureDialog({
             }}
             label="PDB ID (e.g. 1CRN)"
             placeholder="Enter PDB ID"
+            sx={{ mb: 2 }}
+          />
+        ) : null}
+
+        {choice === 'uniprot' ? (
+          <TextField
+            fullWidth
+            value={uniprotId}
+            onChange={event => {
+              setUniprotId(event.target.value.toUpperCase())
+            }}
+            label="UniProt ID (e.g. P04637)"
+            placeholder="Enter UniProt ID"
+            helperText="Will fetch the AlphaFold v6 predicted structure"
             sx={{ mb: 2 }}
           />
         ) : null}
@@ -142,7 +167,8 @@ const AddStructureDialog = observer(function AddStructureDialog({
         ) : null}
 
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-          Tip: After adding, use the Mol* controls to superpose structures.
+          Tip: Structures will be automatically superposed using TM-align. For
+          manual control, use the Mol* controls (🔧 wrench icon).
         </Typography>
       </DialogContent>
       <DialogActions>
