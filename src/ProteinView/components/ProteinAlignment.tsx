@@ -23,7 +23,11 @@ const ProteinAlignment = observer(function ProteinAlignment({
 }) {
   const { pairwiseAlignment, showHighlight, uniprotId } = model
   const containerRef = useRef<HTMLDivElement>(null)
-  const { data: featureData } = useProteinFeatureTrackData(model, uniprotId)
+  const {
+    data: featureData,
+    isLoading: featureLoading,
+    error: featureError,
+  } = useProteinFeatureTrackData(model, uniprotId)
 
   useEffect(
     () =>
@@ -107,7 +111,17 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <span>STRUCT</span>
             </Tooltip>
           </div>
-          {featureData ? (
+          {featureLoading ? (
+            <div style={{ height: ROW_HEIGHT, fontSize: 8, color: '#666' }}>
+              Loading...
+            </div>
+          ) : featureError ? (
+            <Tooltip title={`${featureError}`}>
+              <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
+                Error
+              </div>
+            </Tooltip>
+          ) : featureData ? (
             <ProteinFeatureTrackLabels
               data={featureData}
               labelWidth={LABEL_WIDTH}

@@ -42,7 +42,7 @@ const Protein1DToGenomeHoverHighlight = observer(
     }
 
     const { coord, refName } = hovered.hoverPosition
-    const protein1DInfo = protein1DViewRegistry.getByUniprotId(refName)
+    const protein1DInfo = protein1DViewRegistry.getByUniprotId(refName, session)
 
     if (!protein1DInfo || protein1DInfo.connectedViewId !== viewId) {
       return null
@@ -57,6 +57,7 @@ const Protein1DToGenomeHoverHighlight = observer(
       protein1DViewRegistry.getGenomeHighlightForProteinPosition(
         refName,
         coord - 1,
+        session,
       )
 
     if (!genomeHighlight) {
