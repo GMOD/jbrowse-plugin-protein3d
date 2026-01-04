@@ -4,6 +4,7 @@ import { LoadingEllipses } from '@jbrowse/core/ui'
 import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinViewModel } from '../model'
+import AddStructureDialog from './AddStructureDialog'
 import HeaderStructureInfo from './HeaderStructureInfo'
 import ProteinAlignment from './ProteinAlignment'
 
@@ -30,6 +31,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
             )
           })
         : null}
+      <AddStructureDialog model={model} />
     </div>
   )
 })

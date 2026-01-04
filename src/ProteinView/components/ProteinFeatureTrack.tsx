@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
+import { getCodonRange } from 'g2p_mapper'
 import { observer } from 'mobx-react'
 
-import highlightResidueRange from '../highlightResidueRange'
+import highlightResidueRange, {
+  selectResidueRange,
+} from '../highlightResidueRange'
 import useUniProtFeatures, {
   UniProtFeature,
   getFeatureColor,
@@ -36,59 +39,111 @@ const FeatureBar = observer(function FeatureBar({
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const {
-    transcriptSeqToStructureSeqPosition,
+    structureSeqToTranscriptSeqPosition,
+    genomeToTranscriptSeqMapping,
+    connectedView,
     molstarPluginContext,
-    molstarStructure,
   } = model
 
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-    if (
-      !molstarPluginContext ||
-      !molstarStructure ||
-      !transcriptSeqToStructureSeqPosition
-    ) {
+  const highlightGenomeRange = () => {
+    if (!genomeToTranscriptSeqMapping || !structureSeqToTranscriptSeqPosition) {
+      return
+    }
+    const { p2g, strand, refName } = genomeToTranscriptSeqMapping
+    const assemblyName = connectedView?.assemblyNames[0]
+    if (!assemblyName) {
       return
     }
 
-    const structStart = transcriptSeqToStructureSeqPosition[feature.start - 1]
-    const structEnd = transcriptSeqToStructureSeqPosition[feature.end - 1]
-
-    if (structStart !== undefined && structEnd !== undefined) {
-      highlightResidueRange({
-        structure: molstarStructure,
-        startResidue: structStart + 1,
-        endResidue: structEnd + 1,
-        plugin: molstarPluginContext,
-      })
+    const highlights = []
+    for (let pos = feature.start - 1; pos < feature.end; pos++) {
+      const transcriptPos = structureSeqToTranscriptSeqPosition[pos]
+      if (transcriptPos !== undefined) {
+        const coords = getCodonRange(p2g, transcriptPos, strand)
+        if (coords) {
+          highlights.push({
+            assemblyName,
+            refName,
+            start: coords[0],
+            end: coords[1],
+          })
+        }
+      }
     }
+
+    if (highlights.length > 0) {
+      const minStart = Math.min(...highlights.map(h => h.start))
+      const maxEnd = Math.max(...highlights.map(h => h.end))
+      model.setHoverGenomeHighlights([
+        {
+          assemblyName,
+          refName,
+          start: minStart,
+          end: maxEnd,
+        },
+      ])
+    }
+  }
+
+  // UniProt features are already in structure coordinates (1-based)
+  const getStructureRange = () => {
+    return {
+      start: feature.start,
+      end: feature.end,
+    }
+  }
+
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+    if (!molstarPluginContext) {
+      return
+    }
+
+    // Get structure directly from hierarchy (same as working code in structureModel)
+    const structure =
+      molstarPluginContext.managers.structure.hierarchy.current.structures[0]
+        ?.cell.obj?.data
+    if (!structure) {
+      console.log('No structure available in Molstar hierarchy')
+      return
+    }
+
+    const range = getStructureRange()
+    highlightResidueRange({
+      structure,
+      startResidue: range.start,
+      endResidue: range.end,
+      plugin: molstarPluginContext,
+    })
+
+    highlightGenomeRange()
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
     molstarPluginContext?.managers.interactivity.lociHighlights.clearHighlights()
+    model.clearHoverGenomeHighlights()
   }
 
   const handleClick = () => {
-    if (
-      !molstarPluginContext ||
-      !molstarStructure ||
-      !transcriptSeqToStructureSeqPosition
-    ) {
+    if (!molstarPluginContext) {
       return
     }
 
-    const structStart = transcriptSeqToStructureSeqPosition[feature.start - 1]
-    const structEnd = transcriptSeqToStructureSeqPosition[feature.end - 1]
-
-    if (structStart !== undefined && structEnd !== undefined) {
-      highlightResidueRange({
-        structure: molstarStructure,
-        startResidue: structStart + 1,
-        endResidue: structEnd + 1,
-        plugin: molstarPluginContext,
-      })
+    const structure =
+      molstarPluginContext.managers.structure.hierarchy.current.structures[0]
+        ?.cell.obj?.data
+    if (!structure) {
+      return
     }
+
+    const range = getStructureRange()
+    selectResidueRange({
+      structure,
+      startResidue: range.start,
+      endResidue: range.end,
+      plugin: molstarPluginContext,
+    })
   }
 
   const left = (feature.start - 1) * CHAR_WIDTH + offsetLeft
@@ -120,7 +175,7 @@ const FeatureBar = observer(function FeatureBar({
           width,
           height: TRACK_HEIGHT,
           backgroundColor: color,
-          opacity: isHovered ? 1 : 0.8,
+          opacity: isHovered ? 0.9 : 0.6,
           cursor: 'pointer',
           borderRadius: 2,
           border: isHovered ? '1px solid black' : 'none',
@@ -131,28 +186,57 @@ const FeatureBar = observer(function FeatureBar({
   )
 })
 
-const FeatureTypeTrack = observer(function FeatureTypeTrack({
-  type,
-  features,
+const HoverMarker = observer(function HoverMarker({
   model,
-  sequenceLength,
   offsetLeft,
 }: {
-  type: string
-  features: UniProtFeature[]
   model: JBrowsePluginProteinStructureModel
-  sequenceLength: number
   offsetLeft: number
 }) {
-  const trackWidth = sequenceLength * CHAR_WIDTH + offsetLeft
+  const { structureSeqHoverPos, structureSeqToTranscriptSeqPosition } = model
+
+  if (structureSeqHoverPos === undefined) {
+    return null
+  }
+
+  // Convert structure position to transcript position for display
+  const transcriptPos =
+    structureSeqToTranscriptSeqPosition?.[structureSeqHoverPos]
+  if (transcriptPos === undefined) {
+    return null
+  }
+
+  const left = transcriptPos * CHAR_WIDTH + offsetLeft
 
   return (
     <div
-      style={{ display: 'flex', alignItems: 'center', marginBottom: TRACK_GAP }}
-    >
+      style={{
+        position: 'absolute',
+        left,
+        top: 0,
+        bottom: 0,
+        width: CHAR_WIDTH,
+        backgroundColor: 'rgba(255, 105, 180, 0.5)',
+        pointerEvents: 'none',
+        zIndex: 10,
+      }}
+    />
+  )
+})
+
+const FeatureTypeLabel = observer(function FeatureTypeLabel({
+  type,
+  labelWidth,
+}: {
+  type: string
+  labelWidth: number
+}) {
+  return (
+    <Tooltip title={type} placement="left">
       <div
         style={{
-          width: offsetLeft - 4,
+          height: TRACK_HEIGHT + TRACK_GAP,
+          width: labelWidth - 4,
           fontSize: 9,
           fontFamily: 'monospace',
           textAlign: 'right',
@@ -161,96 +245,117 @@ const FeatureTypeTrack = observer(function FeatureTypeTrack({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
         }}
-        title={type}
       >
         {type}
       </div>
-      <div
-        style={{
-          position: 'relative',
-          height: TRACK_HEIGHT,
-          width: trackWidth - offsetLeft,
-          backgroundColor: '#f5f5f5',
-        }}
-      >
-        {features.map((feature, idx) => (
-          <FeatureBar
-            key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
-            feature={feature}
-            model={model}
-            offsetLeft={0}
-          />
-        ))}
-      </div>
+    </Tooltip>
+  )
+})
+
+const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
+  features,
+  model,
+  sequenceLength,
+}: {
+  features: UniProtFeature[]
+  model: JBrowsePluginProteinStructureModel
+  sequenceLength: number
+}) {
+  const trackWidth = sequenceLength * CHAR_WIDTH
+
+  return (
+    <div
+      style={{
+        position: 'relative',
+        height: TRACK_HEIGHT,
+        width: trackWidth,
+        backgroundColor: '#f5f5f5',
+        marginBottom: TRACK_GAP,
+      }}
+    >
+      {features.map((feature, idx) => (
+        <FeatureBar
+          key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
+          feature={feature}
+          model={model}
+          offsetLeft={0}
+        />
+      ))}
+      <HoverMarker model={model} offsetLeft={0} />
     </div>
   )
 })
 
-const ProteinFeatureTrack = observer(function ProteinFeatureTrack({
-  model,
-  uniprotId,
-}: {
-  model: JBrowsePluginProteinStructureModel
-  uniprotId: string | undefined
-}) {
+interface FeatureTrackData {
+  featureTypes: string[]
+  groupedFeatures: FeaturesByType
+  sequenceLength: number
+}
+
+export function useProteinFeatureTrackData(
+  model: JBrowsePluginProteinStructureModel,
+  uniprotId: string | undefined,
+): {
+  data: FeatureTrackData | undefined
+  isLoading: boolean
+  error: unknown
+} {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
   const { pairwiseAlignment } = model
 
-  if (!uniprotId) {
-    return null
-  }
-
-  if (isLoading) {
-    return (
-      <Typography variant="body2" style={{ fontSize: 9, margin: 8 }}>
-        Loading UniProt features...
-      </Typography>
-    )
-  }
-
-  if (error) {
-    return (
-      <Typography
-        variant="body2"
-        color="error"
-        style={{ fontSize: 9, margin: 8 }}
-      >
-        Error loading features: {`${error}`}
-      </Typography>
-    )
-  }
-
-  if (!features || features.length === 0) {
-    return null
-  }
-
-  if (!pairwiseAlignment) {
-    return null
+  if (!uniprotId || isLoading || error || !features || !pairwiseAlignment) {
+    return { data: undefined, isLoading, error }
   }
 
   const sequenceLength = pairwiseAlignment.alns[0].seq.replace(/-/g, '').length
   const groupedFeatures = groupFeaturesByType(features)
-  const offsetLeft = 50
+  const featureTypes = Object.keys(groupedFeatures)
 
-  return (
-    <div style={{ margin: 8, overflow: 'auto' }}>
-      <Typography variant="body2" style={{ fontSize: 10, marginBottom: 4 }}>
-        UniProt Features (click to highlight on structure)
-      </Typography>
-      <div style={{ minWidth: sequenceLength * CHAR_WIDTH + offsetLeft }}>
-        {Object.entries(groupedFeatures).map(([type, typeFeatures]) => (
-          <FeatureTypeTrack
+  return {
+    data: { featureTypes, groupedFeatures, sequenceLength },
+    isLoading: false,
+    error: undefined,
+  }
+}
+
+export const ProteinFeatureTrackLabels = observer(
+  function ProteinFeatureTrackLabels({
+    data,
+    labelWidth,
+  }: {
+    data: FeatureTrackData
+    labelWidth: number
+  }) {
+    return (
+      <>
+        {data.featureTypes.map(type => (
+          <FeatureTypeLabel key={type} type={type} labelWidth={labelWidth} />
+        ))}
+      </>
+    )
+  },
+)
+
+export const ProteinFeatureTrackContent = observer(
+  function ProteinFeatureTrackContent({
+    data,
+    model,
+  }: {
+    data: FeatureTrackData
+    model: JBrowsePluginProteinStructureModel
+  }) {
+    return (
+      <>
+        {data.featureTypes.map(type => (
+          <FeatureTypeTrackContent
             key={type}
-            type={type}
-            features={typeFeatures}
+            features={data.groupedFeatures[type]!}
             model={model}
-            sequenceLength={sequenceLength}
-            offsetLeft={offsetLeft}
+            sequenceLength={data.sequenceLength}
           />
         ))}
-      </div>
-    </div>
-  )
-})
+      </>
+    )
+  },
+)
 
-export default ProteinFeatureTrack

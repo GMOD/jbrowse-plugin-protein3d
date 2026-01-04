@@ -89,6 +89,7 @@ export default function ProteinViewActions({
             feature,
             uniprotId,
             confidenceUrl,
+            connectedViewId: view.id,
           })
         } catch (e) {
           console.error(e)
@@ -96,6 +97,36 @@ export default function ProteinViewActions({
         }
       })()
     }
+    handleClose()
+  }
+
+  // Check if MSA view plugin is available
+  // @ts-expect-error
+  const hasMsaViewPlugin = typeof window.JBrowsePluginMsaView !== 'undefined'
+
+  const handleLaunchMSAView = () => {
+    if (!selectedTranscript || !uniprotId) {
+      return
+    }
+
+    const msaUrl = `https://alphafold.ebi.ac.uk/files/msa/AF-${uniprotId}-F1-msa_v6.a3m`
+
+    session.addView('MsaView', {
+      type: 'MsaView',
+      displayName: [
+        ...new Set([
+          'MSA view',
+          uniprotId,
+          getGeneDisplayName(feature),
+          getTranscriptDisplayName(selectedTranscript),
+        ]),
+      ].join(' - '),
+      connectedViewId: view.id,
+      connectedFeature: selectedTranscript.toJSON(),
+      init: {
+        msaUrl,
+      },
+    })
     handleClose()
   }
 
@@ -139,6 +170,15 @@ export default function ProteinViewActions({
       >
         Launch 1-D protein annotation view
       </Button>
+      {hasMsaViewPlugin ? (
+        <Button
+          variant="contained"
+          disabled={isLaunchDisabled}
+          onClick={handleLaunchMSAView}
+        >
+          Launch MSA view
+        </Button>
+      ) : null}
     </>
   )
 }

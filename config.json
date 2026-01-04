@@ -3,6 +3,10 @@
     {
       "name": "Protein3d",
       "url": "http://localhost:9000/dist/out.js"
+    },
+    {
+      "name": "MsaView",
+      "url": "https://jbrowse.org/plugins/jbrowse-plugin-msaview/dist/jbrowse-plugin-msaview.umd.production.min.js"
     }
   ],
   "assemblies": [
