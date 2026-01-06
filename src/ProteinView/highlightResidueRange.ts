@@ -93,8 +93,7 @@ export async function overpaintResidueRange({
   plugin: PluginContext
   color: string
 }) {
-  const structureRef =
-    plugin.managers.structure.hierarchy.current.structures[0]
+  const structureRef = plugin.managers.structure.hierarchy.current.structures[0]
   if (structureRef) {
     await setStructureOverpaint(
       plugin,
@@ -113,8 +112,7 @@ export async function overpaintResidueRange({
 }
 
 export async function clearOverpaint(plugin: PluginContext) {
-  const structureRef =
-    plugin.managers.structure.hierarchy.current.structures[0]
+  const structureRef = plugin.managers.structure.hierarchy.current.structures[0]
   if (structureRef) {
     await clearStructureOverpaint(plugin, structureRef.components)
   }

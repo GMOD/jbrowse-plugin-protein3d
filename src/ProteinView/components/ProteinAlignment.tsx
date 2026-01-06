@@ -6,10 +6,10 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
+import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import {
   ProteinFeatureTrackContent,
   ProteinFeatureTrackLabels,
-  useProteinFeatureTrackData,
 } from './ProteinFeatureTrack'
 import SplitString from './SplitString'
 
@@ -116,7 +116,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
               Loading...
             </div>
           ) : featureError ? (
-            <Tooltip title={`${featureError}`}>
+            <Tooltip
+              title={
+                featureError instanceof Error
+                  ? featureError.message
+                  : 'Error loading features'
+              }
+            >
               <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
                 Error
               </div>

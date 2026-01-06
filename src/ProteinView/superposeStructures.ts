@@ -4,13 +4,13 @@ import {
   StructureElement,
   StructureSelection,
 } from 'molstar/lib/mol-model/structure'
+import { tmAlign } from 'molstar/lib/mol-model/structure/structure/util/tm-align'
+import { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { StructureSelectionQueries } from 'molstar/lib/mol-plugin-state/helpers/structure-selection-query'
 import { PluginStateObject } from 'molstar/lib/mol-plugin-state/objects'
 import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
-import { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 import { StateObjectRef } from 'molstar/lib/mol-state'
-import { tmAlign } from 'molstar/lib/mol-model/structure/structure/util/tm-align'
 
 const SuperpositionTag = 'SuperpositionTransform'
 
@@ -52,12 +52,7 @@ export async function superposeStructures(plugin: PluginContext) {
   for (let i = 1; i < validLocis.length; i++) {
     const result = tmAlign(validLocis[0]!, validLocis[i]!)
     const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = result
-    await transform(
-      plugin,
-      structures[i]!.cell,
-      bTransform,
-      coordinateSystem,
-    )
+    await transform(plugin, structures[i]!.cell, bTransform, coordinateSystem)
     plugin.log.info(
       `TM-align: TM-score=${tmScoreA.toFixed(4)}/${tmScoreB.toFixed(4)}, RMSD=${rmsd.toFixed(2)} Å, aligned ${alignedLength} residues.`,
     )
@@ -66,7 +61,10 @@ export async function superposeStructures(plugin: PluginContext) {
   await cameraReset(plugin)
 }
 
-function getRootStructure(plugin: PluginContext, s: StructureElement.Loci['structure']) {
+function getRootStructure(
+  plugin: PluginContext,
+  s: StructureElement.Loci['structure'],
+) {
   const parent = plugin.helpers.substructureParent.get(s)
   if (!parent) {
     return undefined
@@ -120,5 +118,5 @@ async function transform(
 
 async function cameraReset(plugin: PluginContext) {
   await new Promise(res => requestAnimationFrame(res))
-  PluginCommands.Camera.Reset(plugin)
+  await PluginCommands.Camera.Reset(plugin)
 }

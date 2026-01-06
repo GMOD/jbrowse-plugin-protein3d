@@ -70,10 +70,10 @@ const AddStructureDialog = observer(function AddStructureDialog({
   }
 
   const canAdd =
-    (choice === 'url' && structureURL) ||
-    (choice === 'file' && file) ||
-    (choice === 'pdb' && pdbId) ||
-    (choice === 'uniprot' && uniprotId)
+    (choice === 'url' && structureURL !== '') ||
+    (choice === 'file' && file !== undefined) ||
+    (choice === 'pdb' && pdbId !== '') ||
+    (choice === 'uniprot' && uniprotId !== '')
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
@@ -174,7 +174,11 @@ const AddStructureDialog = observer(function AddStructureDialog({
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button
-          onClick={handleAdd}
+          onClick={() => {
+            handleAdd().catch((e: unknown) => {
+              console.error(e)
+            })
+          }}
           variant="contained"
           color="primary"
           disabled={!canAdd}

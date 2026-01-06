@@ -4,8 +4,8 @@ import { SimpleFeature, getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
-import { genomeToTranscriptSeqMapping } from '../mappings'
 import { protein1DViewRegistry } from '../Protein1DViewRegistry'
+import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -56,10 +56,6 @@ const GenomeTo1DProteinHoverHighlight = observer(
 
     const feature = new SimpleFeature(protein1DInfo.feature)
     const mapping = genomeToTranscriptSeqMapping(feature)
-    if (!mapping) {
-      return null
-    }
-
     const { g2p } = mapping
     const proteinPos = g2p[coord - 1]
     if (proteinPos === undefined) {

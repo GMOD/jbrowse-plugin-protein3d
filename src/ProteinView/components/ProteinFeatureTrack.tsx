@@ -1,16 +1,17 @@
 import React, { useState } from 'react'
 
-import { Tooltip, Typography } from '@mui/material'
+import { Tooltip } from '@mui/material'
 import { getCodonRange } from 'g2p_mapper'
 import { observer } from 'mobx-react'
 
 import highlightResidueRange, {
   selectResidueRange,
 } from '../highlightResidueRange'
-import useUniProtFeatures, {
+import {
   UniProtFeature,
   getFeatureColor,
 } from '../hooks/useUniProtFeatures'
+import { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import { JBrowsePluginProteinStructureModel } from '../model'
 
 const CHAR_WIDTH = 6
@@ -18,15 +19,6 @@ const TRACK_HEIGHT = 12
 const TRACK_GAP = 2
 
 type FeaturesByType = Record<string, UniProtFeature[]>
-
-function groupFeaturesByType(features: UniProtFeature[]): FeaturesByType {
-  const grouped: FeaturesByType = {}
-  for (const feature of features) {
-    grouped[feature.type] ??= []
-    grouped[feature.type]!.push(feature)
-  }
-  return grouped
-}
 
 const FeatureBar = observer(function FeatureBar({
   feature,
@@ -104,7 +96,7 @@ const FeatureBar = observer(function FeatureBar({
       molstarPluginContext.managers.structure.hierarchy.current.structures[0]
         ?.cell.obj?.data
     if (!structure) {
-      console.log('No structure available in Molstar hierarchy')
+      console.warn('No structure available in Molstar hierarchy')
       return
     }
 
@@ -286,38 +278,6 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
   )
 })
 
-interface FeatureTrackData {
-  featureTypes: string[]
-  groupedFeatures: FeaturesByType
-  sequenceLength: number
-}
-
-export function useProteinFeatureTrackData(
-  model: JBrowsePluginProteinStructureModel,
-  uniprotId: string | undefined,
-): {
-  data: FeatureTrackData | undefined
-  isLoading: boolean
-  error: unknown
-} {
-  const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const { pairwiseAlignment } = model
-
-  if (!uniprotId || isLoading || error || !features || !pairwiseAlignment) {
-    return { data: undefined, isLoading, error }
-  }
-
-  const sequenceLength = pairwiseAlignment.alns[0].seq.replace(/-/g, '').length
-  const groupedFeatures = groupFeaturesByType(features)
-  const featureTypes = Object.keys(groupedFeatures)
-
-  return {
-    data: { featureTypes, groupedFeatures, sequenceLength },
-    isLoading: false,
-    error: undefined,
-  }
-}
-
 export const ProteinFeatureTrackLabels = observer(
   function ProteinFeatureTrackLabels({
     data,
@@ -358,4 +318,3 @@ export const ProteinFeatureTrackContent = observer(
     )
   },
 )
-

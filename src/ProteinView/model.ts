@@ -203,7 +203,10 @@ function stateModelFactory() {
       /**
        * #action
        */
-      async addStructureAndSuperpose(structure: { url?: string; data?: string }) {
+      async addStructureAndSuperpose(structure: {
+        url?: string
+        data?: string
+      }) {
         const { molstarPluginContext } = self
         if (!molstarPluginContext) {
           return
@@ -229,9 +232,7 @@ function stateModelFactory() {
                 })
               : { model: undefined }
 
-          const sequences = model
-            ? extractStructureSequences(model)
-            : undefined
+          const sequences = model ? extractStructureSequences(model) : undefined
           newStructure.setSequences(sequences)
 
           if (self.structures.length > 1) {

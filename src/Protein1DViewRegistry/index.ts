@@ -1,6 +1,6 @@
 import { SimpleFeature, SimpleFeatureSerialized } from '@jbrowse/core/util'
-import { observable, makeObservable, action, computed } from 'mobx'
 import { getCodonRange } from 'g2p_mapper'
+import { action, computed, makeObservable, observable } from 'mobx'
 
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
