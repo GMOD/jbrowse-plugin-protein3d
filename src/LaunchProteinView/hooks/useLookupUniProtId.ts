@@ -1,7 +1,5 @@
 import useSWR from 'swr'
 
-import { lookupUniProtIdViaMyGeneInfo } from '../services/lookupMethods'
-
 export default function useLookupUniProtId({
   id,
   providedUniprotId,
@@ -30,5 +28,3 @@ export default function useLookupUniProtId({
     error,
   }
 }
-
-export { lookupUniProtIdViaMyGeneInfo }

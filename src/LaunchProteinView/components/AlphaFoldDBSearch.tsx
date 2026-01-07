@@ -9,6 +9,7 @@ import { makeStyles } from 'tss-react/mui'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
+import SequenceSearchStatus from './SequenceSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
@@ -16,9 +17,8 @@ import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
-import useLookupUniProtId, {
-  lookupUniProtIdViaMyGeneInfo,
-} from '../hooks/useLookupUniProtId'
+import useLookupUniProtId from '../hooks/useLookupUniProtId'
+import { lookupUniProtIdViaUniProt } from '../services/lookupMethods'
 import {
   getDisplayName,
   getId,
@@ -101,7 +101,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
     providedUniprotId: featureUniprotId,
-    lookupMethod: lookupUniProtIdViaMyGeneInfo,
+    lookupMethod: lookupUniProtIdViaUniProt,
   })
 
   // AlphaFoldDB sequence search
@@ -197,6 +197,11 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onManualUniprotIdChange={setManualUniprotId}
           autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
+          transcriptId={
+            selectedTranscript
+              ? getDisplayName(selectedTranscript)
+              : getDisplayName(feature)
+          }
           isLoading={isLookupLoading}
           hasProteinSequence={!!userSelectedProteinSequence?.seq}
           sequenceSearchType={sequenceSearchType}
@@ -233,7 +238,16 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 />
               )}
             </div>
-            {structureSequence && uniprotId && (
+            {lookupMode === 'sequence' && (
+              <SequenceSearchStatus
+                isLoading={isSequenceSearchLoading}
+                uniprotId={uniprotId}
+                url={url}
+                hasProteinSequence={!!userSelectedProteinSequence}
+                sequenceSearchType={sequenceSearchType}
+              />
+            )}
+            {structureSequence && uniprotId && lookupMode !== 'sequence' && (
               <AlphaFoldDBSearchStatus
                 uniprotId={uniprotId}
                 selectedTranscript={selectedTranscript}

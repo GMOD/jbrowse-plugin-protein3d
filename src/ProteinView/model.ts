@@ -96,10 +96,6 @@ function stateModelFactory() {
       /**
        * #volatile
        */
-      progress: '',
-      /**
-       * #volatile
-       */
       error: undefined as unknown,
       /**
        * #volatile
@@ -166,6 +162,13 @@ function stateModelFactory() {
        * #action
        */
       setMolstarPluginContext(p?: PluginContext) {
+        // Reset loadedToMolstar for all structures when plugin context changes
+        // This ensures structures get reloaded when the view is moved/remounted
+        if (p !== self.molstarPluginContext) {
+          for (const structure of self.structures) {
+            structure.setLoadedToMolstar(false)
+          }
+        }
         self.molstarPluginContext = p
       },
       /**
@@ -217,6 +220,8 @@ function stateModelFactory() {
           data: structure.data,
           userProvidedTranscriptSequence: '',
         })
+        // Set loadedToMolstar BEFORE pushing to avoid race condition with autorun
+        newStructure.setLoadedToMolstar(true)
         self.structures.push(newStructure)
 
         try {
@@ -279,6 +284,9 @@ function stateModelFactory() {
             const { structures, molstarPluginContext } = self
             if (molstarPluginContext) {
               for (const structure of structures) {
+                if (structure.loadedToMolstar) {
+                  continue
+                }
                 try {
                   const { model } = structure.data
                     ? await addStructureFromData({
@@ -296,6 +304,7 @@ function stateModelFactory() {
                     ? extractStructureSequences(model)
                     : undefined
                   structure.setSequences(sequences)
+                  structure.setLoadedToMolstar(true)
                 } catch (e) {
                   self.setError(e)
                   console.error(e)

@@ -1,9 +1,6 @@
-import React, { useState } from 'react'
+import React from 'react'
 
 import {
-  Button,
-  Menu,
-  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -15,18 +12,11 @@ import {
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
-import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
-import {
-  getConfidenceUrlFromTarget,
-  getStructureUrlFromTarget,
-  getUniprotIdFromAlphaFoldTarget,
-  hasMsaViewPlugin,
-  launch1DProteinView,
-  launch3DProteinView,
-  launchMsaView,
-} from '../utils/launchViewUtils'
+import FoldseekActionMenu from './FoldseekActionMenu'
+import { getStructureUrlFromTarget } from '../utils/launchViewUtils'
 
-import type { FoldseekAlignment, FoldseekResult } from '../services/foldseekApi'
+import type { FlattenedHit } from './FoldseekActionMenu'
+import type { FoldseekResult } from '../services/foldseekApi'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -48,11 +38,6 @@ const useStyles = makeStyles()({
     textAlign: 'center',
   },
 })
-
-interface FlattenedHit extends FoldseekAlignment {
-  db: string
-  structureUrl?: string
-}
 
 function flattenResults(results: FoldseekResult): FlattenedHit[] {
   const hits: FlattenedHit[] = []
@@ -81,118 +66,6 @@ function flattenResults(results: FoldseekResult): FlattenedHit[] {
   }
   hits.sort((a, b) => (a.eval ?? Infinity) - (b.eval ?? Infinity))
   return hits.slice(0, 100)
-}
-
-function ActionMenu({
-  hit,
-  session,
-  view,
-  feature,
-  selectedTranscript,
-  userProvidedTranscriptSequence,
-  onClose,
-}: {
-  hit: FlattenedHit
-  session: AbstractSessionModel
-  view: LinearGenomeViewModel
-  feature: Feature
-  selectedTranscript?: Feature
-  userProvidedTranscriptSequence?: string
-  onClose: () => void
-}) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const open = Boolean(anchorEl)
-
-  const uniprotId = getUniprotIdFromAlphaFoldTarget(hit.target)
-  const isAlphaFold = hit.target.startsWith('AF-')
-
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleMenuClose = () => {
-    setAnchorEl(null)
-  }
-
-  const handleLaunch3D = () => {
-    handleMenuClose()
-    // Use tCa coordinates to generate PDB data if no URL is available
-    const pdbData =
-      !hit.structureUrl && hasValidCaCoords(hit.tCa, hit.tSeq)
-        ? caCoordsToPdb(hit.tCa!, hit.tSeq!, 'A', hit.target)
-        : undefined
-    launch3DProteinView({
-      session,
-      view,
-      feature,
-      selectedTranscript,
-      uniprotId,
-      url: hit.structureUrl,
-      data: pdbData,
-      userProvidedTranscriptSequence,
-    })
-    onClose()
-  }
-
-  const handleLaunch1D = async () => {
-    handleMenuClose()
-    try {
-      await launch1DProteinView({
-        session,
-        view,
-        feature,
-        selectedTranscript,
-        uniprotId,
-        confidenceUrl: getConfidenceUrlFromTarget(hit.target),
-      })
-    } catch (e) {
-      console.error(e)
-      session.notifyError(`${e}`, e)
-    }
-    onClose()
-  }
-
-  const handleLaunchMSA = () => {
-    handleMenuClose()
-    launchMsaView({
-      session,
-      view,
-      feature,
-      selectedTranscript,
-      uniprotId,
-    })
-    onClose()
-  }
-
-  const canLoad = hit.structureUrl ?? hasValidCaCoords(hit.tCa, hit.tSeq)
-  if (!canLoad) {
-    return <span>-</span>
-  }
-
-  return (
-    <>
-      <Button size="small" variant="outlined" onClick={handleClick}>
-        Load
-      </Button>
-      <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-        <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
-        {isAlphaFold && uniprotId ? (
-          <MenuItem
-            onClick={() => {
-              handleLaunch1D().catch((e: unknown) => {
-                console.error(e)
-              })
-            }}
-          >
-            Launch 1D protein annotation view
-          </MenuItem>
-        ) : null}
-        {isAlphaFold && uniprotId && hasMsaViewPlugin() ? (
-          <MenuItem onClick={handleLaunchMSA}>Launch MSA view</MenuItem>
-        ) : null}
-      </Menu>
-    </>
-  )
 }
 
 export default function FoldseekResultsTable({
@@ -263,7 +136,7 @@ export default function FoldseekResultsTable({
                   {hit.eval != null ? hit.eval.toExponential(2) : '-'}
                 </TableCell>
                 <TableCell>
-                  <ActionMenu
+                  <FoldseekActionMenu
                     hit={hit}
                     session={session}
                     view={view}

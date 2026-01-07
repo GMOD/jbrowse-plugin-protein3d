@@ -36,9 +36,6 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
-type StructureModel = Awaited<
-  ReturnType<PluginContext['builders']['structure']['createModel']>
->
 
 /**
  * Extracts position information from a MolStar structure location
@@ -86,10 +83,6 @@ const Structure = types
     /**
      * #volatile
      */
-    model: undefined as StructureModel | undefined,
-    /**
-     * #volatile
-     */
     clickGenomeHighlights: [] as IRegion[],
     /**
      * #volatile
@@ -128,17 +121,21 @@ const Structure = types
      * #volatile
      */
     isMouseInAlignment: false,
+    /**
+     * #volatile
+     * Tracks whether this structure has been loaded into Molstar
+     */
+    loadedToMolstar: false,
   }))
   .actions(self => ({
+    setSequences(str?: string[]) {
+      self.structureSequences = str
+    },
     /**
      * #action
      */
-    setModel(model: StructureModel) {
-      self.model = model
-    },
-
-    setSequences(str?: string[]) {
-      self.structureSequences = str
+    setLoadedToMolstar(val: boolean) {
+      self.loadedToMolstar = val
     },
   }))
   .views(self => ({
@@ -224,7 +221,7 @@ const Structure = types
       if (!url) {
         return undefined
       }
-      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v4.cif
+      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v6.cif
       const match = /AF-([A-Z0-9]+)-F\d+/.exec(url)
       if (match) {
         return match[1]
@@ -426,7 +423,10 @@ const Structure = types
     },
     /**
      * #getter
-     * Returns the Molstar structure object for the current structure
+     * Returns the Molstar structure object for the current structure.
+     * NOTE: This always returns structures[0], which is incorrect when
+     * multiple structures are loaded. Fixing this would require passing the
+     * structure's index from the parent ProteinView model.
      */
     get molstarStructure() {
       return this.molstarPluginContext?.managers.structure.hierarchy.current
@@ -669,23 +669,6 @@ const Structure = types
                 plugin: molstarPluginContext,
               })
             }
-          }
-        }),
-      )
-
-      addDisposer(
-        self,
-        autorun(() => {
-          const { structureSeqHoverPos, molstarPluginContext } = self
-          const structure =
-            molstarPluginContext?.managers.structure.hierarchy.current
-              .structures[0]?.cell.obj?.data
-          if (structure && structureSeqHoverPos !== undefined) {
-            highlightResidue({
-              structure,
-              plugin: molstarPluginContext,
-              selectedResidue: structureSeqHoverPos,
-            })
           }
         }),
       )

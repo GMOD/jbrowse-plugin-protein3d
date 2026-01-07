@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import useAlphaFoldUrl from './useAlphaFoldUrl'
 import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
+import { getAlphaFoldStructureUrl } from '../utils/launchViewUtils'
 
 /**
  * Custom hook to manage AlphaFold predictions and selected entry
@@ -15,12 +16,8 @@ export default function useAlphaFoldData({
 }) {
   const [selectedEntryIndex, setSelectedEntryIndex] = useState<number>(0)
 
-  // Hardcode the structure URL
   const hardcodedUrl = useMemo(
-    () =>
-      uniprotId
-        ? `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v6.cif`
-        : undefined,
+    () => (uniprotId ? getAlphaFoldStructureUrl(uniprotId) : undefined),
     [uniprotId],
   )
 

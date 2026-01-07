@@ -26,9 +26,8 @@ export default function HelpDialog({
           The procedure for the protein lookup is as follows:
           <ul>
             <li>
-              (Automatic lookup) Searches mygene.info for the transcript ID, in
-              order to retrieve the UniProt ID associated with a given
-              transcript ID and then, the UniProt ID is used to lookup the
+              (Automatic lookup) Searches UniProt for the transcript ID or gene
+              name to retrieve the UniProt ID, which is then used to lookup the
               structure in AlphaFoldDB
             </li>
             <li>
@@ -58,7 +57,7 @@ export default function HelpDialog({
         </Typography2>
         <Typography2>
           If you run into challenges with this workflow e.g. your transcripts
-          are not being found in mygene.info then you can use the Manual import
+          are not being found in UniProt then you can use the Manual import
           form, or contact colin.diesh@gmail.com for troubleshooting
         </Typography2>
       </DialogContent>

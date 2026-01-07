@@ -6,15 +6,26 @@ import { launchProteinAnnotationView } from '../components/launchProteinAnnotati
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-export function getAlphaFoldStructureUrl(uniprotId: string, version = 'v4') {
+export const ALPHAFOLD_VERSION = 'v6'
+
+export function getAlphaFoldStructureUrl(
+  uniprotId: string,
+  version = ALPHAFOLD_VERSION,
+) {
   return `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_${version}.cif`
 }
 
-export function getAlphaFoldConfidenceUrl(uniprotId: string, version = 'v4') {
+export function getAlphaFoldConfidenceUrl(
+  uniprotId: string,
+  version = ALPHAFOLD_VERSION,
+) {
   return `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-confidence_${version}.json`
 }
 
-export function getAlphaFoldMsaUrl(uniprotId: string, version = 'v6') {
+export function getAlphaFoldMsaUrl(
+  uniprotId: string,
+  version = ALPHAFOLD_VERSION,
+) {
   return `https://alphafold.ebi.ac.uk/files/msa/AF-${uniprotId}-F1-msa_${version}.a3m`
 }
 
