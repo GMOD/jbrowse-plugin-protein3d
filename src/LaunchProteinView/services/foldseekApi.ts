@@ -29,22 +29,23 @@ export interface FoldseekAlignment {
   seqId: number
   alnLength: number
   missmatches: number
-  gapsOpened: number
-  qStart: number
-  qEnd: number
-  tStart: number
-  tEnd: number
-  prob: number
-  eValue: number
-  score: number
+  gapsopened: number
+  qStartPos: number
+  qEndPos: number
   qLen: number
-  tLen: number
   qAln: string
-  tAln: string
+  dbStartPos: number
+  dbEndPos: number
+  dbLen: number
+  dbAln: string
+  prob: number
+  eval: number
+  score: number
   tCa: string
   tSeq: string
   taxId: number
   taxName: string
+  query: string
 }
 
 export interface FoldseekDatabaseResult {
@@ -60,37 +61,82 @@ export interface FoldseekResult {
   results: FoldseekDatabaseResult[]
 }
 
-export async function submitFoldseekSearch(
-  sequence: string,
-  databases: FoldseekDatabaseId[],
-) {
-  const formData = new FormData()
-
-  // Clean the sequence - remove any FASTA header and whitespace
-  const cleanSequence = sequence
+export async function predict3Di(aaSequence: string) {
+  // Clean the sequence - remove FASTA header, whitespace, stop codons, and non-AA chars
+  const cleanSequence = aaSequence
     .split('\n')
     .filter(line => !line.startsWith('>'))
     .join('')
     .replace(/\s/g, '')
+    .replace(/\*/g, '') // Remove stop codons before querying 3Di
     .toUpperCase()
+    .replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '') // Keep only valid amino acids
 
-  const fastaContent = `>query\n${cleanSequence}`
-  console.log('[Foldseek] Submitting sequence:', fastaContent.slice(0, 100))
-  console.log('[Foldseek] Sequence length:', cleanSequence.length)
+  console.log(
+    '[Foldseek] Original sequence had stop codon:',
+    aaSequence.includes('*'),
+  )
+  console.log('[Foldseek] Clean sequence length:', cleanSequence.length)
+  const response = await fetch(
+    `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`,
+  )
+  if (!response.ok) {
+    throw new Error(
+      `3Di prediction failed: ${response.status} ${await response.text()}`,
+    )
+  }
+  const di3Sequence = await response.text()
+  // Remove any quotes, slashes, or whitespace from the response
+  const cleanDi3 = di3Sequence
+    .replace(/^["'/\s]+/, '')
+    .replace(/["'/\s]+$/, '')
+    .trim()
+  console.log(
+    '[Foldseek] Raw 3Di response end chars:',
+    JSON.stringify(di3Sequence.slice(-20)),
+  )
+  console.log(
+    '[Foldseek] Clean 3Di result end chars:',
+    JSON.stringify(cleanDi3.slice(-20)),
+  )
+  return { aaSequence: cleanSequence, di3Sequence: cleanDi3 }
+}
+
+export async function submitFoldseekSearch(
+  aaSequence: string,
+  di3Sequence: string,
+  databases: FoldseekDatabaseId[],
+) {
+  console.log('[Foldseek] AA Sequence length:', aaSequence.length)
+  console.log('[Foldseek] 3Di Sequence length:', di3Sequence.length)
   console.log('[Foldseek] Databases:', databases)
 
-  const blob = new Blob([fastaContent], { type: 'text/plain' })
-  formData.append('q', blob, 'query.fasta')
+  // Submit both AA and 3Di sequences (with trailing newline like working example)
+  const fastaContent = `>query\n${aaSequence}\n>3DI\n${di3Sequence}\n`
+  console.log('[Foldseek] Submitting FASTA:', fastaContent)
+  console.log(
+    '[Foldseek] AA length:',
+    aaSequence.length,
+    '3Di length:',
+    di3Sequence.length,
+  )
 
-  formData.append('mode', 'all')
-  formData.append('email', 'colin.diesh@gmail.com')
+  const params = new URLSearchParams()
+  params.append('q', fastaContent)
+  params.append('mode', '3diaa')
+  params.append('email', '')
   for (const db of databases) {
-    formData.append('database[]', db)
+    params.append('database[]', db)
   }
+
+  console.log('[Foldseek] Full request body:', params.toString())
 
   const response = await fetch('https://search.foldseek.com/api/ticket', {
     method: 'POST',
-    body: formData,
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params,
   })
 
   const responseData = await response.json()
@@ -106,22 +152,51 @@ export async function submitFoldseekSearch(
 }
 
 export async function pollFoldseekStatus(ticketId: string) {
-  const result = (await jsonfetch(
-    `https://search.foldseek.com/api/ticket/${ticketId}`,
-  )) as FoldseekTicketResponse
-  console.log('[Foldseek] Poll status:', result)
+  // Use the /tickets endpoint (plural) with POST
+  const params = new URLSearchParams()
+  params.append('tickets[]', ticketId)
+
+  const response = await fetch('https://search.foldseek.com/api/tickets', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: params,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to poll ticket status: ${response.status}`)
+  }
+
+  const results = (await response.json()) as FoldseekTicketResponse[]
+  console.log('[Foldseek] Poll status (tickets API):', results)
+
+  // Return the first (and only) result
+  const result = results[0]
+  if (!result) {
+    throw new Error('No ticket status returned')
+  }
   return result
+}
+
+interface FoldseekApiResponse {
+  mode: string
+  queries: { header: string; sequence: string }[]
+  results: {
+    db: string
+    alignments: FoldseekAlignment[][]
+    taxonomyreports: unknown[]
+  }[]
 }
 
 export async function getFoldseekResults(
   ticketId: string,
-  dbIndex: number,
-): Promise<FoldseekDatabaseResult> {
+): Promise<FoldseekApiResponse> {
   const result = await jsonfetch(
-    `https://search.foldseek.com/api/result/${ticketId}/${dbIndex}`,
+    `https://search.foldseek.com/api/result/${ticketId}/0`,
   )
-  console.log('[Foldseek] Results for db', dbIndex, ':', result)
-  return result as FoldseekDatabaseResult
+  console.log('[Foldseek] Results:', result)
+  return result as FoldseekApiResponse
 }
 
 export async function waitForFoldseekResults(
@@ -144,14 +219,15 @@ export async function waitForFoldseekResults(
 
     if (status.status === 'COMPLETE') {
       onStatusChange?.('Fetching results...')
-      const results: FoldseekResult = {
-        query: { header: '', sequence: '' },
-        results: [],
-      }
+      const apiResponse = await getFoldseekResults(ticketId)
 
-      for (let i = 0; i < databases.length; i++) {
-        const dbResult = await getFoldseekResults(ticketId, i)
-        results.results.push(dbResult)
+      // Transform API response to our format
+      const results: FoldseekResult = {
+        query: apiResponse.queries[0] ?? { header: '', sequence: '' },
+        results: apiResponse.results.map(r => ({
+          db: r.db,
+          alignments: r.alignments,
+        })),
       }
 
       return results

@@ -2,7 +2,13 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import { Button, DialogActions, DialogContent, TextField } from '@mui/material'
+import {
+  Button,
+  DialogActions,
+  DialogContent,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -30,6 +36,11 @@ const useStyles = makeStyles()({
   sequenceInput: {
     fontFamily: 'monospace',
   },
+  di3Section: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 8,
+  },
 })
 
 const FoldseekSearch = observer(function FoldseekSearch({
@@ -50,8 +61,18 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const [selectedDatabases, setSelectedDatabases] =
     useState<FoldseekDatabaseId[]>(DEFAULT_DATABASES)
 
-  const { results, isLoading, error, statusMessage, search, reset } =
-    useFoldseekSearch()
+  const {
+    results,
+    cleanedAaSequence,
+    di3Sequence,
+    isLoading,
+    isPredicting,
+    error,
+    statusMessage,
+    predictStructure,
+    search,
+    reset,
+  } = useFoldseekSearch()
 
   const transcripts = useMemo(() => getTranscriptFeatures(feature), [feature])
 
@@ -84,37 +105,32 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
   useEffect(() => {
     if (selectedIsoformData?.seq) {
-      setSequence(selectedIsoformData.seq)
+      // Strip stop codons from displayed sequence
+      setSequence(selectedIsoformData.seq.replace(/\*/g, ''))
     }
   }, [selectedIsoformData])
 
-  const handleSearch = () => {
-    if (sequence.trim() && selectedDatabases.length > 0) {
-      search(sequence.trim(), selectedDatabases)
+  const handlePredict = async () => {
+    if (sequence.trim()) {
+      await predictStructure(sequence.trim())
     }
   }
 
-  const handleLoadStructure = (url: string, target: string) => {
-    session.addView('ProteinView', {
-      type: 'ProteinView',
-      isFloating: true,
-      structures: [
-        {
-          url,
-          userProvidedTranscriptSequence: sequence.replace(/^>.*\n/, ''),
-          feature: selectedTranscript?.toJSON(),
-          connectedViewId: view.id,
-        },
-      ],
-      displayName: `Protein view - ${target}`,
-    })
-    handleClose()
+  const handleSearch = () => {
+    if (cleanedAaSequence && di3Sequence && selectedDatabases.length > 0) {
+      search(cleanedAaSequence, di3Sequence, selectedDatabases)
+    }
   }
 
+  const canPredict = sequence.trim().length > 0 && !isPredicting && !isLoading
   const canSearch =
-    sequence.trim().length > 0 && selectedDatabases.length > 0 && !isLoading
+    !!cleanedAaSequence &&
+    !!di3Sequence &&
+    selectedDatabases.length > 0 &&
+    !isLoading
 
   const combinedError = error || isoformError
+  const isBusy = isLoading || isPredicting
 
   return (
     <>
@@ -129,43 +145,68 @@ const FoldseekSearch = observer(function FoldseekSearch({
         ) : null}
 
         {isoformSequences ? (
-          <TranscriptSelector
-            val={selectedTranscriptId}
-            setVal={setSelectedTranscriptId}
-            isoforms={transcripts}
-            isoformSequences={isoformSequences}
-            feature={feature}
-            disabled={isLoading}
-          />
+          <>
+            <TranscriptSelector
+              val={selectedTranscriptId}
+              setVal={setSelectedTranscriptId}
+              isoforms={transcripts}
+              isoformSequences={isoformSequences}
+              feature={feature}
+              disabled={isBusy}
+            />
+            <TextField
+              label="Protein sequence (amino acids)"
+              multiline
+              rows={4}
+              value={sequence}
+              onChange={e => {
+                setSequence(e.target.value)
+              }}
+              placeholder={`MKTVRQERLKSIVRILERSKEPVSGAQLAEEL...`}
+              disabled={isBusy}
+              InputProps={{
+                className: classes.sequenceInput,
+              }}
+            />
+          </>
         ) : null}
 
-        <TextField
-          label="Protein sequence (FASTA format or raw sequence)"
-          multiline
-          rows={6}
-          value={sequence}
-          onChange={e => setSequence(e.target.value)}
-          placeholder={`>query\nMKTVRQERLKSIVRILERSKEPVSGAQLAEELSNL...`}
-          disabled={isLoading}
-          InputProps={{
-            className: classes.sequenceInput,
-          }}
-        />
+        {di3Sequence ? (
+          <div className={classes.di3Section}>
+            <Typography variant="subtitle2">
+              3Di structural alphabet (used for searching):
+            </Typography>
+            <TextField
+              multiline
+              rows={4}
+              value={di3Sequence}
+              InputProps={{
+                className: classes.sequenceInput,
+                readOnly: true,
+              }}
+            />
+          </div>
+        ) : null}
 
         <FoldseekDatabaseSelector
           selected={selectedDatabases}
           onChange={setSelectedDatabases}
-          disabled={isLoading}
+          disabled={isBusy}
         />
 
-        {isLoading && statusMessage ? (
+        {statusMessage ? (
           <LoadingEllipses variant="subtitle2" message={statusMessage} />
         ) : null}
 
         {results ? (
           <FoldseekResultsTable
             results={results}
-            onLoadStructure={handleLoadStructure}
+            session={session}
+            view={view}
+            feature={feature}
+            selectedTranscript={selectedTranscript}
+            userProvidedTranscriptSequence={sequence}
+            onClose={handleClose}
           />
         ) : null}
       </DialogContent>
@@ -178,14 +219,25 @@ const FoldseekSearch = observer(function FoldseekSearch({
             New search
           </Button>
         ) : null}
-        <Button
-          variant="contained"
-          color="primary"
-          disabled={!canSearch}
-          onClick={handleSearch}
-        >
-          {isLoading ? 'Searching...' : 'Search Foldseek'}
-        </Button>
+        {!di3Sequence ? (
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!canPredict}
+            onClick={handlePredict}
+          >
+            {isPredicting ? 'Predicting...' : 'Predict 3Di structure'}
+          </Button>
+        ) : (
+          <Button
+            variant="contained"
+            color="primary"
+            disabled={!canSearch}
+            onClick={handleSearch}
+          >
+            {isLoading ? 'Searching...' : 'Search Foldseek'}
+          </Button>
+        )}
       </DialogActions>
     </>
   )

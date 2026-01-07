@@ -7,8 +7,7 @@ export function getTranscriptFeatures(feature: Feature) {
 
   // Check for mRNA/transcript subfeatures (three-level: gene → mRNA → CDS)
   const transcripts = subfeatures.filter(
-    (f: Feature) =>
-      f.get('type') === 'mRNA' || f.get('type') === 'transcript',
+    (f: Feature) => f.get('type') === 'mRNA' || f.get('type') === 'transcript',
   )
   if (transcripts.length > 0) {
     return transcripts

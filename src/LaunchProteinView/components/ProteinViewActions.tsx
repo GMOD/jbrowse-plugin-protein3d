@@ -1,15 +1,18 @@
 import React from 'react'
 
-import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button, Typography } from '@mui/material'
 
 import AlignmentSettingsButton from './AlignmentSettingsButton'
-import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import {
   ALIGNMENT_ALGORITHM_LABELS,
   AlignmentAlgorithm,
 } from '../../ProteinView/types'
-import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
+import {
+  hasMsaViewPlugin,
+  launch1DProteinView,
+  launch3DProteinView,
+  launchMsaView,
+} from '../utils/launchViewUtils'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -29,9 +32,6 @@ interface ProteinViewActionsProps {
   sequencesMatch?: boolean
 }
 
-/**
- * Component for the dialog action buttons (Cancel, Launch 3D, Launch 1D)
- */
 export default function ProteinViewActions({
   handleClose,
   uniprotId,
@@ -53,79 +53,49 @@ export default function ProteinViewActions({
     if (!selectedTranscript) {
       return
     }
-
-    session.addView('ProteinView', {
-      type: 'ProteinView',
-      isFloating: true,
+    launch3DProteinView({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
+      url,
+      userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
       alignmentAlgorithm,
-      structures: [
-        {
-          url,
-          userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
-          feature: selectedTranscript.toJSON(),
-          connectedViewId: view.id,
-        },
-      ],
-      displayName: [
-        ...new Set([
-          'Protein view',
-          uniprotId,
-          getGeneDisplayName(feature),
-          getTranscriptDisplayName(selectedTranscript),
-        ]),
-      ].join(' - '),
     })
     handleClose()
   }
 
-  const handleLaunch1DView = () => {
-    if (uniprotId && isSessionWithAddTracks(session) && selectedTranscript) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
-      ;(async () => {
-        try {
-          await launchProteinAnnotationView({
-            session,
-            selectedTranscript,
-            feature,
-            uniprotId,
-            confidenceUrl,
-            connectedViewId: view.id,
-          })
-        } catch (e) {
-          console.error(e)
-          session.notifyError(`${e}`, e)
-        }
-      })()
+  const handleLaunch1DView = async () => {
+    if (!uniprotId || !selectedTranscript) {
+      return
+    }
+    try {
+      await launch1DProteinView({
+        session,
+        view,
+        feature,
+        selectedTranscript,
+        uniprotId,
+        confidenceUrl,
+      })
+    } catch (e) {
+      console.error(e)
+      session.notifyError(`${e}`, e)
     }
     handleClose()
   }
-
-  // Check if MSA view plugin is available
-  // @ts-expect-error
-  const hasMsaViewPlugin = typeof window.JBrowsePluginMsaView !== 'undefined'
 
   const handleLaunchMSAView = () => {
     if (!selectedTranscript || !uniprotId) {
       return
     }
-
-    const msaUrl = `https://alphafold.ebi.ac.uk/files/msa/AF-${uniprotId}-F1-msa_v6.a3m`
-
-    session.addView('MsaView', {
-      type: 'MsaView',
-      displayName: [
-        ...new Set([
-          'MSA view',
-          uniprotId,
-          getGeneDisplayName(feature),
-          getTranscriptDisplayName(selectedTranscript),
-        ]),
-      ].join(' - '),
-      connectedViewId: view.id,
-      connectedFeature: selectedTranscript.toJSON(),
-      init: {
-        msaUrl,
-      },
+    launchMsaView({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
     })
     handleClose()
   }
@@ -170,7 +140,7 @@ export default function ProteinViewActions({
       >
         Launch 1-D protein annotation view
       </Button>
-      {hasMsaViewPlugin ? (
+      {hasMsaViewPlugin() ? (
         <Button
           variant="contained"
           disabled={isLaunchDisabled}

@@ -6,12 +6,12 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
-import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import {
   ProteinFeatureTrackContent,
   ProteinFeatureTrackLabels,
 } from './ProteinFeatureTrack'
 import SplitString from './SplitString'
+import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 
 const LABEL_WIDTH = 50
 const ROW_HEIGHT = 14

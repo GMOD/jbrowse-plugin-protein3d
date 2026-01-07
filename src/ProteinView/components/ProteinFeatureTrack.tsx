@@ -7,11 +7,8 @@ import { observer } from 'mobx-react'
 import highlightResidueRange, {
   selectResidueRange,
 } from '../highlightResidueRange'
-import {
-  UniProtFeature,
-  getFeatureColor,
-} from '../hooks/useUniProtFeatures'
 import { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
+import { UniProtFeature, getFeatureColor } from '../hooks/useUniProtFeatures'
 import { JBrowsePluginProteinStructureModel } from '../model'
 
 const CHAR_WIDTH = 6

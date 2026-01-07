@@ -84,7 +84,9 @@ export default function FoldseekDatabaseSelector({
               <Checkbox
                 size="small"
                 checked={selected.includes(db.id)}
-                onChange={() => handleToggle(db.id)}
+                onChange={() => {
+                  handleToggle(db.id)
+                }}
                 disabled={disabled}
               />
             }

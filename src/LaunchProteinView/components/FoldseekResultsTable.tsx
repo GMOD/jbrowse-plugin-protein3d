@@ -1,7 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import {
   Button,
+  Menu,
+  MenuItem,
   Paper,
   Table,
   TableBody,
@@ -13,10 +15,19 @@ import {
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
-import type {
-  FoldseekAlignment,
-  FoldseekResult,
-} from '../services/foldseekApi'
+import {
+  getConfidenceUrlFromTarget,
+  getStructureUrlFromTarget,
+  getUniprotIdFromAlphaFoldTarget,
+  hasMsaViewPlugin,
+  launch1DProteinView,
+  launch3DProteinView,
+  launchMsaView,
+} from '../utils/launchViewUtils'
+
+import type { FoldseekAlignment, FoldseekResult } from '../services/foldseekApi'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()({
   root: {
@@ -37,22 +48,6 @@ const useStyles = makeStyles()({
   },
 })
 
-function getStructureUrl(target: string, db: string) {
-  if (target.startsWith('AF-')) {
-    const match = /AF-([A-Z0-9]+)-F\d+/.exec(target)
-    if (match) {
-      return `https://alphafold.ebi.ac.uk/files/${target}-model_v4.cif`
-    }
-  }
-  if (db === 'pdb100') {
-    const pdbId = target.split('_')[0]
-    if (pdbId) {
-      return `https://files.rcsb.org/download/${pdbId}.cif`
-    }
-  }
-  return undefined
-}
-
 interface FlattenedHit extends FoldseekAlignment {
   db: string
   structureUrl?: string
@@ -61,26 +56,147 @@ interface FlattenedHit extends FoldseekAlignment {
 function flattenResults(results: FoldseekResult): FlattenedHit[] {
   const hits: FlattenedHit[] = []
   for (const dbResult of results.results) {
+    if (!dbResult.alignments) {
+      continue
+    }
     for (const alignmentGroup of dbResult.alignments) {
+      if (!alignmentGroup) {
+        continue
+      }
       for (const alignment of alignmentGroup) {
+        if (!alignment) {
+          continue
+        }
         hits.push({
           ...alignment,
           db: dbResult.db,
-          structureUrl: getStructureUrl(alignment.target, dbResult.db),
+          structureUrl: getStructureUrlFromTarget(
+            alignment.target,
+            dbResult.db,
+          ),
         })
       }
     }
   }
-  hits.sort((a, b) => b.prob - a.prob)
+  hits.sort((a, b) => (a.eval ?? Infinity) - (b.eval ?? Infinity))
   return hits.slice(0, 100)
+}
+
+function ActionMenu({
+  hit,
+  session,
+  view,
+  feature,
+  selectedTranscript,
+  userProvidedTranscriptSequence,
+  onClose,
+}: {
+  hit: FlattenedHit
+  session: AbstractSessionModel
+  view: LinearGenomeViewModel
+  feature: Feature
+  selectedTranscript?: Feature
+  userProvidedTranscriptSequence?: string
+  onClose: () => void
+}) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const open = Boolean(anchorEl)
+
+  const uniprotId = getUniprotIdFromAlphaFoldTarget(hit.target)
+  const isAlphaFold = hit.target.startsWith('AF-')
+
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
+  const handleLaunch3D = () => {
+    handleMenuClose()
+    launch3DProteinView({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
+      url: hit.structureUrl,
+      userProvidedTranscriptSequence,
+    })
+    onClose()
+  }
+
+  const handleLaunch1D = async () => {
+    handleMenuClose()
+    try {
+      await launch1DProteinView({
+        session,
+        view,
+        feature,
+        selectedTranscript,
+        uniprotId,
+        confidenceUrl: getConfidenceUrlFromTarget(hit.target),
+      })
+    } catch (e) {
+      console.error(e)
+      session.notifyError(`${e}`, e)
+    }
+    onClose()
+  }
+
+  const handleLaunchMSA = () => {
+    handleMenuClose()
+    launchMsaView({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
+    })
+    onClose()
+  }
+
+  if (!hit.structureUrl) {
+    return <span>-</span>
+  }
+
+  return (
+    <>
+      <Button size="small" variant="outlined" onClick={handleClick}>
+        Load
+      </Button>
+      <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
+        <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
+        {isAlphaFold && uniprotId ? (
+          <MenuItem onClick={handleLaunch1D}>
+            Launch 1D protein annotation view
+          </MenuItem>
+        ) : null}
+        {isAlphaFold && uniprotId && hasMsaViewPlugin() ? (
+          <MenuItem onClick={handleLaunchMSA}>Launch MSA view</MenuItem>
+        ) : null}
+      </Menu>
+    </>
+  )
 }
 
 export default function FoldseekResultsTable({
   results,
-  onLoadStructure,
+  session,
+  view,
+  feature,
+  selectedTranscript,
+  userProvidedTranscriptSequence,
+  onClose,
 }: {
   results: FoldseekResult
-  onLoadStructure?: (url: string, target: string) => void
+  session: AbstractSessionModel
+  view: LinearGenomeViewModel
+  feature: Feature
+  selectedTranscript?: Feature
+  userProvidedTranscriptSequence?: string
+  onClose: () => void
 }) {
   const { classes } = useStyles()
   const flatHits = flattenResults(results)
@@ -118,26 +234,32 @@ export default function FoldseekResultsTable({
                 <TableCell>{hit.db}</TableCell>
                 <TableCell>{hit.target}</TableCell>
                 <TableCell>{hit.taxName || '-'}</TableCell>
-                <TableCell>{(hit.prob * 100).toFixed(1)}%</TableCell>
-                <TableCell>{hit.seqId.toFixed(1)}%</TableCell>
                 <TableCell>
-                  {((hit.alnLength / hit.qLen) * 100).toFixed(1)}%
+                  {hit.prob != null ? `${(hit.prob * 100).toFixed(1)}%` : '-'}
                 </TableCell>
-                <TableCell>{hit.eValue.toExponential(2)}</TableCell>
                 <TableCell>
-                  {hit.structureUrl && onLoadStructure ? (
-                    <Button
-                      size="small"
-                      variant="outlined"
-                      onClick={() =>
-                        onLoadStructure(hit.structureUrl!, hit.target)
-                      }
-                    >
-                      Load
-                    </Button>
-                  ) : (
-                    '-'
-                  )}
+                  {hit.seqId != null ? `${hit.seqId.toFixed(1)}%` : '-'}
+                </TableCell>
+                <TableCell>
+                  {hit.alnLength != null && hit.qLen != null
+                    ? `${((hit.alnLength / hit.qLen) * 100).toFixed(1)}%`
+                    : '-'}
+                </TableCell>
+                <TableCell>
+                  {hit.eval != null ? hit.eval.toExponential(2) : '-'}
+                </TableCell>
+                <TableCell>
+                  <ActionMenu
+                    hit={hit}
+                    session={session}
+                    view={view}
+                    feature={feature}
+                    selectedTranscript={selectedTranscript}
+                    userProvidedTranscriptSequence={
+                      userProvidedTranscriptSequence
+                    }
+                    onClose={onClose}
+                  />
                 </TableCell>
               </TableRow>
             ))}
