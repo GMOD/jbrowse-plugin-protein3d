@@ -15,6 +15,7 @@ import {
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
+import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
 import {
   getConfidenceUrlFromTarget,
   getStructureUrlFromTarget,
@@ -115,6 +116,11 @@ function ActionMenu({
 
   const handleLaunch3D = () => {
     handleMenuClose()
+    // Use tCa coordinates to generate PDB data if no URL is available
+    const pdbData =
+      !hit.structureUrl && hasValidCaCoords(hit.tCa, hit.tSeq)
+        ? caCoordsToPdb(hit.tCa, hit.tSeq, 'A', hit.target)
+        : undefined
     launch3DProteinView({
       session,
       view,
@@ -122,6 +128,7 @@ function ActionMenu({
       selectedTranscript,
       uniprotId,
       url: hit.structureUrl,
+      data: pdbData,
       userProvidedTranscriptSequence,
     })
     onClose()
@@ -157,7 +164,8 @@ function ActionMenu({
     onClose()
   }
 
-  if (!hit.structureUrl) {
+  const canLoad = hit.structureUrl || hasValidCaCoords(hit.tCa, hit.tSeq)
+  if (!canLoad) {
     return <span>-</span>
   }
 

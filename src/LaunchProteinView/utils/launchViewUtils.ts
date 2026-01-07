@@ -69,12 +69,16 @@ export function launch3DProteinView({
   selectedTranscript,
   uniprotId,
   url,
+  data,
   userProvidedTranscriptSequence,
   alignmentAlgorithm,
+  displayName,
 }: LaunchViewParams & {
   url?: string
+  data?: string
   userProvidedTranscriptSequence?: string
   alignmentAlgorithm?: string
+  displayName?: string
 }) {
   session.addView('ProteinView', {
     type: 'ProteinView',
@@ -83,19 +87,22 @@ export function launch3DProteinView({
     structures: [
       {
         url,
+        data,
         userProvidedTranscriptSequence,
         feature: selectedTranscript?.toJSON(),
         connectedViewId: view.id,
       },
     ],
-    displayName: [
-      ...new Set([
-        'Protein view',
-        uniprotId,
-        getGeneDisplayName(feature),
-        getTranscriptDisplayName(selectedTranscript),
-      ]),
-    ].join(' - '),
+    displayName:
+      displayName ??
+      [
+        ...new Set([
+          'Protein view',
+          uniprotId,
+          getGeneDisplayName(feature),
+          getTranscriptDisplayName(selectedTranscript),
+        ]),
+      ].join(' - '),
   })
 }
 
