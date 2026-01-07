@@ -56,6 +56,7 @@ export default function useFoldseekSearch() {
       di3Seq: string,
       databases: FoldseekDatabaseId[] = DEFAULT_DATABASES,
     ) => {
+      const isAborted = () => abortRef.current
       setIsLoading(true)
       setError(undefined)
       setResults(undefined)
@@ -65,7 +66,7 @@ export default function useFoldseekSearch() {
       try {
         const ticket = await submitFoldseekSearch(aaSeq, di3Seq, databases)
 
-        if (abortRef.current) {
+        if (isAborted()) {
           return
         }
 
@@ -73,23 +74,23 @@ export default function useFoldseekSearch() {
           ticket.id,
           databases,
           status => {
-            if (!abortRef.current) {
+            if (!isAborted()) {
               setStatusMessage(status)
             }
           },
         )
 
-        if (!abortRef.current) {
+        if (!isAborted()) {
           setResults(results)
           setStatusMessage('')
         }
       } catch (e) {
-        if (!abortRef.current) {
+        if (!isAborted()) {
           setError(e)
           setStatusMessage('')
         }
       } finally {
-        if (!abortRef.current) {
+        if (!isAborted()) {
           setIsLoading(false)
         }
       }

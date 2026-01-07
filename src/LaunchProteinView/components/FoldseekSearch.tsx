@@ -118,7 +118,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
   const handleSearch = () => {
     if (cleanedAaSequence && di3Sequence && selectedDatabases.length > 0) {
-      search(cleanedAaSequence, di3Sequence, selectedDatabases)
+      search(cleanedAaSequence, di3Sequence, selectedDatabases).catch(
+        (e: unknown) => {
+          console.error(e)
+        },
+      )
     }
   }
 
@@ -129,7 +133,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     selectedDatabases.length > 0 &&
     !isLoading
 
-  const combinedError = error || isoformError
+  const combinedError = error ?? isoformError
   const isBusy = isLoading || isPredicting
 
   return (
@@ -224,7 +228,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
             variant="contained"
             color="primary"
             disabled={!canPredict}
-            onClick={handlePredict}
+            onClick={() => {
+              handlePredict().catch((e: unknown) => {
+                console.error(e)
+              })
+            }}
           >
             {isPredicting ? 'Predicting...' : 'Predict 3Di structure'}
           </Button>

@@ -62,8 +62,8 @@ export function caCoordsToPdb(
     const x = coords[i]
     const y = coords[i + 1]
     const z = coords[i + 2]
-    const aa = tSeq[resNum - 1] || 'X'
-    const resName = AA_3LETTER[aa] || 'UNK'
+    const aa = tSeq[resNum - 1] ?? 'X'
+    const resName = AA_3LETTER[aa] ?? 'UNK'
 
     if (x === undefined || y === undefined || z === undefined) {
       break

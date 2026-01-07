@@ -164,7 +164,7 @@ function ActionMenu({
     onClose()
   }
 
-  const canLoad = hit.structureUrl || hasValidCaCoords(hit.tCa, hit.tSeq)
+  const canLoad = hit.structureUrl ?? hasValidCaCoords(hit.tCa, hit.tSeq)
   if (!canLoad) {
     return <span>-</span>
   }
@@ -177,7 +177,13 @@ function ActionMenu({
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
         <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
         {isAlphaFold && uniprotId ? (
-          <MenuItem onClick={handleLaunch1D}>
+          <MenuItem
+            onClick={() => {
+              handleLaunch1D().catch((e: unknown) => {
+                console.error(e)
+              })
+            }}
+          >
             Launch 1D protein annotation view
           </MenuItem>
         ) : null}
@@ -241,7 +247,7 @@ export default function FoldseekResultsTable({
               <TableRow key={`${hit.db}-${hit.target}-${idx}`}>
                 <TableCell>{hit.db}</TableCell>
                 <TableCell>{hit.target}</TableCell>
-                <TableCell>{hit.taxName || '-'}</TableCell>
+                <TableCell>{hit.taxName ?? '-'}</TableCell>
                 <TableCell>
                   {hit.prob != null ? `${(hit.prob * 100).toFixed(1)}%` : '-'}
                 </TableCell>

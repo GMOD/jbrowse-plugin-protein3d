@@ -1,6 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-import { Button, Typography } from '@mui/material'
+import { Button, Menu, MenuItem, Typography } from '@mui/material'
 
 import AlignmentSettingsButton from './AlignmentSettingsButton'
 import {
@@ -46,10 +46,22 @@ export default function ProteinViewActions({
   onAlignmentAlgorithmChange,
   sequencesMatch,
 }: ProteinViewActionsProps) {
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
+  const menuOpen = Boolean(anchorEl)
+
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
+  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    setAnchorEl(event.currentTarget)
+  }
+
+  const handleMenuClose = () => {
+    setAnchorEl(null)
+  }
+
   const handleLaunch3DView = () => {
+    handleMenuClose()
     if (!selectedTranscript) {
       return
     }
@@ -67,6 +79,7 @@ export default function ProteinViewActions({
   }
 
   const handleLaunch1DView = async () => {
+    handleMenuClose()
     if (!uniprotId || !selectedTranscript) {
       return
     }
@@ -87,6 +100,7 @@ export default function ProteinViewActions({
   }
 
   const handleLaunchMSAView = () => {
+    handleMenuClose()
     if (!selectedTranscript || !uniprotId) {
       return
     }
@@ -129,26 +143,27 @@ export default function ProteinViewActions({
         variant="contained"
         color="primary"
         disabled={isLaunchDisabled}
-        onClick={handleLaunch3DView}
+        onClick={handleMenuClick}
       >
-        Launch 3-D protein structure view
+        Launch
       </Button>
-      <Button
-        variant="contained"
-        disabled={isLaunchDisabled}
-        onClick={handleLaunch1DView}
-      >
-        Launch 1-D protein annotation view
-      </Button>
-      {hasMsaViewPlugin() ? (
-        <Button
-          variant="contained"
-          disabled={isLaunchDisabled}
-          onClick={handleLaunchMSAView}
+      <Menu anchorEl={anchorEl} open={menuOpen} onClose={handleMenuClose}>
+        <MenuItem onClick={handleLaunch3DView}>
+          Launch 3D protein structure view
+        </MenuItem>
+        <MenuItem
+          onClick={() => {
+            handleLaunch1DView().catch((e: unknown) => {
+              console.error(e)
+            })
+          }}
         >
-          Launch MSA view
-        </Button>
-      ) : null}
+          Launch 1D protein annotation view
+        </MenuItem>
+        {hasMsaViewPlugin() ? (
+          <MenuItem onClick={handleLaunchMSAView}>Launch MSA view</MenuItem>
+        ) : null}
+      </Menu>
     </>
   )
 }

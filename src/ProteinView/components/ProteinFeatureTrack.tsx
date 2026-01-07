@@ -15,8 +15,6 @@ const CHAR_WIDTH = 6
 const TRACK_HEIGHT = 12
 const TRACK_GAP = 2
 
-type FeaturesByType = Record<string, UniProtFeature[]>
-
 const FeatureBar = observer(function FeatureBar({
   feature,
   model,

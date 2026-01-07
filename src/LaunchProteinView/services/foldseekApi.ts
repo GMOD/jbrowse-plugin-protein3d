@@ -26,31 +26,31 @@ export interface FoldseekTicketResponse {
 
 export interface FoldseekAlignment {
   target: string
-  seqId: number
-  alnLength: number
-  missmatches: number
-  gapsopened: number
-  qStartPos: number
-  qEndPos: number
-  qLen: number
-  qAln: string
-  dbStartPos: number
-  dbEndPos: number
-  dbLen: number
-  dbAln: string
-  prob: number
-  eval: number
-  score: number
-  tCa: string
-  tSeq: string
-  taxId: number
-  taxName: string
-  query: string
+  seqId?: number
+  alnLength?: number
+  mismatches?: number
+  gapsopened?: number
+  qStartPos?: number
+  qEndPos?: number
+  qLen?: number
+  qAln?: string
+  dbStartPos?: number
+  dbEndPos?: number
+  dbLen?: number
+  dbAln?: string
+  prob?: number
+  eval?: number
+  score?: number
+  tCa?: string
+  tSeq?: string
+  taxId?: number
+  taxName?: string
+  query?: string
 }
 
 export interface FoldseekDatabaseResult {
   db: string
-  alignments: FoldseekAlignment[][]
+  alignments?: ((FoldseekAlignment | undefined)[] | undefined)[]
 }
 
 export interface FoldseekResult {
@@ -72,11 +72,6 @@ export async function predict3Di(aaSequence: string) {
     .toUpperCase()
     .replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '') // Keep only valid amino acids
 
-  console.log(
-    '[Foldseek] Original sequence had stop codon:',
-    aaSequence.includes('*'),
-  )
-  console.log('[Foldseek] Clean sequence length:', cleanSequence.length)
   const response = await fetch(
     `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`,
   )
@@ -91,14 +86,6 @@ export async function predict3Di(aaSequence: string) {
     .replace(/^["'/\s]+/, '')
     .replace(/["'/\s]+$/, '')
     .trim()
-  console.log(
-    '[Foldseek] Raw 3Di response end chars:',
-    JSON.stringify(di3Sequence.slice(-20)),
-  )
-  console.log(
-    '[Foldseek] Clean 3Di result end chars:',
-    JSON.stringify(cleanDi3.slice(-20)),
-  )
   return { aaSequence: cleanSequence, di3Sequence: cleanDi3 }
 }
 
@@ -107,20 +94,8 @@ export async function submitFoldseekSearch(
   di3Sequence: string,
   databases: FoldseekDatabaseId[],
 ) {
-  console.log('[Foldseek] AA Sequence length:', aaSequence.length)
-  console.log('[Foldseek] 3Di Sequence length:', di3Sequence.length)
-  console.log('[Foldseek] Databases:', databases)
-
   // Submit both AA and 3Di sequences (with trailing newline like working example)
   const fastaContent = `>query\n${aaSequence}\n>3DI\n${di3Sequence}\n`
-  console.log('[Foldseek] Submitting FASTA:', fastaContent)
-  console.log(
-    '[Foldseek] AA length:',
-    aaSequence.length,
-    '3Di length:',
-    di3Sequence.length,
-  )
-
   const params = new URLSearchParams()
   params.append('q', fastaContent)
   params.append('mode', '3diaa')
@@ -128,8 +103,6 @@ export async function submitFoldseekSearch(
   for (const db of databases) {
     params.append('database[]', db)
   }
-
-  console.log('[Foldseek] Full request body:', params.toString())
 
   const response = await fetch('https://search.foldseek.com/api/ticket', {
     method: 'POST',
@@ -140,7 +113,6 @@ export async function submitFoldseekSearch(
   })
 
   const responseData = await response.json()
-  console.log('[Foldseek] Submit response:', responseData)
 
   if (!response.ok) {
     throw new Error(
@@ -169,7 +141,6 @@ export async function pollFoldseekStatus(ticketId: string) {
   }
 
   const results = (await response.json()) as FoldseekTicketResponse[]
-  console.log('[Foldseek] Poll status (tickets API):', results)
 
   // Return the first (and only) result
   const result = results[0]
@@ -195,7 +166,6 @@ export async function getFoldseekResults(
   const result = await jsonfetch(
     `https://search.foldseek.com/api/result/${ticketId}/0`,
   )
-  console.log('[Foldseek] Results:', result)
   return result as FoldseekApiResponse
 }
 
@@ -213,7 +183,7 @@ export async function waitForFoldseekResults(
     if (status.status === 'ERROR') {
       console.error('[Foldseek] Search error:', status)
       throw new Error(
-        `Foldseek search failed: ${status.error || 'Unknown error'}`,
+        `Foldseek search failed: ${status.error ?? 'Unknown error'}`,
       )
     }
 
