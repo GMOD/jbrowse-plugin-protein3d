@@ -25,6 +25,7 @@ interface UniProtIdInputProps {
   featureUniprotId?: string
   transcriptId?: string
   isLoading: boolean
+  hasProteinSequence?: boolean
   sequenceSearchType?: SequenceSearchType
   onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
 }
@@ -73,6 +74,7 @@ export default function UniProtIdInput({
   featureUniprotId,
   transcriptId,
   isLoading,
+  hasProteinSequence,
   sequenceSearchType,
   onSequenceSearchTypeChange,
 }: UniProtIdInputProps) {
@@ -105,11 +107,13 @@ export default function UniProtIdInput({
             control={<Radio />}
             label="Manual UniProt ID entry"
           />
-          <FormControlLabel
-            value="sequence"
-            control={<Radio />}
-            label="AlphaFoldDB sequence search"
-          />
+          {hasProteinSequence && (
+            <FormControlLabel
+              value="sequence"
+              control={<Radio />}
+              label="AlphaFoldDB sequence search"
+            />
+          )}
         </RadioGroup>
       </FormControl>
 

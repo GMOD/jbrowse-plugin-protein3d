@@ -107,6 +107,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const {
     uniprotId: sequenceSearchUniprotId,
     cifUrl: sequenceSearchCifUrl,
+    plddtDocUrl: sequenceSearchPlddtUrl,
     structureSequence: sequenceSearchStructureSequence,
     isLoading: isSequenceSearchLoading,
     error: sequenceSearchError,
@@ -150,7 +151,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // Use sequence search URLs/sequence when in sequence mode, otherwise use AlphaFold data
   const url = lookupMode === 'sequence' ? sequenceSearchCifUrl : alphaFoldUrl
   const confidenceUrl =
-    lookupMode === 'sequence' ? undefined : alphaFoldConfidenceUrl
+    lookupMode === 'sequence' ? sequenceSearchPlddtUrl : alphaFoldConfidenceUrl
   const structureSequence =
     lookupMode === 'sequence'
       ? sequenceSearchStructureSequence
@@ -201,6 +202,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               : getDisplayName(feature)
           }
           isLoading={isLookupLoading}
+          hasProteinSequence={!!userSelectedProteinSequence?.seq}
           sequenceSearchType={sequenceSearchType}
           onSequenceSearchTypeChange={setSequenceSearchType}
         />
