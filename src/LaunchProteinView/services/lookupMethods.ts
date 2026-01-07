@@ -1,10 +1,11 @@
 import { jsonfetch } from '../../fetchUtils'
 import { stripTrailingVersion } from '../utils/util'
 
-interface UniProtSearchResult {
+interface UniProtApiResult {
   results: {
     entryType: string
     primaryAccession: string
+    uniProtkbId?: string
     genes?: {
       geneName?: {
         value: string
@@ -12,8 +13,26 @@ interface UniProtSearchResult {
     }[]
     organism?: {
       taxonId: number
+      scientificName?: string
+      commonName?: string
+    }
+    proteinDescription?: {
+      recommendedName?: {
+        fullName?: {
+          value: string
+        }
+      }
     }
   }[]
+}
+
+export interface UniProtEntry {
+  accession: string
+  id?: string
+  geneName?: string
+  organismName?: string
+  proteinName?: string
+  isReviewed: boolean
 }
 
 // Ensembl ID prefixes - covers human (ENS), mouse (ENSMUS), zebrafish (ENSDAR), etc.
@@ -30,62 +49,89 @@ export function isRecognizedTranscriptId(id: string) {
   return isEnsemblId(id) || isRefSeqId(id)
 }
 
-export async function lookupUniProtIdViaUniProt(
-  geneId: string,
-): Promise<string | undefined> {
-  const id = stripTrailingVersion(geneId)
-  if (!id) {
-    return undefined
-  }
+// Ensembl gene ID prefix
+function isEnsemblGeneId(id: string) {
+  return /^ENSG\d+/i.test(id)
+}
 
-  // Only perform lookups for recognized ID patterns to avoid organism ambiguity
-  if (!isRecognizedTranscriptId(id)) {
-    return undefined
-  }
+/**
+ * Search UniProt for entries matching a gene, returning multiple results.
+ * Tries multiple strategies: xref search, then gene name search.
+ */
+export async function searchUniProtEntries(
+  geneId?: string,
+  geneName?: string,
+  organismId = 9606, // Default to human
+): Promise<UniProtEntry[]> {
+  console.log('[searchUniProtEntries] geneId:', geneId)
+  console.log('[searchUniProtEntries] geneName:', geneName)
 
-  const xrefType = isEnsemblId(id) ? 'ensembl' : 'refseq'
+  const strippedGeneId = geneId ? stripTrailingVersion(geneId) : undefined
+  const entries: UniProtEntry[] = []
 
-  // Try cross-reference search with reviewed (Swiss-Prot) first
-  const reviewedUrl = `https://rest.uniprot.org/uniprotkb/search?query=xref:${xrefType}-${id}+AND+reviewed:true&fields=accession,gene_names,organism_id&size=1`
-  try {
-    const data = (await jsonfetch(reviewedUrl)) as UniProtSearchResult
-    if (data.results[0]?.primaryAccession) {
-      return data.results[0].primaryAccession
+  // Strategy 1: Try xref search with gene ID
+  if (strippedGeneId && isEnsemblGeneId(strippedGeneId)) {
+    const searchUrl = `https://rest.uniprot.org/uniprotkb/search?query=xref:ensembl-${strippedGeneId}&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=10`
+    console.log('[searchUniProtEntries] trying xref search:', searchUrl)
+    try {
+      const data = (await jsonfetch(searchUrl)) as UniProtApiResult
+      console.log('[searchUniProtEntries] xref results count:', data.results.length)
+      for (const result of data.results) {
+        entries.push({
+          accession: result.primaryAccession,
+          id: result.uniProtkbId,
+          geneName: result.genes?.[0]?.geneName?.value,
+          organismName:
+            result.organism?.commonName ?? result.organism?.scientificName,
+          proteinName:
+            result.proteinDescription?.recommendedName?.fullName?.value,
+          isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
+        })
+      }
+    } catch (e) {
+      console.log('[searchUniProtEntries] xref error:', e)
     }
-  } catch {
-    // Fall through to unreviewed search
   }
 
-  // Try unreviewed to get gene name and organism, then search for Swiss-Prot
-  const unreviewedUrl = `https://rest.uniprot.org/uniprotkb/search?query=xref:${xrefType}-${id}&fields=accession,gene_names,organism_id&size=1`
-  try {
-    const data = (await jsonfetch(unreviewedUrl)) as UniProtSearchResult
-    const tremblEntry = data.results[0]
-    if (tremblEntry) {
-      const geneName = tremblEntry.genes?.[0]?.geneName?.value
-      const taxonId = tremblEntry.organism?.taxonId
-
-      // Try to find Swiss-Prot by gene name AND organism
-      if (geneName && taxonId) {
-        const swissProtUrl = `https://rest.uniprot.org/uniprotkb/search?query=gene:${geneName}+AND+organism_id:${taxonId}+AND+reviewed:true&fields=accession&size=1`
-        try {
-          const swissProtData = (await jsonfetch(
-            swissProtUrl,
-          )) as UniProtSearchResult
-          if (swissProtData.results[0]?.primaryAccession) {
-            return swissProtData.results[0].primaryAccession
-          }
-        } catch {
-          // Fall through to TrEMBL fallback
+  // Strategy 2: If no reviewed entries found, try gene name search
+  const hasReviewedEntry = entries.some(e => e.isReviewed)
+  if (!hasReviewedEntry && geneName) {
+    const geneNameSearchUrl = `https://rest.uniprot.org/uniprotkb/search?query=gene:${encodeURIComponent(geneName)}+AND+organism_id:${organismId}+AND+reviewed:true&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=5`
+    console.log('[searchUniProtEntries] trying gene name search:', geneNameSearchUrl)
+    try {
+      const data = (await jsonfetch(geneNameSearchUrl)) as UniProtApiResult
+      console.log('[searchUniProtEntries] gene name results count:', data.results.length)
+      for (const result of data.results) {
+        // Don't add duplicates
+        if (!entries.some(e => e.accession === result.primaryAccession)) {
+          entries.push({
+            accession: result.primaryAccession,
+            id: result.uniProtkbId,
+            geneName: result.genes?.[0]?.geneName?.value,
+            organismName:
+              result.organism?.commonName ?? result.organism?.scientificName,
+            proteinName:
+              result.proteinDescription?.recommendedName?.fullName?.value,
+            isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
+          })
         }
       }
-
-      // Fall back to TrEMBL entry
-      return tremblEntry.primaryAccession
+    } catch (e) {
+      console.log('[searchUniProtEntries] gene name error:', e)
     }
-  } catch {
-    // No results
   }
 
-  return undefined
+  // Sort reviewed entries first
+  entries.sort((a, b) => {
+    if (a.isReviewed && !b.isReviewed) {
+      return -1
+    }
+    if (!a.isReviewed && b.isReviewed) {
+      return 1
+    }
+    return 0
+  })
+
+  console.log('[searchUniProtEntries] returning entries:', entries)
+  return entries
 }
