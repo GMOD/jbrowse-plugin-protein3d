@@ -71,7 +71,7 @@ function md5ii(
 }
 
 function binlMd5(x: number[], len: number) {
-  x[len >> 5] |= 0x80 << (len % 32)
+  x[len >> 5]! |= 0x80 << (len % 32)
   x[(((len + 64) >>> 9) << 4) + 14] = len
 
   let a = 1732584193
