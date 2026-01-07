@@ -2,13 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import { DialogActions, DialogContent, Typography } from '@mui/material'
+import { DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
 import ProteinViewActions from './ProteinViewActions'
+import SequenceSearchStatus from './SequenceSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
@@ -237,31 +238,14 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 />
               )}
             </div>
-            {lookupMode === 'sequence' &&
-              !isSequenceSearchLoading &&
-              !uniprotId &&
-              userSelectedProteinSequence && (
-                <Typography color="warning.main">
-                  No AlphaFold structure found for this sequence (searched by{' '}
-                  {sequenceSearchType === 'md5'
-                    ? 'MD5 checksum'
-                    : 'full sequence'}
-                  )
-                </Typography>
-              )}
-            {lookupMode === 'sequence' && uniprotId && (
-              <Typography color="success.main">
-                Found AlphaFold structure: {uniprotId}
-                {url && (
-                  <>
-                    {' '}
-                    -{' '}
-                    <a href={url} target="_blank" rel="noreferrer">
-                      {url}
-                    </a>
-                  </>
-                )}
-              </Typography>
+            {lookupMode === 'sequence' && (
+              <SequenceSearchStatus
+                isLoading={isSequenceSearchLoading}
+                uniprotId={uniprotId}
+                url={url}
+                hasProteinSequence={!!userSelectedProteinSequence}
+                sequenceSearchType={sequenceSearchType}
+              />
             )}
             {structureSequence && uniprotId && lookupMode !== 'sequence' && (
               <AlphaFoldDBSearchStatus
