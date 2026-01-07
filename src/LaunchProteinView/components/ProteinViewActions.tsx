@@ -5,9 +5,8 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  List,
-  ListItemButton,
-  ListItemText,
+  MenuItem,
+  MenuList,
   Typography,
 } from '@mui/material'
 
@@ -163,28 +162,34 @@ export default function ProteinViewActions({
       >
         <DialogTitle>Additional launch options</DialogTitle>
         <DialogContent>
-          <List>
-            <ListItemButton
+          <MenuList>
+            <MenuItem
               onClick={() => {
                 handleLaunch1DView().catch((e: unknown) => {
                   console.error(e)
                 })
               }}
             >
-              <ListItemText
-                primary="Launch 1D protein annotation view"
-                secondary="View protein features and annotations as a linear track"
-              />
-            </ListItemButton>
+              <div>
+                <Typography variant="body1">
+                  Launch 1D protein annotation view
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  View protein features and annotations as a linear track
+                </Typography>
+              </div>
+            </MenuItem>
             {hasMsaViewPlugin() ? (
-              <ListItemButton onClick={handleLaunchMSAView}>
-                <ListItemText
-                  primary="Launch MSA view"
-                  secondary="View multiple sequence alignment from AlphaFold"
-                />
-              </ListItemButton>
+              <MenuItem onClick={handleLaunchMSAView}>
+                <div>
+                  <Typography variant="body1">Launch MSA view</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    View multiple sequence alignment from AlphaFold
+                  </Typography>
+                </div>
+              </MenuItem>
             ) : null}
-          </List>
+          </MenuList>
         </DialogContent>
       </Dialog>
     </>
