@@ -7,19 +7,40 @@ import { md5 } from '../utils/md5'
 
 export type SequenceSearchType = 'md5' | 'sequence'
 
+interface StructureEntity {
+  entity_type: string
+  entity_poly_type: string
+  identifier: string
+  identifier_category: string
+  description: string
+  chain_ids: string[]
+}
+
+interface StructureSummary {
+  model_identifier: string
+  model_url: string
+  model_format: string
+  model_page_url: string
+  confidence_avg_local_score: number
+  entities: StructureEntity[]
+}
+
 interface SequenceSummaryResponse {
-  entryId?: string
-  uniprotAccession?: string
-  uniprotId?: string
-  uniprotDescription?: string
-  taxId?: number
-  organismScientificName?: string
-  uniprotStart?: number
-  uniprotEnd?: number
-  modelUrl?: string
-  cifUrl?: string
-  plddtDocUrl?: string
-  sequence?: string
+  entry: {
+    sequence: string
+    checksum: string
+    checksum_type: string
+  }
+  structures: {
+    summary: StructureSummary
+  }[]
+}
+
+function getUniprotIdFromStructure(structure: { summary: StructureSummary }) {
+  const uniprotEntity = structure.summary.entities.find(
+    e => e.identifier_category === 'UNIPROT',
+  )
+  return uniprotEntity?.identifier
 }
 
 export default function useAlphaFoldSequenceSearch({
@@ -52,13 +73,20 @@ export default function useAlphaFoldSequenceSearch({
     },
   )
 
+  const firstStructure = data?.structures?.[0]
+  const uniprotId = firstStructure
+    ? getUniprotIdFromStructure(firstStructure)
+    : undefined
+  const cifUrl = firstStructure?.summary.model_url
+  const structureSequence = data?.entry?.sequence
+
   return {
     isLoading,
     result: data,
-    uniprotId: data?.uniprotAccession,
-    cifUrl: data?.cifUrl,
-    plddtDocUrl: data?.plddtDocUrl,
-    structureSequence: data?.sequence,
+    uniprotId,
+    cifUrl,
+    structureSequence,
+    structures: data?.structures,
     error,
   }
 }

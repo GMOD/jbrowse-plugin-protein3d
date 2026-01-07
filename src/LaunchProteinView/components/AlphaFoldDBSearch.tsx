@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import { DialogActions, DialogContent } from '@mui/material'
+import { DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -16,9 +16,8 @@ import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
-import useLookupUniProtId, {
-  lookupUniProtIdViaMyGeneInfo,
-} from '../hooks/useLookupUniProtId'
+import useLookupUniProtId from '../hooks/useLookupUniProtId'
+import { lookupUniProtIdViaUniProt } from '../services/lookupMethods'
 import {
   getDisplayName,
   getId,
@@ -101,14 +100,13 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       ? getDisplayName(selectedTranscript)
       : getDisplayName(feature),
     providedUniprotId: featureUniprotId,
-    lookupMethod: lookupUniProtIdViaMyGeneInfo,
+    lookupMethod: lookupUniProtIdViaUniProt,
   })
 
   // AlphaFoldDB sequence search
   const {
     uniprotId: sequenceSearchUniprotId,
     cifUrl: sequenceSearchCifUrl,
-    plddtDocUrl: sequenceSearchPlddtUrl,
     structureSequence: sequenceSearchStructureSequence,
     isLoading: isSequenceSearchLoading,
     error: sequenceSearchError,
@@ -152,7 +150,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // Use sequence search URLs/sequence when in sequence mode, otherwise use AlphaFold data
   const url = lookupMode === 'sequence' ? sequenceSearchCifUrl : alphaFoldUrl
   const confidenceUrl =
-    lookupMode === 'sequence' ? sequenceSearchPlddtUrl : alphaFoldConfidenceUrl
+    lookupMode === 'sequence' ? undefined : alphaFoldConfidenceUrl
   const structureSequence =
     lookupMode === 'sequence'
       ? sequenceSearchStructureSequence
@@ -198,7 +196,6 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
           isLoading={isLookupLoading}
-          hasProteinSequence={!!userSelectedProteinSequence?.seq}
           sequenceSearchType={sequenceSearchType}
           onSequenceSearchTypeChange={setSequenceSearchType}
         />
@@ -233,7 +230,20 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 />
               )}
             </div>
-            {structureSequence && uniprotId && (
+            {lookupMode === 'sequence' && !isSequenceSearchLoading && !uniprotId && userSelectedProteinSequence && (
+              <Typography color="warning.main">
+                No AlphaFold structure found for this sequence (searched by {sequenceSearchType === 'md5' ? 'MD5 checksum' : 'full sequence'})
+              </Typography>
+            )}
+            {lookupMode === 'sequence' && uniprotId && (
+              <Typography color="success.main">
+                Found AlphaFold structure: {uniprotId}
+                {url && (
+                  <> - <a href={url} target="_blank" rel="noreferrer">{url}</a></>
+                )}
+              </Typography>
+            )}
+            {structureSequence && uniprotId && lookupMode !== 'sequence' && (
               <AlphaFoldDBSearchStatus
                 uniprotId={uniprotId}
                 selectedTranscript={selectedTranscript}

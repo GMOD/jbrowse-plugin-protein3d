@@ -22,7 +22,6 @@ interface UniProtIdInputProps {
   autoUniprotId?: string
   featureUniprotId?: string
   isLoading: boolean
-  hasProteinSequence?: boolean
   sequenceSearchType?: SequenceSearchType
   onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
 }
@@ -63,7 +62,6 @@ export default function UniProtIdInput({
   autoUniprotId,
   featureUniprotId,
   isLoading,
-  hasProteinSequence,
   sequenceSearchType,
   onSequenceSearchTypeChange,
 }: UniProtIdInputProps) {
@@ -94,13 +92,11 @@ export default function UniProtIdInput({
             control={<Radio />}
             label="Manual UniProt ID entry"
           />
-          {hasProteinSequence && (
-            <FormControlLabel
-              value="sequence"
-              control={<Radio />}
-              label="AlphaFoldDB sequence search"
-            />
-          )}
+          <FormControlLabel
+            value="sequence"
+            control={<Radio />}
+            label="AlphaFoldDB sequence search"
+          />
         </RadioGroup>
       </FormControl>
 
@@ -122,28 +118,40 @@ export default function UniProtIdInput({
       {lookupMode === 'sequence' &&
         sequenceSearchType &&
         onSequenceSearchTypeChange && (
-          <FormControl component="fieldset">
-            <RadioGroup
-              row
-              value={sequenceSearchType}
-              onChange={event => {
-                onSequenceSearchTypeChange(
-                  event.target.value as SequenceSearchType,
-                )
-              }}
-            >
-              <FormControlLabel
-                value="md5"
-                control={<Radio />}
-                label="Search by MD5 checksum (faster, exact match only)"
-              />
-              <FormControlLabel
-                value="sequence"
-                control={<Radio />}
-                label="Search by sequence"
-              />
-            </RadioGroup>
-          </FormControl>
+          <>
+            <FormControl component="fieldset">
+              <RadioGroup
+                row
+                value={sequenceSearchType}
+                onChange={event => {
+                  onSequenceSearchTypeChange(
+                    event.target.value as SequenceSearchType,
+                  )
+                }}
+              >
+                <FormControlLabel
+                  value="md5"
+                  control={<Radio />}
+                  label="Exact match (faster)"
+                />
+                <FormControlLabel
+                  value="sequence"
+                  control={<Radio />}
+                  label="Search by sequence"
+                />
+              </RadioGroup>
+            </FormControl>
+            <div>
+              Note: This lookup may not return the canonical UniProt accession
+              associated with your gene of interest. If you have questions about
+              which structure to use, visit{' '}
+              <ExternalLink href="https://alphafold.ebi.ac.uk/">
+                AlphaFoldDB
+              </ExternalLink>{' '}
+              to look up the UniProt ID associated with your gene manually, and
+              then use the "Manual UniProt" option
+            </div>
+          </>
         )}
 
       {lookupMode === 'auto' ? (

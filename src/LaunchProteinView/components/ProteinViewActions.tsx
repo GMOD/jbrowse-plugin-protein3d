@@ -1,6 +1,15 @@
 import React, { useState } from 'react'
 
-import { Button, Menu, MenuItem, Typography } from '@mui/material'
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  List,
+  ListItemButton,
+  ListItemText,
+  Typography,
+} from '@mui/material'
 
 import AlignmentSettingsButton from './AlignmentSettingsButton'
 import {
@@ -46,22 +55,12 @@ export default function ProteinViewActions({
   onAlignmentAlgorithmChange,
   sequencesMatch,
 }: ProteinViewActionsProps) {
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const menuOpen = Boolean(anchorEl)
+  const [dialogOpen, setDialogOpen] = useState(false)
 
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
-  const handleMenuClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    setAnchorEl(event.currentTarget)
-  }
-
-  const handleMenuClose = () => {
-    setAnchorEl(null)
-  }
-
   const handleLaunch3DView = () => {
-    handleMenuClose()
     if (!selectedTranscript) {
       return
     }
@@ -79,7 +78,7 @@ export default function ProteinViewActions({
   }
 
   const handleLaunch1DView = async () => {
-    handleMenuClose()
+    setDialogOpen(false)
     if (!uniprotId || !selectedTranscript) {
       return
     }
@@ -100,7 +99,7 @@ export default function ProteinViewActions({
   }
 
   const handleLaunchMSAView = () => {
-    handleMenuClose()
+    setDialogOpen(false)
     if (!selectedTranscript || !uniprotId) {
       return
     }
@@ -143,27 +142,51 @@ export default function ProteinViewActions({
         variant="contained"
         color="primary"
         disabled={isLaunchDisabled}
-        onClick={handleMenuClick}
+        onClick={handleLaunch3DView}
       >
-        Launch
+        Launch 3D protein view
       </Button>
-      <Menu anchorEl={anchorEl} open={menuOpen} onClose={handleMenuClose}>
-        <MenuItem onClick={handleLaunch3DView}>
-          Launch 3D protein structure view
-        </MenuItem>
-        <MenuItem
-          onClick={() => {
-            handleLaunch1DView().catch((e: unknown) => {
-              console.error(e)
-            })
-          }}
-        >
-          Launch 1D protein annotation view
-        </MenuItem>
-        {hasMsaViewPlugin() ? (
-          <MenuItem onClick={handleLaunchMSAView}>Launch MSA view</MenuItem>
-        ) : null}
-      </Menu>
+      <Button
+        variant="outlined"
+        disabled={isLaunchDisabled}
+        onClick={() => {
+          setDialogOpen(true)
+        }}
+      >
+        More...
+      </Button>
+      <Dialog
+        open={dialogOpen}
+        onClose={() => {
+          setDialogOpen(false)
+        }}
+      >
+        <DialogTitle>Additional launch options</DialogTitle>
+        <DialogContent>
+          <List>
+            <ListItemButton
+              onClick={() => {
+                handleLaunch1DView().catch((e: unknown) => {
+                  console.error(e)
+                })
+              }}
+            >
+              <ListItemText
+                primary="Launch 1D protein annotation view"
+                secondary="View protein features and annotations as a linear track"
+              />
+            </ListItemButton>
+            {hasMsaViewPlugin() ? (
+              <ListItemButton onClick={handleLaunchMSAView}>
+                <ListItemText
+                  primary="Launch MSA view"
+                  secondary="View multiple sequence alignment from AlphaFold"
+                />
+              </ListItemButton>
+            ) : null}
+          </List>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }
