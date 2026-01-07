@@ -96,10 +96,6 @@ function stateModelFactory() {
       /**
        * #volatile
        */
-      progress: '',
-      /**
-       * #volatile
-       */
       error: undefined as unknown,
       /**
        * #volatile
@@ -224,6 +220,8 @@ function stateModelFactory() {
           data: structure.data,
           userProvidedTranscriptSequence: '',
         })
+        // Set loadedToMolstar BEFORE pushing to avoid race condition with autorun
+        newStructure.setLoadedToMolstar(true)
         self.structures.push(newStructure)
 
         try {
@@ -241,7 +239,6 @@ function stateModelFactory() {
 
           const sequences = model ? extractStructureSequences(model) : undefined
           newStructure.setSequences(sequences)
-          newStructure.setLoadedToMolstar(true)
 
           if (self.structures.length > 1) {
             await superposeStructures(molstarPluginContext)

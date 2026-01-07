@@ -195,6 +195,11 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onManualUniprotIdChange={setManualUniprotId}
           autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
+          transcriptId={
+            selectedTranscript
+              ? getDisplayName(selectedTranscript)
+              : getDisplayName(feature)
+          }
           isLoading={isLookupLoading}
           sequenceSearchType={sequenceSearchType}
           onSequenceSearchTypeChange={setSequenceSearchType}
@@ -230,16 +235,29 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 />
               )}
             </div>
-            {lookupMode === 'sequence' && !isSequenceSearchLoading && !uniprotId && userSelectedProteinSequence && (
-              <Typography color="warning.main">
-                No AlphaFold structure found for this sequence (searched by {sequenceSearchType === 'md5' ? 'MD5 checksum' : 'full sequence'})
-              </Typography>
-            )}
+            {lookupMode === 'sequence' &&
+              !isSequenceSearchLoading &&
+              !uniprotId &&
+              userSelectedProteinSequence && (
+                <Typography color="warning.main">
+                  No AlphaFold structure found for this sequence (searched by{' '}
+                  {sequenceSearchType === 'md5'
+                    ? 'MD5 checksum'
+                    : 'full sequence'}
+                  )
+                </Typography>
+              )}
             {lookupMode === 'sequence' && uniprotId && (
               <Typography color="success.main">
                 Found AlphaFold structure: {uniprotId}
                 {url && (
-                  <> - <a href={url} target="_blank" rel="noreferrer">{url}</a></>
+                  <>
+                    {' '}
+                    -{' '}
+                    <a href={url} target="_blank" rel="noreferrer">
+                      {url}
+                    </a>
+                  </>
                 )}
               </Typography>
             )}

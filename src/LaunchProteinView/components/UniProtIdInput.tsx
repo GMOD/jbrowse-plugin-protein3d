@@ -9,6 +9,8 @@ import {
 } from '@mui/material'
 
 import ExternalLink from '../../components/ExternalLink'
+import { isRecognizedTranscriptId } from '../services/lookupMethods'
+import { stripTrailingVersion } from '../utils/util'
 
 import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
 
@@ -21,20 +23,28 @@ interface UniProtIdInputProps {
   onManualUniprotIdChange: (id: string) => void
   autoUniprotId?: string
   featureUniprotId?: string
+  transcriptId?: string
   isLoading: boolean
   sequenceSearchType?: SequenceSearchType
   onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
 }
 
+function UnrecognizedIdMessage() {
+  return (
+    <div>
+      Automatic lookup only works for Ensembl (ENS...) or RefSeq (NM_, XM_,
+      etc.) transcript IDs. Try the &quot;AlphaFoldDB sequence search&quot;
+      option or the &quot;Foldseek search&quot; tab instead.
+    </div>
+  )
+}
+
 function UniProtIDNotFoundMessage() {
   return (
     <div>
-      UniProt ID not found. You can try manually searching on{' '}
-      <a href="https://alphafold.ebi.ac.uk/" target="_blank" rel="noreferrer">
-        AlphaFoldDB
-      </a>{' '}
-      for your gene. After visiting the above link, you can switch to "Open file
-      manually" and paste in the mmCIF link
+      UniProt ID not found for this transcript. Try the &quot;AlphaFoldDB
+      sequence search&quot; option or the &quot;Foldseek search&quot; tab
+      instead.
     </div>
   )
 }
@@ -61,10 +71,13 @@ export default function UniProtIdInput({
   onManualUniprotIdChange,
   autoUniprotId,
   featureUniprotId,
+  transcriptId,
   isLoading,
   sequenceSearchType,
   onSequenceSearchTypeChange,
 }: UniProtIdInputProps) {
+  const strippedId = stripTrailingVersion(transcriptId)
+  const isRecognized = strippedId ? isRecognizedTranscriptId(strippedId) : false
   return (
     <>
       <FormControl component="fieldset">
@@ -155,7 +168,9 @@ export default function UniProtIdInput({
         )}
 
       {lookupMode === 'auto' ? (
-        isLoading || autoUniprotId ? null : (
+        isLoading || autoUniprotId ? null : !isRecognized ? (
+          <UnrecognizedIdMessage />
+        ) : (
           <UniProtIDNotFoundMessage />
         )
       ) : lookupMode === 'manual' ? (

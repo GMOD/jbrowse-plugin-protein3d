@@ -36,9 +36,6 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
-type StructureModel = Awaited<
-  ReturnType<PluginContext['builders']['structure']['createModel']>
->
 
 /**
  * Extracts position information from a MolStar structure location
@@ -83,10 +80,6 @@ const Structure = types
     userProvidedTranscriptSequence: types.string,
   })
   .volatile(() => ({
-    /**
-     * #volatile
-     */
-    model: undefined as StructureModel | undefined,
     /**
      * #volatile
      */
@@ -135,13 +128,6 @@ const Structure = types
     loadedToMolstar: false,
   }))
   .actions(self => ({
-    /**
-     * #action
-     */
-    setModel(model: StructureModel) {
-      self.model = model
-    },
-
     setSequences(str?: string[]) {
       self.structureSequences = str
     },
@@ -437,7 +423,10 @@ const Structure = types
     },
     /**
      * #getter
-     * Returns the Molstar structure object for the current structure
+     * Returns the Molstar structure object for the current structure.
+     * NOTE: This always returns structures[0], which is incorrect when
+     * multiple structures are loaded. Fixing this would require passing the
+     * structure's index from the parent ProteinView model.
      */
     get molstarStructure() {
       return this.molstarPluginContext?.managers.structure.hierarchy.current
@@ -680,23 +669,6 @@ const Structure = types
                 plugin: molstarPluginContext,
               })
             }
-          }
-        }),
-      )
-
-      addDisposer(
-        self,
-        autorun(() => {
-          const { structureSeqHoverPos, molstarPluginContext } = self
-          const structure =
-            molstarPluginContext?.managers.structure.hierarchy.current
-              .structures[0]?.cell.obj?.data
-          if (structure && structureSeqHoverPos !== undefined) {
-            highlightResidue({
-              structure,
-              plugin: molstarPluginContext,
-              selectedResidue: structureSeqHoverPos,
-            })
           }
         }),
       )

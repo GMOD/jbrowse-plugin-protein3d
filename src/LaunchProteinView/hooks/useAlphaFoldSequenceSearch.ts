@@ -73,12 +73,12 @@ export default function useAlphaFoldSequenceSearch({
     },
   )
 
-  const firstStructure = data?.structures?.[0]
+  const firstStructure = data?.structures[0]
   const uniprotId = firstStructure
     ? getUniprotIdFromStructure(firstStructure)
     : undefined
   const cifUrl = firstStructure?.summary.model_url
-  const structureSequence = data?.entry?.sequence
+  const structureSequence = data?.entry.sequence
 
   return {
     isLoading,
