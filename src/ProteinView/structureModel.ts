@@ -221,7 +221,7 @@ const Structure = types
       if (!url) {
         return undefined
       }
-      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v4.cif
+      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v6.cif
       const match = /AF-([A-Z0-9]+)-F\d+/.exec(url)
       if (match) {
         return match[1]

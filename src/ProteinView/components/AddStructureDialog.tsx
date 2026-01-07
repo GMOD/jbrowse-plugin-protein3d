@@ -16,6 +16,10 @@ import {
 } from '@mui/material'
 import { observer } from 'mobx-react'
 
+import {
+  getAlphaFoldStructureUrl,
+  getPdbStructureUrl,
+} from '../../LaunchProteinView/utils/launchViewUtils'
 import { JBrowsePluginProteinViewModel } from '../model'
 
 const AddStructureDialog = observer(function AddStructureDialog({
@@ -46,10 +50,10 @@ const AddStructureDialog = observer(function AddStructureDialog({
       let data: string | undefined
 
       if (choice === 'pdb' && pdbId) {
-        url = `https://files.rcsb.org/download/${pdbId}.cif`
+        url = getPdbStructureUrl(pdbId)
       }
       if (choice === 'uniprot' && uniprotId) {
-        url = `https://alphafold.ebi.ac.uk/files/AF-${uniprotId.toUpperCase()}-F1-model_v6.cif`
+        url = getAlphaFoldStructureUrl(uniprotId.toUpperCase())
       }
       if (choice === 'file' && file) {
         data = await file.text()

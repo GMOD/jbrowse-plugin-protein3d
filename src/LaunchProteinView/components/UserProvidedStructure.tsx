@@ -88,7 +88,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')
-  const [error2, setError] = useState<unknown>()
+  const [submitError, setSubmitError] = useState<unknown>()
   const [structureURL, setStructureURL] = useState('')
   const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
@@ -96,13 +96,13 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   // finding exon/CDS subfeatures. we want to select from transcript names
   const options = useMemo(() => getTranscriptFeatures(feature), [feature])
   const view = getContainingView(model) as LGV
-  const { isoformSequences, error } = useIsoformProteinSequences({
+  const { isoformSequences, error: isoformError } = useIsoformProteinSequences({
     feature,
     view,
   })
-  const { sequences: structureSequences1, error: error3 } =
+  const { sequences: structureSequences1, error: localFileError } =
     useLocalStructureFileSequence({ file })
-  const { sequences: structureSequences2, error: error4 } =
+  const { sequences: structureSequences2, error: remoteFileError } =
     useRemoteStructureFileSequence({ url: structureURL })
 
   const structureName =
@@ -118,11 +118,11 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const selectedTranscript = options.find(val => getId(val) === userSelection)
   const protein = isoformSequences?.[userSelection ?? '']
 
-  const e = error ?? error2 ?? error3 ?? error4
+  const error = isoformError ?? submitError ?? localFileError ?? remoteFileError
   return (
     <>
       <DialogContent className={classes.dialogContent}>
-        {e ? <ErrorMessage error={e} /> : null}
+        {error ? <ErrorMessage error={error} /> : null}
         <HelpText />
 
         <div style={{ display: 'flex', margin: 30 }}>
@@ -283,7 +283,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
                 handleClose()
               } catch (e) {
                 console.error(e)
-                setError(e)
+                setSubmitError(e)
               }
             })()
           }}
