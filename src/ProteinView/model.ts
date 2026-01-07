@@ -166,6 +166,13 @@ function stateModelFactory() {
        * #action
        */
       setMolstarPluginContext(p?: PluginContext) {
+        // Reset loadedToMolstar for all structures when plugin context changes
+        // This ensures structures get reloaded when the view is moved/remounted
+        if (p !== self.molstarPluginContext) {
+          for (const structure of self.structures) {
+            structure.setLoadedToMolstar(false)
+          }
+        }
         self.molstarPluginContext = p
       },
       /**
@@ -234,6 +241,7 @@ function stateModelFactory() {
 
           const sequences = model ? extractStructureSequences(model) : undefined
           newStructure.setSequences(sequences)
+          newStructure.setLoadedToMolstar(true)
 
           if (self.structures.length > 1) {
             await superposeStructures(molstarPluginContext)
@@ -279,6 +287,9 @@ function stateModelFactory() {
             const { structures, molstarPluginContext } = self
             if (molstarPluginContext) {
               for (const structure of structures) {
+                if (structure.loadedToMolstar) {
+                  continue
+                }
                 try {
                   const { model } = structure.data
                     ? await addStructureFromData({
@@ -296,6 +307,7 @@ function stateModelFactory() {
                     ? extractStructureSequences(model)
                     : undefined
                   structure.setSequences(sequences)
+                  structure.setLoadedToMolstar(true)
                 } catch (e) {
                   self.setError(e)
                   console.error(e)

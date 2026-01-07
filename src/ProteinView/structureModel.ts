@@ -128,6 +128,11 @@ const Structure = types
      * #volatile
      */
     isMouseInAlignment: false,
+    /**
+     * #volatile
+     * Tracks whether this structure has been loaded into Molstar
+     */
+    loadedToMolstar: false,
   }))
   .actions(self => ({
     /**
@@ -139,6 +144,12 @@ const Structure = types
 
     setSequences(str?: string[]) {
       self.structureSequences = str
+    },
+    /**
+     * #action
+     */
+    setLoadedToMolstar(val: boolean) {
+      self.loadedToMolstar = val
     },
   }))
   .views(self => ({
