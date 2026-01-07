@@ -12,13 +12,15 @@ export default function TranscriptSelector({
   isoformSequences,
   structureSequence,
   feature,
+  disabled,
 }: {
   isoforms: Feature[]
   feature: Feature
   val: string
   setVal: (str: string) => void
-  structureSequence: string
+  structureSequence?: string
   isoformSequences: Record<string, { feature: Feature; seq: string }>
+  disabled?: boolean
 }) {
   const geneName = getGeneDisplayName(feature)
   const matches: Feature[] = []
@@ -29,7 +31,10 @@ export default function TranscriptSelector({
     const entry = isoformSequences[f.id()]
     if (!entry) {
       noData.push(f)
-    } else if (entry.seq.replaceAll('*', '') === structureSequence) {
+    } else if (
+      structureSequence &&
+      entry.seq.replaceAll('*', '') === structureSequence
+    ) {
       matches.push(f)
     } else {
       nonMatches.push(f)
@@ -55,6 +60,7 @@ export default function TranscriptSelector({
       }}
       label="Choose transcript isoform"
       select
+      disabled={disabled}
     >
       {matches.map(f => (
         <MenuItem value={f.id()} key={f.id()}>

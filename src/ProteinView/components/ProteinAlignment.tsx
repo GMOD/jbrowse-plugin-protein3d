@@ -6,12 +6,12 @@ import { observer } from 'mobx-react'
 
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
-import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import {
   ProteinFeatureTrackContent,
   ProteinFeatureTrackLabels,
 } from './ProteinFeatureTrack'
 import SplitString from './SplitString'
+import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 
 const LABEL_WIDTH = 50
 const ROW_HEIGHT = 14
@@ -140,6 +140,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
             overflow: 'auto',
             whiteSpace: 'nowrap',
             flex: 1,
+            paddingBottom: 10,
           }}
         >
           <div style={{ height: ROW_HEIGHT }}>

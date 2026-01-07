@@ -4,11 +4,18 @@ export function getTranscriptFeatures(feature: Feature) {
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
   const subfeatures = feature.get('subfeatures') ?? []
-  return subfeatures.some(
-    f => f.get('type') === 'CDS' || f.get('type') === 'exon',
+
+  // Check for mRNA/transcript subfeatures (three-level: gene → mRNA → CDS)
+  const transcripts = subfeatures.filter(
+    (f: Feature) => f.get('type') === 'mRNA' || f.get('type') === 'transcript',
   )
-    ? [feature]
-    : subfeatures
+  if (transcripts.length > 0) {
+    return transcripts
+  }
+
+  // Has direct CDS/exon children, treat feature itself as the transcript
+  // (two-level: gene → CDS or mRNA → CDS)
+  return [feature]
 }
 
 export function stripTrailingVersion(s?: string) {
