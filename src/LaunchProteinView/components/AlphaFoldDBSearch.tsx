@@ -13,6 +13,7 @@ import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
 import useAlphaFoldData from '../hooks/useAlphaFoldData'
+import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
 import useLookupUniProtId, {
@@ -26,6 +27,8 @@ import {
   selectBestTranscript,
 } from '../utils/util'
 
+import type { LookupMode } from './UniProtIdInput'
+import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -62,10 +65,10 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const view = getContainingView(model) as LinearGenomeViewModel
 
   // State for UniProt ID lookup
-  const [lookupMode, setLookupMode] = useState<'auto' | 'manual' | 'feature'>(
-    'auto',
-  )
+  const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
+  const [sequenceSearchType, setSequenceSearchType] =
+    useState<SequenceSearchType>('md5')
   // hardcoded right now
   const useApiSearch = false
 
@@ -101,12 +104,28 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     lookupMethod: lookupUniProtIdViaMyGeneInfo,
   })
 
+  // AlphaFoldDB sequence search
+  const {
+    uniprotId: sequenceSearchUniprotId,
+    cifUrl: sequenceSearchCifUrl,
+    plddtDocUrl: sequenceSearchPlddtUrl,
+    structureSequence: sequenceSearchStructureSequence,
+    isLoading: isSequenceSearchLoading,
+    error: sequenceSearchError,
+  } = useAlphaFoldSequenceSearch({
+    sequence: userSelectedProteinSequence?.seq,
+    searchType: sequenceSearchType,
+    enabled: lookupMode === 'sequence',
+  })
+
   const uniprotId =
     lookupMode === 'feature'
       ? featureUniprotId
       : lookupMode === 'auto'
         ? autoUniprotId
-        : manualUniprotId
+        : lookupMode === 'sequence'
+          ? sequenceSearchUniprotId
+          : manualUniprotId
 
   // Auto-select 'feature' mode if a feature UniProt ID is found
   useEffect(() => {
@@ -115,24 +134,43 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     }
   }, [featureUniprotId, lookupMode])
 
-  // AlphaFold data and selection
+  // AlphaFold data and selection (skip if using sequence search which provides direct URLs)
   const {
     predictions,
     isLoading: isAlphaFoldUrlLoading,
     error: alphaFoldUrlError,
     selectedEntryIndex,
     setSelectedEntryIndex,
-    url,
-    confidenceUrl,
-    structureSequence,
-  } = useAlphaFoldData({ uniprotId, useApiSearch })
+    url: alphaFoldUrl,
+    confidenceUrl: alphaFoldConfidenceUrl,
+    structureSequence: alphaFoldStructureSequence,
+  } = useAlphaFoldData({
+    uniprotId: lookupMode === 'sequence' ? undefined : uniprotId,
+    useApiSearch,
+  })
+
+  // Use sequence search URLs/sequence when in sequence mode, otherwise use AlphaFold data
+  const url = lookupMode === 'sequence' ? sequenceSearchCifUrl : alphaFoldUrl
+  const confidenceUrl =
+    lookupMode === 'sequence' ? sequenceSearchPlddtUrl : alphaFoldConfidenceUrl
+  const structureSequence =
+    lookupMode === 'sequence'
+      ? sequenceSearchStructureSequence
+      : alphaFoldStructureSequence
 
   // Aggregate errors and loading statuses
-  const error = lookupError ?? isoformProteinSequencesError ?? alphaFoldUrlError
+  const error =
+    lookupError ??
+    isoformProteinSequencesError ??
+    alphaFoldUrlError ??
+    sequenceSearchError
   const loadingStatuses = useLoadingStatuses({
     isLookupLoading,
     isIsoformProteinSequencesLoading,
-    isAlphaFoldUrlLoading,
+    isAlphaFoldUrlLoading:
+      lookupMode === 'sequence' ? false : isAlphaFoldUrlLoading,
+    isSequenceSearchLoading:
+      lookupMode === 'sequence' ? isSequenceSearchLoading : false,
   })
 
   // Auto-select transcript based on structure sequence match
@@ -160,6 +198,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
           isLoading={isLookupLoading}
+          hasProteinSequence={!!userSelectedProteinSequence?.seq}
+          sequenceSearchType={sequenceSearchType}
+          onSequenceSearchTypeChange={setSequenceSearchType}
         />
 
         {loadingStatuses.length > 0 &&
@@ -172,9 +213,8 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           ))}
 
         {isoformSequences &&
-        structureSequence &&
         selectedTranscript &&
-        uniprotId ? (
+        (lookupMode === 'sequence' || (structureSequence && uniprotId)) ? (
           <>
             <div className={classes.selectorsRow}>
               <TranscriptSelector
@@ -185,7 +225,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 isoforms={options}
                 isoformSequences={isoformSequences}
               />
-              {predictions && (
+              {predictions && lookupMode !== 'sequence' && (
                 <AlphaFoldEntrySelector
                   predictions={predictions}
                   selectedEntryIndex={selectedEntryIndex}
@@ -193,13 +233,15 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 />
               )}
             </div>
-            <AlphaFoldDBSearchStatus
-              uniprotId={uniprotId}
-              selectedTranscript={selectedTranscript}
-              structureSequence={structureSequence}
-              isoformSequences={isoformSequences}
-              url={url}
-            />
+            {structureSequence && uniprotId && (
+              <AlphaFoldDBSearchStatus
+                uniprotId={uniprotId}
+                selectedTranscript={selectedTranscript}
+                structureSequence={structureSequence}
+                isoformSequences={isoformSequences}
+                url={url}
+              />
+            )}
           </>
         ) : null}
       </DialogContent>

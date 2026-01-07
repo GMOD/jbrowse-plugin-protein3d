@@ -5,10 +5,12 @@ export default function useLoadingStatuses({
   isLookupLoading,
   isIsoformProteinSequencesLoading,
   isAlphaFoldUrlLoading,
+  isSequenceSearchLoading,
 }: {
   isLookupLoading: boolean
   isIsoformProteinSequencesLoading: boolean
   isAlphaFoldUrlLoading: boolean
+  isSequenceSearchLoading?: boolean
 }): string[] {
   const statuses: string[] = []
 
@@ -22,6 +24,10 @@ export default function useLoadingStatuses({
 
   if (isAlphaFoldUrlLoading) {
     statuses.push('Fetching AlphaFold structure URL')
+  }
+
+  if (isSequenceSearchLoading) {
+    statuses.push('Searching AlphaFoldDB by sequence')
   }
 
   return statuses
