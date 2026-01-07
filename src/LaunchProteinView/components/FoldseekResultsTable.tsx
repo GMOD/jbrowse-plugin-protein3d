@@ -119,7 +119,7 @@ function ActionMenu({
     // Use tCa coordinates to generate PDB data if no URL is available
     const pdbData =
       !hit.structureUrl && hasValidCaCoords(hit.tCa, hit.tSeq)
-        ? caCoordsToPdb(hit.tCa, hit.tSeq, 'A', hit.target)
+        ? caCoordsToPdb(hit.tCa!, hit.tSeq!, 'A', hit.target)
         : undefined
     launch3DProteinView({
       session,

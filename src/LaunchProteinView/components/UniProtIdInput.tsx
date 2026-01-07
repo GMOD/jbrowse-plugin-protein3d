@@ -10,7 +10,9 @@ import {
 
 import ExternalLink from '../../components/ExternalLink'
 
-type LookupMode = 'auto' | 'manual' | 'feature'
+import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
+
+export type LookupMode = 'auto' | 'manual' | 'feature' | 'sequence'
 
 interface UniProtIdInputProps {
   lookupMode: LookupMode
@@ -20,6 +22,9 @@ interface UniProtIdInputProps {
   autoUniprotId?: string
   featureUniprotId?: string
   isLoading: boolean
+  hasProteinSequence?: boolean
+  sequenceSearchType?: SequenceSearchType
+  onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
 }
 
 function UniProtIDNotFoundMessage() {
@@ -58,6 +63,9 @@ export default function UniProtIdInput({
   autoUniprotId,
   featureUniprotId,
   isLoading,
+  hasProteinSequence,
+  sequenceSearchType,
+  onSequenceSearchTypeChange,
 }: UniProtIdInputProps) {
   return (
     <>
@@ -86,6 +94,13 @@ export default function UniProtIdInput({
             control={<Radio />}
             label="Manual UniProt ID entry"
           />
+          {hasProteinSequence && (
+            <FormControlLabel
+              value="sequence"
+              control={<Radio />}
+              label="AlphaFoldDB sequence search"
+            />
+          )}
         </RadioGroup>
       </FormControl>
 
@@ -103,6 +118,33 @@ export default function UniProtIdInput({
           />
         </div>
       )}
+
+      {lookupMode === 'sequence' &&
+        sequenceSearchType &&
+        onSequenceSearchTypeChange && (
+          <FormControl component="fieldset">
+            <RadioGroup
+              row
+              value={sequenceSearchType}
+              onChange={event => {
+                onSequenceSearchTypeChange(
+                  event.target.value as SequenceSearchType,
+                )
+              }}
+            >
+              <FormControlLabel
+                value="md5"
+                control={<Radio />}
+                label="Search by MD5 checksum (faster, exact match only)"
+              />
+              <FormControlLabel
+                value="sequence"
+                control={<Radio />}
+                label="Search by sequence"
+              />
+            </RadioGroup>
+          </FormControl>
+        )}
 
       {lookupMode === 'auto' ? (
         isLoading || autoUniprotId ? null : (
