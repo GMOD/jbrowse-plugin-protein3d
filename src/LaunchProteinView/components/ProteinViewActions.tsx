@@ -4,7 +4,7 @@ import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button, Typography } from '@mui/material'
 
 import AlignmentSettingsButton from './AlignmentSettingsButton'
-import { launchLinearProteinAnnotationView } from './launchLinearProteinAnnotationView'
+import { launchProteinAnnotationView } from './launchProteinAnnotationView'
 import {
   ALIGNMENT_ALGORITHM_LABELS,
   AlignmentAlgorithm,
@@ -83,12 +83,13 @@ export default function ProteinViewActions({
       // eslint-disable-next-line @typescript-eslint/no-floating-promises
       ;(async () => {
         try {
-          await launchLinearProteinAnnotationView({
+          await launchProteinAnnotationView({
             session,
             selectedTranscript,
             feature,
             uniprotId,
-            confidenceUrl: confidenceUrl ?? '',
+            confidenceUrl,
+            connectedViewId: view.id,
           })
         } catch (e) {
           console.error(e)
