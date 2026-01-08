@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import { DialogActions, DialogContent } from '@mui/material'
+import { DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -14,13 +14,13 @@ import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import UniProtResultsTable from './UniProtResultsTable'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
+import ExternalLink from '../../components/ExternalLink'
 import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
 import useUniProtSearch from '../hooks/useUniProtSearch'
 import {
-  getDisplayName,
   getId,
   getTranscriptFeatures,
   getUniProtIdFromFeature,
@@ -90,22 +90,10 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     getUniProtIdFromFeature(selectedTranscript) ??
     getUniProtIdFromFeature(feature)
 
-  // Search UniProt for entries matching the transcript
-  // Wait for transcript selection to stabilize before searching
-  const transcriptId = selectedTranscript
-    ? getDisplayName(selectedTranscript)
-    : undefined
-
   // Get gene ID and gene name from feature
   const geneId = feature.get('gene_id') ?? feature.get('ID')
-  const geneName = feature.get('gene_name') ?? feature.get('name') ?? feature.get('Name')
-
-  console.log('[AlphaFoldDBSearch] lookupMode:', lookupMode)
-  console.log('[AlphaFoldDBSearch] featureUniprotId:', featureUniprotId)
-  console.log('[AlphaFoldDBSearch] transcriptId:', transcriptId)
-  console.log('[AlphaFoldDBSearch] geneId:', geneId)
-  console.log('[AlphaFoldDBSearch] geneName:', geneName)
-  console.log('[AlphaFoldDBSearch] selectedTranscript:', selectedTranscript?.id())
+  const geneName =
+    feature.get('gene_name') ?? feature.get('name') ?? feature.get('Name')
 
   // Search by gene ID and gene name
   // Gene name search is important because some Swiss-Prot entries aren't linked via Ensembl xrefs
@@ -119,12 +107,8 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     enabled: lookupMode === 'auto' && !featureUniprotId,
   })
 
-  console.log('[AlphaFoldDBSearch] uniprotEntries:', uniprotEntries)
-  console.log('[AlphaFoldDBSearch] isLookupLoading:', isLookupLoading)
-
   // Auto-select first UniProt entry when results load
   const autoUniprotId = uniprotEntries[0]?.accession
-  console.log('[AlphaFoldDBSearch] autoUniprotId:', autoUniprotId)
 
   // AlphaFoldDB sequence search
   const {
@@ -144,7 +128,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     lookupMode === 'feature'
       ? featureUniprotId
       : lookupMode === 'auto'
-        ? selectedUniprotId ?? autoUniprotId
+        ? (selectedUniprotId ?? autoUniprotId)
         : lookupMode === 'sequence'
           ? sequenceSearchUniprotId
           : manualUniprotId
@@ -197,17 +181,11 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
     if (isoformSequences !== undefined && userSelection === undefined) {
-      console.log('[AlphaFoldDBSearch] Auto-selecting transcript...')
-      console.log('[AlphaFoldDBSearch] options:', options.map(o => ({ id: o.id(), name: getDisplayName(o) })))
-      console.log('[AlphaFoldDBSearch] isoformSequences keys:', Object.keys(isoformSequences))
-      console.log('[AlphaFoldDBSearch] isoformSequences with lengths:', Object.entries(isoformSequences).map(([k, v]) => ({ key: k, len: v.seq.length, name: getDisplayName(v.feature) })))
-      console.log('[AlphaFoldDBSearch] structureSequence:', structureSequence?.slice(0, 50))
       const best = selectBestTranscript({
         options,
         isoformSequences,
         structureSequence,
       })
-      console.log('[AlphaFoldDBSearch] selected best:', best?.id(), getDisplayName(best!))
       setUserSelection(best?.id())
     }
   }, [options, structureSequence, isoformSequences, userSelection])
@@ -222,14 +200,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onLookupModeChange={setLookupMode}
           manualUniprotId={manualUniprotId}
           onManualUniprotIdChange={setManualUniprotId}
-          autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
-          transcriptId={
-            selectedTranscript
-              ? getDisplayName(selectedTranscript)
-              : getDisplayName(feature)
-          }
-          isLoading={isLookupLoading}
           hasProteinSequence={!!userSelectedProteinSequence?.seq}
           sequenceSearchType={sequenceSearchType}
           onSequenceSearchTypeChange={setSequenceSearchType}
@@ -248,11 +219,29 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           lookupMode === 'auto' &&
           !featureUniprotId &&
           (uniprotEntries.length > 0 || isLookupLoading) && (
-            <UniProtResultsTable
-              entries={uniprotEntries}
-              selectedAccession={selectedUniprotId ?? autoUniprotId}
-              onSelect={setSelectedUniprotId}
-            />
+            <>
+              <Typography variant="body2" color="textSecondary">
+                Searched UniProt by{' '}
+                {[
+                  geneId ? `gene ID "${geneId}"` : undefined,
+                  geneName ? `gene name "${geneName}"` : undefined,
+                ]
+                  .filter(Boolean)
+                  .join(' and ')}
+              </Typography>
+              <UniProtResultsTable
+                entries={uniprotEntries}
+                selectedAccession={selectedUniprotId ?? autoUniprotId}
+                onSelect={setSelectedUniprotId}
+              />
+              <Typography variant="body2" color="textSecondary">
+                If you don't see the entry you're looking for, search{' '}
+                <ExternalLink href="https://www.uniprot.org/">
+                  UniProt
+                </ExternalLink>{' '}
+                directly and use "Enter manually" above.
+              </Typography>
+            </>
           )}
 
         {isoformSequences &&

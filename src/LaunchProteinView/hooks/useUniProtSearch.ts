@@ -15,24 +15,14 @@ export default function useUniProtSearch({
   enabled?: boolean
 }) {
   const strippedGeneId = stripTrailingVersion(geneId)
-  const hasValidId =
-    (strippedGeneId && /^ENSG\d+/i.test(strippedGeneId)) || !!geneName
-
-  console.log('[useUniProtSearch] geneId:', geneId)
-  console.log('[useUniProtSearch] geneName:', geneName)
-  console.log('[useUniProtSearch] hasValidId:', hasValidId)
-  console.log('[useUniProtSearch] enabled:', enabled)
+  const hasEnsemblGeneId = Boolean(
+    strippedGeneId && /^ENSG\d+/i.test(strippedGeneId),
+  )
+  const hasValidId = hasEnsemblGeneId || Boolean(geneName)
 
   const { data, error, isLoading } = useSWR<UniProtEntry[]>(
-    enabled && hasValidId
-      ? ['uniprotSearch', strippedGeneId, geneName]
-      : null,
-    async () => {
-      console.log('[useUniProtSearch] fetching for geneId:', strippedGeneId, 'geneName:', geneName)
-      const results = await searchUniProtEntries(strippedGeneId, geneName)
-      console.log('[useUniProtSearch] results:', results)
-      return results
-    },
+    enabled && hasValidId ? ['uniprotSearch', strippedGeneId, geneName] : null,
+    async () => searchUniProtEntries(strippedGeneId, geneName),
     {
       revalidateOnFocus: false,
       revalidateOnReconnect: false,
@@ -40,9 +30,6 @@ export default function useUniProtSearch({
       keepPreviousData: true,
     },
   )
-
-  console.log('[useUniProtSearch] data:', data)
-  console.log('[useUniProtSearch] isLoading:', isLoading)
 
   return {
     entries: data ?? [],

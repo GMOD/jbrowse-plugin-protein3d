@@ -63,19 +63,14 @@ export async function searchUniProtEntries(
   geneName?: string,
   organismId = 9606, // Default to human
 ): Promise<UniProtEntry[]> {
-  console.log('[searchUniProtEntries] geneId:', geneId)
-  console.log('[searchUniProtEntries] geneName:', geneName)
-
   const strippedGeneId = geneId ? stripTrailingVersion(geneId) : undefined
   const entries: UniProtEntry[] = []
 
   // Strategy 1: Try xref search with gene ID
   if (strippedGeneId && isEnsemblGeneId(strippedGeneId)) {
     const searchUrl = `https://rest.uniprot.org/uniprotkb/search?query=xref:ensembl-${strippedGeneId}&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=10`
-    console.log('[searchUniProtEntries] trying xref search:', searchUrl)
     try {
       const data = (await jsonfetch(searchUrl)) as UniProtApiResult
-      console.log('[searchUniProtEntries] xref results count:', data.results.length)
       for (const result of data.results) {
         entries.push({
           accession: result.primaryAccession,
@@ -88,8 +83,8 @@ export async function searchUniProtEntries(
           isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
         })
       }
-    } catch (e) {
-      console.log('[searchUniProtEntries] xref error:', e)
+    } catch {
+      // xref search failed, continue to gene name search
     }
   }
 
@@ -97,10 +92,8 @@ export async function searchUniProtEntries(
   const hasReviewedEntry = entries.some(e => e.isReviewed)
   if (!hasReviewedEntry && geneName) {
     const geneNameSearchUrl = `https://rest.uniprot.org/uniprotkb/search?query=gene:${encodeURIComponent(geneName)}+AND+organism_id:${organismId}+AND+reviewed:true&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=5`
-    console.log('[searchUniProtEntries] trying gene name search:', geneNameSearchUrl)
     try {
       const data = (await jsonfetch(geneNameSearchUrl)) as UniProtApiResult
-      console.log('[searchUniProtEntries] gene name results count:', data.results.length)
       for (const result of data.results) {
         // Don't add duplicates
         if (!entries.some(e => e.accession === result.primaryAccession)) {
@@ -116,8 +109,8 @@ export async function searchUniProtEntries(
           })
         }
       }
-    } catch (e) {
-      console.log('[searchUniProtEntries] gene name error:', e)
+    } catch {
+      // gene name search failed
     }
   }
 
@@ -132,6 +125,5 @@ export async function searchUniProtEntries(
     return 0
   })
 
-  console.log('[searchUniProtEntries] returning entries:', entries)
   return entries
 }

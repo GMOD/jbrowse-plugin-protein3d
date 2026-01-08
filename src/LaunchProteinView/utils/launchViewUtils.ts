@@ -165,6 +165,7 @@ export function launchMsaView({
     connectedFeature: selectedTranscript?.toJSON(),
     init: {
       msaUrl,
+      colorSchemeName: 'percent_identity',
     },
   })
 }
@@ -172,4 +173,67 @@ export function launchMsaView({
 export function hasMsaViewPlugin() {
   // @ts-expect-error
   return typeof window.JBrowsePluginMsaView !== 'undefined'
+}
+
+export function launch3DProteinViewWithMsa({
+  session,
+  view,
+  feature,
+  selectedTranscript,
+  uniprotId,
+  url,
+  data,
+  userProvidedTranscriptSequence,
+  alignmentAlgorithm,
+  displayName,
+}: LaunchViewParams & {
+  url?: string
+  data?: string
+  userProvidedTranscriptSequence?: string
+  alignmentAlgorithm?: string
+  displayName?: string
+}) {
+  if (!uniprotId) {
+    return
+  }
+
+  const msaUrl = getAlphaFoldMsaUrl(uniprotId)
+  const baseName = [
+    ...new Set([
+      uniprotId,
+      getGeneDisplayName(feature),
+      getTranscriptDisplayName(selectedTranscript),
+    ]),
+  ].join(' - ')
+
+  // Launch MSA view first to get its ID
+  const msaView = session.addView('MsaView', {
+    type: 'MsaView',
+    displayName: `MSA view - ${baseName}`,
+    connectedViewId: view.id,
+    connectedFeature: selectedTranscript?.toJSON(),
+    init: {
+      msaUrl,
+      colorSchemeName: 'percent_identity',
+    },
+  })
+
+  // Launch 3D protein view with reference to MSA view
+  session.addView('ProteinView', {
+    type: 'ProteinView',
+    isFloating: true,
+    alignmentAlgorithm,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+    connectedMsaViewId: msaView?.id,
+    structures: [
+      {
+        url,
+        data,
+        userProvidedTranscriptSequence,
+        feature: selectedTranscript?.toJSON(),
+        connectedViewId: view.id,
+      },
+    ],
+    displayName: displayName ?? `Protein view - ${baseName}`,
+  })
 }

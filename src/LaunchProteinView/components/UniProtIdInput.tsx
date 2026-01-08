@@ -6,11 +6,10 @@ import {
   Radio,
   RadioGroup,
   TextField,
+  Typography,
 } from '@mui/material'
 
 import ExternalLink from '../../components/ExternalLink'
-import { isRecognizedTranscriptId } from '../services/lookupMethods'
-import { stripTrailingVersion } from '../utils/util'
 
 import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
 
@@ -21,65 +20,25 @@ interface UniProtIdInputProps {
   onLookupModeChange: (mode: LookupMode) => void
   manualUniprotId: string
   onManualUniprotIdChange: (id: string) => void
-  autoUniprotId?: string
   featureUniprotId?: string
-  transcriptId?: string
-  isLoading: boolean
   hasProteinSequence?: boolean
   sequenceSearchType?: SequenceSearchType
   onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
 }
 
-function UnrecognizedIdMessage() {
-  return (
-    <div>
-      Automatic lookup only works for Ensembl (ENS...) or RefSeq (NM_, XM_,
-      etc.) transcript IDs. Try the &quot;AlphaFoldDB sequence search&quot;
-      option or the &quot;Foldseek search&quot; tab instead.
-    </div>
-  )
-}
-
-function UniProtIDNotFoundMessage() {
-  return (
-    <div>
-      UniProt ID not found for this transcript. Try the &quot;AlphaFoldDB
-      sequence search&quot; option or the &quot;Foldseek search&quot; tab
-      instead.
-    </div>
-  )
-}
-
-function EnterUniProtID() {
-  return (
-    <div>
-      Please enter a valid UniProt ID. You can search for UniProt IDs at{' '}
-      <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink> or{' '}
-      <ExternalLink href="https://alphafold.ebi.ac.uk/">
-        AlphaFoldDB
-      </ExternalLink>
-    </div>
-  )
-}
-
 /**
- * Component to handle UniProt ID input (both automatic and manual modes)
+ * Component to handle UniProt ID input mode selection
  */
 export default function UniProtIdInput({
   lookupMode,
   onLookupModeChange,
   manualUniprotId,
   onManualUniprotIdChange,
-  autoUniprotId,
   featureUniprotId,
-  transcriptId,
-  isLoading,
   hasProteinSequence,
   sequenceSearchType,
   onSequenceSearchTypeChange,
 }: UniProtIdInputProps) {
-  const strippedId = stripTrailingVersion(transcriptId)
-  const isRecognized = strippedId ? isRecognizedTranscriptId(strippedId) : false
   return (
     <>
       <FormControl component="fieldset">
@@ -94,42 +53,40 @@ export default function UniProtIdInput({
             <FormControlLabel
               value="feature"
               control={<Radio />}
-              label={`Use feature UniProt ID (${featureUniprotId})`}
+              label={`From feature (${featureUniprotId})`}
             />
           )}
           <FormControlLabel
             value="auto"
             control={<Radio />}
-            label="Automatic UniProt ID lookup"
+            label="Auto-detect using UniProt ID mapping API"
           />
           <FormControlLabel
             value="manual"
             control={<Radio />}
-            label="Manual UniProt ID entry"
+            label="Enter manually"
           />
           {hasProteinSequence && (
             <FormControlLabel
               value="sequence"
               control={<Radio />}
-              label="AlphaFoldDB sequence search"
+              label="Search sequence against AlphaFoldDB API"
             />
           )}
         </RadioGroup>
       </FormControl>
 
       {lookupMode === 'manual' && (
-        <div>
-          <TextField
-            label="UniProt ID"
-            variant="outlined"
-            placeholder="Enter UniProt ID (e.g. P68871)"
-            helperText="Enter a valid UniProt ID to load the corresponding protein structure"
-            value={manualUniprotId}
-            onChange={e => {
-              onManualUniprotIdChange(e.target.value)
-            }}
-          />
-        </div>
+        <TextField
+          label="UniProt ID"
+          variant="outlined"
+          placeholder="e.g. P68871"
+          size="small"
+          value={manualUniprotId}
+          onChange={e => {
+            onManualUniprotIdChange(e.target.value)
+          }}
+        />
       )}
 
       {lookupMode === 'sequence' &&
@@ -149,37 +106,31 @@ export default function UniProtIdInput({
                 <FormControlLabel
                   value="md5"
                   control={<Radio />}
-                  label="Exact match (faster)"
+                  label="Exact match"
                 />
                 <FormControlLabel
                   value="sequence"
                   control={<Radio />}
-                  label="Search by sequence"
+                  label="Fuzzy match"
                 />
               </RadioGroup>
             </FormControl>
-            <div>
-              Note: This lookup may not return the canonical UniProt accession
-              associated with your gene of interest. If you have questions about
-              which structure to use, visit{' '}
-              <ExternalLink href="https://alphafold.ebi.ac.uk/">
-                AlphaFoldDB
-              </ExternalLink>{' '}
-              to look up the UniProt ID associated with your gene manually, and
-              then use the "Manual UniProt" option
-            </div>
+            <Typography variant="body2" color="text.secondary">
+              May not find the canonical UniProt entry.
+            </Typography>
           </>
         )}
 
-      {lookupMode === 'auto' ? (
-        isLoading || autoUniprotId ? null : !isRecognized ? (
-          <UnrecognizedIdMessage />
-        ) : (
-          <UniProtIDNotFoundMessage />
-        )
-      ) : lookupMode === 'manual' ? (
-        !manualUniprotId && <EnterUniProtID />
-      ) : null}
+      {lookupMode === 'manual' && !manualUniprotId && (
+        <Typography variant="body2" color="text.secondary">
+          Search{' '}
+          <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>
+          {' or '}
+          <ExternalLink href="https://alphafold.ebi.ac.uk/">
+            AlphaFoldDB
+          </ExternalLink>
+        </Typography>
+      )}
     </>
   )
 }

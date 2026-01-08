@@ -19,6 +19,7 @@ import {
   hasMsaViewPlugin,
   launch1DProteinView,
   launch3DProteinView,
+  launch3DProteinViewWithMsa,
   launchMsaView,
 } from '../utils/launchViewUtils'
 
@@ -60,6 +61,7 @@ export default function ProteinViewActions({
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
   const handleLaunch3DView = () => {
+    setDialogOpen(false)
     if (!selectedTranscript) {
       return
     }
@@ -112,6 +114,24 @@ export default function ProteinViewActions({
     handleClose()
   }
 
+  const handleLaunch3DWithMsa = () => {
+    setDialogOpen(false)
+    if (!selectedTranscript || !uniprotId) {
+      return
+    }
+    launch3DProteinViewWithMsa({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
+      url,
+      userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
+      alignmentAlgorithm,
+    })
+    handleClose()
+  }
+
   return (
     <>
       {sequencesMatch === false ? (
@@ -141,18 +161,11 @@ export default function ProteinViewActions({
         variant="contained"
         color="primary"
         disabled={isLaunchDisabled}
-        onClick={handleLaunch3DView}
-      >
-        Launch 3D protein view
-      </Button>
-      <Button
-        variant="outlined"
-        disabled={isLaunchDisabled}
         onClick={() => {
           setDialogOpen(true)
         }}
       >
-        More...
+        Launch
       </Button>
       <Dialog
         open={dialogOpen}
@@ -160,9 +173,20 @@ export default function ProteinViewActions({
           setDialogOpen(false)
         }}
       >
-        <DialogTitle>Additional launch options</DialogTitle>
+        <DialogTitle>Launch options</DialogTitle>
         <DialogContent>
           <MenuList>
+            <MenuItem onClick={handleLaunch3DView}>
+              <div>
+                <Typography variant="body1">
+                  Launch 3D protein structure view
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  View protein structure with genome-to-structure coordinate
+                  mapping
+                </Typography>
+              </div>
+            </MenuItem>
             <MenuItem
               onClick={() => {
                 handleLaunch1DView().catch((e: unknown) => {
@@ -180,14 +204,26 @@ export default function ProteinViewActions({
               </div>
             </MenuItem>
             {hasMsaViewPlugin() ? (
-              <MenuItem onClick={handleLaunchMSAView}>
-                <div>
-                  <Typography variant="body1">Launch MSA view</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    View multiple sequence alignment from AlphaFold
-                  </Typography>
-                </div>
-              </MenuItem>
+              <>
+                <MenuItem onClick={handleLaunchMSAView}>
+                  <div>
+                    <Typography variant="body1">Launch MSA view</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      View multiple sequence alignment from AlphaFold
+                    </Typography>
+                  </div>
+                </MenuItem>
+                <MenuItem onClick={handleLaunch3DWithMsa}>
+                  <div>
+                    <Typography variant="body1">
+                      Launch 3D structure + MSA view
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Launch both views with synchronized hover highlighting
+                    </Typography>
+                  </div>
+                </MenuItem>
+              </>
             ) : null}
           </MenuList>
         </DialogContent>
