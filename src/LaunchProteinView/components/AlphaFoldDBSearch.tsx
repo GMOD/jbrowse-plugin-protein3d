@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import { DialogActions, DialogContent } from '@mui/material'
+import { DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -12,15 +12,15 @@ import ProteinViewActions from './ProteinViewActions'
 import SequenceSearchStatus from './SequenceSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
+import UniProtResultsTable from './UniProtResultsTable'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
+import ExternalLink from '../../components/ExternalLink'
 import useAlphaFoldData from '../hooks/useAlphaFoldData'
 import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
-import useLookupUniProtId from '../hooks/useLookupUniProtId'
-import { lookupUniProtIdViaUniProt } from '../services/lookupMethods'
+import useUniProtSearch from '../hooks/useUniProtSearch'
 import {
-  getDisplayName,
   getId,
   getTranscriptFeatures,
   getUniProtIdFromFeature,
@@ -67,10 +67,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   // State for UniProt ID lookup
   const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
+  const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
-  // hardcoded right now
-  const useApiSearch = false
 
   // Transcript selection
   const options = useMemo(() => getTranscriptFeatures(feature), [feature])
@@ -91,18 +90,25 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     getUniProtIdFromFeature(selectedTranscript) ??
     getUniProtIdFromFeature(feature)
 
-  // Auto-lookup UniProt ID (only when not using feature mode)
+  // Get gene ID and gene name from feature
+  const geneId = feature.get('gene_id') ?? feature.get('ID')
+  const geneName =
+    feature.get('gene_name') ?? feature.get('name') ?? feature.get('Name')
+
+  // Search by gene ID and gene name
+  // Gene name search is important because some Swiss-Prot entries aren't linked via Ensembl xrefs
   const {
-    uniprotId: autoUniprotId,
+    entries: uniprotEntries,
     isLoading: isLookupLoading,
     error: lookupError,
-  } = useLookupUniProtId({
-    id: selectedTranscript
-      ? getDisplayName(selectedTranscript)
-      : getDisplayName(feature),
-    providedUniprotId: featureUniprotId,
-    lookupMethod: lookupUniProtIdViaUniProt,
+  } = useUniProtSearch({
+    geneId,
+    geneName,
+    enabled: lookupMode === 'auto' && !featureUniprotId,
   })
+
+  // Auto-select first UniProt entry when results load
+  const autoUniprotId = uniprotEntries[0]?.accession
 
   // AlphaFoldDB sequence search
   const {
@@ -122,7 +128,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     lookupMode === 'feature'
       ? featureUniprotId
       : lookupMode === 'auto'
-        ? autoUniprotId
+        ? (selectedUniprotId ?? autoUniprotId)
         : lookupMode === 'sequence'
           ? sequenceSearchUniprotId
           : manualUniprotId
@@ -146,7 +152,6 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     structureSequence: alphaFoldStructureSequence,
   } = useAlphaFoldData({
     uniprotId: lookupMode === 'sequence' ? undefined : uniprotId,
-    useApiSearch,
   })
 
   // Use sequence search URLs/sequence when in sequence mode, otherwise use AlphaFold data
@@ -195,14 +200,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onLookupModeChange={setLookupMode}
           manualUniprotId={manualUniprotId}
           onManualUniprotIdChange={setManualUniprotId}
-          autoUniprotId={autoUniprotId}
           featureUniprotId={featureUniprotId}
-          transcriptId={
-            selectedTranscript
-              ? getDisplayName(selectedTranscript)
-              : getDisplayName(feature)
-          }
-          isLoading={isLookupLoading}
           hasProteinSequence={!!userSelectedProteinSequence?.seq}
           sequenceSearchType={sequenceSearchType}
           onSequenceSearchTypeChange={setSequenceSearchType}
@@ -216,6 +214,35 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               message={status}
             />
           ))}
+
+        {isoformSequences &&
+          lookupMode === 'auto' &&
+          !featureUniprotId &&
+          (uniprotEntries.length > 0 || isLookupLoading) && (
+            <>
+              <Typography variant="body2" color="textSecondary">
+                Searched UniProt by{' '}
+                {[
+                  geneId ? `gene ID "${geneId}"` : undefined,
+                  geneName ? `gene name "${geneName}"` : undefined,
+                ]
+                  .filter(Boolean)
+                  .join(' and ')}
+              </Typography>
+              <UniProtResultsTable
+                entries={uniprotEntries}
+                selectedAccession={selectedUniprotId ?? autoUniprotId}
+                onSelect={setSelectedUniprotId}
+              />
+              <Typography variant="body2" color="textSecondary">
+                If you don't see the entry you're looking for, search{' '}
+                <ExternalLink href="https://www.uniprot.org/">
+                  UniProt
+                </ExternalLink>{' '}
+                directly and use "Enter manually" above.
+              </Typography>
+            </>
+          )}
 
         {isoformSequences &&
         selectedTranscript &&

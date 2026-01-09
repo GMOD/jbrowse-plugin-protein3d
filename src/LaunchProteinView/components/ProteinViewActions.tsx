@@ -5,9 +5,8 @@ import {
   Dialog,
   DialogContent,
   DialogTitle,
-  List,
-  ListItemButton,
-  ListItemText,
+  MenuItem,
+  MenuList,
   Typography,
 } from '@mui/material'
 
@@ -20,6 +19,7 @@ import {
   hasMsaViewPlugin,
   launch1DProteinView,
   launch3DProteinView,
+  launch3DProteinViewWithMsa,
   launchMsaView,
 } from '../utils/launchViewUtils'
 
@@ -61,6 +61,7 @@ export default function ProteinViewActions({
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
   const handleLaunch3DView = () => {
+    setDialogOpen(false)
     if (!selectedTranscript) {
       return
     }
@@ -113,6 +114,24 @@ export default function ProteinViewActions({
     handleClose()
   }
 
+  const handleLaunch3DWithMsa = () => {
+    setDialogOpen(false)
+    if (!selectedTranscript || !uniprotId) {
+      return
+    }
+    launch3DProteinViewWithMsa({
+      session,
+      view,
+      feature,
+      selectedTranscript,
+      uniprotId,
+      url,
+      userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
+      alignmentAlgorithm,
+    })
+    handleClose()
+  }
+
   return (
     <>
       {sequencesMatch === false ? (
@@ -142,18 +161,11 @@ export default function ProteinViewActions({
         variant="contained"
         color="primary"
         disabled={isLaunchDisabled}
-        onClick={handleLaunch3DView}
-      >
-        Launch 3D protein view
-      </Button>
-      <Button
-        variant="outlined"
-        disabled={isLaunchDisabled}
         onClick={() => {
           setDialogOpen(true)
         }}
       >
-        More...
+        Launch
       </Button>
       <Dialog
         open={dialogOpen}
@@ -161,30 +173,59 @@ export default function ProteinViewActions({
           setDialogOpen(false)
         }}
       >
-        <DialogTitle>Additional launch options</DialogTitle>
+        <DialogTitle>Launch options</DialogTitle>
         <DialogContent>
-          <List>
-            <ListItemButton
+          <MenuList>
+            <MenuItem onClick={handleLaunch3DView}>
+              <div>
+                <Typography variant="body1">
+                  Launch 3D protein structure view
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  View protein structure with genome-to-structure coordinate
+                  mapping
+                </Typography>
+              </div>
+            </MenuItem>
+            <MenuItem
               onClick={() => {
                 handleLaunch1DView().catch((e: unknown) => {
                   console.error(e)
                 })
               }}
             >
-              <ListItemText
-                primary="Launch 1D protein annotation view"
-                secondary="View protein features and annotations as a linear track"
-              />
-            </ListItemButton>
+              <div>
+                <Typography variant="body1">
+                  Launch 1D protein annotation view
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  View protein features and annotations as a linear track
+                </Typography>
+              </div>
+            </MenuItem>
             {hasMsaViewPlugin() ? (
-              <ListItemButton onClick={handleLaunchMSAView}>
-                <ListItemText
-                  primary="Launch MSA view"
-                  secondary="View multiple sequence alignment from AlphaFold"
-                />
-              </ListItemButton>
+              <>
+                <MenuItem onClick={handleLaunchMSAView}>
+                  <div>
+                    <Typography variant="body1">Launch MSA view</Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      View multiple sequence alignment from AlphaFold
+                    </Typography>
+                  </div>
+                </MenuItem>
+                <MenuItem onClick={handleLaunch3DWithMsa}>
+                  <div>
+                    <Typography variant="body1">
+                      Launch 3D structure + MSA view
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      Launch both views with synchronized hover highlighting
+                    </Typography>
+                  </div>
+                </MenuItem>
+              </>
             ) : null}
-          </List>
+          </MenuList>
         </DialogContent>
       </Dialog>
     </>

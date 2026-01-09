@@ -78,6 +78,12 @@ function stateModelFactory() {
 
         /**
          * #property
+         * ID of connected MSA view for hover synchronization
+         */
+        connectedMsaViewId: types.maybe(types.string),
+
+        /**
+         * #property
          * used for loading the protein view via session snapshots, e.g.
          * {
          *   "type": "ProteinView",
@@ -188,6 +194,12 @@ function stateModelFactory() {
        */
       setInit(arg?: ProteinViewInitState) {
         self.init = arg
+      },
+      /**
+       * #action
+       */
+      setConnectedMsaViewId(id?: string) {
+        self.connectedMsaViewId = id
       },
       /**
        * #action
