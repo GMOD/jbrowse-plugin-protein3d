@@ -1,8 +1,19 @@
 import fs from 'fs'
+import path from 'path'
+import { fileURLToPath } from 'url'
 import * as esbuild from 'esbuild'
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
-import JbrowseGlobals from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
+
+// Load JBrowse re-exports list
+// Note: Once @jbrowse/core exports this properly, can simplify to:
+// import JbrowseGlobals from '@jbrowse/core/ReExports/list'
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const listPath = path.join(
+  __dirname,
+  'node_modules/@jbrowse/core/esm/ReExports/list.js',
+)
+const JbrowseGlobals = await import(listPath)
 
 function createGlobalMap(jbrowseGlobals) {
   const globalMap = {}

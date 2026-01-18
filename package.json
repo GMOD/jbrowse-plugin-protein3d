@@ -10,14 +10,32 @@
     "dist",
     "src"
   ],
+  "config": {
+    "port": 9000,
+    "browse": {
+      "port": 8999
+    },
+    "jbrowse": {
+      "plugin": {
+        "name": "Protein3d"
+      }
+    }
+  },
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:setup": "node scripts/test-versions.mjs setup",
+    "test:setup:version": "node scripts/test-versions.mjs setup",
+    "test:versions": "node scripts/test-versions.mjs run",
+    "test:version": "node scripts/test-versions.mjs run",
     "clean": "rimraf dist",
     "format": "prettier --write .",
     "prebuild": "npm run clean",
     "start": "node esbuild-watch.mjs",
     "build": "tsc && NODE_ENV=production node esbuild.mjs",
+    "build:bundle": "NODE_ENV=production node esbuild.mjs",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0",
+    "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "npm run build",
     "postversion": "git push --follow-tags"
   },
@@ -59,6 +77,8 @@
     "rxjs": "^7.0.0",
     "tss-react": "^4.9.4",
     "typescript": "^5.3.3",
+    "puppeteer": "^24.0.0",
+    "serve": "^14.2.5",
     "typescript-eslint": "^8.53.0",
     "vitest": "^4.0.17"
   },
