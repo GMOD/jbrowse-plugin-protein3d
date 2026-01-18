@@ -120,8 +120,8 @@ dist
 .jbrowse
 .test-jbrowse*
 
-# Debug screenshots from tests
-debug-*.png
+# Debug screenshots (root level only - test/screenshots/ is tracked in repo)
+/debug-*.png
 
 # Cypress specific files
 cypress/videos

@@ -24,6 +24,7 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:all": "node scripts/test-versions.mjs setup && node scripts/test-versions.mjs run",
     "test:setup": "node scripts/test-versions.mjs setup",
     "test:setup:version": "node scripts/test-versions.mjs setup",
     "test:versions": "node scripts/test-versions.mjs run",
