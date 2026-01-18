@@ -1,7 +1,7 @@
 import fs from 'fs'
 import * as esbuild from 'esbuild'
 import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
-import JbrowseGlobals from '@jbrowse/core/ReExports/list.js'
+import JbrowseGlobals from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
 
 function createGlobalMap(jbrowseGlobals) {
