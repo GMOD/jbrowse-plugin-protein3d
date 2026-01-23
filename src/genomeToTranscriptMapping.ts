@@ -20,7 +20,7 @@ function* getPositions(f: Feature, strand: number) {
 export function genomeToTranscriptMapping(feature: Feature) {
   const strand = feature.get('strand') as number
   const refName = feature.get('refName')
-  const subs = feature.children() ?? []
+  const subs = feature.children?.() ?? []
   const cds = subs
     .filter(f => f.get('type') === 'CDS')
     .toSorted((a, b) => strand * (a.get('start') - b.get('start')))

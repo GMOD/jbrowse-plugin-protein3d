@@ -3,8 +3,8 @@ name: Push
 on: push
 
 jobs:
-  test:
-    name: Test and typecheck on node 20.x and ubuntu-latest
+  build-and-lint:
+    name: Build, lint, and unit tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -14,12 +14,47 @@ jobs:
           node-version: 20.x
       - name: Install deps (with cache)
         uses: bahmutov/npm-install@v1
-      - name: build
+      - name: Build
         run: yarn build
       - name: Lint
         run: yarn lint
-      - name: Test
-        run: yarn test
+      - name: Unit tests
+        run: yarn vitest run --exclude 'test/**'
+
+  e2e-tests:
+    name: E2E tests (${{ matrix.jbrowse-version }})
+    runs-on: ubuntu-latest
+    needs: build-and-lint
+    strategy:
+      fail-fast: false
+      matrix:
+        jbrowse-version: [v3.7.0, nightly]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20.x
+      - name: Install deps (with cache)
+        uses: bahmutov/npm-install@v1
+      - name: Install JBrowse CLI
+        run: npm install -g @jbrowse/cli
+      - name: Setup JBrowse ${{ matrix.jbrowse-version }}
+        run: |
+          if [ "${{ matrix.jbrowse-version }}" = "nightly" ]; then
+            jbrowse create .test-jbrowse-nightly --nightly
+          else
+            jbrowse create .test-jbrowse-${{ matrix.jbrowse-version }} --tag ${{ matrix.jbrowse-version }}
+          fi
+      - name: Run E2E tests
+        run: TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} yarn vitest run test/
+      - name: Upload screenshots on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots-${{ matrix.jbrowse-version }}
+          path: test-screenshots/
+
   spellcheck:
     name: Spell check
     runs-on: ubuntu-latest

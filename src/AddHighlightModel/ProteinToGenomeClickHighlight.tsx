@@ -4,8 +4,12 @@ import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
-import { JBrowsePluginProteinViewModel } from '../ProteinView/model'
+import {
+  JBrowsePluginProteinStructureModel,
+  JBrowsePluginProteinViewModel,
+} from '../ProteinView/model'
 
+import type { Region } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 type LGV = LinearGenomeViewModel
@@ -21,17 +25,18 @@ const ProteinToGenomeClickHighlight = observer(
     const assembly = assemblyManager.get(assemblyName)
     return assembly ? (
       <>
-        {proteinView?.structures.map(structure =>
-          structure.clickGenomeHighlights.map((r, idx) => (
-            <Highlight
-              key={`${JSON.stringify(r)}-${idx}}`}
-              start={r.start}
-              end={r.end}
-              refName={r.refName}
-              assemblyName={assemblyName}
-              model={model}
-            />
-          )),
+        {proteinView?.structures.map(
+          (structure: JBrowsePluginProteinStructureModel, idx: number) =>
+            structure.clickGenomeHighlights.map((r: Region, idx2: number) => (
+              <Highlight
+                key={`${JSON.stringify(r)}-${idx}-${idx2}}`}
+                start={r.start}
+                end={r.end}
+                refName={r.refName}
+                assemblyName={assemblyName}
+                model={model}
+              />
+            )),
         )}
       </>
     ) : null

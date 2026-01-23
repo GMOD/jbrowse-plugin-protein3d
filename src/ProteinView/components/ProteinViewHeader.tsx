@@ -3,7 +3,10 @@ import React from 'react'
 import { LoadingEllipses } from '@jbrowse/core/ui'
 import { observer } from 'mobx-react'
 
-import { JBrowsePluginProteinViewModel } from '../model'
+import {
+  JBrowsePluginProteinStructureModel,
+  JBrowsePluginProteinViewModel,
+} from '../model'
 import AddStructureDialog from './AddStructureDialog'
 import HeaderStructureInfo from './HeaderStructureInfo'
 import ProteinAlignment from './ProteinAlignment'
@@ -18,18 +21,20 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
     <div>
       <HeaderStructureInfo model={model} />
       {showAlignment
-        ? structures.map((structure, idx) => {
-            const { pairwiseAlignment } = structure
-            return (
-              <div key={idx}>
-                {pairwiseAlignment ? (
-                  <ProteinAlignment key={idx} model={structure} />
-                ) : (
-                  <LoadingEllipses message="Loading pairwise alignment" />
-                )}
-              </div>
-            )
-          })
+        ? structures.map(
+            (structure: JBrowsePluginProteinStructureModel, idx: number) => {
+              const { pairwiseAlignment } = structure
+              return (
+                <div key={idx}>
+                  {pairwiseAlignment ? (
+                    <ProteinAlignment key={idx} model={structure} />
+                  ) : (
+                    <LoadingEllipses message="Loading pairwise alignment" />
+                  )}
+                </div>
+              )
+            },
+          )
         : null}
       <AddStructureDialog model={model} />
     </div>

@@ -12,14 +12,19 @@ function getTestDir(version) {
 function setupVersion(version) {
   const testDir = getTestDir(version)
   if (fs.existsSync(testDir)) {
-    console.log(`JBrowse ${version} already exists at ${testDir}, skipping setup`)
+    console.log(
+      `JBrowse ${version} already exists at ${testDir}, skipping setup`,
+    )
     return true
   }
   console.log(`Creating JBrowse ${version} at ${testDir}...`)
   try {
-    execSync(`npx @jbrowse/cli create ${testDir} --tag @jbrowse/web@${version}`, {
-      stdio: 'inherit',
-    })
+    execSync(
+      `npx @jbrowse/cli create ${testDir} --tag @jbrowse/web@${version}`,
+      {
+        stdio: 'inherit',
+      },
+    )
     return true
   } catch (error) {
     console.error(`Failed to create JBrowse ${version}:`, error.message)

@@ -2,7 +2,10 @@ import React from 'react'
 
 import { observer } from 'mobx-react'
 
-import { JBrowsePluginProteinViewModel } from '../model'
+import {
+  JBrowsePluginProteinStructureModel,
+  JBrowsePluginProteinViewModel,
+} from '../model'
 
 const HeaderStructureInfo = observer(function HeaderStructureInfo({
   model,
@@ -10,18 +13,20 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
   model: JBrowsePluginProteinViewModel
 }) {
   const { structures } = model
-  return structures.map((structure, idx) => {
-    const { clickString, hoverString } = structure
-    return (
-      <span key={`${clickString}-${hoverString}-${idx}`}>
-        {[
-          clickString ? `Click: ${clickString}` : '',
-          hoverString ? `Hover: ${hoverString}` : '',
-        ].join(' ')}
-        &nbsp;
-      </span>
-    )
-  })
+  return structures.map(
+    (structure: JBrowsePluginProteinStructureModel, idx: number) => {
+      const { clickString, hoverString } = structure
+      return (
+        <span key={`${clickString}-${hoverString}-${idx}`}>
+          {[
+            clickString ? `Click: ${clickString}` : '',
+            hoverString ? `Hover: ${hoverString}` : '',
+          ].join(' ')}
+          &nbsp;
+        </span>
+      )
+    },
+  )
 })
 
 export default HeaderStructureInfo

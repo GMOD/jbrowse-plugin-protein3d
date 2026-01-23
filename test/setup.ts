@@ -66,7 +66,8 @@ export function setupJBrowse() {
   // Build the plugin bundle (uses build:bundle to skip type checking for faster iteration)
   // Set SKIP_BUILD=1 to skip if dist already exists
   const distDir = path.join(process.cwd(), 'dist')
-  const skipBuild = process.env.SKIP_BUILD === '1' || process.env.SKIP_BUILD === 'true'
+  const skipBuild =
+    process.env.SKIP_BUILD === '1' || process.env.SKIP_BUILD === 'true'
 
   if (skipBuild && fs.existsSync(distDir)) {
     console.log('Skipping build (SKIP_BUILD is set and dist exists)')
@@ -296,7 +297,7 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
     )
   })
 
-  const jbrowseUrl = `http://localhost:${JBROWSE_PORT}/`
+  const jbrowseUrl = `http://localhost:${JBROWSE_PORT}/?sessionName=mysession`
   console.log(`Navigating to: ${jbrowseUrl}`)
   await page.goto(jbrowseUrl, { waitUntil: 'networkidle2', timeout: 60_000 })
 
