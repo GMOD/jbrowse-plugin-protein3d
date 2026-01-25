@@ -20,8 +20,8 @@ export function structureSeqVsTranscriptSeqMap(
 
   let j = 0
   let k = 0
-  const structureSeqToTranscriptSeqPosition = {} as Record<string, number>
-  const transcriptSeqToStructureSeqPosition = {} as Record<string, number>
+  const structureSeqToTranscriptSeqPosition: Record<number, number> = {}
+  const transcriptSeqToStructureSeqPosition: Record<number, number> = {}
 
   for (let i = 0; i < structureSeq.length; i++) {
     const c1 = structureSeq[i]
@@ -55,7 +55,7 @@ export function structurePositionToAlignmentMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
   const structureSeq = pairwiseAlignment.alns[1].seq
-  const structurePositionToAlignment = {} as Record<string, number>
+  const structurePositionToAlignment: Record<number, number> = {}
 
   for (let i = 0, j = 0; i < structureSeq.length; i++) {
     if (structureSeq[i] !== '-') {
@@ -71,7 +71,7 @@ export function transcriptPositionToAlignmentMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
   const transcriptSeq = pairwiseAlignment.alns[0].seq
-  const transcriptPositionToAlignment = {} as Record<string, number>
+  const transcriptPositionToAlignment: Record<number, number> = {}
 
   for (let i = 0, j = 0; i < transcriptSeq.length; i++) {
     if (transcriptSeq[i] !== '-') {

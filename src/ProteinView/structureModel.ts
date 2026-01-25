@@ -42,6 +42,16 @@ type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
 
+export interface ParentProteinView {
+  zoomToBaseLevel: boolean
+  showHighlight: boolean
+  alignmentAlgorithm: AlignmentAlgorithm
+  molstarPluginContext: PluginContext | undefined
+  structures: { url?: string }[]
+  setShowAlignment: (f: boolean) => void
+  setError: (e: unknown) => void
+}
+
 /**
  * Extracts position information from a MolStar structure location
  * @returns Object with 0-based position, residue code, and chain ID
@@ -410,32 +420,38 @@ const Structure = types
       return r1 === r2
     },
 
+    get parentView(): ParentProteinView {
+      return getParent<ParentProteinView>(self, 2)
+    },
     get zoomToBaseLevel(): boolean {
-      // @ts-expect-error
-      return getParent(self, 2).zoomToBaseLevel
+      return this.parentView.zoomToBaseLevel
     },
     get showHighlight(): boolean {
-      // @ts-expect-error
-      return getParent(self, 2).showHighlight
+      return this.parentView.showHighlight
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
-      // @ts-expect-error
-      return getParent(self, 2).alignmentAlgorithm
+      return this.parentView.alignmentAlgorithm
     },
     get molstarPluginContext(): PluginContext | undefined {
-      // @ts-expect-error
-      return getParent(self, 2).molstarPluginContext
+      return this.parentView.molstarPluginContext
+    },
+    /**
+     * #getter
+     * Returns this structure's index in the parent's structures array
+     */
+    get structureIndex() {
+      return this.parentView.structures.indexOf(self)
     },
     /**
      * #getter
      * Returns the Molstar structure object for the current structure.
-     * NOTE: This always returns structures[0], which is incorrect when
-     * multiple structures are loaded. Fixing this would require passing the
-     * structure's index from the parent ProteinView model.
      */
     get molstarStructure() {
-      return this.molstarPluginContext?.managers.structure.hierarchy.current
-        .structures[0]?.cell.obj?.data
+      const idx = this.structureIndex
+      return idx >= 0
+        ? this.molstarPluginContext?.managers.structure.hierarchy.current
+            .structures[idx]?.cell.obj?.data
+        : undefined
     },
   }))
   .actions(self => ({
@@ -541,13 +557,11 @@ const Structure = types
               self.setAlignment(pairwiseAlignment)
               self.setAlignmentStatus('')
 
-              // @ts-expect-error
-              getParent(self, 2).setShowAlignment(true)
+              self.parentView.setShowAlignment(true)
             }
           } catch (e) {
             console.error(e)
-            // @ts-expect-error
-            getParent(self, 2).setError(e)
+            self.parentView.setError(e)
           }
         }),
       )
@@ -604,8 +618,7 @@ const Structure = types
                       structureSeqPos: locationInfo.structureSeqPos,
                     }).catch((e: unknown) => {
                       console.error(e)
-                      // @ts-expect-error
-                      getParent(self, 2).setError(e)
+                      self.parentView.setError(e)
                     })
                   }
                 }

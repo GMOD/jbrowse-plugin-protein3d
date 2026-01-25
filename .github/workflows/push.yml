@@ -47,7 +47,9 @@ jobs:
             jbrowse create .test-jbrowse-${{ matrix.jbrowse-version }} --tag ${{ matrix.jbrowse-version }}
           fi
       - name: Run E2E tests
-        run: TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} yarn vitest run test/
+        run:
+          TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} yarn vitest run
+          test/
       - name: Upload screenshots on failure
         if: failure()
         uses: actions/upload-artifact@v4

@@ -1,5 +1,11 @@
 import { isSessionWithAddTracks } from '@jbrowse/core/util'
 
+declare global {
+  interface Window {
+    JBrowsePluginMsaView?: unknown
+  }
+}
+
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
@@ -171,7 +177,6 @@ export function launchMsaView({
 }
 
 export function hasMsaViewPlugin() {
-  // @ts-expect-error
   return typeof window.JBrowsePluginMsaView !== 'undefined'
 }
 
