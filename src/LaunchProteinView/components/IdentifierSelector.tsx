@@ -1,29 +1,14 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import {
-  Chip,
+  Button,
   FormControl,
   InputLabel,
   MenuItem,
   Select,
-  Typography,
 } from '@mui/material'
-import { makeStyles } from 'tss-react/mui'
 
 import { getDatabaseTypeForId } from '../utils/util'
-
-const useStyles = makeStyles()({
-  container: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  chipContainer: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 4,
-  },
-})
 
 interface IdentifierSelectorProps {
   recognizedIds: string[]
@@ -73,7 +58,7 @@ export default function IdentifierSelector({
   selectedId,
   onSelectedIdChange,
 }: IdentifierSelectorProps) {
-  const { classes } = useStyles()
+  const [expanded, setExpanded] = useState(false)
 
   // Build list of selectable options
   const options: { value: string; label: string }[] = [
@@ -86,55 +71,39 @@ export default function IdentifierSelector({
   }
 
   if (recognizedIds.length === 0 && !geneName) {
+    return null
+  }
+
+  if (!expanded) {
     return (
-      <Typography variant="body2" color="text.secondary">
-        No recognized database identifiers found in feature attributes.
-      </Typography>
+      <Button
+        size="small"
+        variant="text"
+        onClick={() => {
+          setExpanded(true)
+        }}
+      >
+        Choose identifier to query...
+      </Button>
     )
   }
 
   return (
-    <div className={classes.container}>
-      <FormControl size="small" sx={{ minWidth: 300 }}>
-        <InputLabel>Query UniProt by</InputLabel>
-        <Select
-          value={selectedId}
-          label="Query UniProt by"
-          onChange={e => {
-            onSelectedIdChange(e.target.value)
-          }}
-        >
-          {options.map(opt => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-
-      {recognizedIds.length > 0 && (
-        <div className={classes.chipContainer}>
-          <Typography variant="caption" color="text.secondary">
-            Found:
-          </Typography>
-          {recognizedIds.slice(0, 5).map(id => (
-            <Chip
-              key={id}
-              label={id}
-              size="small"
-              variant="outlined"
-              onClick={() => {
-                onSelectedIdChange(id)
-              }}
-            />
-          ))}
-          {recognizedIds.length > 5 && (
-            <Typography variant="caption" color="text.secondary">
-              +{recognizedIds.length - 5} more
-            </Typography>
-          )}
-        </div>
-      )}
-    </div>
+    <FormControl size="small">
+      <InputLabel>Query UniProt by</InputLabel>
+      <Select
+        value={selectedId}
+        label="Query UniProt by"
+        onChange={e => {
+          onSelectedIdChange(e.target.value)
+        }}
+      >
+        {options.map(opt => (
+          <MenuItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </Select>
+    </FormControl>
   )
 }

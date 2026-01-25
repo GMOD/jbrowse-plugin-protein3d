@@ -37,9 +37,12 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 const useStyles = makeStyles()({
   dialogContent: {
     width: '80em',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 20,
+    '& > *': {
+      marginBottom: 20,
+    },
+    '& > *:last-child': {
+      marginBottom: 0,
+    },
   },
   selectorsRow: {
     display: 'flex',
