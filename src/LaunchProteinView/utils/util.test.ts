@@ -383,4 +383,42 @@ describe('extractFeatureIdentifiers', () => {
     ).length
     expect(nmCount).toBe(1)
   })
+
+  test('extracts UniProt ID from uniprot attribute', () => {
+    const feature = new SimpleFeature({
+      uniqueId: 'test-uniprot',
+      refName: 'chr7',
+      start: 155799980,
+      end: 155809163,
+      ID: 'NM_001310462.2',
+      uniprot: 'Q15465',
+      gene_id: 'SHH',
+    })
+    const result = extractFeatureIdentifiers(feature)
+    expect(result.uniprotId).toBe('Q15465')
+  })
+
+  test('extracts UniProt ID from uniprotId attribute', () => {
+    const feature = new SimpleFeature({
+      uniqueId: 'test-uniprotId',
+      refName: 'chr7',
+      start: 155799980,
+      end: 155809163,
+      uniprotId: 'P12345',
+    })
+    const result = extractFeatureIdentifiers(feature)
+    expect(result.uniprotId).toBe('P12345')
+  })
+
+  test('extracts UniProt ID from uniprotid attribute (lowercase)', () => {
+    const feature = new SimpleFeature({
+      uniqueId: 'test-uniprotid',
+      refName: 'chr7',
+      start: 155799980,
+      end: 155809163,
+      uniprotid: 'A0A0A0MRZ7',
+    })
+    const result = extractFeatureIdentifiers(feature)
+    expect(result.uniprotId).toBe('A0A0A0MRZ7')
+  })
 })

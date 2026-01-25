@@ -12,6 +12,7 @@ import { getDatabaseTypeForId } from '../utils/util'
 
 interface IdentifierSelectorProps {
   recognizedIds: string[]
+  uniprotId?: string
   geneName?: string
   selectedId: string
   onSelectedIdChange: (id: string) => void
@@ -54,6 +55,7 @@ function getIdLabel(id: string): string {
 
 export default function IdentifierSelector({
   recognizedIds,
+  uniprotId,
   geneName,
   selectedId,
   onSelectedIdChange,
@@ -66,6 +68,13 @@ export default function IdentifierSelector({
     ...recognizedIds.map(id => ({ value: id, label: getIdLabel(id) })),
   ]
 
+  if (uniprotId) {
+    options.push({
+      value: `uniprot:${uniprotId}`,
+      label: `${uniprotId} (UniProt)`,
+    })
+  }
+
   if (geneName) {
     options.push({
       value: `gene:${geneName}`,
@@ -73,7 +82,7 @@ export default function IdentifierSelector({
     })
   }
 
-  if (recognizedIds.length === 0 && !geneName) {
+  if (recognizedIds.length === 0 && !uniprotId && !geneName) {
     return null
   }
 

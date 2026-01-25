@@ -209,7 +209,7 @@ export default function ProteinViewActions({
                   <div>
                     <Typography variant="body1">Launch MSA view</Typography>
                     <Typography variant="body2" color="text.secondary">
-                      View multiple sequence alignment from AlphaFold
+                      View AlphaFold a3m multiple sequence alignment
                     </Typography>
                   </div>
                 </MenuItem>
@@ -219,7 +219,7 @@ export default function ProteinViewActions({
                       Launch 3D structure + MSA view
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                      Launch both views with synchronized hover highlighting
+                      Launch both views with AlphaFold a3m MSA
                     </Typography>
                   </div>
                 </MenuItem>

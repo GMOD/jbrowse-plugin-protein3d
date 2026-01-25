@@ -139,6 +139,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     [transcriptIds.recognizedIds, geneIds.recognizedIds],
   )
 
+  // UniProt ID from feature attributes (prefer transcript over gene)
+  const extractedUniprotId = transcriptIds.uniprotId ?? geneIds.uniprotId
+
   // Use gene name from either transcript or gene feature
   const geneName = transcriptIds.geneName ?? geneIds.geneName
 

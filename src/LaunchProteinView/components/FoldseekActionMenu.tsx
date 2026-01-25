@@ -126,7 +126,9 @@ export default function FoldseekActionMenu({
           </MenuItem>
         ) : null}
         {isAlphaFold && uniprotId && hasMsaViewPlugin() ? (
-          <MenuItem onClick={handleLaunchMSA}>Launch MSA view</MenuItem>
+          <MenuItem onClick={handleLaunchMSA}>
+            Launch MSA view (AlphaFoldDB a3m)
+          </MenuItem>
         ) : null}
       </Menu>
     </>

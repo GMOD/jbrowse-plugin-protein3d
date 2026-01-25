@@ -160,6 +160,7 @@ function extractIdsFromDbxref(dbxrefEntries: string[]): string[] {
 
 export interface FeatureIdentifiers {
   recognizedIds: string[]
+  uniprotId?: string
   geneId?: string
   geneName?: string
 }
@@ -208,6 +209,14 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
     }
   }
 
+  // Handle UniProt ID from feature attributes (trust that it's valid if present)
+  const uniprotIdAttr =
+    f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid') ?? f.get('UniProt')
+  const uniprotId =
+    typeof uniprotIdAttr === 'string' && uniprotIdAttr.length > 0
+      ? uniprotIdAttr
+      : undefined
+
   // Parse dbxref for additional IDs
   const dbxref = f.get('Dbxref') ?? f.get('dbxref') ?? f.get('db_xref')
   const dbxrefIds = extractIdsFromDbxref(parseDbxref(dbxref))
@@ -222,6 +231,7 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
 
   return {
     recognizedIds: [...new Set(recognizedIds)],
+    uniprotId,
     geneId: typeof geneId === 'string' ? geneId : undefined,
     geneName: typeof geneName === 'string' ? geneName : undefined,
   }
