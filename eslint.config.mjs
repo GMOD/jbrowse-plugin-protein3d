@@ -10,6 +10,9 @@ export default defineConfig(
   {
     ignores: [
       '**/dist/**/*',
+      '.test-jbrowse-nightly/**/*',
+      'scripts/**/*',
+      'test/**/*',
       'eslint.config.mjs',
       'esbuild-watch.mjs',
       'esbuild.mjs',

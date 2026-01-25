@@ -1,11 +1,13 @@
 import { ConfigurationSchema } from '@jbrowse/core/configuration'
 
+import type { AnyConfigurationSchemaType } from '@jbrowse/core/configuration'
+
 /**
  * #config UniProtVariationAdapter
  */
 function x() {} // eslint-disable-line @typescript-eslint/no-unused-vars
 
-const UniProtVariationAdapter = ConfigurationSchema(
+const UniProtVariationAdapter: AnyConfigurationSchemaType = ConfigurationSchema(
   'UniProtVariationAdapter',
   {
     /**

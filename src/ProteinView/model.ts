@@ -1,8 +1,8 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
+import { addDisposer, types } from '@jbrowse/mobx-state-tree'
 import Visibility from '@mui/icons-material/Visibility'
 import { autorun } from 'mobx'
-import { addDisposer, types } from 'mobx-state-tree'
 
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
@@ -12,7 +12,7 @@ import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
 import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
-import type { Instance } from 'mobx-state-tree'
+import type { IAnyModelType, Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 export interface ProteinViewInitState {
   structures?: {
@@ -28,7 +28,7 @@ export interface ProteinViewInitState {
  * extends
  * - BaseViewModel
  */
-function stateModelFactory() {
+function stateModelFactory(): IAnyModelType {
   return types
     .compose(
       'ProteinView',

@@ -118,6 +118,10 @@ dist
 
 # Ignore the directory with the JBrowse 2 build
 .jbrowse
+.test-jbrowse*
+
+# Debug screenshots (root level only - test/screenshots/ is tracked in repo)
+/debug-*.png
 
 # Cypress specific files
 cypress/videos

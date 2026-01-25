@@ -4,8 +4,13 @@ import {
   getSession,
 } from '@jbrowse/core/util'
 import { Region as IRegion } from '@jbrowse/core/util/types'
+import {
+  type Instance,
+  addDisposer,
+  getParent,
+  types,
+} from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
-import { type Instance, addDisposer, getParent, types } from 'mobx-state-tree'
 import {
   StructureElement,
   StructureProperties,

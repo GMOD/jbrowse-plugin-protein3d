@@ -7,7 +7,7 @@ import AddIcon from '@mui/icons-material/Add'
 
 import LaunchProteinViewDialog from './components/LaunchProteinViewDialog'
 
-import type { IAnyModelType } from 'mobx-state-tree'
+import type { IAnyModelType } from '@jbrowse/mobx-state-tree'
 
 function isDisplay(elt: { name: string }): elt is DisplayType {
   return elt.name === 'LinearBasicDisplay'
