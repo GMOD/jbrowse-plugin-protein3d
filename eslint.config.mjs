@@ -16,6 +16,7 @@ export default defineConfig(
       'eslint.config.mjs',
       'esbuild-watch.mjs',
       'esbuild.mjs',
+      '.test-jbrowse*',
     ],
   },
   {

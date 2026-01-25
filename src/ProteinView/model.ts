@@ -12,7 +12,7 @@ import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
 import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
-import type { IAnyModelType, Instance } from '@jbrowse/mobx-state-tree'
+import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 export interface ProteinViewInitState {
   structures?: {
@@ -28,7 +28,7 @@ export interface ProteinViewInitState {
  * extends
  * - BaseViewModel
  */
-function stateModelFactory(): IAnyModelType {
+function stateModelFactory() {
   return types
     .compose(
       'ProteinView',
