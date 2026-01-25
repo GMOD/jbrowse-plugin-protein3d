@@ -141,6 +141,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
             whiteSpace: 'nowrap',
             flex: 1,
             paddingBottom: 10,
+            backgroundColor: 'white',
           }}
         >
           <div style={{ height: ROW_HEIGHT }}>

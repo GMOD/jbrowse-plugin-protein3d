@@ -10,19 +10,23 @@ import highlightResidueRange, {
 import { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import { UniProtFeature, getFeatureColor } from '../hooks/useUniProtFeatures'
 import { JBrowsePluginProteinStructureModel } from '../model'
+import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
 const CHAR_WIDTH = 6
 const TRACK_HEIGHT = 12
 const TRACK_GAP = 2
 
+function getMolstarStructure(model: JBrowsePluginProteinStructureModel) {
+  return model.molstarPluginContext?.managers.structure.hierarchy.current
+    .structures[0]?.cell.obj?.data
+}
+
 const FeatureBar = observer(function FeatureBar({
   feature,
   model,
-  offsetLeft,
 }: {
   feature: UniProtFeature
   model: JBrowsePluginProteinStructureModel
-  offsetLeft: number
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const {
@@ -72,37 +76,17 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  // UniProt features are already in structure coordinates (1-based)
-  const getStructureRange = () => {
-    return {
-      start: feature.start,
-      end: feature.end,
-    }
-  }
-
   const handleMouseEnter = () => {
     setIsHovered(true)
-    if (!molstarPluginContext) {
-      return
+    const structure = getMolstarStructure(model)
+    if (structure && molstarPluginContext) {
+      highlightResidueRange({
+        structure,
+        startResidue: feature.start,
+        endResidue: feature.end,
+        plugin: molstarPluginContext,
+      })
     }
-
-    // Get structure directly from hierarchy (same as working code in structureModel)
-    const structure =
-      molstarPluginContext.managers.structure.hierarchy.current.structures[0]
-        ?.cell.obj?.data
-    if (!structure) {
-      console.warn('No structure available in Molstar hierarchy')
-      return
-    }
-
-    const range = getStructureRange()
-    highlightResidueRange({
-      structure,
-      startResidue: range.start,
-      endResidue: range.end,
-      plugin: molstarPluginContext,
-    })
-
     highlightGenomeRange()
   }
 
@@ -113,27 +97,25 @@ const FeatureBar = observer(function FeatureBar({
   }
 
   const handleClick = () => {
-    if (!molstarPluginContext) {
-      return
+    const structure = getMolstarStructure(model)
+    if (structure && molstarPluginContext) {
+      selectResidueRange({
+        structure,
+        startResidue: feature.start,
+        endResidue: feature.end,
+        plugin: molstarPluginContext,
+      })
     }
 
-    const structure =
-      molstarPluginContext.managers.structure.hierarchy.current.structures[0]
-        ?.cell.obj?.data
-    if (!structure) {
-      return
-    }
-
-    const range = getStructureRange()
-    selectResidueRange({
-      structure,
-      startResidue: range.start,
-      endResidue: range.end,
-      plugin: molstarPluginContext,
+    clickProteinToGenome({
+      model,
+      structureSeqPos: feature.start - 1,
+    }).catch((e: unknown) => {
+      console.error(e)
     })
   }
 
-  const left = (feature.start - 1) * CHAR_WIDTH + offsetLeft
+  const left = (feature.start - 1) * CHAR_WIDTH
   const width = Math.max((feature.end - feature.start + 1) * CHAR_WIDTH, 3)
   const color = getFeatureColor(feature.type)
 
@@ -175,10 +157,8 @@ const FeatureBar = observer(function FeatureBar({
 
 const HoverMarker = observer(function HoverMarker({
   model,
-  offsetLeft,
 }: {
   model: JBrowsePluginProteinStructureModel
-  offsetLeft: number
 }) {
   const { structureSeqHoverPos, structureSeqToTranscriptSeqPosition } = model
 
@@ -186,14 +166,13 @@ const HoverMarker = observer(function HoverMarker({
     return null
   }
 
-  // Convert structure position to transcript position for display
   const transcriptPos =
     structureSeqToTranscriptSeqPosition?.[structureSeqHoverPos]
   if (transcriptPos === undefined) {
     return null
   }
 
-  const left = transcriptPos * CHAR_WIDTH + offsetLeft
+  const left = transcriptPos * CHAR_WIDTH
 
   return (
     <div
@@ -256,7 +235,6 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
         position: 'relative',
         height: TRACK_HEIGHT,
         width: trackWidth,
-        backgroundColor: '#f5f5f5',
         marginBottom: TRACK_GAP,
       }}
     >
@@ -265,10 +243,9 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
           key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
           feature={feature}
           model={model}
-          offsetLeft={0}
         />
       ))}
-      <HoverMarker model={model} offsetLeft={0} />
+      <HoverMarker model={model} />
     </div>
   )
 })

@@ -42,15 +42,28 @@ export interface UniProtEntry {
 // Re-export for backward compatibility
 export { isRecognizedDatabaseId as isRecognizedTranscriptId }
 
+const UNIPROT_FIELDS =
+  'accession,id,gene_names,organism_name,protein_name,reviewed'
+
+function mapApiResultToEntry(
+  result: UniProtApiResult['results'][0],
+): UniProtEntry {
+  return {
+    accession: result.primaryAccession,
+    id: result.uniProtkbId,
+    geneName: result.genes?.[0]?.geneName?.value,
+    organismName:
+      result.organism?.commonName ?? result.organism?.scientificName,
+    proteinName: result.proteinDescription?.recommendedName?.fullName?.value,
+    isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
+  }
+}
+
 /**
  * Build UniProt xref query for a recognized database ID
  */
 function buildXrefQuery(id: string): string | undefined {
   const dbType = getDatabaseTypeForId(id)
-  if (!dbType) {
-    return undefined
-  }
-
   switch (dbType) {
     case 'ensembl':
       return `xref:ensembl-${id}`
@@ -59,28 +72,19 @@ function buildXrefQuery(id: string): string | undefined {
     case 'ccds':
       return `xref:ccds-${id}`
     case 'hgnc':
-      // HGNC format in UniProt is just the number
       return `xref:hgnc-${id.replace('HGNC:', '')}`
     default:
       return undefined
   }
 }
 
-/**
- * Search UniProt using a specific xref query
- */
-async function searchByXref(query: string): Promise<UniProtEntry[]> {
-  const searchUrl = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=10`
-  const data = (await jsonfetch(searchUrl)) as UniProtApiResult
-  return data.results.map(result => ({
-    accession: result.primaryAccession,
-    id: result.uniProtkbId,
-    geneName: result.genes?.[0]?.geneName?.value,
-    organismName:
-      result.organism?.commonName ?? result.organism?.scientificName,
-    proteinName: result.proteinDescription?.recommendedName?.fullName?.value,
-    isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
-  }))
+async function searchUniProt(
+  query: string,
+  size = 10,
+): Promise<UniProtEntry[]> {
+  const url = `https://rest.uniprot.org/uniprotkb/search?query=${encodeURIComponent(query)}&fields=${UNIPROT_FIELDS}&size=${size}`
+  const data = (await jsonfetch(url)) as UniProtApiResult
+  return data.results.map(mapApiResultToEntry)
 }
 
 /**
@@ -117,9 +121,8 @@ export async function searchUniProtEntries({
     const query = buildXrefQuery(id)
     if (query) {
       try {
-        const results = await searchByXref(query)
+        const results = await searchUniProt(query)
         addEntries(results)
-        // If we found reviewed entries with a specific ID, that's likely correct
         if (results.some(e => e.isReviewed)) {
           break
         }
@@ -129,7 +132,7 @@ export async function searchUniProtEntries({
     }
   }
 
-  // Strategy 2: Try legacy gene_id if it looks like an Ensembl gene ID
+  // Strategy 2: Try legacy gene_id if it looks like a recognized database ID
   const strippedGeneId = geneId ? stripTrailingVersion(geneId) : undefined
   if (
     strippedGeneId &&
@@ -139,7 +142,7 @@ export async function searchUniProtEntries({
     const query = buildXrefQuery(strippedGeneId)
     if (query) {
       try {
-        addEntries(await searchByXref(query))
+        addEntries(await searchUniProt(query))
       } catch {
         // xref search failed
       }
@@ -147,23 +150,10 @@ export async function searchUniProtEntries({
   }
 
   // Strategy 3: If no reviewed entries found, try gene name search
-  const hasReviewedEntry = entries.some(e => e.isReviewed)
-  if (!hasReviewedEntry && geneName) {
-    const geneNameSearchUrl = `https://rest.uniprot.org/uniprotkb/search?query=gene:${encodeURIComponent(geneName)}+AND+organism_id:${organismId}+AND+reviewed:true&fields=accession,id,gene_names,organism_name,protein_name,reviewed&size=5`
+  if (!entries.some(e => e.isReviewed) && geneName) {
     try {
-      const data = (await jsonfetch(geneNameSearchUrl)) as UniProtApiResult
-      addEntries(
-        data.results.map(result => ({
-          accession: result.primaryAccession,
-          id: result.uniProtkbId,
-          geneName: result.genes?.[0]?.geneName?.value,
-          organismName:
-            result.organism?.commonName ?? result.organism?.scientificName,
-          proteinName:
-            result.proteinDescription?.recommendedName?.fullName?.value,
-          isReviewed: result.entryType === 'UniProtKB reviewed (Swiss-Prot)',
-        })),
-      )
+      const query = `gene:${geneName}+AND+organism_id:${organismId}+AND+reviewed:true`
+      addEntries(await searchUniProt(query, 5))
     } catch {
       // gene name search failed
     }

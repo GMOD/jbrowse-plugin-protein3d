@@ -67,7 +67,10 @@ export default function IdentifierSelector({
   ]
 
   if (geneName) {
-    options.push({ value: `gene:${geneName}`, label: `${geneName} (gene name)` })
+    options.push({
+      value: `gene:${geneName}`,
+      label: `${geneName} (gene name)`,
+    })
   }
 
   if (recognizedIds.length === 0 && !geneName) {

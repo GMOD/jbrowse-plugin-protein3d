@@ -34,6 +34,33 @@ import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+function getSearchDescription({
+  selectedQueryId,
+  recognizedIds,
+  geneName,
+  joinWord = 'and',
+}: {
+  selectedQueryId: string
+  recognizedIds: string[]
+  geneName?: string
+  joinWord?: 'and' | 'or'
+}) {
+  if (selectedQueryId === 'auto') {
+    return [
+      recognizedIds.length > 0
+        ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
+        : undefined,
+      geneName ? `gene name "${geneName}"` : undefined,
+    ]
+      .filter(Boolean)
+      .join(` ${joinWord} `)
+  }
+  if (selectedQueryId.startsWith('gene:')) {
+    return `gene name "${selectedQueryId.replace('gene:', '')}"`
+  }
+  return `database ID "${selectedQueryId}"`
+}
+
 const useStyles = makeStyles()({
   dialogContent: {
     width: '80em',
@@ -254,18 +281,11 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
             <>
               <Typography variant="body2" color="textSecondary">
                 Searched UniProt by{' '}
-                {selectedQueryId === 'auto'
-                  ? [
-                      recognizedIds.length > 0
-                        ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
-                        : undefined,
-                      geneName ? `gene name "${geneName}"` : undefined,
-                    ]
-                      .filter(Boolean)
-                      .join(' and ')
-                  : selectedQueryId.startsWith('gene:')
-                    ? `gene name "${selectedQueryId.replace('gene:', '')}"`
-                    : `database ID "${selectedQueryId}"`}
+                {getSearchDescription({
+                  selectedQueryId,
+                  recognizedIds,
+                  geneName,
+                })}
               </Typography>
               <UniProtResultsTable
                 entries={uniprotEntries}
@@ -290,18 +310,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           uniprotEntries.length === 0 && (
             <Typography variant="body2" color="textSecondary">
               No UniProt entries found for{' '}
-              {selectedQueryId === 'auto'
-                ? [
-                    recognizedIds.length > 0
-                      ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
-                      : undefined,
-                    geneName ? `gene name "${geneName}"` : undefined,
-                  ]
-                    .filter(Boolean)
-                    .join(' or ')
-                : selectedQueryId.startsWith('gene:')
-                  ? `gene name "${selectedQueryId.replace('gene:', '')}"`
-                  : `database ID "${selectedQueryId}"`}
+              {getSearchDescription({
+                selectedQueryId,
+                recognizedIds,
+                geneName,
+                joinWord: 'or',
+              })}
               . Try a different identifier above, or search{' '}
               <ExternalLink href="https://www.uniprot.org/">
                 UniProt
