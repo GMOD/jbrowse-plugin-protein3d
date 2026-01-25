@@ -8,6 +8,7 @@ import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import AlphaFoldEntrySelector from './AlphaFoldEntrySelector'
+import IdentifierSelector from './IdentifierSelector'
 import ProteinViewActions from './ProteinViewActions'
 import SequenceSearchStatus from './SequenceSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
@@ -21,6 +22,7 @@ import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
 import useUniProtSearch from '../hooks/useUniProtSearch'
 import {
+  extractFeatureIdentifiers,
   getId,
   getTranscriptFeatures,
   getUniProtIdFromFeature,
@@ -68,6 +70,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
   const [manualUniprotId, setManualUniprotId] = useState<string>('')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
+  const [selectedQueryId, setSelectedQueryId] = useState<string>('auto')
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
 
@@ -90,20 +93,35 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     getUniProtIdFromFeature(selectedTranscript) ??
     getUniProtIdFromFeature(feature)
 
-  // Get gene ID and gene name from feature
-  const geneId = feature.get('gene_id') ?? feature.get('ID')
-  const geneName =
-    feature.get('gene_name') ?? feature.get('name') ?? feature.get('Name')
+  // Extract identifiers from both transcript and gene features
+  // Prioritize recognized database IDs (Ensembl, RefSeq, CCDS, HGNC) over gene symbols
+  const transcriptIds = useMemo(
+    () => extractFeatureIdentifiers(selectedTranscript),
+    [selectedTranscript],
+  )
+  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
 
-  // Search by gene ID and gene name
-  // Gene name search is important because some Swiss-Prot entries aren't linked via Ensembl xrefs
+  // Combine recognized IDs from both transcript and gene, transcript IDs first
+  const recognizedIds = useMemo(
+    () => [
+      ...new Set([...transcriptIds.recognizedIds, ...geneIds.recognizedIds]),
+    ],
+    [transcriptIds.recognizedIds, geneIds.recognizedIds],
+  )
+
+  // Use gene name from either transcript or gene feature
+  const geneName = transcriptIds.geneName ?? geneIds.geneName
+
+  // Search UniProt using recognized database IDs (preferred) and gene name (fallback)
   const {
     entries: uniprotEntries,
     isLoading: isLookupLoading,
     error: lookupError,
   } = useUniProtSearch({
-    geneId,
+    recognizedIds,
+    geneId: geneIds.geneId,
     geneName,
+    selectedQueryId,
     enabled: lookupMode === 'auto' && !featureUniprotId,
   })
 
@@ -206,6 +224,17 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onSequenceSearchTypeChange={setSequenceSearchType}
         />
 
+        {lookupMode === 'auto' &&
+          !featureUniprotId &&
+          (recognizedIds.length > 0 || geneName) && (
+            <IdentifierSelector
+              recognizedIds={recognizedIds}
+              geneName={geneName}
+              selectedId={selectedQueryId}
+              onSelectedIdChange={setSelectedQueryId}
+            />
+          )}
+
         {loadingStatuses.length > 0 &&
           loadingStatuses.map(status => (
             <LoadingEllipses
@@ -222,12 +251,18 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
             <>
               <Typography variant="body2" color="textSecondary">
                 Searched UniProt by{' '}
-                {[
-                  geneId ? `gene ID "${geneId}"` : undefined,
-                  geneName ? `gene name "${geneName}"` : undefined,
-                ]
-                  .filter(Boolean)
-                  .join(' and ')}
+                {selectedQueryId === 'auto'
+                  ? [
+                      recognizedIds.length > 0
+                        ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
+                        : undefined,
+                      geneName ? `gene name "${geneName}"` : undefined,
+                    ]
+                      .filter(Boolean)
+                      .join(' and ')
+                  : selectedQueryId.startsWith('gene:')
+                    ? `gene name "${selectedQueryId.replace('gene:', '')}"`
+                    : `database ID "${selectedQueryId}"`}
               </Typography>
               <UniProtResultsTable
                 entries={uniprotEntries}
@@ -235,13 +270,42 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 onSelect={setSelectedUniprotId}
               />
               <Typography variant="body2" color="textSecondary">
-                If you don't see the entry you're looking for, search{' '}
+                If you don't see the entry you're looking for, try a different
+                identifier above or search{' '}
                 <ExternalLink href="https://www.uniprot.org/">
                   UniProt
                 </ExternalLink>{' '}
-                directly and use "Enter manually" above.
+                directly and use "Enter manually".
               </Typography>
             </>
+          )}
+
+        {isoformSequences &&
+          lookupMode === 'auto' &&
+          !featureUniprotId &&
+          !isLookupLoading &&
+          uniprotEntries.length === 0 && (
+            <Typography variant="body2" color="textSecondary">
+              No UniProt entries found for{' '}
+              {selectedQueryId === 'auto'
+                ? [
+                    recognizedIds.length > 0
+                      ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
+                      : undefined,
+                    geneName ? `gene name "${geneName}"` : undefined,
+                  ]
+                    .filter(Boolean)
+                    .join(' or ')
+                : selectedQueryId.startsWith('gene:')
+                  ? `gene name "${selectedQueryId.replace('gene:', '')}"`
+                  : `database ID "${selectedQueryId}"`}
+              . Try a different identifier above, or search{' '}
+              <ExternalLink href="https://www.uniprot.org/">
+                UniProt
+              </ExternalLink>{' '}
+              directly and use "Enter manually" above, or use "Search sequence
+              against AlphaFoldDB API" if available.
+            </Typography>
           )}
 
         {isoformSequences &&
