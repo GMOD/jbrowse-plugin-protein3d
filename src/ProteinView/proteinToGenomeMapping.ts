@@ -34,26 +34,73 @@ export function proteinToGenomeMapping({
   return getCodonRange(p2g, transcriptPos, strand)
 }
 
+/**
+ * Maps a protein structure range to genome coordinates
+ * @returns [start, end] tuple of genome coordinates spanning the full range, or undefined if mapping fails
+ */
+export function proteinRangeToGenomeMapping({
+  model,
+  structureSeqPos,
+  structureSeqEndPos,
+}: {
+  structureSeqPos: number
+  structureSeqEndPos: number
+  model: JBrowsePluginProteinStructureModel
+}) {
+  let minStart: number | undefined
+  let maxEnd: number | undefined
+  for (let pos = structureSeqPos; pos < structureSeqEndPos; pos++) {
+    const result = proteinToGenomeMapping({ structureSeqPos: pos, model })
+    if (result) {
+      const [s, e] = result
+      if (minStart === undefined || s < minStart) {
+        minStart = s
+      }
+      if (maxEnd === undefined || e > maxEnd) {
+        maxEnd = e
+      }
+    }
+  }
+  if (minStart !== undefined && maxEnd !== undefined) {
+    return [minStart, maxEnd] as const
+  }
+  return undefined
+}
+
 export async function clickProteinToGenome({
   model,
   structureSeqPos,
+  structureSeqEndPos,
 }: {
   structureSeqPos: number
+  structureSeqEndPos?: number
   model: JBrowsePluginProteinStructureModel
 }) {
   const session = getSession(model)
-  const result = proteinToGenomeMapping({ structureSeqPos, model })
   const { connectedView, genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
   const { assemblyManager } = session
-  if (!genomeToTranscriptSeqMapping || result === undefined) {
+  if (!genomeToTranscriptSeqMapping) {
     return undefined
   }
-  const [start, end] = result
   const { strand, refName } = genomeToTranscriptSeqMapping
   const assemblyName = connectedView?.assemblyNames[0]
   if (!assemblyName) {
     return undefined
   }
+
+  const result =
+    structureSeqEndPos !== undefined
+      ? proteinRangeToGenomeMapping({
+          structureSeqPos,
+          structureSeqEndPos,
+          model,
+        })
+      : proteinToGenomeMapping({ structureSeqPos, model })
+
+  if (!result) {
+    return undefined
+  }
+  const [start, end] = result
 
   model.setClickGenomeHighlights([
     {

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { Tooltip } from '@mui/material'
-import { getCodonRange } from 'g2p_mapper'
 import { observer } from 'mobx-react'
 
 import highlightResidueRange, {
@@ -10,7 +9,10 @@ import highlightResidueRange, {
 import { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import { UniProtFeature, getFeatureColor } from '../hooks/useUniProtFeatures'
 import { JBrowsePluginProteinStructureModel } from '../model'
-import { clickProteinToGenome } from '../proteinToGenomeMapping'
+import {
+  clickProteinToGenome,
+  proteinRangeToGenomeMapping,
+} from '../proteinToGenomeMapping'
 
 const CHAR_WIDTH = 6
 const TRACK_HEIGHT = 12
@@ -29,49 +31,23 @@ const FeatureBar = observer(function FeatureBar({
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const {
-    structureSeqToTranscriptSeqPosition,
-    genomeToTranscriptSeqMapping,
-    connectedView,
-    molstarPluginContext,
-  } = model
+  const { genomeToTranscriptSeqMapping, connectedView, molstarPluginContext } =
+    model
 
   const highlightGenomeRange = () => {
-    if (!genomeToTranscriptSeqMapping || !structureSeqToTranscriptSeqPosition) {
-      return
-    }
-    const { p2g, strand, refName } = genomeToTranscriptSeqMapping
+    const { refName } = genomeToTranscriptSeqMapping ?? {}
     const assemblyName = connectedView?.assemblyNames[0]
-    if (!assemblyName) {
+    if (!refName || !assemblyName) {
       return
     }
-
-    const highlights = []
-    for (let pos = feature.start - 1; pos < feature.end; pos++) {
-      const transcriptPos = structureSeqToTranscriptSeqPosition[pos]
-      if (transcriptPos !== undefined) {
-        const coords = getCodonRange(p2g, transcriptPos, strand)
-        if (coords) {
-          highlights.push({
-            assemblyName,
-            refName,
-            start: coords[0],
-            end: coords[1],
-          })
-        }
-      }
-    }
-
-    if (highlights.length > 0) {
-      const minStart = Math.min(...highlights.map(h => h.start))
-      const maxEnd = Math.max(...highlights.map(h => h.end))
+    const result = proteinRangeToGenomeMapping({
+      model,
+      structureSeqPos: feature.start - 1,
+      structureSeqEndPos: feature.end,
+    })
+    if (result) {
       model.setHoverGenomeHighlights([
-        {
-          assemblyName,
-          refName,
-          start: minStart,
-          end: maxEnd,
-        },
+        { assemblyName, refName, start: result[0], end: result[1] },
       ])
     }
   }
@@ -110,6 +86,7 @@ const FeatureBar = observer(function FeatureBar({
     clickProteinToGenome({
       model,
       structureSeqPos: feature.start - 1,
+      structureSeqEndPos: feature.end,
     }).catch((e: unknown) => {
       console.error(e)
     })
