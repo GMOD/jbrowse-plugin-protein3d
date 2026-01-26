@@ -5,6 +5,7 @@ import useAlphaFoldSequenceSearch from './useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useLoadingStatuses from './useLoadingStatuses'
 import useUniProtSearch from './useUniProtSearch'
+import getSearchDescription from '../utils/getSearchDescription'
 import {
   extractFeatureIdentifiers,
   getId,
@@ -217,6 +218,40 @@ export default function useAlphaFoldDBSearch({
       !!selectedTranscript &&
       (lookupMode === 'sequence' || !!(structureSequence && uniprotId)),
     sequencesMatch:
-      userSelectedProteinSequence?.seq.replaceAll('*', '') === structureSequence,
+      userSelectedProteinSequence?.seq.replaceAll('*', '') ===
+      structureSequence,
+
+    // Pre-computed search descriptions for display
+    searchDescription: getSearchDescription({
+      selectedQueryId,
+      recognizedIds,
+      geneName,
+    }),
+    searchDescriptionOr: getSearchDescription({
+      selectedQueryId,
+      recognizedIds,
+      geneName,
+      joinWord: 'or',
+    }),
+
+    // For table selection display
+    selectedTableAccession: selectedUniprotId ?? autoUniprotId,
+
+    // Additional display flags for cleaner conditionals
+    showUniprotResults:
+      !!isoformSequences &&
+      lookupMode === 'auto' &&
+      !featureUniprotId &&
+      (uniprotEntries.length > 0 || isLookupLoading),
+    showNoResults:
+      !!isoformSequences &&
+      lookupMode === 'auto' &&
+      !featureUniprotId &&
+      !isLookupLoading &&
+      uniprotEntries.length === 0,
+    showAlphaFoldEntrySelector: !!predictions && lookupMode !== 'sequence',
+    showSequenceSearchStatus: lookupMode === 'sequence',
+    showAlphaFoldDBSearchStatus:
+      !!structureSequence && !!uniprotId && lookupMode !== 'sequence',
   }
 }

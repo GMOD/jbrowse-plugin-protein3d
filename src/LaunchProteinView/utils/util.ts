@@ -211,7 +211,10 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
 
   // Handle UniProt ID from feature attributes (trust that it's valid if present)
   const uniprotIdAttr =
-    f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid') ?? f.get('UniProt')
+    f.get('uniprot') ??
+    f.get('uniprotId') ??
+    f.get('uniprotid') ??
+    f.get('UniProt')
   const uniprotId =
     typeof uniprotIdAttr === 'string' && uniprotIdAttr.length > 0
       ? uniprotIdAttr

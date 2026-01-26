@@ -75,7 +75,9 @@ export default function AlphaFoldDBSearchStatus({
     </>
   ) : (
     <Typography>
-      Searching {selectedTranscript ? getDisplayName(selectedTranscript) : 'transcript'} for UniProt ID
+      Searching{' '}
+      {selectedTranscript ? getDisplayName(selectedTranscript) : 'transcript'}{' '}
+      for UniProt ID
     </Typography>
   )
 }

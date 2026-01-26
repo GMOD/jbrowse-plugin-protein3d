@@ -41,7 +41,8 @@ export default function useUniProtSearch({
 
   // Has valid ID if we have any recognized database IDs or a gene name
   const hasRecognizedId = idsToSearch.some(id => isRecognizedDatabaseId(id))
-  const hasValidId = hasRecognizedId || Boolean(geneNameToSearch) || Boolean(uniprotId)
+  const hasValidId =
+    hasRecognizedId || Boolean(geneNameToSearch) || Boolean(uniprotId)
 
   const { data, error, isLoading } = useSWR<UniProtEntry[]>(
     enabled && hasValidId && !isDirectUniProt

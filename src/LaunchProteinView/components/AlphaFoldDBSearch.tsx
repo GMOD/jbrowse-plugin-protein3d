@@ -17,7 +17,6 @@ import UniProtResultsTable from './UniProtResultsTable'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
 import ExternalLink from '../../components/ExternalLink'
 import useAlphaFoldDBSearch from '../hooks/useAlphaFoldDBSearch'
-import getSearchDescription from '../utils/getSearchDescription'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -88,54 +87,36 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
 
-        {state.showAutoSearchResults &&
-          (state.uniprotEntries.length > 0 || state.isLookupLoading) && (
-            <>
-              <Typography variant="body2" color="textSecondary">
-                Searched UniProt by{' '}
-                {getSearchDescription({
-                  selectedQueryId: state.selectedQueryId,
-                  recognizedIds: state.recognizedIds,
-                  geneName: state.geneName,
-                })}
-              </Typography>
-              <UniProtResultsTable
-                entries={state.uniprotEntries}
-                selectedAccession={
-                  state.selectedUniprotId ?? state.uniprotEntries[0]?.accession
-                }
-                onSelect={state.setSelectedUniprotId}
-              />
-              <Typography variant="body2" color="textSecondary">
-                If you don't see the entry you're looking for, try a different
-                identifier above or search{' '}
-                <ExternalLink href="https://www.uniprot.org/">
-                  UniProt
-                </ExternalLink>{' '}
-                directly and use "Enter manually".
-              </Typography>
-            </>
-          )}
-
-        {state.showAutoSearchResults &&
-          !state.isLookupLoading &&
-          state.uniprotEntries.length === 0 && (
+        {state.showUniprotResults && (
+          <>
             <Typography variant="body2" color="textSecondary">
-              No UniProt entries found for{' '}
-              {getSearchDescription({
-                selectedQueryId: state.selectedQueryId,
-                recognizedIds: state.recognizedIds,
-                geneName: state.geneName,
-                joinWord: 'or',
-              })}
-              . Try a different identifier above, or search{' '}
+              Searched UniProt by {state.searchDescription}
+            </Typography>
+            <UniProtResultsTable
+              entries={state.uniprotEntries}
+              selectedAccession={state.selectedTableAccession}
+              onSelect={state.setSelectedUniprotId}
+            />
+            <Typography variant="body2" color="textSecondary">
+              If you don't see the entry you're looking for, try a different
+              identifier above or search{' '}
               <ExternalLink href="https://www.uniprot.org/">
                 UniProt
               </ExternalLink>{' '}
-              directly and use "Enter manually" above, or use "Search sequence
-              against AlphaFoldDB API" if available.
+              directly and use "Enter manually".
             </Typography>
-          )}
+          </>
+        )}
+
+        {state.showNoResults && (
+          <Typography variant="body2" color="textSecondary">
+            No UniProt entries found for {state.searchDescriptionOr}. Try a
+            different identifier above, or search{' '}
+            <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
+            directly and use "Enter manually" above, or use "Search sequence
+            against AlphaFoldDB API" if available.
+          </Typography>
+        )}
 
         {state.showStructureSelectors && (
           <>
@@ -148,15 +129,15 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 isoforms={state.transcriptOptions}
                 isoformSequences={state.isoformSequences!}
               />
-              {state.predictions && state.lookupMode !== 'sequence' && (
+              {state.showAlphaFoldEntrySelector && (
                 <AlphaFoldEntrySelector
-                  predictions={state.predictions}
+                  predictions={state.predictions!}
                   selectedEntryIndex={state.selectedEntryIndex}
                   onSelectionChange={state.setSelectedEntryIndex}
                 />
               )}
             </div>
-            {state.lookupMode === 'sequence' && (
+            {state.showSequenceSearchStatus && (
               <SequenceSearchStatus
                 isLoading={state.isSequenceSearchLoading}
                 uniprotId={state.uniprotId}
@@ -165,17 +146,15 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 sequenceSearchType={state.sequenceSearchType}
               />
             )}
-            {state.structureSequence &&
-              state.uniprotId &&
-              state.lookupMode !== 'sequence' && (
-                <AlphaFoldDBSearchStatus
-                  uniprotId={state.uniprotId}
-                  selectedTranscript={state.selectedTranscript}
-                  structureSequence={state.structureSequence}
-                  isoformSequences={state.isoformSequences!}
-                  url={state.url}
-                />
-              )}
+            {state.showAlphaFoldDBSearchStatus && (
+              <AlphaFoldDBSearchStatus
+                uniprotId={state.uniprotId}
+                selectedTranscript={state.selectedTranscript}
+                structureSequence={state.structureSequence}
+                isoformSequences={state.isoformSequences!}
+                url={state.url}
+              />
+            )}
           </>
         )}
       </DialogContent>
