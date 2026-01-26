@@ -28,7 +28,7 @@ export default function AlphaFoldDBSearchStatus({
   url,
 }: {
   uniprotId?: string
-  selectedTranscript: Feature
+  selectedTranscript?: Feature
   structureSequence?: string
   isoformSequences: Record<string, { feature: Feature; seq: string }>
   url?: string
@@ -75,7 +75,7 @@ export default function AlphaFoldDBSearchStatus({
     </>
   ) : (
     <Typography>
-      Searching {getDisplayName(selectedTranscript)} for UniProt ID
+      Searching {selectedTranscript ? getDisplayName(selectedTranscript) : 'transcript'} for UniProt ID
     </Typography>
   )
 }
