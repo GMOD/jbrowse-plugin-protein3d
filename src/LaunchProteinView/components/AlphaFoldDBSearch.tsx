@@ -16,16 +16,15 @@ import UniProtIdInput from './UniProtIdInput'
 import UniProtResultsTable from './UniProtResultsTable'
 import { AlignmentAlgorithm } from '../../ProteinView/types'
 import ExternalLink from '../../components/ExternalLink'
-import useAlphaFoldData from '../hooks/useAlphaFoldData'
-import useAlphaFoldSequenceSearch from '../hooks/useAlphaFoldSequenceSearch'
+import useFeatureIdentifiers from '../hooks/useFeatureIdentifiers'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLoadingStatuses from '../hooks/useLoadingStatuses'
+import useStructureResolution from '../hooks/useStructureResolution'
 import useUniProtSearch from '../hooks/useUniProtSearch'
+import getSearchDescription from '../utils/getSearchDescription'
 import {
-  extractFeatureIdentifiers,
   getId,
   getTranscriptFeatures,
-  getUniProtIdFromFeature,
   selectBestTranscript,
 } from '../utils/util'
 
@@ -33,33 +32,6 @@ import type { LookupMode } from './UniProtIdInput'
 import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-
-function getSearchDescription({
-  selectedQueryId,
-  recognizedIds,
-  geneName,
-  joinWord = 'and',
-}: {
-  selectedQueryId: string
-  recognizedIds: string[]
-  geneName?: string
-  joinWord?: 'and' | 'or'
-}) {
-  if (selectedQueryId === 'auto') {
-    return [
-      recognizedIds.length > 0
-        ? `database ID${recognizedIds.length > 1 ? 's' : ''} "${recognizedIds.join('", "')}"`
-        : undefined,
-      geneName ? `gene name "${geneName}"` : undefined,
-    ]
-      .filter(Boolean)
-      .join(` ${joinWord} `)
-  }
-  if (selectedQueryId.startsWith('gene:')) {
-    return `gene name "${selectedQueryId.replace('gene:', '')}"`
-  }
-  return `database ID "${selectedQueryId}"`
-}
 
 const useStyles = makeStyles()({
   dialogContent: {
@@ -96,83 +68,65 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   const session = getSession(model)
   const view = getContainingView(model) as LinearGenomeViewModel
 
-  // State for UniProt ID lookup
   const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
-  const [manualUniprotId, setManualUniprotId] = useState<string>('')
-  const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
-  const [selectedQueryId, setSelectedQueryId] = useState<string>('auto')
+  const [manualUniprotId, setManualUniprotId] = useState('')
+  const [selectedQueryId, setSelectedQueryId] = useState('auto')
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
-
-  // Transcript selection
-  const options = useMemo(() => getTranscriptFeatures(feature), [feature])
+  const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
   const [userSelection, setUserSelection] = useState<string>()
+
+  const options = useMemo(() => getTranscriptFeatures(feature), [feature])
   const selectedTranscript = options.find(val => getId(val) === userSelection)
 
-  // Load isoform sequences
   const {
     isoformSequences,
-    isLoading: isIsoformProteinSequencesLoading,
-    error: isoformProteinSequencesError,
+    isLoading: isIsoformLoading,
+    error: isoformError,
   } = useIsoformProteinSequences({ feature, view })
 
-  const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
+  const { recognizedIds, geneName, geneId, featureUniprotId } =
+    useFeatureIdentifiers(feature, selectedTranscript)
 
-  // Check for UniProt ID from feature attributes (check transcript first, fall back to parent)
-  const featureUniprotId =
-    getUniProtIdFromFeature(selectedTranscript) ??
-    getUniProtIdFromFeature(feature)
-
-  // Extract identifiers from both transcript and gene features
-  // Prioritize recognized database IDs (Ensembl, RefSeq, CCDS, HGNC) over gene symbols
-  const transcriptIds = useMemo(
-    () => extractFeatureIdentifiers(selectedTranscript),
-    [selectedTranscript],
-  )
-  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
-
-  // Combine recognized IDs from both transcript and gene, transcript IDs first
-  const recognizedIds = useMemo(
-    () => [
-      ...new Set([...transcriptIds.recognizedIds, ...geneIds.recognizedIds]),
-    ],
-    [transcriptIds.recognizedIds, geneIds.recognizedIds],
-  )
-
-  // UniProt ID from feature attributes (prefer transcript over gene)
-  const extractedUniprotId = transcriptIds.uniprotId ?? geneIds.uniprotId
-
-  // Use gene name from either transcript or gene feature
-  const geneName = transcriptIds.geneName ?? geneIds.geneName
-
-  // Search UniProt using recognized database IDs (preferred) and gene name (fallback)
   const {
     entries: uniprotEntries,
     isLoading: isLookupLoading,
     error: lookupError,
   } = useUniProtSearch({
     recognizedIds,
-    geneId: geneIds.geneId,
+    geneId,
     geneName,
     selectedQueryId,
     enabled: lookupMode === 'auto' && !featureUniprotId,
   })
 
-  // Auto-select first UniProt entry when results load
   const autoUniprotId = uniprotEntries[0]?.accession
+  const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
 
-  // AlphaFoldDB sequence search
   const {
-    uniprotId: sequenceSearchUniprotId,
-    cifUrl: sequenceSearchCifUrl,
-    plddtDocUrl: sequenceSearchPlddtUrl,
-    structureSequence: sequenceSearchStructureSequence,
-    isLoading: isSequenceSearchLoading,
-    error: sequenceSearchError,
-  } = useAlphaFoldSequenceSearch({
-    sequence: userSelectedProteinSequence?.seq,
-    searchType: sequenceSearchType,
-    enabled: lookupMode === 'sequence',
+    url,
+    confidenceUrl,
+    structureSequence,
+    uniprotIdFromSequenceSearch,
+    predictions,
+    selectedEntryIndex,
+    setSelectedEntryIndex,
+    isAlphaFoldLoading,
+    isSequenceSearchLoading,
+    alphaFoldError,
+    sequenceSearchError,
+  } = useStructureResolution({
+    lookupMode,
+    uniprotIdForAlphaFold:
+      lookupMode === 'feature'
+        ? featureUniprotId
+        : lookupMode === 'auto'
+          ? (selectedUniprotId ?? autoUniprotId)
+          : lookupMode === 'manual'
+            ? manualUniprotId
+            : undefined,
+    proteinSequence: userSelectedProteinSequence?.seq,
+    sequenceSearchType,
   })
 
   const uniprotId =
@@ -181,7 +135,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       : lookupMode === 'auto'
         ? (selectedUniprotId ?? autoUniprotId)
         : lookupMode === 'sequence'
-          ? sequenceSearchUniprotId
+          ? uniprotIdFromSequenceSearch
           : manualUniprotId
 
   // Auto-select 'feature' mode if a feature UniProt ID is found
@@ -190,44 +144,6 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       setLookupMode('feature')
     }
   }, [featureUniprotId, lookupMode])
-
-  // AlphaFold data and selection (skip if using sequence search which provides direct URLs)
-  const {
-    predictions,
-    isLoading: isAlphaFoldUrlLoading,
-    error: alphaFoldUrlError,
-    selectedEntryIndex,
-    setSelectedEntryIndex,
-    url: alphaFoldUrl,
-    confidenceUrl: alphaFoldConfidenceUrl,
-    structureSequence: alphaFoldStructureSequence,
-  } = useAlphaFoldData({
-    uniprotId: lookupMode === 'sequence' ? undefined : uniprotId,
-  })
-
-  // Use sequence search URLs/sequence when in sequence mode, otherwise use AlphaFold data
-  const url = lookupMode === 'sequence' ? sequenceSearchCifUrl : alphaFoldUrl
-  const confidenceUrl =
-    lookupMode === 'sequence' ? sequenceSearchPlddtUrl : alphaFoldConfidenceUrl
-  const structureSequence =
-    lookupMode === 'sequence'
-      ? sequenceSearchStructureSequence
-      : alphaFoldStructureSequence
-
-  // Aggregate errors and loading statuses
-  const error =
-    lookupError ??
-    isoformProteinSequencesError ??
-    alphaFoldUrlError ??
-    sequenceSearchError
-  const loadingStatuses = useLoadingStatuses({
-    isLookupLoading,
-    isIsoformProteinSequencesLoading,
-    isAlphaFoldUrlLoading:
-      lookupMode === 'sequence' ? false : isAlphaFoldUrlLoading,
-    isSequenceSearchLoading:
-      lookupMode === 'sequence' ? isSequenceSearchLoading : false,
-  })
 
   // Auto-select transcript based on structure sequence match
   useEffect(() => {
@@ -240,6 +156,22 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       setUserSelection(best?.id())
     }
   }, [options, structureSequence, isoformSequences, userSelection])
+
+  const error = lookupError ?? isoformError ?? alphaFoldError ?? sequenceSearchError
+  const loadingStatuses = useLoadingStatuses({
+    isLookupLoading,
+    isIsoformProteinSequencesLoading: isIsoformLoading,
+    isAlphaFoldUrlLoading: isAlphaFoldLoading,
+    isSequenceSearchLoading,
+  })
+
+  const showAutoSearchResults =
+    isoformSequences && lookupMode === 'auto' && !featureUniprotId
+
+  const showStructureSelectors =
+    isoformSequences &&
+    selectedTranscript &&
+    (lookupMode === 'sequence' || (structureSequence && uniprotId))
 
   return (
     <>
@@ -268,69 +200,42 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
             />
           )}
 
-        {loadingStatuses.length > 0 &&
-          loadingStatuses.map(status => (
-            <LoadingEllipses
-              key={status}
-              variant="subtitle2"
-              message={status}
-            />
-          ))}
+        {loadingStatuses.map(status => (
+          <LoadingEllipses key={status} variant="subtitle2" message={status} />
+        ))}
 
-        {isoformSequences &&
-          lookupMode === 'auto' &&
-          !featureUniprotId &&
-          (uniprotEntries.length > 0 || isLookupLoading) && (
-            <>
-              <Typography variant="body2" color="textSecondary">
-                Searched UniProt by{' '}
-                {getSearchDescription({
-                  selectedQueryId,
-                  recognizedIds,
-                  geneName,
-                })}
-              </Typography>
-              <UniProtResultsTable
-                entries={uniprotEntries}
-                selectedAccession={selectedUniprotId ?? autoUniprotId}
-                onSelect={setSelectedUniprotId}
-              />
-              <Typography variant="body2" color="textSecondary">
-                If you don't see the entry you're looking for, try a different
-                identifier above or search{' '}
-                <ExternalLink href="https://www.uniprot.org/">
-                  UniProt
-                </ExternalLink>{' '}
-                directly and use "Enter manually".
-              </Typography>
-            </>
-          )}
-
-        {isoformSequences &&
-          lookupMode === 'auto' &&
-          !featureUniprotId &&
-          !isLookupLoading &&
-          uniprotEntries.length === 0 && (
+        {showAutoSearchResults && (uniprotEntries.length > 0 || isLookupLoading) && (
+          <>
             <Typography variant="body2" color="textSecondary">
-              No UniProt entries found for{' '}
-              {getSearchDescription({
-                selectedQueryId,
-                recognizedIds,
-                geneName,
-                joinWord: 'or',
-              })}
-              . Try a different identifier above, or search{' '}
-              <ExternalLink href="https://www.uniprot.org/">
-                UniProt
-              </ExternalLink>{' '}
-              directly and use "Enter manually" above, or use "Search sequence
-              against AlphaFoldDB API" if available.
+              Searched UniProt by{' '}
+              {getSearchDescription({ selectedQueryId, recognizedIds, geneName })}
             </Typography>
-          )}
+            <UniProtResultsTable
+              entries={uniprotEntries}
+              selectedAccession={selectedUniprotId ?? autoUniprotId}
+              onSelect={setSelectedUniprotId}
+            />
+            <Typography variant="body2" color="textSecondary">
+              If you don't see the entry you're looking for, try a different
+              identifier above or search{' '}
+              <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
+              directly and use "Enter manually".
+            </Typography>
+          </>
+        )}
 
-        {isoformSequences &&
-        selectedTranscript &&
-        (lookupMode === 'sequence' || (structureSequence && uniprotId)) ? (
+        {showAutoSearchResults && !isLookupLoading && uniprotEntries.length === 0 && (
+          <Typography variant="body2" color="textSecondary">
+            No UniProt entries found for{' '}
+            {getSearchDescription({ selectedQueryId, recognizedIds, geneName, joinWord: 'or' })}
+            . Try a different identifier above, or search{' '}
+            <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
+            directly and use "Enter manually" above, or use "Search sequence
+            against AlphaFoldDB API" if available.
+          </Typography>
+        )}
+
+        {showStructureSelectors && (
           <>
             <div className={classes.selectorsRow}>
               <TranscriptSelector
@@ -368,7 +273,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               />
             )}
           </>
-        ) : null}
+        )}
       </DialogContent>
       <DialogActions>
         <ProteinViewActions
@@ -384,8 +289,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           alignmentAlgorithm={alignmentAlgorithm}
           onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
           sequencesMatch={
-            userSelectedProteinSequence?.seq.replaceAll('*', '') ===
-            structureSequence
+            userSelectedProteinSequence?.seq.replaceAll('*', '') === structureSequence
           }
         />
       </DialogActions>
