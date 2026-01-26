@@ -1,7 +1,7 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 
-import { version } from '../package.json'
+import { version } from './version'
 import AddHighlightModelF from './AddHighlightModel'
 import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
 import AlphaMissensePathogenicityAdapterF from './AlphaMissensePathogenicityAdapter'
