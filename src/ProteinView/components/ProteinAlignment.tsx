@@ -4,6 +4,8 @@ import { Tooltip, Typography } from '@mui/material'
 import { reaction } from 'mobx'
 import { observer } from 'mobx-react'
 
+import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
+import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
@@ -11,10 +13,6 @@ import {
   ProteinFeatureTrackLabels,
 } from './ProteinFeatureTrack'
 import SplitString from './SplitString'
-import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
-
-const LABEL_WIDTH = 50
-const ROW_HEIGHT = 14
 
 const ProteinAlignment = observer(function ProteinAlignment({
   model,
@@ -41,24 +39,15 @@ const ProteinAlignment = observer(function ProteinAlignment({
         () => model.alignmentHoverPos,
         alignmentHoverPos => {
           const container = containerRef.current
-          console.log('scrollTo reaction fired', {
-            alignmentHoverPos,
-            autoScrollAlignment,
-            isMouseInAlignment: model.isMouseInAlignment,
-            hasContainer: !!container,
-          })
           if (
             !autoScrollAlignment ||
             model.isMouseInAlignment ||
             alignmentHoverPos === undefined ||
             !container
           ) {
-            console.log('scrollTo reaction: SKIPPING scroll')
             return
           }
-          console.log('scrollTo reaction: PERFORMING scroll')
-          const charWidth = 6
-          const scrollPosition = alignmentHoverPos * charWidth
+          const scrollPosition = alignmentHoverPos * CHAR_WIDTH
           container.scrollTo({
             left: scrollPosition - container.clientWidth / 2,
             behavior: 'smooth',
@@ -69,14 +58,12 @@ const ProteinAlignment = observer(function ProteinAlignment({
   )
 
   const handleContainerMouseEnter = useCallback(() => {
-    console.log('handleContainerMouseEnter called')
     model.setIsMouseInAlignment(true)
   }, [model])
 
   const handleContainerMouseLeave = useCallback(() => {
-    console.log('handleContainerMouseLeave called')
     model.setIsMouseInAlignment(false)
-    model.setHoveredPosition(undefined, 'handleContainerMouseLeave')
+    model.setHoveredPosition(undefined)
     model.clearHoverGenomeHighlights()
     model.clearHighlightFromExternal()
   }, [model])

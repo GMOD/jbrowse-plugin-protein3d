@@ -289,7 +289,13 @@ function stateModelFactory() {
         try {
           const stored = localStorage.getItem(SETTINGS_KEY)
           if (stored) {
-            const settings = JSON.parse(stored)
+            const settings = JSON.parse(stored) as {
+              showAlignment?: boolean
+              showProteinTracks?: boolean
+              showHighlight?: boolean
+              zoomToBaseLevel?: boolean
+              autoScrollAlignment?: boolean
+            }
             if (settings.showAlignment !== undefined) {
               self.setShowAlignment(settings.showAlignment)
             }
@@ -502,7 +508,11 @@ function stateModelFactory() {
             label: 'Re-align structures (TM-align)',
             onClick: () => {
               if (self.molstarPluginContext) {
-                superposeStructures(self.molstarPluginContext)
+                superposeStructures(self.molstarPluginContext).catch(
+                  (e: unknown) => {
+                    console.error(e)
+                  },
+                )
               }
             },
           },

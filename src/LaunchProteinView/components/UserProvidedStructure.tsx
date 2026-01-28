@@ -234,7 +234,9 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         </div>
       </DialogContent>
       <DialogActions>
-        {protein?.seq && structureSequence && stripStopCodon(protein.seq) !== structureSequence ? (
+        {protein?.seq &&
+        structureSequence &&
+        stripStopCodon(protein.seq) !== structureSequence ? (
           <Typography
             variant="body2"
             sx={{ mr: 2, display: 'flex', alignItems: 'center' }}

@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
+import { CHAR_WIDTH, TRACK_GAP, TRACK_HEIGHT } from '../constants'
 import highlightResidueRange, {
   selectResidueRange,
 } from '../highlightResidueRange'
@@ -14,10 +15,6 @@ import {
   proteinRangeToGenomeMapping,
 } from '../proteinToGenomeMapping'
 
-const CHAR_WIDTH = 6
-const TRACK_HEIGHT = 12
-const TRACK_GAP = 2
-
 const FeatureBar = observer(function FeatureBar({
   feature,
   model,
@@ -26,9 +23,18 @@ const FeatureBar = observer(function FeatureBar({
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const [isSelected, setIsSelected] = useState(false)
-  const { genomeToTranscriptSeqMapping, connectedView, molstarPluginContext } =
-    model
+  const {
+    genomeToTranscriptSeqMapping,
+    connectedView,
+    molstarPluginContext,
+    selectedFeature,
+  } = model
+  const isSelected =
+    selectedFeature?.start === feature.start &&
+    selectedFeature.end === feature.end &&
+    selectedFeature.type === feature.type &&
+    selectedFeature.description === feature.description &&
+    selectedFeature.id === feature.id
 
   const highlightGenomeRange = () => {
     const { refName } = genomeToTranscriptSeqMapping ?? {}
@@ -48,25 +54,22 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  const highlightAlignmentRange = () => {
+  const getAlignmentRange = () => {
     const { structurePositionToAlignmentMap } = model
     if (!structurePositionToAlignmentMap) {
-      return
+      return undefined
     }
     const startAlignmentPos = structurePositionToAlignmentMap[feature.start - 1]
     const endAlignmentPos = structurePositionToAlignmentMap[feature.end - 1]
     if (startAlignmentPos !== undefined && endAlignmentPos !== undefined) {
-      model.setAlignmentHoverRange({
-        start: startAlignmentPos,
-        end: endAlignmentPos,
-      })
+      return { start: startAlignmentPos, end: endAlignmentPos }
     }
+    return undefined
   }
 
   const handleMouseEnter = () => {
     setIsHovered(true)
     const structure = model.molstarStructure
-    console.log('handleMouseEnter', { structure, featureStart: feature.start, featureEnd: feature.end })
     if (structure && molstarPluginContext) {
       highlightResidueRange({
         structure,
@@ -76,7 +79,10 @@ const FeatureBar = observer(function FeatureBar({
       })
     }
     highlightGenomeRange()
-    highlightAlignmentRange()
+    const range = getAlignmentRange()
+    if (range) {
+      model.setAlignmentHoverRange(range)
+    }
   }
 
   const handleMouseLeave = () => {
@@ -89,7 +95,6 @@ const FeatureBar = observer(function FeatureBar({
   const handleClick = () => {
     const structure = model.molstarStructure
     const newSelected = !isSelected
-    setIsSelected(newSelected)
 
     if (structure && molstarPluginContext) {
       if (newSelected) {
@@ -104,13 +109,30 @@ const FeatureBar = observer(function FeatureBar({
       }
     }
 
-    clickProteinToGenome({
-      model,
-      structureSeqPos: feature.start - 1,
-      structureSeqEndPos: feature.end,
-    }).catch((e: unknown) => {
-      console.error(e)
-    })
+    if (newSelected) {
+      model.setSelectedFeature({
+        start: feature.start,
+        end: feature.end,
+        type: feature.type,
+        description: feature.description,
+        id: feature.id,
+      })
+      const range = getAlignmentRange()
+      if (range) {
+        model.setClickAlignmentRange(range)
+      }
+      clickProteinToGenome({
+        model,
+        structureSeqPos: feature.start - 1,
+        structureSeqEndPos: feature.end,
+      }).catch((e: unknown) => {
+        console.error(e)
+      })
+    } else {
+      model.clearSelectedFeature()
+      model.clearClickAlignmentRange()
+      model.clearClickGenomeHighlights()
+    }
   }
 
   const left = (feature.start - 1) * CHAR_WIDTH

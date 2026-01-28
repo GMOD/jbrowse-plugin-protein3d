@@ -1,7 +1,6 @@
 import Plugin from '@jbrowse/core/Plugin'
 import PluginManager from '@jbrowse/core/PluginManager'
 
-import { version } from './version'
 import AddHighlightModelF from './AddHighlightModel'
 import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
 import AlphaMissensePathogenicityAdapterF from './AlphaMissensePathogenicityAdapter'
@@ -9,6 +8,7 @@ import LaunchProteinViewF from './LaunchProteinView'
 import LaunchProteinViewExtensionPointF from './LaunchProteinViewExtensionPoint'
 import ProteinViewF from './ProteinView'
 import UniProtVariationAdapterF from './UniProtVariationAdapter'
+import { version } from './version'
 
 export default class ProteinViewer extends Plugin {
   name = 'ProteinViewer'

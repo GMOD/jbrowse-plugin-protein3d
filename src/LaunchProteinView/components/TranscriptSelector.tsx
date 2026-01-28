@@ -3,7 +3,11 @@ import React from 'react'
 import { Feature } from '@jbrowse/core/util'
 import { MenuItem, TextField } from '@mui/material'
 
-import { getGeneDisplayName, getTranscriptDisplayName, stripStopCodon } from '../utils/util'
+import {
+  getGeneDisplayName,
+  getTranscriptDisplayName,
+  stripStopCodon,
+} from '../utils/util'
 
 export default function TranscriptSelector({
   val,

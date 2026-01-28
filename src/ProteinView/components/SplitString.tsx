@@ -2,11 +2,10 @@ import React, { useMemo, useRef } from 'react'
 
 import { observer } from 'mobx-react'
 
+import { CHAR_WIDTH } from '../constants'
 import { throttle } from './throttle'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
-
-const CHAR_WIDTH = 6
 
 const CharacterSpans = observer(function CharacterSpans({
   str,
@@ -79,18 +78,21 @@ const HoverHighlight = observer(function HoverHighlight({
   )
 })
 
-const RangeHoverHighlight = observer(function RangeHoverHighlight({
-  model,
+const RangeHighlight = observer(function RangeHighlight({
+  range,
   strLength,
+  background,
+  border,
 }: {
-  model: JBrowsePluginProteinStructureModel
+  range: { start: number; end: number } | undefined
   strLength: number
+  background: string
+  border?: string
 }) {
-  const { alignmentHoverRange } = model
-  if (!alignmentHoverRange) {
+  if (!range) {
     return null
   }
-  const { start, end } = alignmentHoverRange
+  const { start, end } = range
   const clampedStart = Math.max(0, start)
   const clampedEnd = Math.min(strLength - 1, end)
   if (clampedStart > clampedEnd) {
@@ -106,7 +108,9 @@ const RangeHoverHighlight = observer(function RangeHoverHighlight({
         top: 0,
         width,
         height: '100%',
-        background: 'rgba(255, 165, 0, 0.4)',
+        background,
+        border,
+        boxSizing: 'border-box',
         pointerEvents: 'none',
       }}
     />
@@ -133,7 +137,6 @@ const SplitString = observer(function SplitString({
         const x = e.clientX - rect.left
         const index = Math.floor(x / CHAR_WIDTH)
         if (index >= 0 && index < str.length) {
-          console.log('SplitString handleMouseMove calling hoverAlignmentPosition', { index, isMouseInAlignment: model.isMouseInAlignment })
           model.hoverAlignmentPosition(index)
         }
       }, 16),
@@ -170,7 +173,17 @@ const SplitString = observer(function SplitString({
     >
       <MatchOverlays model={model} />
       <CharacterSpans str={str} />
-      <RangeHoverHighlight model={model} strLength={str.length} />
+      <RangeHighlight
+        range={model.clickAlignmentRange}
+        strLength={str.length}
+        background="rgba(0, 120, 255, 0.3)"
+        border="1px solid rgba(0, 120, 255, 0.6)"
+      />
+      <RangeHighlight
+        range={model.alignmentHoverRange}
+        strLength={str.length}
+        background="rgba(255, 165, 0, 0.4)"
+      />
       <HoverHighlight model={model} strLength={str.length} />
     </span>
   )
