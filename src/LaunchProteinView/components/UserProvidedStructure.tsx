@@ -39,6 +39,7 @@ import {
   getId,
   getTranscriptDisplayName,
   getTranscriptFeatures,
+  stripStopCodon,
 } from '../utils/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -233,7 +234,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         </div>
       </DialogContent>
       <DialogActions>
-        {protein?.seq && structureSequence && protein.seq.replaceAll('*', '') !== structureSequence ? (
+        {protein?.seq && structureSequence && stripStopCodon(protein.seq) !== structureSequence ? (
           <Typography
             variant="body2"
             sx={{ mr: 2, display: 'flex', alignItems: 'center' }}

@@ -3,6 +3,7 @@ import React from 'react'
 import {
   Chip,
   Paper,
+  Radio,
   Table,
   TableBody,
   TableCell,
@@ -74,6 +75,7 @@ export default function UniProtResultsTable({
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
+              <TableCell className={classes.headerCell} padding="checkbox" />
               <TableCell className={classes.headerCell}>Accession</TableCell>
               <TableCell className={classes.headerCell}>Gene</TableCell>
               <TableCell className={classes.headerCell}>Organism</TableCell>
@@ -93,6 +95,12 @@ export default function UniProtResultsTable({
                   selectedAccession === entry.accession && classes.selectedRow,
                 )}
               >
+                <TableCell padding="checkbox">
+                  <Radio
+                    checked={selectedAccession === entry.accession}
+                    size="small"
+                  />
+                </TableCell>
                 <TableCell>
                   <ExternalLink
                     href={`https://www.uniprot.org/uniprotkb/${entry.accession}`}

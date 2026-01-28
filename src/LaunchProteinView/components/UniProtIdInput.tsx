@@ -77,22 +77,24 @@ export default function UniProtIdInput({
       </FormControl>
 
       {lookupMode === 'manual' && (
-        <TextField
-          label="UniProt ID"
-          variant="outlined"
-          placeholder="e.g. P68871"
-          size="small"
-          value={manualUniprotId}
-          onChange={e => {
-            onManualUniprotIdChange(e.target.value)
-          }}
-        />
+        <div>
+          <TextField
+            label="UniProt ID"
+            variant="outlined"
+            placeholder="e.g. P68871"
+            size="small"
+            value={manualUniprotId}
+            onChange={e => {
+              onManualUniprotIdChange(e.target.value)
+            }}
+          />
+        </div>
       )}
 
       {lookupMode === 'sequence' &&
         sequenceSearchType &&
         onSequenceSearchTypeChange && (
-          <>
+          <div>
             <FormControl component="fieldset">
               <RadioGroup
                 row
@@ -118,7 +120,7 @@ export default function UniProtIdInput({
             <Typography variant="body2" color="text.secondary">
               May not find the canonical UniProt entry.
             </Typography>
-          </>
+          </div>
         )}
 
       {lookupMode === 'manual' && !manualUniprotId && (

@@ -1,5 +1,9 @@
 import { Feature } from '@jbrowse/core/util'
 
+export function stripStopCodon(seq: string) {
+  return seq.replaceAll('*', '')
+}
+
 export function getTranscriptFeatures(feature: Feature) {
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names
@@ -251,7 +255,8 @@ export function selectBestTranscript({
 }) {
   const exactMatch = options.find(
     f =>
-      isoformSequences[f.id()]?.seq.replaceAll('*', '') === structureSequence,
+      structureSequence &&
+      stripStopCodon(isoformSequences[f.id()]?.seq ?? '') === structureSequence,
   )
   const longestWithData = options
     .filter(f => !!isoformSequences[f.id()])

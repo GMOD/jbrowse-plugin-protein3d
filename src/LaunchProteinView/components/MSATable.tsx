@@ -5,7 +5,7 @@ import { TextField } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 import Checkbox2 from './Checkbox2'
-import { getTranscriptDisplayName } from '../utils/util'
+import { getTranscriptDisplayName, stripStopCodon } from '../utils/util'
 
 const useStyles = makeStyles()({
   textAreaFont: {
@@ -28,7 +28,7 @@ export default function MSATable({
   const removedStars = Object.fromEntries(
     Object.entries(isoformSequences).map(([key, val]) => [
       key,
-      { ...val, seq: val.seq.replaceAll('*', '') },
+      { ...val, seq: stripStopCodon(val.seq) },
     ]),
   )
   const exactMatchIsoformAndStructureSeq = Object.entries(removedStars).find(

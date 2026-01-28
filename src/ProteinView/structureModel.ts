@@ -35,6 +35,7 @@ import {
 import selectResidue from './selectResidue'
 import { AlignmentAlgorithm } from './types'
 import { checkHovered, invertMap, toStr } from './util'
+import { stripStopCodon } from '../LaunchProteinView/utils/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -436,8 +437,10 @@ const Structure = types
      * #getter
      */
     get exactMatch() {
-      const r1 = self.userProvidedTranscriptSequence.replaceAll('*', '')
-      const r2 = self.structureSequences?.[0]?.replaceAll('*', '')
+      const r1 = stripStopCodon(self.userProvidedTranscriptSequence)
+      const r2 = self.structureSequences?.[0]
+        ? stripStopCodon(self.structureSequences[0])
+        : undefined
       return r1 === r2
     },
 
@@ -472,8 +475,12 @@ const Structure = types
     /**
      * #getter
      * Returns the Molstar structure object for the current structure.
+     * Note: We access loadedToMolstar to ensure MobX recomputes this getter
+     * when the structure finishes loading (Molstar's internal state isn't observable).
      */
     get molstarStructure() {
+      // Access loadedToMolstar to create MobX dependency for recomputation
+      const _loaded = self.loadedToMolstar
       const idx = this.structureIndex
       return idx >= 0
         ? this.molstarPluginContext?.managers.structure.hierarchy.current
@@ -559,8 +566,8 @@ const Structure = types
             if (!!self.pairwiseAlignment || !seq1 || !seq2) {
               return
             }
-            const r1 = seq1.replaceAll('*', '')
-            const r2 = seq2.replaceAll('*', '')
+            const r1 = stripStopCodon(seq1)
+            const r2 = stripStopCodon(seq2)
             if (exactMatch) {
               let consensus = ''
               // eslint-disable-next-line @typescript-eslint/prefer-for-of
@@ -696,6 +703,12 @@ const Structure = types
             molstarPluginContext,
             molstarStructure,
           } = self
+          console.log('showHighlight autorun', {
+            showHighlight,
+            molstarStructure,
+            structureSeqToTranscriptSeqPosition,
+            molstarPluginContext,
+          })
           if (molstarStructure && structureSeqToTranscriptSeqPosition) {
             if (showHighlight) {
               for (const coord of Object.keys(

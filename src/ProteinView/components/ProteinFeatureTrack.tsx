@@ -26,6 +26,7 @@ const FeatureBar = observer(function FeatureBar({
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
+  const [isSelected, setIsSelected] = useState(false)
   const { genomeToTranscriptSeqMapping, connectedView, molstarPluginContext } =
     model
 
@@ -65,6 +66,7 @@ const FeatureBar = observer(function FeatureBar({
   const handleMouseEnter = () => {
     setIsHovered(true)
     const structure = model.molstarStructure
+    console.log('handleMouseEnter', { structure, featureStart: feature.start, featureEnd: feature.end })
     if (structure && molstarPluginContext) {
       highlightResidueRange({
         structure,
@@ -86,13 +88,20 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleClick = () => {
     const structure = model.molstarStructure
+    const newSelected = !isSelected
+    setIsSelected(newSelected)
+
     if (structure && molstarPluginContext) {
-      selectResidueRange({
-        structure,
-        startResidue: feature.start,
-        endResidue: feature.end,
-        plugin: molstarPluginContext,
-      })
+      if (newSelected) {
+        selectResidueRange({
+          structure,
+          startResidue: feature.start,
+          endResidue: feature.end,
+          plugin: molstarPluginContext,
+        })
+      } else {
+        molstarPluginContext.managers.interactivity.lociSelects.deselectAll()
+      }
     }
 
     clickProteinToGenome({
@@ -133,10 +142,14 @@ const FeatureBar = observer(function FeatureBar({
           width,
           height: TRACK_HEIGHT,
           backgroundColor: color,
-          opacity: isHovered ? 0.9 : 0.6,
+          opacity: isHovered || isSelected ? 0.9 : 0.6,
           cursor: 'pointer',
           borderRadius: 2,
-          border: isHovered ? '1px solid black' : 'none',
+          border: isSelected
+            ? '2px solid #333'
+            : isHovered
+              ? '1px solid black'
+              : 'none',
           boxSizing: 'border-box',
         }}
       />

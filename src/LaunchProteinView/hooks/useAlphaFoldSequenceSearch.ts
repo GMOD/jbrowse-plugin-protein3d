@@ -4,6 +4,7 @@ import useSWR from 'swr'
 
 import { jsonfetch } from '../../fetchUtils'
 import { md5 } from '../utils/md5'
+import { stripStopCodon } from '../utils/util'
 
 export type SequenceSearchType = 'md5' | 'sequence'
 
@@ -35,7 +36,7 @@ export default function useAlphaFoldSequenceSearch({
     if (!sequence) {
       return undefined
     }
-    const cleanSeq = sequence.toUpperCase().replaceAll('*', '')
+    const cleanSeq = stripStopCodon(sequence.toUpperCase())
     return searchType === 'md5' ? md5(cleanSeq) : cleanSeq
   }, [sequence, searchType])
 

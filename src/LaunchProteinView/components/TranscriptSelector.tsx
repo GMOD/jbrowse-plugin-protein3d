@@ -3,7 +3,7 @@ import React from 'react'
 import { Feature } from '@jbrowse/core/util'
 import { MenuItem, TextField } from '@mui/material'
 
-import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
+import { getGeneDisplayName, getTranscriptDisplayName, stripStopCodon } from '../utils/util'
 
 export default function TranscriptSelector({
   val,
@@ -33,7 +33,7 @@ export default function TranscriptSelector({
       noData.push(f)
     } else if (
       structureSequence &&
-      entry.seq.replaceAll('*', '') === structureSequence
+      stripStopCodon(entry.seq) === structureSequence
     ) {
       matches.push(f)
     } else {

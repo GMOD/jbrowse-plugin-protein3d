@@ -12,6 +12,7 @@ import {
   getTranscriptFeatures,
   getUniProtIdFromFeature,
   selectBestTranscript,
+  stripStopCodon,
 } from '../utils/util'
 
 import type { SequenceSearchType } from './useAlphaFoldSequenceSearch'
@@ -142,6 +143,12 @@ export default function useAlphaFoldDBSearch({
     }
   }, [featureUniprotId, lookupMode])
 
+  // Reset transcript selection when UniProt selection changes
+  // This allows re-evaluation of which transcripts match the new structure
+  useEffect(() => {
+    setUserSelection(undefined)
+  }, [selectedUniprotId])
+
   // Auto-select best transcript when structure sequence is available
   useEffect(() => {
     if (isoformSequences !== undefined && userSelection === undefined) {
@@ -218,8 +225,9 @@ export default function useAlphaFoldDBSearch({
       !!selectedTranscript &&
       (lookupMode === 'sequence' || !!(structureSequence && uniprotId)),
     sequencesMatch:
-      userSelectedProteinSequence?.seq.replaceAll('*', '') ===
-      structureSequence,
+      userSelectedProteinSequence?.seq && structureSequence
+        ? stripStopCodon(userSelectedProteinSequence.seq) === structureSequence
+        : undefined,
 
     // Pre-computed search descriptions for display
     searchDescription: getSearchDescription({
