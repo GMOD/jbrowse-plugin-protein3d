@@ -195,9 +195,11 @@ const HoverMarker = observer(function HoverMarker({
 const FeatureTypeLabel = observer(function FeatureTypeLabel({
   type,
   labelWidth,
+  model,
 }: {
   type: string
   labelWidth: number
+  model: JBrowsePluginProteinStructureModel
 }) {
   return (
     <Tooltip title={type} placement="left">
@@ -212,9 +214,31 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          gap: 2,
         }}
       >
-        {type}
+        <span
+          onClick={e => {
+            e.stopPropagation()
+            model.hideFeatureType(type)
+          }}
+          style={{
+            cursor: 'pointer',
+            color: '#999',
+            fontWeight: 'bold',
+            fontSize: 8,
+            lineHeight: 1,
+          }}
+          title={`Hide ${type} track`}
+        >
+          x
+        </span>
+        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {type}
+        </span>
       </div>
     </Tooltip>
   )
@@ -256,14 +280,25 @@ export const ProteinFeatureTrackLabels = observer(
   function ProteinFeatureTrackLabels({
     data,
     labelWidth,
+    model,
   }: {
     data: FeatureTrackData
     labelWidth: number
+    model: JBrowsePluginProteinStructureModel
   }) {
+    const { hiddenFeatureTypes } = model
+    const visibleTypes = data.featureTypes.filter(
+      type => !hiddenFeatureTypes.has(type),
+    )
     return (
       <>
-        {data.featureTypes.map(type => (
-          <FeatureTypeLabel key={type} type={type} labelWidth={labelWidth} />
+        {visibleTypes.map(type => (
+          <FeatureTypeLabel
+            key={type}
+            type={type}
+            labelWidth={labelWidth}
+            model={model}
+          />
         ))}
       </>
     )
@@ -278,9 +313,13 @@ export const ProteinFeatureTrackContent = observer(
     data: FeatureTrackData
     model: JBrowsePluginProteinStructureModel
   }) {
+    const { hiddenFeatureTypes } = model
+    const visibleTypes = data.featureTypes.filter(
+      type => !hiddenFeatureTypes.has(type),
+    )
     return (
       <>
-        {data.featureTypes.map(type => (
+        {visibleTypes.map(type => (
           <FeatureTypeTrackContent
             key={type}
             features={data.groupedFeatures[type]!}

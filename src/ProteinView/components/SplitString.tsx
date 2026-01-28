@@ -133,6 +133,7 @@ const SplitString = observer(function SplitString({
         const x = e.clientX - rect.left
         const index = Math.floor(x / CHAR_WIDTH)
         if (index >= 0 && index < str.length) {
+          console.log('SplitString handleMouseMove calling hoverAlignmentPosition', { index, isMouseInAlignment: model.isMouseInAlignment })
           model.hoverAlignmentPosition(index)
         }
       }, 16),

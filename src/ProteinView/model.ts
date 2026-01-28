@@ -455,6 +455,14 @@ function stateModelFactory() {
                   self.setShowHighlight(!self.showHighlight)
                 },
               },
+              {
+                label: 'Show all protein feature tracks',
+                onClick: () => {
+                  for (const structure of self.structures) {
+                    structure.showAllFeatureTypes()
+                  }
+                },
+              },
             ],
           },
           {

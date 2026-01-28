@@ -151,10 +151,35 @@ const Structure = types
     alignmentHoverRange: undefined as
       | { start: number; end: number }
       | undefined,
+    /**
+     * #volatile
+     * Set of feature track types that are hidden
+     */
+    hiddenFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
     setSequences(str?: string[]) {
       self.structureSequences = str
+    },
+    /**
+     * #action
+     */
+    hideFeatureType(type: string) {
+      self.hiddenFeatureTypes = new Set([...self.hiddenFeatureTypes, type])
+    },
+    /**
+     * #action
+     */
+    showFeatureType(type: string) {
+      const newSet = new Set(self.hiddenFeatureTypes)
+      newSet.delete(type)
+      self.hiddenFeatureTypes = newSet
+    },
+    /**
+     * #action
+     */
+    showAllFeatureTypes() {
+      self.hiddenFeatureTypes = new Set()
     },
     /**
      * #action
@@ -222,11 +247,15 @@ const Structure = types
     /**
      * #action
      */
-    setHoveredPosition(arg?: {
-      structureSeqPos?: number
-      chain?: string
-      code?: string
-    }) {
+    setHoveredPosition(
+      arg?: {
+        structureSeqPos?: number
+        chain?: string
+        code?: string
+      },
+      source?: string,
+    ) {
+      console.log('setHoveredPosition called', { arg, source })
       self.hoverPosition = arg
     },
     /**
@@ -245,6 +274,7 @@ const Structure = types
      * #action
      */
     setIsMouseInAlignment(val: boolean) {
+      console.log('setIsMouseInAlignment called', { val })
       self.isMouseInAlignment = val
     },
   }))
@@ -521,9 +551,12 @@ const Structure = types
     hoverAlignmentPosition(alignmentPos: number) {
       const structureSeqPos =
         self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      self.setHoveredPosition({
-        structureSeqPos,
-      })
+      self.setHoveredPosition(
+        {
+          structureSeqPos,
+        },
+        'hoverAlignmentPosition',
+      )
       if (structureSeqPos !== undefined) {
         hoverProteinToGenome({
           model: self as JBrowsePluginProteinStructureModel,
@@ -624,9 +657,12 @@ const Structure = types
                 : transcriptSeqToStructureSeqPosition?.[pos]
 
             if (c0 !== undefined) {
-              self.setHoveredPosition({
-                structureSeqPos: c0,
-              })
+              self.setHoveredPosition(
+                {
+                  structureSeqPos: c0,
+                },
+                'genomeHoverAutorun',
+              )
             }
           }
         }),
@@ -645,7 +681,7 @@ const Structure = types
                   )
                   if (loc) {
                     const locationInfo = extractLocationInfo(loc)
-                    self.setHoveredPosition(locationInfo)
+                    self.setHoveredPosition(locationInfo, 'molstarClickSubscribe')
 
                     clickProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,
@@ -678,7 +714,7 @@ const Structure = types
                   )
                   if (loc) {
                     const locationInfo = extractLocationInfo(loc)
-                    self.setHoveredPosition(locationInfo)
+                    self.setHoveredPosition(locationInfo, 'molstarHoverSubscribe')
                     hoverProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,
                       structureSeqPos: locationInfo.structureSeqPos,

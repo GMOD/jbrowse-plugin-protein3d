@@ -41,14 +41,22 @@ const ProteinAlignment = observer(function ProteinAlignment({
         () => model.alignmentHoverPos,
         alignmentHoverPos => {
           const container = containerRef.current
+          console.log('scrollTo reaction fired', {
+            alignmentHoverPos,
+            autoScrollAlignment,
+            isMouseInAlignment: model.isMouseInAlignment,
+            hasContainer: !!container,
+          })
           if (
             !autoScrollAlignment ||
             model.isMouseInAlignment ||
             alignmentHoverPos === undefined ||
             !container
           ) {
+            console.log('scrollTo reaction: SKIPPING scroll')
             return
           }
+          console.log('scrollTo reaction: PERFORMING scroll')
           const charWidth = 6
           const scrollPosition = alignmentHoverPos * charWidth
           container.scrollTo({
@@ -61,12 +69,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
   )
 
   const handleContainerMouseEnter = useCallback(() => {
+    console.log('handleContainerMouseEnter called')
     model.setIsMouseInAlignment(true)
   }, [model])
 
   const handleContainerMouseLeave = useCallback(() => {
+    console.log('handleContainerMouseLeave called')
     model.setIsMouseInAlignment(false)
-    model.setHoveredPosition(undefined)
+    model.setHoveredPosition(undefined, 'handleContainerMouseLeave')
     model.clearHoverGenomeHighlights()
     model.clearHighlightFromExternal()
   }, [model])
@@ -98,7 +108,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
           paddingBottom: 8,
         }}
         onMouseEnter={handleContainerMouseEnter}
-        onMouseLeave={handleContainerMouseLeave}
       >
         <div
           style={{
@@ -140,6 +149,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <ProteinFeatureTrackLabels
                 data={featureData}
                 labelWidth={LABEL_WIDTH}
+                model={model}
               />
             ) : null
           ) : null}
@@ -154,14 +164,16 @@ const ProteinAlignment = observer(function ProteinAlignment({
             backgroundColor: 'white',
           }}
         >
-          <div style={{ height: ROW_HEIGHT }}>
-            <SplitString model={model} str={a0} />
-          </div>
-          <div style={{ height: ROW_HEIGHT }}>
-            <SplitString model={model} str={con} />
-          </div>
-          <div style={{ height: ROW_HEIGHT }}>
-            <SplitString model={model} str={a1} />
+          <div onMouseLeave={handleContainerMouseLeave}>
+            <div style={{ height: ROW_HEIGHT }}>
+              <SplitString model={model} str={a0} />
+            </div>
+            <div style={{ height: ROW_HEIGHT }}>
+              <SplitString model={model} str={con} />
+            </div>
+            <div style={{ height: ROW_HEIGHT }}>
+              <SplitString model={model} str={a1} />
+            </div>
           </div>
           {showProteinTracks && featureData ? (
             <ProteinFeatureTrackContent data={featureData} model={model} />
