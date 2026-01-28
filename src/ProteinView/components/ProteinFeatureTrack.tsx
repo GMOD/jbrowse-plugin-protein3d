@@ -18,11 +18,6 @@ const CHAR_WIDTH = 6
 const TRACK_HEIGHT = 12
 const TRACK_GAP = 2
 
-function getMolstarStructure(model: JBrowsePluginProteinStructureModel) {
-  return model.molstarPluginContext?.managers.structure.hierarchy.current
-    .structures[0]?.cell.obj?.data
-}
-
 const FeatureBar = observer(function FeatureBar({
   feature,
   model,
@@ -54,7 +49,7 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    const structure = getMolstarStructure(model)
+    const structure = model.molstarStructure
     if (structure && molstarPluginContext) {
       highlightResidueRange({
         structure,
@@ -73,7 +68,7 @@ const FeatureBar = observer(function FeatureBar({
   }
 
   const handleClick = () => {
-    const structure = getMolstarStructure(model)
+    const structure = model.molstarStructure
     if (structure && molstarPluginContext) {
       selectResidueRange({
         structure,

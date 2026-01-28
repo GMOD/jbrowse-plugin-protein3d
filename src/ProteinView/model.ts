@@ -12,6 +12,8 @@ import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
 import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
+const SETTINGS_KEY = 'proteinView-settings'
+
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 export interface ProteinViewInitState {
@@ -67,7 +69,15 @@ function stateModelFactory() {
         /**
          * #property
          */
+        autoScrollAlignment: true,
+        /**
+         * #property
+         */
         showAlignment: true,
+        /**
+         * #property
+         */
+        showProteinTracks: true,
         /**
          * #property
          */
@@ -155,8 +165,20 @@ function stateModelFactory() {
       /**
        * #action
        */
+      setShowProteinTracks(arg: boolean) {
+        self.showProteinTracks = arg
+      },
+      /**
+       * #action
+       */
       setZoomToBaseLevel(arg: boolean) {
         self.zoomToBaseLevel = arg
+      },
+      /**
+       * #action
+       */
+      setAutoScrollAlignment(arg: boolean) {
+        self.autoScrollAlignment = arg
       },
       /**
        * #action
@@ -263,6 +285,59 @@ function stateModelFactory() {
     }))
     .actions(self => ({
       afterAttach() {
+        // restore settings from localStorage
+        try {
+          const stored = localStorage.getItem(SETTINGS_KEY)
+          if (stored) {
+            const settings = JSON.parse(stored)
+            if (settings.showAlignment !== undefined) {
+              self.setShowAlignment(settings.showAlignment)
+            }
+            if (settings.showProteinTracks !== undefined) {
+              self.setShowProteinTracks(settings.showProteinTracks)
+            }
+            if (settings.showHighlight !== undefined) {
+              self.setShowHighlight(settings.showHighlight)
+            }
+            if (settings.zoomToBaseLevel !== undefined) {
+              self.setZoomToBaseLevel(settings.zoomToBaseLevel)
+            }
+            if (settings.autoScrollAlignment !== undefined) {
+              self.setAutoScrollAlignment(settings.autoScrollAlignment)
+            }
+          }
+        } catch (e) {
+          console.error('Failed to restore protein view settings', e)
+        }
+
+        // save settings to localStorage when they change
+        addDisposer(
+          self,
+          autorun(() => {
+            const {
+              showAlignment,
+              showProteinTracks,
+              showHighlight,
+              zoomToBaseLevel,
+              autoScrollAlignment,
+            } = self
+            try {
+              localStorage.setItem(
+                SETTINGS_KEY,
+                JSON.stringify({
+                  showAlignment,
+                  showProteinTracks,
+                  showHighlight,
+                  zoomToBaseLevel,
+                  autoScrollAlignment,
+                }),
+              )
+            } catch (e) {
+              console.error('Failed to save protein view settings', e)
+            }
+          }),
+        )
+
         // process init parameter for loading structures from session snapshots
         addDisposer(
           self,
@@ -353,31 +428,55 @@ function stateModelFactory() {
       menuItems() {
         return [
           {
-            label: 'Show pairwise alignment area',
-            type: 'checkbox',
-            checked: self.showAlignment,
+            label: 'Show...',
             icon: Visibility,
-            onClick: () => {
-              self.setShowAlignment(!self.showAlignment)
-            },
+            subMenu: [
+              {
+                label: 'Pairwise alignment',
+                type: 'checkbox',
+                checked: self.showAlignment,
+                onClick: () => {
+                  self.setShowAlignment(!self.showAlignment)
+                },
+              },
+              {
+                label: 'Protein feature tracks',
+                type: 'checkbox',
+                checked: self.showProteinTracks,
+                onClick: () => {
+                  self.setShowProteinTracks(!self.showProteinTracks)
+                },
+              },
+              {
+                label: 'Pairwise alignment as green highlight',
+                type: 'checkbox',
+                checked: self.showHighlight,
+                onClick: () => {
+                  self.setShowHighlight(!self.showHighlight)
+                },
+              },
+            ],
           },
           {
-            label: 'Show pairwise alignment as green highlight',
-            type: 'checkbox',
-            checked: self.showHighlight,
-            icon: Visibility,
-            onClick: () => {
-              self.setShowHighlight(!self.showHighlight)
-            },
-          },
-          {
-            label: 'Zoom to base level on click',
-            type: 'checkbox',
-            checked: self.zoomToBaseLevel,
-            icon: Visibility,
-            onClick: () => {
-              self.setZoomToBaseLevel(!self.zoomToBaseLevel)
-            },
+            label: 'Settings...',
+            subMenu: [
+              {
+                label: 'Zoom to base level on click',
+                type: 'checkbox',
+                checked: self.zoomToBaseLevel,
+                onClick: () => {
+                  self.setZoomToBaseLevel(!self.zoomToBaseLevel)
+                },
+              },
+              {
+                label: 'Auto-scroll alignment on hover',
+                type: 'checkbox',
+                checked: self.autoScrollAlignment,
+                onClick: () => {
+                  self.setAutoScrollAlignment(!self.autoScrollAlignment)
+                },
+              },
+            ],
           },
           {
             label: 'Import manual alignment...',
@@ -389,6 +488,14 @@ function stateModelFactory() {
             label: 'Add structure...',
             onClick: () => {
               self.setShowAddStructureDialog(true)
+            },
+          },
+          {
+            label: 'Re-align structures (TM-align)',
+            onClick: () => {
+              if (self.molstarPluginContext) {
+                superposeStructures(self.molstarPluginContext)
+              }
             },
           },
         ]

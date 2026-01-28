@@ -21,7 +21,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { pairwiseAlignment, showHighlight, uniprotId } = model
+  const {
+    pairwiseAlignment,
+    showHighlight,
+    showProteinTracks,
+    autoScrollAlignment,
+    uniprotId,
+  } = model
   const containerRef = useRef<HTMLDivElement>(null)
   const {
     data: featureData,
@@ -36,6 +42,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
         alignmentHoverPos => {
           const container = containerRef.current
           if (
+            !autoScrollAlignment ||
             model.isMouseInAlignment ||
             alignmentHoverPos === undefined ||
             !container
@@ -50,7 +57,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           })
         },
       ),
-    [model, containerRef],
+    [model, autoScrollAlignment],
   )
 
   const handleContainerMouseEnter = useCallback(() => {
@@ -111,27 +118,29 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <span>STRUCT</span>
             </Tooltip>
           </div>
-          {featureLoading ? (
-            <div style={{ height: ROW_HEIGHT, fontSize: 8, color: '#666' }}>
-              Loading...
-            </div>
-          ) : featureError ? (
-            <Tooltip
-              title={
-                featureError instanceof Error
-                  ? featureError.message
-                  : 'Error loading features'
-              }
-            >
-              <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
-                Error
+          {showProteinTracks ? (
+            featureLoading ? (
+              <div style={{ height: ROW_HEIGHT, fontSize: 8, color: '#666' }}>
+                Loading...
               </div>
-            </Tooltip>
-          ) : featureData ? (
-            <ProteinFeatureTrackLabels
-              data={featureData}
-              labelWidth={LABEL_WIDTH}
-            />
+            ) : featureError ? (
+              <Tooltip
+                title={
+                  featureError instanceof Error
+                    ? featureError.message
+                    : 'Error loading features'
+                }
+              >
+                <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
+                  Error
+                </div>
+              </Tooltip>
+            ) : featureData ? (
+              <ProteinFeatureTrackLabels
+                data={featureData}
+                labelWidth={LABEL_WIDTH}
+              />
+            ) : null
           ) : null}
         </div>
         <div
@@ -153,7 +162,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           <div style={{ height: ROW_HEIGHT }}>
             <SplitString model={model} str={a1} />
           </div>
-          {featureData ? (
+          {showProteinTracks && featureData ? (
             <ProteinFeatureTrackContent data={featureData} model={model} />
           ) : null}
         </div>

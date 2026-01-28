@@ -28,6 +28,7 @@
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "yarn build",
     "prepublishOnly": "node -e \"console.log('export const version = \\'' + require('./package.json').version + '\\'')\" > src/version.ts && git add -A src && git diff --cached --quiet || git commit -m '[skip ci] Bump version.ts'",
+    "preversion": "yarn lint",
     "postversion": "git push --follow-tags"
   },
   "dependencies": {

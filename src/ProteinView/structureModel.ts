@@ -44,7 +44,9 @@ type MaybePairwiseAlignment = PairwiseAlignment | undefined
 
 export interface ParentProteinView {
   zoomToBaseLevel: boolean
+  autoScrollAlignment: boolean
   showHighlight: boolean
+  showProteinTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
   structures: { url?: string }[]
@@ -426,8 +428,14 @@ const Structure = types
     get zoomToBaseLevel(): boolean {
       return this.parentView.zoomToBaseLevel
     },
+    get autoScrollAlignment(): boolean {
+      return this.parentView.autoScrollAlignment
+    },
     get showHighlight(): boolean {
       return this.parentView.showHighlight
+    },
+    get showProteinTracks(): boolean {
+      return this.parentView.showProteinTracks
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
       return this.parentView.alignmentAlgorithm
@@ -667,17 +675,15 @@ const Structure = types
             showHighlight,
             structureSeqToTranscriptSeqPosition,
             molstarPluginContext,
+            molstarStructure,
           } = self
-          const structure =
-            molstarPluginContext?.managers.structure.hierarchy.current
-              .structures[0]?.cell.obj?.data
-          if (structure && structureSeqToTranscriptSeqPosition) {
+          if (molstarStructure && structureSeqToTranscriptSeqPosition) {
             if (showHighlight) {
               for (const coord of Object.keys(
                 structureSeqToTranscriptSeqPosition,
               )) {
                 selectResidue({
-                  structure,
+                  structure: molstarStructure,
                   plugin: molstarPluginContext,
                   selectedResidue: +coord + 1,
                 })
