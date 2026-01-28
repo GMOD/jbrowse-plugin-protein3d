@@ -899,7 +899,7 @@ exports[`mapping 1`] = `
 }
 `;
 
-exports[`test 1`] = `
+exports[`structureSeqVsTranscriptSeqMap snapshot 1`] = `
 {
   "structureSeqToTranscriptSeqPosition": {
     "0": 392,

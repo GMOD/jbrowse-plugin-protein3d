@@ -47,6 +47,21 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
+  const highlightAlignmentRange = () => {
+    const { structurePositionToAlignmentMap } = model
+    if (!structurePositionToAlignmentMap) {
+      return
+    }
+    const startAlignmentPos = structurePositionToAlignmentMap[feature.start - 1]
+    const endAlignmentPos = structurePositionToAlignmentMap[feature.end - 1]
+    if (startAlignmentPos !== undefined && endAlignmentPos !== undefined) {
+      model.setAlignmentHoverRange({
+        start: startAlignmentPos,
+        end: endAlignmentPos,
+      })
+    }
+  }
+
   const handleMouseEnter = () => {
     setIsHovered(true)
     const structure = model.molstarStructure
@@ -59,12 +74,14 @@ const FeatureBar = observer(function FeatureBar({
       })
     }
     highlightGenomeRange()
+    highlightAlignmentRange()
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
     molstarPluginContext?.managers.interactivity.lociHighlights.clearHighlights()
     model.clearHoverGenomeHighlights()
+    model.clearAlignmentHoverRange()
   }
 
   const handleClick = () => {

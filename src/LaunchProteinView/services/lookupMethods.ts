@@ -87,11 +87,35 @@ async function searchUniProt(
   return data.results.map(mapApiResultToEntry)
 }
 
+async function searchByXref(id: string) {
+  const query = buildXrefQuery(id)
+  if (query) {
+    try {
+      return await searchUniProt(query)
+    } catch (e) {
+      console.error(`xref search failed for ${id}:`, e)
+    }
+  }
+  return []
+}
+
+function deduplicateEntries(entries: UniProtEntry[]) {
+  const seen = new Set<string>()
+  const result: UniProtEntry[] = []
+  for (const entry of entries) {
+    if (!seen.has(entry.accession)) {
+      seen.add(entry.accession)
+      result.push(entry)
+    }
+  }
+  return result
+}
+
 /**
  * Search UniProt for entries matching a gene, returning multiple results.
  * Tries multiple strategies in order of specificity:
  * 1. Recognized database IDs (Ensembl, RefSeq, CCDS, HGNC) via xref search
- * 2. Gene name search
+ * 2. Gene name search (fallback if no reviewed entries found)
  */
 export async function searchUniProtEntries({
   recognizedIds = [],
@@ -103,72 +127,29 @@ export async function searchUniProtEntries({
   geneId?: string
   geneName?: string
   organismId?: number
-}): Promise<UniProtEntry[]> {
-  const entries: UniProtEntry[] = []
-  const seenAccessions = new Set<string>()
-
-  const addEntries = (newEntries: UniProtEntry[]) => {
-    for (const entry of newEntries) {
-      if (!seenAccessions.has(entry.accession)) {
-        seenAccessions.add(entry.accession)
-        entries.push(entry)
-      }
-    }
-  }
-
-  // Strategy 1: Search by recognized database IDs (most specific)
-  for (const id of recognizedIds) {
-    const query = buildXrefQuery(id)
-    if (query) {
-      try {
-        const results = await searchUniProt(query)
-        addEntries(results)
-        if (results.some(e => e.isReviewed)) {
-          break
-        }
-      } catch {
-        // xref search failed, continue to next ID
-      }
-    }
-  }
-
-  // Strategy 2: Try legacy gene_id if it looks like a recognized database ID
+}) {
+  // Collect all IDs to search, including legacy geneId if applicable
+  const idsToSearch = new Set(recognizedIds)
   const strippedGeneId = geneId ? stripTrailingVersion(geneId) : undefined
-  if (
-    strippedGeneId &&
-    isRecognizedDatabaseId(strippedGeneId) &&
-    !recognizedIds.includes(strippedGeneId)
-  ) {
-    const query = buildXrefQuery(strippedGeneId)
-    if (query) {
-      try {
-        addEntries(await searchUniProt(query))
-      } catch {
-        // xref search failed
-      }
-    }
+  if (strippedGeneId && isRecognizedDatabaseId(strippedGeneId)) {
+    idsToSearch.add(strippedGeneId)
   }
 
-  // Strategy 3: If no reviewed entries found, try gene name search
+  // Search all xrefs in parallel
+  const xrefResults = await Promise.all([...idsToSearch].map(searchByXref))
+  let entries = deduplicateEntries(xrefResults.flat())
+
+  // Fallback: if no reviewed entries found, try gene name search
   if (!entries.some(e => e.isReviewed) && geneName) {
     try {
       const query = `gene:${geneName}+AND+organism_id:${organismId}+AND+reviewed:true`
-      addEntries(await searchUniProt(query, 5))
-    } catch {
-      // gene name search failed
+      const geneNameResults = await searchUniProt(query, 5)
+      entries = deduplicateEntries([...entries, ...geneNameResults])
+    } catch (e) {
+      console.error(`gene name search failed for ${geneName}:`, e)
     }
   }
 
   // Sort reviewed entries first
-  entries.sort((a, b) => {
-    if (a.isReviewed && !b.isReviewed) {
-      return -1
-    }
-    if (!a.isReviewed && b.isReviewed) {
-      return 1
-    }
-    return 0
-  })
-
-  return entries
+  return entries.toSorted((a, b) => Number(b.isReviewed) - Number(a.isReviewed))
 }

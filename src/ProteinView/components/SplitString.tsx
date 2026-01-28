@@ -79,6 +79,40 @@ const HoverHighlight = observer(function HoverHighlight({
   )
 })
 
+const RangeHoverHighlight = observer(function RangeHoverHighlight({
+  model,
+  strLength,
+}: {
+  model: JBrowsePluginProteinStructureModel
+  strLength: number
+}) {
+  const { alignmentHoverRange } = model
+  if (!alignmentHoverRange) {
+    return null
+  }
+  const { start, end } = alignmentHoverRange
+  const clampedStart = Math.max(0, start)
+  const clampedEnd = Math.min(strLength - 1, end)
+  if (clampedStart > clampedEnd) {
+    return null
+  }
+  const width = (clampedEnd - clampedStart + 1) * CHAR_WIDTH
+
+  return (
+    <span
+      style={{
+        position: 'absolute',
+        left: clampedStart * CHAR_WIDTH,
+        top: 0,
+        width,
+        height: '100%',
+        background: 'rgba(255, 165, 0, 0.4)',
+        pointerEvents: 'none',
+      }}
+    />
+  )
+})
+
 const SplitString = observer(function SplitString({
   model,
   str,
@@ -135,6 +169,7 @@ const SplitString = observer(function SplitString({
     >
       <MatchOverlays model={model} />
       <CharacterSpans str={str} />
+      <RangeHoverHighlight model={model} strLength={str.length} />
       <HoverHighlight model={model} strLength={str.length} />
     </span>
   )

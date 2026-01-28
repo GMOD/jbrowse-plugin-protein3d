@@ -143,6 +143,13 @@ const Structure = types
      * Tracks whether this structure has been loaded into Molstar
      */
     loadedToMolstar: false,
+    /**
+     * #volatile
+     * Range of alignment positions to highlight (e.g., when hovering a protein feature)
+     */
+    alignmentHoverRange: undefined as
+      | { start: number; end: number }
+      | undefined,
   }))
   .actions(self => ({
     setSequences(str?: string[]) {
@@ -198,6 +205,18 @@ const Structure = types
      */
     clearHoverGenomeHighlights() {
       self.hoverGenomeHighlights = []
+    },
+    /**
+     * #action
+     */
+    setAlignmentHoverRange(range?: { start: number; end: number }) {
+      self.alignmentHoverRange = range
+    },
+    /**
+     * #action
+     */
+    clearAlignmentHoverRange() {
+      self.alignmentHoverRange = undefined
     },
     /**
      * #action
