@@ -12,7 +12,7 @@ import {
   ProteinFeatureTrackContent,
   ProteinFeatureTrackLabels,
 } from './ProteinFeatureTrack'
-import SplitString from './SplitString'
+import SplitString, { AlignmentHighlights } from './SplitString'
 
 const ProteinAlignment = observer(function ProteinAlignment({
   model,
@@ -151,7 +151,15 @@ const ProteinAlignment = observer(function ProteinAlignment({
             backgroundColor: 'white',
           }}
         >
-          <div onMouseLeave={handleContainerMouseLeave}>
+          <div
+            onMouseLeave={handleContainerMouseLeave}
+            style={{ position: 'relative' }}
+          >
+            <AlignmentHighlights
+              model={model}
+              strLength={a0.length}
+              height={ROW_HEIGHT * 3}
+            />
             <div style={{ height: ROW_HEIGHT }}>
               <SplitString model={model} str={a0} />
             </div>

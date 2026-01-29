@@ -72,16 +72,17 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           hasProteinSequence={!!state.userSelectedProteinSequence?.seq}
           sequenceSearchType={state.sequenceSearchType}
           onSequenceSearchTypeChange={state.setSequenceSearchType}
+          endContent={
+            state.showIdentifierSelector ? (
+              <IdentifierSelector
+                recognizedIds={state.recognizedIds}
+                geneName={state.geneName}
+                selectedId={state.selectedQueryId}
+                onSelectedIdChange={state.setSelectedQueryId}
+              />
+            ) : null
+          }
         />
-
-        {state.showIdentifierSelector && (
-          <IdentifierSelector
-            recognizedIds={state.recognizedIds}
-            geneName={state.geneName}
-            selectedId={state.selectedQueryId}
-            onSelectedIdChange={state.setSelectedQueryId}
-          />
-        )}
 
         {state.loadingStatuses.map(status => (
           <LoadingEllipses key={status} variant="subtitle2" message={status} />

@@ -160,17 +160,9 @@ const Structure = types
       | undefined,
     /**
      * #volatile
-     * The currently selected protein feature (for persistent highlight)
+     * The uniqueId of the currently selected protein feature (for persistent highlight)
      */
-    selectedFeature: undefined as
-      | {
-          start: number
-          end: number
-          type: string
-          description: string
-          id?: string
-        }
-      | undefined,
+    selectedFeatureId: undefined as string | undefined,
     /**
      * #volatile
      * Set of feature track types that are hidden
@@ -279,20 +271,14 @@ const Structure = types
     /**
      * #action
      */
-    setSelectedFeature(feature?: {
-      start: number
-      end: number
-      type: string
-      description: string
-      id?: string
-    }) {
-      self.selectedFeature = feature
+    setSelectedFeatureId(uniqueId?: string) {
+      self.selectedFeatureId = uniqueId
     },
     /**
      * #action
      */
-    clearSelectedFeature() {
-      self.selectedFeature = undefined
+    clearSelectedFeatureId() {
+      self.selectedFeatureId = undefined
     },
     /**
      * #action
@@ -609,8 +595,8 @@ const Structure = types
     clickAlignmentPosition(alignmentPos: number) {
       const structureSeqPos =
         self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      self.clearClickAlignmentRange()
-      self.clearSelectedFeature()
+      self.clearSelectedFeatureId()
+      self.setClickAlignmentRange({ start: alignmentPos, end: alignmentPos })
       if (structureSeqPos !== undefined) {
         clickProteinToGenome({
           model: self as JBrowsePluginProteinStructureModel,
@@ -719,7 +705,7 @@ const Structure = types
                     const locationInfo = extractLocationInfo(loc)
                     self.setHoveredPosition(locationInfo)
                     self.clearClickAlignmentRange()
-                    self.clearSelectedFeature()
+                    self.clearSelectedFeatureId()
 
                     clickProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,

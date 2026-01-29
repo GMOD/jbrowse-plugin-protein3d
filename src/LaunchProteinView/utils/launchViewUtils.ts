@@ -97,7 +97,7 @@ export function launch3DProteinView({
   alignmentAlgorithm?: string
   displayName?: string
 }) {
-  session.addView('ProteinView', {
+  return session.addView('ProteinView', {
     type: 'ProteinView',
     isFloating: true,
     alignmentAlgorithm,
@@ -154,10 +154,10 @@ export function launchMsaView({
   uniprotId,
 }: LaunchViewParams) {
   if (!uniprotId) {
-    return
+    return undefined
   }
   const msaUrl = getAlphaFoldMsaUrl(uniprotId)
-  session.addView('MsaView', {
+  return session.addView('MsaView', {
     type: 'MsaView',
     displayName: [
       ...new Set([
@@ -199,7 +199,7 @@ export function launch3DProteinViewWithMsa({
   displayName?: string
 }) {
   if (!uniprotId) {
-    return
+    return undefined
   }
 
   const msaUrl = getAlphaFoldMsaUrl(uniprotId)
@@ -224,7 +224,7 @@ export function launch3DProteinViewWithMsa({
   })
 
   // Launch 3D protein view with reference to MSA view
-  session.addView('ProteinView', {
+  return session.addView('ProteinView', {
     type: 'ProteinView',
     isFloating: true,
     alignmentAlgorithm,

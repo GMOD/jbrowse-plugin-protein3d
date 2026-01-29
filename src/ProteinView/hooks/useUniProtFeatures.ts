@@ -6,6 +6,7 @@ export interface UniProtFeature {
   end: number
   description: string
   id?: string
+  uniqueId: string
 }
 
 const featureColors: Record<string, string> = {
@@ -71,12 +72,14 @@ async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
     }
 
     if (type) {
+      const uniqueId = `${type}-${start}-${end}-${features.length}`
       features.push({
         type,
         start,
         end,
         description,
         id,
+        uniqueId,
       })
     }
   }

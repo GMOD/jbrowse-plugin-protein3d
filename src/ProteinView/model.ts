@@ -2,6 +2,7 @@ import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, types } from '@jbrowse/mobx-state-tree'
 import Visibility from '@mui/icons-material/Visibility'
+import SettingsIcon from '@mui/icons-material/Settings'
 import { autorun } from 'mobx'
 
 import { addStructureFromData } from './addStructureFromData'
@@ -473,6 +474,7 @@ function stateModelFactory() {
           },
           {
             label: 'Settings...',
+            icon: SettingsIcon,
             subMenu: [
               {
                 label: 'Zoom to base level on click',

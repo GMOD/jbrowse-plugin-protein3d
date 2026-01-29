@@ -56,7 +56,6 @@ export default function ProteinViewActions({
   sequencesMatch,
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
-
   const isLaunchDisabled =
     !uniprotId || !userSelectedProteinSequence || !selectedTranscript
 
@@ -75,6 +74,7 @@ export default function ProteinViewActions({
       userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
       alignmentAlgorithm,
     })
+
     handleClose()
   }
 
@@ -111,6 +111,7 @@ export default function ProteinViewActions({
       selectedTranscript,
       uniprotId,
     })
+
     handleClose()
   }
 
@@ -129,6 +130,7 @@ export default function ProteinViewActions({
       userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
       alignmentAlgorithm,
     })
+
     handleClose()
   }
 

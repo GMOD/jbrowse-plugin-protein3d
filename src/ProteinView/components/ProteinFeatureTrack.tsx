@@ -3,7 +3,15 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { CHAR_WIDTH, TRACK_GAP, TRACK_HEIGHT } from '../constants'
+import {
+  CHAR_WIDTH,
+  HIDE_BUTTON_COLOR,
+  HOVERED_BORDER,
+  HOVER_MARKER_COLOR,
+  SELECTED_BORDER,
+  TRACK_GAP,
+  TRACK_HEIGHT,
+} from '../constants'
 import highlightResidueRange, {
   selectResidueRange,
 } from '../highlightResidueRange'
@@ -14,6 +22,34 @@ import {
   clickProteinToGenome,
   proteinRangeToGenomeMapping,
 } from '../proteinToGenomeMapping'
+
+function getVisibleTypes(
+  featureTypes: string[],
+  hiddenFeatureTypes: Set<string>,
+) {
+  return featureTypes.filter(type => !hiddenFeatureTypes.has(type))
+}
+
+function getFeatureGeometry(feature: UniProtFeature) {
+  return {
+    left: (feature.start - 1) * CHAR_WIDTH,
+    width: Math.max((feature.end - feature.start + 1) * CHAR_WIDTH, 3),
+  }
+}
+
+function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
+  return (
+    <div>
+      <div>
+        <strong>{feature.type}</strong>
+      </div>
+      <div>
+        Position: {feature.start}-{feature.end}
+      </div>
+      {feature.description ? <div>{feature.description}</div> : null}
+    </div>
+  )
+}
 
 const FeatureBar = observer(function FeatureBar({
   feature,
@@ -27,35 +63,12 @@ const FeatureBar = observer(function FeatureBar({
     genomeToTranscriptSeqMapping,
     connectedView,
     molstarPluginContext,
-    selectedFeature,
+    selectedFeatureId,
+    structurePositionToAlignmentMap,
   } = model
-  const isSelected =
-    selectedFeature?.start === feature.start &&
-    selectedFeature.end === feature.end &&
-    selectedFeature.type === feature.type &&
-    selectedFeature.description === feature.description &&
-    selectedFeature.id === feature.id
-
-  const highlightGenomeRange = () => {
-    const { refName } = genomeToTranscriptSeqMapping ?? {}
-    const assemblyName = connectedView?.assemblyNames[0]
-    if (!refName || !assemblyName) {
-      return
-    }
-    const result = proteinRangeToGenomeMapping({
-      model,
-      structureSeqPos: feature.start - 1,
-      structureSeqEndPos: feature.end,
-    })
-    if (result) {
-      model.setHoverGenomeHighlights([
-        { assemblyName, refName, start: result[0], end: result[1] },
-      ])
-    }
-  }
+  const isSelected = selectedFeatureId === feature.uniqueId
 
   const getAlignmentRange = () => {
-    const { structurePositionToAlignmentMap } = model
     if (!structurePositionToAlignmentMap) {
       return undefined
     }
@@ -78,7 +91,25 @@ const FeatureBar = observer(function FeatureBar({
         plugin: molstarPluginContext,
       })
     }
-    highlightGenomeRange()
+    const { refName } = genomeToTranscriptSeqMapping ?? {}
+    const assemblyName = connectedView?.assemblyNames[0]
+    if (refName && assemblyName) {
+      const result = proteinRangeToGenomeMapping({
+        model,
+        structureSeqPos: feature.start - 1,
+        structureSeqEndPos: feature.end,
+      })
+      if (result) {
+        model.setHoverGenomeHighlights([
+          {
+            assemblyName,
+            refName,
+            start: result[0],
+            end: result[1],
+          },
+        ])
+      }
+    }
     const range = getAlignmentRange()
     if (range) {
       model.setAlignmentHoverRange(range)
@@ -110,13 +141,7 @@ const FeatureBar = observer(function FeatureBar({
     }
 
     if (newSelected) {
-      model.setSelectedFeature({
-        start: feature.start,
-        end: feature.end,
-        type: feature.type,
-        description: feature.description,
-        id: feature.id,
-      })
+      model.setSelectedFeatureId(feature.uniqueId)
       const range = getAlignmentRange()
       if (range) {
         model.setClickAlignmentRange(range)
@@ -129,30 +154,17 @@ const FeatureBar = observer(function FeatureBar({
         console.error(e)
       })
     } else {
-      model.clearSelectedFeature()
+      model.clearSelectedFeatureId()
       model.clearClickAlignmentRange()
       model.clearClickGenomeHighlights()
     }
   }
 
-  const left = (feature.start - 1) * CHAR_WIDTH
-  const width = Math.max((feature.end - feature.start + 1) * CHAR_WIDTH, 3)
+  const { left, width } = getFeatureGeometry(feature)
   const color = getFeatureColor(feature.type)
 
   return (
-    <Tooltip
-      title={
-        <div>
-          <div>
-            <strong>{feature.type}</strong>
-          </div>
-          <div>
-            Position: {feature.start}-{feature.end}
-          </div>
-          {feature.description ? <div>{feature.description}</div> : null}
-        </div>
-      }
-    >
+    <Tooltip title={<FeatureTooltipContent feature={feature} />}>
       <div
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
@@ -168,9 +180,9 @@ const FeatureBar = observer(function FeatureBar({
           cursor: 'pointer',
           borderRadius: 2,
           border: isSelected
-            ? '2px solid #333'
+            ? SELECTED_BORDER
             : isHovered
-              ? '1px solid black'
+              ? HOVERED_BORDER
               : 'none',
           boxSizing: 'border-box',
         }}
@@ -206,7 +218,7 @@ const HoverMarker = observer(function HoverMarker({
         top: 0,
         bottom: 0,
         width: CHAR_WIDTH,
-        backgroundColor: 'rgba(255, 105, 180, 0.5)',
+        backgroundColor: HOVER_MARKER_COLOR,
         pointerEvents: 'none',
         zIndex: 10,
       }}
@@ -249,7 +261,7 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
           }}
           style={{
             cursor: 'pointer',
-            color: '#999',
+            color: HIDE_BUTTON_COLOR,
             fontWeight: 'bold',
             fontSize: 8,
             lineHeight: 1,
@@ -286,12 +298,8 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
         marginBottom: TRACK_GAP,
       }}
     >
-      {features.map((feature, idx) => (
-        <FeatureBar
-          key={`${feature.type}-${feature.start}-${feature.end}-${idx}`}
-          feature={feature}
-          model={model}
-        />
+      {features.map(feature => (
+        <FeatureBar key={feature.uniqueId} feature={feature} model={model} />
       ))}
       <HoverMarker model={model} />
     </div>
@@ -309,9 +317,7 @@ export const ProteinFeatureTrackLabels = observer(
     model: JBrowsePluginProteinStructureModel
   }) {
     const { hiddenFeatureTypes } = model
-    const visibleTypes = data.featureTypes.filter(
-      type => !hiddenFeatureTypes.has(type),
-    )
+    const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
     return (
       <>
         {visibleTypes.map(type => (
@@ -336,9 +342,7 @@ export const ProteinFeatureTrackContent = observer(
     model: JBrowsePluginProteinStructureModel
   }) {
     const { hiddenFeatureTypes } = model
-    const visibleTypes = data.featureTypes.filter(
-      type => !hiddenFeatureTypes.has(type),
-    )
+    const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
     return (
       <>
         {visibleTypes.map(type => (

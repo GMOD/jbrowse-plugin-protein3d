@@ -113,6 +113,8 @@ export async function clickProteinToGenome({
   if (zoomToBaseLevel) {
     await connectedView.navToLocString(
       `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
+      undefined,
+      0.2,
     )
   } else {
     const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)

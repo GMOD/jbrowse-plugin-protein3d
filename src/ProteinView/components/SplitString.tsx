@@ -28,8 +28,10 @@ const CharacterSpans = observer(function CharacterSpans({
 
 const MatchOverlays = observer(function MatchOverlays({
   model,
+  height,
 }: {
   model: JBrowsePluginProteinStructureModel
+  height: number
 }) {
   const { showHighlight, alignmentMatchSet } = model
   return !showHighlight || !alignmentMatchSet
@@ -42,7 +44,7 @@ const MatchOverlays = observer(function MatchOverlays({
             left: i * CHAR_WIDTH,
             top: 0,
             width: CHAR_WIDTH,
-            height: '100%',
+            height,
             background: '#33ff19a0',
             pointerEvents: 'none',
           }}
@@ -53,9 +55,11 @@ const MatchOverlays = observer(function MatchOverlays({
 const HoverHighlight = observer(function HoverHighlight({
   model,
   strLength,
+  height,
 }: {
   model: JBrowsePluginProteinStructureModel
   strLength: number
+  height: number
 }) {
   const { alignmentHoverPos } = model
   const showHoverHighlight =
@@ -70,7 +74,7 @@ const HoverHighlight = observer(function HoverHighlight({
         left: alignmentHoverPos * CHAR_WIDTH,
         top: 0,
         width: CHAR_WIDTH,
-        height: '100%',
+        height,
         background: '#f698',
         pointerEvents: 'none',
       }}
@@ -83,11 +87,13 @@ const RangeHighlight = observer(function RangeHighlight({
   strLength,
   background,
   border,
+  height,
 }: {
   range: { start: number; end: number } | undefined
   strLength: number
   background: string
   border?: string
+  height: number
 }) {
   if (!range) {
     return null
@@ -107,13 +113,52 @@ const RangeHighlight = observer(function RangeHighlight({
         left: clampedStart * CHAR_WIDTH,
         top: 0,
         width,
-        height: '100%',
+        height,
         background,
         border,
         boxSizing: 'border-box',
         pointerEvents: 'none',
       }}
     />
+  )
+})
+
+export const AlignmentHighlights = observer(function AlignmentHighlights({
+  model,
+  strLength,
+  height,
+}: {
+  model: JBrowsePluginProteinStructureModel
+  strLength: number
+  height: number
+}) {
+  return (
+    <div
+      style={{
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        width: strLength * CHAR_WIDTH,
+        height,
+        pointerEvents: 'none',
+      }}
+    >
+      <MatchOverlays model={model} height={height} />
+      <RangeHighlight
+        range={model.clickAlignmentRange}
+        strLength={strLength}
+        background="rgba(0, 120, 255, 0.3)"
+        border="1px solid rgba(0, 120, 255, 0.6)"
+        height={height}
+      />
+      <RangeHighlight
+        range={model.alignmentHoverRange}
+        strLength={strLength}
+        background="rgba(255, 165, 0, 0.4)"
+        height={height}
+      />
+      <HoverHighlight model={model} strLength={strLength} height={height} />
+    </div>
   )
 })
 
@@ -171,20 +216,7 @@ const SplitString = observer(function SplitString({
       onMouseMove={handleMouseMove}
       onClick={handleClick}
     >
-      <MatchOverlays model={model} />
       <CharacterSpans str={str} />
-      <RangeHighlight
-        range={model.clickAlignmentRange}
-        strLength={str.length}
-        background="rgba(0, 120, 255, 0.3)"
-        border="1px solid rgba(0, 120, 255, 0.6)"
-      />
-      <RangeHighlight
-        range={model.alignmentHoverRange}
-        strLength={str.length}
-        background="rgba(255, 165, 0, 0.4)"
-      />
-      <HoverHighlight model={model} strLength={str.length} />
     </span>
   )
 })

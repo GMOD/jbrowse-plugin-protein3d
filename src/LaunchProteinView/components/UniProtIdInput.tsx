@@ -24,6 +24,7 @@ interface UniProtIdInputProps {
   hasProteinSequence?: boolean
   sequenceSearchType?: SequenceSearchType
   onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
+  endContent?: React.ReactNode
 }
 
 /**
@@ -38,43 +39,47 @@ export default function UniProtIdInput({
   hasProteinSequence,
   sequenceSearchType,
   onSequenceSearchTypeChange,
+  endContent,
 }: UniProtIdInputProps) {
   return (
     <>
-      <FormControl component="fieldset">
-        <RadioGroup
-          row
-          value={lookupMode}
-          onChange={event => {
-            onLookupModeChange(event.target.value as LookupMode)
-          }}
-        >
-          {featureUniprotId && (
+      <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+        <FormControl component="fieldset">
+          <RadioGroup
+            row
+            value={lookupMode}
+            onChange={event => {
+              onLookupModeChange(event.target.value as LookupMode)
+            }}
+          >
+            {featureUniprotId && (
+              <FormControlLabel
+                value="feature"
+                control={<Radio />}
+                label={`From feature (${featureUniprotId})`}
+              />
+            )}
             <FormControlLabel
-              value="feature"
+              value="auto"
               control={<Radio />}
-              label={`From feature (${featureUniprotId})`}
+              label="Auto-detect using UniProt ID mapping API"
             />
-          )}
-          <FormControlLabel
-            value="auto"
-            control={<Radio />}
-            label="Auto-detect using UniProt ID mapping API"
-          />
-          <FormControlLabel
-            value="manual"
-            control={<Radio />}
-            label="Enter manually"
-          />
-          {hasProteinSequence && (
             <FormControlLabel
-              value="sequence"
+              value="manual"
               control={<Radio />}
-              label="Search sequence against AlphaFoldDB API"
+              label="Enter manually"
             />
-          )}
-        </RadioGroup>
-      </FormControl>
+            {hasProteinSequence && (
+              <FormControlLabel
+                value="sequence"
+                control={<Radio />}
+                label="Search sequence against AlphaFoldDB API"
+              />
+            )}
+          </RadioGroup>
+        </FormControl>
+        {endContent}
+      </div>
 
       {lookupMode === 'manual' && (
         <div>
