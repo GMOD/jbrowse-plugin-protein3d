@@ -763,7 +763,11 @@ const Structure = types
             molstarPluginContext,
             molstarStructure,
           } = self
-          if (molstarStructure && structureSeqToTranscriptSeqPosition) {
+          if (
+            molstarStructure &&
+            molstarPluginContext &&
+            structureSeqToTranscriptSeqPosition
+          ) {
             if (showHighlight) {
               for (const coord of Object.keys(
                 structureSeqToTranscriptSeqPosition,
