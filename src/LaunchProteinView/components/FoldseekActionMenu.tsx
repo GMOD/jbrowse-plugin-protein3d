@@ -42,7 +42,6 @@ export default function FoldseekActionMenu({
   const open = Boolean(anchorEl)
 
   const uniprotId = getUniprotIdFromAlphaFoldTarget(hit.target)
-  const isAlphaFold = hit.target.startsWith('AF-')
 
   const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(event.currentTarget)
@@ -114,7 +113,7 @@ export default function FoldseekActionMenu({
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
         <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
-        {isAlphaFold && uniprotId ? (
+        {uniprotId ? (
           <MenuItem
             onClick={() => {
               handleLaunch1D().catch((e: unknown) => {
@@ -125,7 +124,7 @@ export default function FoldseekActionMenu({
             Launch 1D protein annotation view
           </MenuItem>
         ) : null}
-        {isAlphaFold && uniprotId && hasMsaViewPlugin() ? (
+        {uniprotId && hasMsaViewPlugin() ? (
           <MenuItem onClick={handleLaunchMSA}>
             Launch MSA view (AlphaFoldDB a3m)
           </MenuItem>

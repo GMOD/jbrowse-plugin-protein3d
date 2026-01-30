@@ -17,16 +17,9 @@ import {
 } from 'molstar/lib/mol-model/structure'
 import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-import { runLocalAlignment } from './pairwiseAlignment'
-import {
-  PairwiseAlignment,
-  genomeToTranscriptSeqMapping,
-  structurePositionToAlignmentMap,
-  structureSeqVsTranscriptSeqMap,
-  transcriptPositionToAlignmentMap,
-} from '../mappings'
 import clearSelection from './clearSelection'
 import highlightResidue from './highlightResidue'
+import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
@@ -35,7 +28,15 @@ import {
 import selectResidue from './selectResidue'
 import { AlignmentAlgorithm } from './types'
 import { checkHovered, invertMap, toStr } from './util'
+import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
+import {
+  PairwiseAlignment,
+  genomeToTranscriptSeqMapping,
+  structurePositionToAlignmentMap,
+  structureSeqVsTranscriptSeqMap,
+  transcriptPositionToAlignmentMap,
+} from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -319,12 +320,7 @@ const Structure = types
       if (!url) {
         return undefined
       }
-      // AlphaFold URLs: https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v6.cif
-      const match = /AF-([A-Z0-9]+)-F\d+/.exec(url)
-      if (match) {
-        return match[1]
-      }
-      return undefined
+      return getUniprotIdFromAlphaFoldTarget(url)
     },
     /**
      * #getter
