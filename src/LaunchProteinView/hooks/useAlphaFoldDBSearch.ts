@@ -45,7 +45,6 @@ export default function useAlphaFoldDBSearch({
     f => getId(f) === userSelection,
   )
 
-  // Load isoform protein sequences
   const {
     isoformSequences,
     isLoading: isIsoformLoading,
@@ -261,5 +260,6 @@ export default function useAlphaFoldDBSearch({
     showSequenceSearchStatus: lookupMode === 'sequence',
     showAlphaFoldDBSearchStatus:
       !!structureSequence && !!uniprotId && lookupMode !== 'sequence',
+    isLoading: loadingStatuses.length > 0,
   }
 }

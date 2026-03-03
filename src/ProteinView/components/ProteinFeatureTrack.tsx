@@ -37,6 +37,7 @@ function getFeatureGeometry(feature: UniProtFeature) {
   }
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
   return (
     <div>
@@ -89,6 +90,8 @@ const FeatureBar = observer(function FeatureBar({
         startResidue: feature.start,
         endResidue: feature.end,
         plugin: molstarPluginContext,
+      }).catch((e: unknown) => {
+        console.error(e)
       })
     }
     const { refName } = genomeToTranscriptSeqMapping ?? {}
@@ -134,6 +137,8 @@ const FeatureBar = observer(function FeatureBar({
           startResidue: feature.start,
           endResidue: feature.end,
           plugin: molstarPluginContext,
+        }).catch((e: unknown) => {
+          console.error(e)
         })
       } else {
         molstarPluginContext.managers.interactivity.lociSelects.deselectAll()

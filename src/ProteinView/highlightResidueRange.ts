@@ -1,13 +1,9 @@
-import { Structure, StructureSelection } from 'molstar/lib/mol-model/structure'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
-import {
-  clearStructureOverpaint,
-  setStructureOverpaint,
-} from 'molstar/lib/mol-plugin-state/helpers/structure-overpaint'
-import { Script } from 'molstar/lib/mol-script/script'
-import { Color } from 'molstar/lib/mol-util/color'
+import loadMolstar from './loadMolstar'
 
-export function getMolstarRangeSelection({
+import type { Structure } from 'molstar/lib/mol-model/structure'
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+
+async function getMolstarRangeSelection({
   structure,
   startResidue,
   endResidue,
@@ -16,6 +12,7 @@ export function getMolstarRangeSelection({
   startResidue: number
   endResidue: number
 }) {
+  const { Script } = await loadMolstar()
   return Script.getStructureSelection(
     Q =>
       Q.struct.generator.atomGroups({
@@ -35,7 +32,7 @@ export function getMolstarRangeSelection({
   )
 }
 
-export default function highlightResidueRange({
+export default async function highlightResidueRange({
   structure,
   startResidue,
   endResidue,
@@ -46,7 +43,8 @@ export default function highlightResidueRange({
   endResidue: number
   plugin: PluginContext
 }) {
-  const sel = getMolstarRangeSelection({
+  const { StructureSelection } = await loadMolstar()
+  const sel = await getMolstarRangeSelection({
     structure,
     startResidue,
     endResidue,
@@ -56,7 +54,7 @@ export default function highlightResidueRange({
   plugin.managers.interactivity.lociHighlights.highlight({ loci })
 }
 
-export function selectResidueRange({
+export async function selectResidueRange({
   structure,
   startResidue,
   endResidue,
@@ -67,7 +65,8 @@ export function selectResidueRange({
   endResidue: number
   plugin: PluginContext
 }) {
-  const sel = getMolstarRangeSelection({
+  const { StructureSelection } = await loadMolstar()
+  const sel = await getMolstarRangeSelection({
     structure,
     startResidue,
     endResidue,
@@ -78,8 +77,7 @@ export function selectResidueRange({
 }
 
 export function hexToMolstarColor(hex: string) {
-  const cleanHex = hex.replace('#', '')
-  return Color(parseInt(cleanHex, 16))
+  return parseInt(hex.replace('#', ''), 16)
 }
 
 export async function overpaintResidueRange({
@@ -93,14 +91,16 @@ export async function overpaintResidueRange({
   plugin: PluginContext
   color: string
 }) {
+  const { StructureSelection, setStructureOverpaint, Color } =
+    await loadMolstar()
   const structureRef = plugin.managers.structure.hierarchy.current.structures[0]
   if (structureRef) {
     await setStructureOverpaint(
       plugin,
       structureRef.components,
-      hexToMolstarColor(color),
-      async structure => {
-        const sel = getMolstarRangeSelection({
+      Color(parseInt(color.replace('#', ''), 16)),
+      async (structure: Structure) => {
+        const sel = await getMolstarRangeSelection({
           structure,
           startResidue,
           endResidue,
@@ -112,6 +112,7 @@ export async function overpaintResidueRange({
 }
 
 export async function clearOverpaint(plugin: PluginContext) {
+  const { clearStructureOverpaint } = await loadMolstar()
   const structureRef = plugin.managers.structure.hierarchy.current.structures[0]
   if (structureRef) {
     await clearStructureOverpaint(plugin, structureRef.components)

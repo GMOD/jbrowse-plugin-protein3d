@@ -40,9 +40,11 @@ export function getPdbStructureUrl(pdbId: string) {
 }
 
 export function getUniprotIdFromAlphaFoldTarget(target: string) {
-  // Extract UniProt ID from AlphaFold target: "AF-P16442-F1-model_v6" -> "P16442"
+  // Extract UniProt ID from AlphaFold target or URL
+  // Handles both "AF-P16442-F1-model_v6" and full URLs like
+  // "https://alphafold.ebi.ac.uk/files/AF-P16442-F1-model_v6.cif"
   const targetId = target.split(' ')[0] ?? target
-  const match = /^AF-([A-Z0-9]+)-F\d+/.exec(targetId)
+  const match = /AF-([A-Z0-9]+)-F\d+/.exec(targetId)
   return match?.[1]
 }
 

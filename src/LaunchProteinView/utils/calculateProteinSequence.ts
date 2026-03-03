@@ -72,8 +72,9 @@ export function getProteinSequence({
     type: string
     subfeatures: { start: number; end: number; type: string }[]
   }
+  const subfeatures = f.subfeatures
   const cds = dedupe(
-    f.subfeatures
+    subfeatures
       .toSorted((a, b) => a.start - b.start)
       .map(sub => ({
         ...sub,

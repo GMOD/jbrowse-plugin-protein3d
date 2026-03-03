@@ -1,17 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
 
-// molstar
-import { GeometryExport } from 'molstar/lib/extensions/geo-export'
-import { PluginConfig } from 'molstar/lib/mol-plugin/config'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
-import { PluginSpec } from 'molstar/lib/mol-plugin/spec'
-import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
-import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
-import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
+import loadMolstar from './loadMolstar'
 
-export const ExtensionMap = {
-  'geo-export': PluginSpec.Behavior(GeometryExport),
-}
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export default function useProteinView({
   showControls,
@@ -21,6 +12,7 @@ export default function useProteinView({
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
   const [error, setError] = useState<unknown>()
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     let p: PluginContext | undefined
@@ -30,6 +22,15 @@ export default function useProteinView({
         if (!parentRef.current) {
           return
         }
+        const {
+          GeometryExport,
+          PluginConfig,
+          PluginSpec,
+          DefaultPluginUISpec,
+          createPluginUI,
+          renderReact18,
+        } = await loadMolstar()
+
         const d = document.createElement('div')
         parentRef.current.append(d)
         const defaultSpec = DefaultPluginUISpec()
@@ -38,7 +39,6 @@ export default function useProteinView({
           render: renderReact18,
           spec: {
             ...DefaultPluginUISpec(),
-            // extensions: Object.keys(ExtensionMap),
             behaviors: [
               ...defaultSpec.behaviors,
               PluginSpec.Behavior(GeometryExport),
@@ -57,6 +57,8 @@ export default function useProteinView({
       } catch (e) {
         console.error(e)
         setError(e)
+      } finally {
+        setLoading(false)
       }
     })()
     return () => {
@@ -64,5 +66,5 @@ export default function useProteinView({
     }
   }, [showControls])
 
-  return { parentRef, error, plugin }
+  return { parentRef, error, plugin, loading }
 }

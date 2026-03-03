@@ -8,10 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 20.x
+      - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
       - name: Install deps (with cache)
         uses: bahmutov/npm-install@v1
       - name: Build
@@ -31,10 +31,10 @@ jobs:
         jbrowse-version: [v3.7.0, nightly]
     steps:
       - uses: actions/checkout@v4
-      - name: Use Node.js 20.x
+      - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
-          node-version: 20.x
+          node-version: 22.x
       - name: Install deps (with cache)
         uses: bahmutov/npm-install@v1
       - name: Install JBrowse CLI

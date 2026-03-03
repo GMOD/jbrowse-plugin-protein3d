@@ -123,6 +123,7 @@ const RangeHighlight = observer(function RangeHighlight({
   )
 })
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const AlignmentHighlights = observer(function AlignmentHighlights({
   model,
   strLength,

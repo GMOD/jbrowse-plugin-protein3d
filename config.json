@@ -77,19 +77,7 @@
           "locationType": "UriLocation"
         }
       },
-      "assemblyNames": ["hg38"],
-      "displays": [
-        {
-          "type": "LinearBasicDisplay",
-          "displayId": "genes_with_uniprot_linear",
-          "renderer": {
-            "type": "SvgFeatureRenderer",
-            "labels": {
-              "name": "jexl:get(feature,'name') || get(feature,'gene_name')"
-            }
-          }
-        }
-      ]
+      "assemblyNames": ["hg38"]
     },
     {
       "type": "FeatureTrack",
@@ -110,19 +98,7 @@
           "indexType": "TBI"
         }
       },
-      "assemblyNames": ["hg38"],
-      "displays": [
-        {
-          "type": "LinearBasicDisplay",
-          "displayId": "gencode_nclist_v36_hg38_linear",
-          "renderer": {
-            "type": "SvgFeatureRenderer",
-            "labels": {
-              "name": "jexl:get(feature,'gene_name')"
-            }
-          }
-        }
-      ]
+      "assemblyNames": ["hg38"]
     }
   ],
   "aggregateTextSearchAdapters": [

@@ -11,14 +11,10 @@ import {
   types,
 } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
-import {
-  StructureElement,
-  StructureProperties,
-} from 'molstar/lib/mol-model/structure'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 import clearSelection from './clearSelection'
 import highlightResidue from './highlightResidue'
+import loadMolstar from './loadMolstar'
 import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
@@ -39,6 +35,7 @@ import {
 } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined
@@ -56,18 +53,18 @@ export interface ParentProteinView {
   setError: (e: unknown) => void
 }
 
-/**
- * Extracts position information from a MolStar structure location
- * @returns Object with 0-based position, residue code, and chain ID
- */
-function extractLocationInfo(location: StructureElement.Location) {
-  const pos = StructureProperties.residue.auth_seq_id(location)
-  const code = StructureProperties.atom.label_comp_id(location)
-  const chain = StructureProperties.chain.auth_asym_id(location)
+function extractLocationInfo(
+  molstar: Awaited<ReturnType<typeof loadMolstar>>,
+  location: ReturnType<
+    (typeof molstar.StructureElement.Loci)['getFirstLocation']
+  > &
+    object,
+) {
   return {
-    structureSeqPos: pos - 1, // Convert to 0-based
-    code,
-    chain,
+    structureSeqPos:
+      molstar.StructureProperties.residue.auth_seq_id(location) - 1,
+    code: molstar.StructureProperties.atom.label_comp_id(location),
+    chain: molstar.StructureProperties.chain.auth_asym_id(location),
   }
 }
 
@@ -391,22 +388,18 @@ const Structure = types
       const genomeLetter = this.hoverGenomeLetter
       const parts = []
 
-      // Position (1-based)
       if (r.structureSeqPos !== undefined) {
         parts.push(`Position: ${r.structureSeqPos + 1}`)
       }
 
-      // Structure letter
       if (structureLetter) {
         parts.push(`Structure: ${structureLetter}`)
       }
 
-      // Genome letter (only if different from structure)
       if (genomeLetter && structureLetter && genomeLetter !== structureLetter) {
         parts.push(`Genome: ${genomeLetter}`)
       }
 
-      // Chain (if available from Molstar)
       if (r.chain) {
         parts.push(`Chain: ${r.chain}`)
       }
@@ -443,12 +436,10 @@ const Structure = types
      * Returns the single-letter amino acid code from the structure at hover position
      */
     get hoverStructureLetter() {
-      // Use 3-letter code from Molstar if available (when hovering 3D structure)
       const code = self.hoverPosition?.code
       if (code) {
         return proteinAbbreviationMapping[code]?.singleLetterCode
       }
-      // Fall back to structure sequence (when hovering alignment)
       const structurePos = this.structureSeqHoverPos
       if (structurePos !== undefined && self.structureSequences?.[0]) {
         return self.structureSequences[0][structurePos]
@@ -537,7 +528,6 @@ const Structure = types
      */
     get molstarStructure() {
       const idx = this.structureIndex
-      // Include loadedToMolstar in condition to create MobX dependency for recomputation
       return self.loadedToMolstar && idx >= 0
         ? this.molstarPluginContext?.managers.structure.hierarchy.current
             .structures[idx]?.cell.obj?.data
@@ -548,7 +538,6 @@ const Structure = types
     /**
      * #action
      * Highlight a residue from an external source (e.g., MSA view)
-     * This triggers the visual highlight in Molstar without updating internal state
      */
     highlightFromExternal(structureSeqPos: number) {
       const structure = self.molstarStructure
@@ -558,6 +547,8 @@ const Structure = types
           structure,
           selectedResidue: structureSeqPos,
           plugin,
+        }).catch((e: unknown) => {
+          console.error(e)
         })
       }
     },
@@ -605,7 +596,6 @@ const Structure = types
   }))
   .actions(self => ({
     afterAttach() {
-      // pairwise align transcript sequence to structure residues
       addDisposer(
         self,
         autorun(async () => {
@@ -656,7 +646,6 @@ const Structure = types
         }),
       )
 
-      // convert hover over the genome to structure position
       addDisposer(
         self,
         autorun(() => {
@@ -688,17 +677,18 @@ const Structure = types
 
       addDisposer(
         self,
-        autorun(() => {
+        autorun(async () => {
           const { molstarPluginContext } = self
           if (molstarPluginContext) {
+            const molstar = await loadMolstar()
             const ret =
               molstarPluginContext.behaviors.interaction.click.subscribe(e => {
-                if (StructureElement.Loci.is(e.current.loci)) {
-                  const loc = StructureElement.Loci.getFirstLocation(
+                if (molstar.StructureElement.Loci.is(e.current.loci)) {
+                  const loc = molstar.StructureElement.Loci.getFirstLocation(
                     e.current.loci,
                   )
                   if (loc) {
-                    const locationInfo = extractLocationInfo(loc)
+                    const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
                     self.clearClickAlignmentRange()
                     self.clearSelectedFeatureId()
@@ -723,17 +713,18 @@ const Structure = types
 
       addDisposer(
         self,
-        autorun(() => {
+        autorun(async () => {
           const { molstarPluginContext } = self
           if (molstarPluginContext) {
+            const molstar = await loadMolstar()
             const ret =
               molstarPluginContext.behaviors.interaction.hover.subscribe(e => {
-                if (StructureElement.Loci.is(e.current.loci)) {
-                  const loc = StructureElement.Loci.getFirstLocation(
+                if (molstar.StructureElement.Loci.is(e.current.loci)) {
+                  const loc = molstar.StructureElement.Loci.getFirstLocation(
                     e.current.loci,
                   )
                   if (loc) {
-                    const locationInfo = extractLocationInfo(loc)
+                    const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
                     hoverProteinToGenome({
                       model: self as JBrowsePluginProteinStructureModel,
@@ -752,7 +743,7 @@ const Structure = types
 
       addDisposer(
         self,
-        autorun(() => {
+        autorun(async () => {
           const {
             showHighlight,
             structureSeqToTranscriptSeqPosition,
@@ -768,7 +759,7 @@ const Structure = types
               for (const coord of Object.keys(
                 structureSeqToTranscriptSeqPosition,
               )) {
-                selectResidue({
+                await selectResidue({
                   structure: molstarStructure,
                   plugin: molstarPluginContext,
                   selectedResidue: +coord + 1,
