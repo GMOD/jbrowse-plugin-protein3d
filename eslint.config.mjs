@@ -14,6 +14,7 @@ export default defineConfig(
       'scripts/**/*',
       'test/**/*',
       'eslint.config.mjs',
+      'rollup.config.mjs',
       'esbuild-watch.mjs',
       'esbuild.mjs',
       '.test-jbrowse*',

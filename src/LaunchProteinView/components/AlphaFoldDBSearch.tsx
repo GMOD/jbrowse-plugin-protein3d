@@ -173,6 +173,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           alignmentAlgorithm={alignmentAlgorithm}
           onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
           sequencesMatch={state.sequencesMatch}
+          isLoading={state.isLoading}
         />
       </DialogActions>
     </>

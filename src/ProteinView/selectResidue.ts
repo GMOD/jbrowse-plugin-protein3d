@@ -1,9 +1,10 @@
-import { Structure, StructureSelection } from 'molstar/lib/mol-model/structure'
-import { PluginContext } from 'molstar/lib/mol-plugin/context'
-
+import loadMolstar from './loadMolstar'
 import { getMolstarStructureSelection } from './util'
 
-export default function selectResidue({
+import type { Structure } from 'molstar/lib/mol-model/structure'
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+
+export default async function selectResidue({
   structure,
   selectedResidue,
   plugin,
@@ -12,7 +13,8 @@ export default function selectResidue({
   selectedResidue: number
   plugin: PluginContext
 }) {
-  const sel = getMolstarStructureSelection({ structure, selectedResidue })
+  const { StructureSelection } = await loadMolstar()
+  const sel = await getMolstarStructureSelection({ structure, selectedResidue })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
   plugin.managers.interactivity.lociSelects.select({
     loci,

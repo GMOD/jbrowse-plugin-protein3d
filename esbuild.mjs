@@ -16,9 +16,6 @@ function createGlobalMap(jbrowseGlobals) {
       type: 'cjs',
     }
   }
-  // Map @jbrowse/mobx-state-tree to mobx-state-tree for backwards compatibility
-  // In v4.0.0+, JBrowse uses @jbrowse/mobx-state-tree but exports it as 'mobx-state-tree'
-  // In v3.x, JBrowse used mobx-state-tree directly
   globalMap['@jbrowse/mobx-state-tree'] = {
     varName: `JBrowseExports["mobx-state-tree"]`,
     type: 'cjs',
@@ -46,13 +43,55 @@ const rebuildLogPlugin = {
   },
 }
 
+// For the UMD build, replace loadMolstar with a version that loads the
+// molstar chunk via URL relative to the plugin script. The source
+// loadMolstar.ts uses a standard import('./molstarExports') which works
+// natively for npm/bundler consumers.
+const umdLoadMolstarPlugin = {
+  name: 'umd-load-molstar',
+  setup(build) {
+    build.onLoad({ filter: /loadMolstar\.ts$/ }, () => ({
+      contents: `
+        var src = typeof document !== 'undefined'
+          ? document.currentScript?.src
+          : undefined;
+        var base = src ? src.replace(/\\/[^/]*$/, '/') : '';
+        var cached;
+        export default function loadMolstar() {
+          if (!cached) {
+            cached = import(base + 'molstar-chunk.js').catch(function(e) {
+              cached = undefined;
+              throw e;
+            });
+          }
+          return cached;
+        }
+      `,
+      loader: 'js',
+    }))
+  },
+}
+
 const globals = JBrowseReExports
-const config = {
+const externalsPlugin = globalExternals(createGlobalMap(globals))
+
+const molstarConfig = {
+  entryPoints: ['src/ProteinView/molstarExports.ts'],
+  bundle: true,
+  outfile: 'dist/molstar-chunk.js',
+  format: 'esm',
+  metafile: true,
+  sourcemap: true,
+  minify: true,
+  plugins: [externalsPlugin, rebuildLogPlugin],
+}
+
+const mainConfig = {
   entryPoints: ['src/index.ts'],
   bundle: true,
   globalName: 'JBrowsePluginProtein3d',
   metafile: true,
-  plugins: [globalExternals(createGlobalMap(globals)), rebuildLogPlugin],
+  plugins: [externalsPlugin, umdLoadMolstarPlugin, rebuildLogPlugin],
   ...(isWatch
     ? { outfile: 'dist/out.js' }
     : {
@@ -62,8 +101,11 @@ const config = {
       }),
 }
 
+console.log('Building molstar chunk...')
+await esbuild.build(molstarConfig)
+
 if (isWatch) {
-  const ctx = await esbuild.context(config)
+  const ctx = await esbuild.context(mainConfig)
   const internalPort = PORT + 400
   const { hosts } = await ctx.serve({ servedir: '.', port: internalPort })
 
@@ -78,7 +120,6 @@ if (isWatch) {
           headers: req.headers,
         },
         proxyRes => {
-          // restore CORS after https://github.com/evanw/esbuild/releases/tag/v0.25.0 disabled it
           res.writeHead(proxyRes.statusCode, {
             ...proxyRes.headers,
             'Access-Control-Allow-Origin': '*',
@@ -94,6 +135,6 @@ if (isWatch) {
   await ctx.watch()
   console.log('Watching files...')
 } else {
-  const result = await esbuild.build(config)
+  const result = await esbuild.build(mainConfig)
   fs.writeFileSync('meta.json', JSON.stringify(result.metafile))
 }

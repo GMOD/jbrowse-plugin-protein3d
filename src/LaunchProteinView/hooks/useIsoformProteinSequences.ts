@@ -14,17 +14,21 @@ export default function useIsoformProteinSequences({
   const { data, error, isLoading } = useSWR<
     Record<string, { feature: Feature; seq: string }>
   >(
-    // Use feature ID and view assembly names as the cache key
     ['isoform-sequences', feature.id(), view?.assemblyNames?.[0]],
     async () => {
       const ret = [] as [string, { feature: Feature; seq: string }][]
-      for (const f of getTranscriptFeatures(feature)) {
-        const seq = await fetchProteinSeq({
-          view,
-          feature: f,
-        })
-        if (seq) {
-          ret.push([f.id(), { feature: f, seq }])
+      const transcripts = getTranscriptFeatures(feature)
+      for (const f of transcripts) {
+        try {
+          const seq = await fetchProteinSeq({
+            view,
+            feature: f,
+          })
+          if (seq) {
+            ret.push([f.id(), { feature: f, seq }])
+          }
+        } catch (e) {
+          console.error('[useIsoformProteinSequences] error for', f.id(), e)
         }
       }
       return Object.fromEntries(ret)

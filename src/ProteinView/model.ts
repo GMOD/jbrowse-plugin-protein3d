@@ -17,6 +17,7 @@ const SETTINGS_KEY = 'proteinView-settings'
 
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+
 export interface ProteinViewInitState {
   structures?: {
     url?: string
@@ -410,7 +411,7 @@ function stateModelFactory() {
 
         addDisposer(
           self,
-          autorun(() => {
+          autorun(async () => {
             const { structures, molstarPluginContext } = self
             if (molstarPluginContext) {
               for (const [i, s0] of structures.entries()) {
@@ -419,7 +420,7 @@ function stateModelFactory() {
                     .structures[i]?.cell.obj?.data
                 const pos = s0.structureSeqHoverPos
                 if (structure && pos !== undefined) {
-                  highlightResidue({
+                  await highlightResidue({
                     structure,
                     plugin: molstarPluginContext,
                     selectedResidue: pos,

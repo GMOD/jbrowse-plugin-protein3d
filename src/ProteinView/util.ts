@@ -1,8 +1,9 @@
 import { Feature } from '@jbrowse/core/util'
-import { Structure } from 'molstar/lib/mol-model/structure'
-import { Script } from 'molstar/lib/mol-script/script'
 
+import loadMolstar from './loadMolstar'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
+
+import type { Structure } from 'molstar/lib/mol-model/structure'
 
 export function checkHovered(hovered: unknown): hovered is {
   hoverFeature: Feature
@@ -19,13 +20,14 @@ export function checkHovered(hovered: unknown): hovered is {
   )
 }
 
-export function getMolstarStructureSelection({
+export async function getMolstarStructureSelection({
   structure,
   selectedResidue,
 }: {
   structure: Structure
   selectedResidue: number
 }) {
+  const { Script } = await loadMolstar()
   return Script.getStructureSelection(
     Q =>
       Q.struct.generator.atomGroups({

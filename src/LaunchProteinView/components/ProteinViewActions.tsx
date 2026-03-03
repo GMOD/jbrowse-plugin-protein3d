@@ -1,7 +1,9 @@
 import React, { useState } from 'react'
 
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import {
   Button,
+  ButtonGroup,
   Dialog,
   DialogContent,
   DialogTitle,
@@ -39,6 +41,7 @@ interface ProteinViewActionsProps {
   alignmentAlgorithm: AlignmentAlgorithm
   onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
   sequencesMatch?: boolean
+  isLoading?: boolean
 }
 
 export default function ProteinViewActions({
@@ -54,10 +57,20 @@ export default function ProteinViewActions({
   alignmentAlgorithm,
   onAlignmentAlgorithmChange,
   sequencesMatch,
+  isLoading,
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
-  const isLaunchDisabled =
-    !uniprotId || !userSelectedProteinSequence || !selectedTranscript
+  const canLaunch =
+    !!uniprotId && !!userSelectedProteinSequence && !!selectedTranscript
+
+  const missingReasons = isLoading
+    ? []
+    : [
+        !uniprotId && 'No UniProt ID found',
+        !userSelectedProteinSequence &&
+          'Could not compute protein sequence (feature may be missing CDS subfeatures)',
+        !selectedTranscript && 'No transcript selected',
+      ].filter(Boolean)
 
   const handleLaunch3DView = () => {
     setDialogOpen(false)
@@ -153,22 +166,32 @@ export default function ProteinViewActions({
       <Button
         variant="contained"
         color="secondary"
+        size="small"
         onClick={() => {
           handleClose()
         }}
       >
         Cancel
       </Button>
-      <Button
-        variant="contained"
-        color="primary"
-        disabled={isLaunchDisabled}
-        onClick={() => {
-          setDialogOpen(true)
-        }}
-      >
-        Launch
-      </Button>
+      {!canLaunch ? (
+        <Typography variant="body2" color="error" sx={{ mr: 2 }}>
+          {missingReasons.join('. ')}
+        </Typography>
+      ) : null}
+      <ButtonGroup variant="contained" color="primary" size="small">
+        <Button disabled={!canLaunch} onClick={handleLaunch3DView}>
+          Launch
+        </Button>
+        <Button
+          disabled={!canLaunch}
+          onClick={() => {
+            setDialogOpen(true)
+          }}
+          aria-label="More launch options"
+        >
+          <ArrowDropDownIcon />
+        </Button>
+      </ButtonGroup>
       <Dialog
         open={dialogOpen}
         onClose={() => {
@@ -205,28 +228,28 @@ export default function ProteinViewActions({
                 </Typography>
               </div>
             </MenuItem>
-            {hasMsaViewPlugin() ? (
-              <>
-                <MenuItem onClick={handleLaunchMSAView}>
-                  <div>
-                    <Typography variant="body1">Launch MSA view</Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      View AlphaFold a3m multiple sequence alignment
-                    </Typography>
-                  </div>
-                </MenuItem>
-                <MenuItem onClick={handleLaunch3DWithMsa}>
-                  <div>
-                    <Typography variant="body1">
-                      Launch 3D structure + MSA view
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Launch both views with AlphaFold a3m MSA
-                    </Typography>
-                  </div>
-                </MenuItem>
-              </>
-            ) : null}
+            {hasMsaViewPlugin()
+              ? [
+                  <MenuItem key="msa" onClick={handleLaunchMSAView}>
+                    <div>
+                      <Typography variant="body1">Launch MSA view</Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        View AlphaFold a3m multiple sequence alignment
+                      </Typography>
+                    </div>
+                  </MenuItem>,
+                  <MenuItem key="3d-msa" onClick={handleLaunch3DWithMsa}>
+                    <div>
+                      <Typography variant="body1">
+                        Launch 3D structure + MSA view
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Launch both views with AlphaFold a3m MSA
+                      </Typography>
+                    </div>
+                  </MenuItem>,
+                ]
+              : null}
           </MenuList>
         </DialogContent>
       </Dialog>
