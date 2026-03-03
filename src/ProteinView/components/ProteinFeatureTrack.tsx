@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useMemo, useRef, useState } from 'react'
 
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
@@ -20,8 +20,10 @@ import { UniProtFeature, getFeatureColor } from '../hooks/useUniProtFeatures'
 import { JBrowsePluginProteinStructureModel } from '../model'
 import {
   clickProteinToGenome,
+  hoverProteinToGenome,
   proteinRangeToGenomeMapping,
 } from '../proteinToGenomeMapping'
+import { throttle } from './throttle'
 
 function getVisibleTypes(
   featureTypes: string[],
@@ -169,7 +171,7 @@ const FeatureBar = observer(function FeatureBar({
   const color = getFeatureColor(feature.type)
 
   return (
-    <Tooltip title={<FeatureTooltipContent feature={feature} />}>
+    <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
       <div
         onClick={handleClick}
         onMouseEnter={handleMouseEnter}
@@ -348,8 +350,38 @@ export const ProteinFeatureTrackContent = observer(
   }) {
     const { hiddenFeatureTypes } = model
     const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
+    const containerRef = useRef<HTMLDivElement>(null)
+
+    const handleMouseMove = useMemo(
+      () =>
+        throttle((e: React.MouseEvent) => {
+          const container = containerRef.current
+          if (!container) {
+            return
+          }
+          const rect = container.getBoundingClientRect()
+          const x = e.clientX - rect.left
+          const structureSeqPos = Math.floor(x / CHAR_WIDTH)
+          if (structureSeqPos >= 0 && structureSeqPos < data.sequenceLength) {
+            model.setHoveredPosition({ structureSeqPos })
+            hoverProteinToGenome({ model, structureSeqPos })
+          }
+        }, 16),
+      [model, data.sequenceLength],
+    )
+
+    const handleMouseLeave = () => {
+      model.setHoveredPosition(undefined)
+      model.clearHoverGenomeHighlights()
+      model.clearHighlightFromExternal()
+    }
+
     return (
-      <>
+      <div
+        ref={containerRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         {visibleTypes.map(type => (
           <FeatureTypeTrackContent
             key={type}
@@ -358,7 +390,7 @@ export const ProteinFeatureTrackContent = observer(
             sequenceLength={data.sequenceLength}
           />
         ))}
-      </>
+      </div>
     )
   },
 )
