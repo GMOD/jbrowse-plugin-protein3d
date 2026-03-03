@@ -18,11 +18,7 @@ import highlightResidueRange, {
 import { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import { UniProtFeature, getFeatureColor } from '../hooks/useUniProtFeatures'
 import { JBrowsePluginProteinStructureModel } from '../model'
-import {
-  clickProteinToGenome,
-  hoverProteinToGenome,
-  proteinRangeToGenomeMapping,
-} from '../proteinToGenomeMapping'
+import { clickProteinToGenome } from '../proteinToGenomeMapping'
 import { throttle } from './throttle'
 
 function getVisibleTypes(
@@ -32,10 +28,17 @@ function getVisibleTypes(
   return featureTypes.filter(type => !hiddenFeatureTypes.has(type))
 }
 
-function getFeatureGeometry(feature: UniProtFeature) {
+function getFeatureGeometry(
+  feature: UniProtFeature,
+  structurePositionToAlignmentMap: Record<number, number> | undefined,
+) {
+  const startAlnPos =
+    structurePositionToAlignmentMap?.[feature.start - 1] ?? feature.start - 1
+  const endAlnPos =
+    structurePositionToAlignmentMap?.[feature.end - 1] ?? feature.end - 1
   return {
-    left: (feature.start - 1) * CHAR_WIDTH,
-    width: Math.max((feature.end - feature.start + 1) * CHAR_WIDTH, 3),
+    left: startAlnPos * CHAR_WIDTH,
+    width: Math.max((endAlnPos - startAlnPos + 1) * CHAR_WIDTH, 3),
   }
 }
 
@@ -63,8 +66,6 @@ const FeatureBar = observer(function FeatureBar({
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const {
-    genomeToTranscriptSeqMapping,
-    connectedView,
     molstarPluginContext,
     selectedFeatureId,
     structurePositionToAlignmentMap,
@@ -96,25 +97,6 @@ const FeatureBar = observer(function FeatureBar({
         console.error(e)
       })
     }
-    const { refName } = genomeToTranscriptSeqMapping ?? {}
-    const assemblyName = connectedView?.assemblyNames[0]
-    if (refName && assemblyName) {
-      const result = proteinRangeToGenomeMapping({
-        model,
-        structureSeqPos: feature.start - 1,
-        structureSeqEndPos: feature.end,
-      })
-      if (result) {
-        model.setHoverGenomeHighlights([
-          {
-            assemblyName,
-            refName,
-            start: result[0],
-            end: result[1],
-          },
-        ])
-      }
-    }
     const range = getAlignmentRange()
     if (range) {
       model.setAlignmentHoverRange(range)
@@ -124,7 +106,6 @@ const FeatureBar = observer(function FeatureBar({
   const handleMouseLeave = () => {
     setIsHovered(false)
     molstarPluginContext?.managers.interactivity.lociHighlights.clearHighlights()
-    model.clearHoverGenomeHighlights()
     model.clearAlignmentHoverRange()
   }
 
@@ -167,7 +148,10 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  const { left, width } = getFeatureGeometry(feature)
+  const { left, width } = getFeatureGeometry(
+    feature,
+    structurePositionToAlignmentMap,
+  )
   const color = getFeatureColor(feature.type)
 
   return (
@@ -203,19 +187,13 @@ const HoverMarker = observer(function HoverMarker({
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { structureSeqHoverPos, structureSeqToTranscriptSeqPosition } = model
+  const { alignmentHoverPos } = model
 
-  if (structureSeqHoverPos === undefined) {
+  if (alignmentHoverPos === undefined) {
     return null
   }
 
-  const transcriptPos =
-    structureSeqToTranscriptSeqPosition?.[structureSeqHoverPos]
-  if (transcriptPos === undefined) {
-    return null
-  }
-
-  const left = transcriptPos * CHAR_WIDTH
+  const left = alignmentHoverPos * CHAR_WIDTH
 
   return (
     <div
@@ -361,10 +339,9 @@ export const ProteinFeatureTrackContent = observer(
           }
           const rect = container.getBoundingClientRect()
           const x = e.clientX - rect.left
-          const structureSeqPos = Math.floor(x / CHAR_WIDTH)
-          if (structureSeqPos >= 0 && structureSeqPos < data.sequenceLength) {
-            model.setHoveredPosition({ structureSeqPos })
-            hoverProteinToGenome({ model, structureSeqPos })
+          const alignmentPos = Math.floor(x / CHAR_WIDTH)
+          if (alignmentPos >= 0 && alignmentPos < data.sequenceLength) {
+            model.hoverAlignmentPosition(alignmentPos)
           }
         }, 16),
       [model, data.sequenceLength],

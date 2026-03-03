@@ -33,7 +33,7 @@ export default function useProteinFeatureTrackData(
     return { data: undefined, isLoading, error }
   }
 
-  const sequenceLength = pairwiseAlignment.alns[0].seq.replace(/-/g, '').length
+  const sequenceLength = pairwiseAlignment.alns[0].seq.length
   const groupedFeatures = groupFeaturesByType(features)
   const featureTypes = Object.keys(groupedFeatures)
 
