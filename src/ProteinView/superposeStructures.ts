@@ -62,7 +62,12 @@ export async function superposeStructures(plugin: PluginContext) {
   for (let i = 1; i < validLocis.length; i++) {
     const result = tmAlign(validLocis[0]!, validLocis[i]!)
     const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = result
-    await applyTransform(plugin, structures[i]!.cell, bTransform, coordinateSystem)
+    await applyTransform(
+      plugin,
+      structures[i]!.cell,
+      bTransform,
+      coordinateSystem,
+    )
     plugin.log.info(
       `TM-align: TM-score=${tmScoreA.toFixed(4)}/${tmScoreB.toFixed(4)}, RMSD=${rmsd.toFixed(2)} Å, aligned ${alignedLength} residues.`,
     )
@@ -88,9 +93,7 @@ async function applyTransform(
     q
       .byRef(r.transform.ref)
       .subtree()
-      .withTransformer(
-        StateTransforms.Model.TransformStructureConformation,
-      ),
+      .withTransformer(StateTransforms.Model.TransformStructureConformation),
   )[0]
 
   const finalTransform =
@@ -110,11 +113,9 @@ async function applyTransform(
     : plugin.state.data
         .build()
         .to(s)
-        .insert(
-          StateTransforms.Model.TransformStructureConformation,
-          params,
-          { tags: SuperpositionTag },
-        )
+        .insert(StateTransforms.Model.TransformStructureConformation, params, {
+          tags: SuperpositionTag,
+        })
 
   await plugin.runTask(plugin.state.data.updateTree(b))
 }

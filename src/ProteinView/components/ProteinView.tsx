@@ -31,8 +31,11 @@ const ProteinView = observer(function ProteinView({
     return <ErrorMessage error={error} />
   }
   return (
-    // @ts-expect-error
-    <ProteinViewContainer model={model} parentRef={parentRef} loading={loading} />
+    <ProteinViewContainer
+      model={model}
+      parentRef={parentRef}
+      loading={loading}
+    />
   )
 })
 
@@ -42,7 +45,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
   loading,
 }: {
   model: JBrowsePluginProteinViewModel
-  parentRef?: React.RefObject<HTMLDivElement>
+  parentRef?: React.RefObject<HTMLDivElement | null>
   loading?: boolean
 }) {
   const { width, height, error } = model

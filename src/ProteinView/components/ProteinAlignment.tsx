@@ -148,9 +148,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
             backgroundColor: 'white',
           }}
         >
-          <div
-            style={{ position: 'relative' }}
-          >
+          <div style={{ position: 'relative' }}>
             <AlignmentHighlights
               model={model}
               strLength={a0.length}
