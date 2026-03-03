@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 
 import { Tooltip, Typography } from '@mui/material'
 import { reaction } from 'mobx'
@@ -57,17 +57,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
     [model, autoScrollAlignment],
   )
 
-  const handleContainerMouseEnter = useCallback(() => {
-    model.setIsMouseInAlignment(true)
-  }, [model])
-
-  const handleContainerMouseLeave = useCallback(() => {
-    model.setIsMouseInAlignment(false)
-    model.setHoveredPosition(undefined)
-    model.clearHoverGenomeHighlights()
-    model.clearHighlightFromExternal()
-  }, [model])
-
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
   }
@@ -94,7 +83,15 @@ const ProteinAlignment = observer(function ProteinAlignment({
           margin: 8,
           paddingBottom: 8,
         }}
-        onMouseEnter={handleContainerMouseEnter}
+        onMouseEnter={() => {
+          model.setIsMouseInAlignment(true)
+        }}
+        onMouseLeave={() => {
+          model.setIsMouseInAlignment(false)
+          model.setHoveredPosition(undefined)
+          model.clearHoverGenomeHighlights()
+          model.clearHighlightFromExternal()
+        }}
       >
         <div
           style={{
@@ -152,7 +149,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
           }}
         >
           <div
-            onMouseLeave={handleContainerMouseLeave}
             style={{ position: 'relative' }}
           >
             <AlignmentHighlights

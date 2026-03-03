@@ -61,7 +61,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   return (
     <>
       <DialogContent className={classes.dialogContent}>
-        {state.error ? <ErrorMessage error={state.error} /> : null}
+        {state.error && !state.isLoading ? (
+          <ErrorMessage error={state.error} />
+        ) : null}
 
         <UniProtIdInput
           lookupMode={state.lookupMode}

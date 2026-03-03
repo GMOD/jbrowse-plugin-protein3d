@@ -163,6 +163,20 @@ export default function useAlphaFoldDBSearch({
   // Aggregate errors and loading states
   const error =
     lookupError ?? isoformError ?? alphaFoldError ?? sequenceSearchError
+
+  if (error) {
+    console.log('[useAlphaFoldDBSearch] error while loading:', {
+      lookupError,
+      isoformError,
+      alphaFoldError,
+      sequenceSearchError,
+      isLookupLoading,
+      isIsoformLoading,
+      isAlphaFoldLoading,
+      isSequenceSearchLoading,
+    })
+  }
+
   const loadingStatuses = useLoadingStatuses({
     isLookupLoading,
     isIsoformProteinSequencesLoading: isIsoformLoading,

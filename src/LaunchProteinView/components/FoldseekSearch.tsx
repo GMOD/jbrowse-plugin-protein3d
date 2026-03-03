@@ -139,7 +139,9 @@ const FoldseekSearch = observer(function FoldseekSearch({
   return (
     <>
       <DialogContent className={classes.dialogContent}>
-        {combinedError ? <ErrorMessage error={combinedError} /> : null}
+        {combinedError && !isLoadingIsoforms ? (
+          <ErrorMessage error={combinedError} />
+        ) : null}
 
         {isLoadingIsoforms ? (
           <LoadingEllipses
