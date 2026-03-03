@@ -22,7 +22,7 @@
     "format": "prettier --write .",
     "prebuild": "yarn clean",
     "start": "node esbuild.mjs --watch",
-    "build": "tsc && NODE_ENV=production node esbuild.mjs",
+    "build": "tsc && NODE_ENV=production node esbuild.mjs && cp distconfig.json dist/config.json",
     "build:bundle": "NODE_ENV=production node esbuild.mjs",
     "lint": "eslint --report-unused-disable-directives --max-warnings 0",
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
