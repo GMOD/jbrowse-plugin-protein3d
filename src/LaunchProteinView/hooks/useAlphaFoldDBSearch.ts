@@ -32,15 +32,23 @@ export default function useAlphaFoldDBSearch({
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
-  const [userSelection, setUserSelection] = useState<string>()
+  const [userTranscriptId, setUserTranscriptId] = useState<string>()
 
+  // Gene-level identifiers for the UniProt search
   const transcriptOptions = useMemo(
     () => getTranscriptFeatures(feature),
     [feature],
   )
-  const selectedTranscript = transcriptOptions.find(
-    f => getId(f) === userSelection,
-  )
+  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
+  const featureUniprotId = getUniProtIdFromFeature(feature)
+
+  // Compute effective lookup mode synchronously — avoids a useEffect that
+  // would leave a one-frame gap where isLoading is false but uniprotId is
+  // still undefined
+  const effectiveLookupMode =
+    lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
+  const isSequenceMode = effectiveLookupMode === 'sequence'
+  const isAutoMode = effectiveLookupMode === 'auto'
 
   const {
     isoformSequences,
@@ -48,48 +56,20 @@ export default function useAlphaFoldDBSearch({
     error: isoformError,
   } = useIsoformProteinSequences({ feature, view })
 
-  const transcriptIds = useMemo(
-    () => extractFeatureIdentifiers(selectedTranscript),
-    [selectedTranscript],
-  )
-  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
-  const recognizedIds = useMemo(
-    () => [
-      ...new Set([...transcriptIds.recognizedIds, ...geneIds.recognizedIds]),
-    ],
-    [transcriptIds.recognizedIds, geneIds.recognizedIds],
-  )
-  const geneName = transcriptIds.geneName ?? geneIds.geneName
-  const featureUniprotId =
-    getUniProtIdFromFeature(selectedTranscript) ??
-    getUniProtIdFromFeature(feature)
-
-  // Compute the effective lookup mode synchronously to avoid the one-frame gap
-  // that a useEffect would cause. When 'auto' is selected and the feature
-  // already has a UniProt ID, we use 'feature' mode immediately so downstream
-  // hooks get the correct uniprotId on the same render cycle.
-  // Note: effectiveLookupMode === 'auto' implies !featureUniprotId.
-  const effectiveLookupMode =
-    lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
-  const isSequenceMode = effectiveLookupMode === 'sequence'
-  const isAutoMode = effectiveLookupMode === 'auto'
-
   const {
     entries: uniprotEntries,
     isLoading: isLookupLoading,
     error: lookupError,
   } = useUniProtSearch({
-    recognizedIds,
+    recognizedIds: geneIds.recognizedIds,
     geneId: geneIds.geneId,
-    geneName,
+    geneName: geneIds.geneName,
     selectedQueryId,
     enabled: isAutoMode,
   })
 
   const autoUniprotId = uniprotEntries[0]?.accession
-  const userSelectedProteinSequence = isoformSequences?.[userSelection ?? '']
-
-  const uniprotIdForAlphaFold =
+  const uniprotId =
     effectiveLookupMode === 'feature'
       ? featureUniprotId
       : isAutoMode
@@ -108,14 +88,35 @@ export default function useAlphaFoldDBSearch({
     confidenceUrl: alphaFoldConfidenceUrl,
     structureSequence: alphaFoldStructureSequence,
   } = useAlphaFoldData({
-    uniprotId: isSequenceMode ? undefined : uniprotIdForAlphaFold,
+    uniprotId: isSequenceMode ? undefined : uniprotId,
   })
 
+  // Auto-select transcript synchronously — avoids a useEffect that would
+  // leave a one-frame gap where isLoading is false but no transcript is
+  // selected yet
+  const autoTranscriptId = useMemo(() => {
+    if (isoformSequences) {
+      return selectBestTranscript({
+        options: transcriptOptions,
+        isoformSequences,
+        structureSequence: alphaFoldStructureSequence,
+      })?.id()
+    }
+    return undefined
+  }, [transcriptOptions, alphaFoldStructureSequence, isoformSequences])
+
+  const effectiveTranscriptId = userTranscriptId ?? autoTranscriptId
+  const selectedTranscript = transcriptOptions.find(
+    f => getId(f) === effectiveTranscriptId,
+  )
+  const userSelectedProteinSequence =
+    isoformSequences?.[effectiveTranscriptId ?? '']
+
   const {
-    uniprotId: sequenceSearchUniprotId,
-    cifUrl: sequenceSearchUrl,
-    plddtDocUrl: sequenceSearchConfidenceUrl,
-    structureSequence: sequenceSearchStructureSequence,
+    uniprotId: seqSearchUniprotId,
+    cifUrl: seqSearchUrl,
+    plddtDocUrl: seqSearchConfidenceUrl,
+    structureSequence: seqSearchStructureSequence,
     isLoading: isSequenceSearchLoading,
     error: sequenceSearchError,
   } = useAlphaFoldSequenceSearch({
@@ -124,76 +125,37 @@ export default function useAlphaFoldDBSearch({
     enabled: isSequenceMode,
   })
 
-  const url = isSequenceMode ? sequenceSearchUrl : alphaFoldUrl
-  const confidenceUrl = isSequenceMode
-    ? sequenceSearchConfidenceUrl
+  // Merge alphafold / sequence-search results
+  const finalUrl = isSequenceMode ? seqSearchUrl : alphaFoldUrl
+  const finalConfidenceUrl = isSequenceMode
+    ? seqSearchConfidenceUrl
     : alphaFoldConfidenceUrl
-  const structureSequence = isSequenceMode
-    ? sequenceSearchStructureSequence
+  const finalStructureSequence = isSequenceMode
+    ? seqSearchStructureSequence
     : alphaFoldStructureSequence
-  const uniprotId = isSequenceMode
-    ? sequenceSearchUniprotId
-    : uniprotIdForAlphaFold
+  const finalUniprotId = isSequenceMode ? seqSearchUniprotId : uniprotId
 
-  // Reset transcript selection when UniProt selection changes
+  // Reset manual transcript selection when UniProt selection changes
   useEffect(() => {
-    setUserSelection(undefined)
+    setUserTranscriptId(undefined)
   }, [selectedUniprotId])
-
-  // Auto-select best transcript when structure sequence is available
-  useEffect(() => {
-    if (isoformSequences !== undefined && userSelection === undefined) {
-      const best = selectBestTranscript({
-        options: transcriptOptions,
-        isoformSequences,
-        structureSequence,
-      })
-      setUserSelection(best?.id())
-    }
-  }, [transcriptOptions, structureSequence, isoformSequences, userSelection])
-
-  // Only report errors from hooks that have finished loading and whose
-  // upstream dependencies are also resolved. This prevents brief error flashes
-  // when a downstream hook errors on stale input that is about to change.
-  const error = (() => {
-    if (isoformError && !isIsoformLoading) {
-      return isoformError
-    }
-    if (isSequenceMode) {
-      if (sequenceSearchError && !isSequenceSearchLoading && !isIsoformLoading) {
-        return sequenceSearchError
-      }
-      return undefined
-    }
-    if (lookupError && !isLookupLoading) {
-      return lookupError
-    }
-    if (alphaFoldError && !isAlphaFoldLoading && !isLookupLoading) {
-      return alphaFoldError
-    }
-    return undefined
-  })()
-
-  if (error) {
-    console.log('[useAlphaFoldDBSearch] error:', {
-      lookupError,
-      isoformError,
-      alphaFoldError,
-      sequenceSearchError,
-      isLookupLoading,
-      isIsoformLoading,
-      isAlphaFoldLoading,
-      isSequenceSearchLoading,
-      effectiveLookupMode,
-    })
-  }
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     !isSequenceMode && isAlphaFoldLoading && 'Fetching AlphaFold structure URL',
-    isSequenceMode && isSequenceSearchLoading && 'Searching AlphaFoldDB by sequence',
+    isSequenceMode &&
+      isSequenceSearchLoading &&
+      'Searching AlphaFoldDB by sequence',
   ].filter((s): s is string => !!s)
+  const isLoading = loadingStatuses.length > 0
+
+  // Only show errors once all loading is done — the synchronous
+  // effectiveLookupMode and autoTranscriptId computations prevent the
+  // one-frame gaps that previously caused brief error flashes
+  const rawError =
+    isoformError ?? lookupError ?? alphaFoldError ?? sequenceSearchError
+  const error = isLoading ? undefined : rawError
 
   return {
     lookupMode: effectiveLookupMode,
@@ -206,8 +168,8 @@ export default function useAlphaFoldDBSearch({
     setSequenceSearchType,
     selectedUniprotId,
     setSelectedUniprotId,
-    userSelection,
-    setUserSelection,
+    userSelection: effectiveTranscriptId,
+    setUserSelection: setUserTranscriptId,
 
     transcriptOptions,
     selectedTranscript,
@@ -218,39 +180,40 @@ export default function useAlphaFoldDBSearch({
     selectedEntryIndex,
     setSelectedEntryIndex,
 
-    recognizedIds,
-    geneName,
+    recognizedIds: geneIds.recognizedIds,
+    geneName: geneIds.geneName,
     featureUniprotId,
 
-    uniprotId,
-    url,
-    confidenceUrl,
-    structureSequence,
+    uniprotId: finalUniprotId,
+    url: finalUrl,
+    confidenceUrl: finalConfidenceUrl,
+    structureSequence: finalStructureSequence,
 
     error,
     loadingStatuses,
     isSequenceSearchLoading,
 
     showIdentifierSelector:
-      isAutoMode && (recognizedIds.length > 0 || !!geneName),
+      isAutoMode && (geneIds.recognizedIds.length > 0 || !!geneIds.geneName),
     showStructureSelectors:
       !!isoformSequences &&
       !!selectedTranscript &&
-      (isSequenceMode || !!(structureSequence && uniprotId)),
+      (isSequenceMode || !!(finalStructureSequence && finalUniprotId)),
     sequencesMatch:
-      userSelectedProteinSequence?.seq && structureSequence
-        ? stripStopCodon(userSelectedProteinSequence.seq) === structureSequence
+      userSelectedProteinSequence?.seq && finalStructureSequence
+        ? stripStopCodon(userSelectedProteinSequence.seq) ===
+          finalStructureSequence
         : undefined,
 
     searchDescription: getSearchDescription({
       selectedQueryId,
-      recognizedIds,
-      geneName,
+      recognizedIds: geneIds.recognizedIds,
+      geneName: geneIds.geneName,
     }),
     searchDescriptionOr: getSearchDescription({
       selectedQueryId,
-      recognizedIds,
-      geneName,
+      recognizedIds: geneIds.recognizedIds,
+      geneName: geneIds.geneName,
       joinWord: 'or',
     }),
 
@@ -268,7 +231,7 @@ export default function useAlphaFoldDBSearch({
     showAlphaFoldEntrySelector: !!predictions && !isSequenceMode,
     showSequenceSearchStatus: isSequenceMode,
     showAlphaFoldDBSearchStatus:
-      !!structureSequence && !!uniprotId && !isSequenceMode,
-    isLoading: loadingStatuses.length > 0,
+      !!finalStructureSequence && !!finalUniprotId && !isSequenceMode,
+    isLoading,
   }
 }
