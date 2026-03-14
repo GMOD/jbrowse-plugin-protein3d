@@ -5,14 +5,14 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+concurrency:
+  group: daily
+  cancel-in-progress: true
+
 jobs:
   e2e-tests:
-    name: E2E tests (${{ matrix.jbrowse-version }})
+    name: E2E tests (nightly)
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        jbrowse-version: [nightly]
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 22.x
@@ -23,13 +23,13 @@ jobs:
         uses: bahmutov/npm-install@v1
       - name: Install JBrowse CLI
         run: npm install -g @jbrowse/cli
-      - name: Setup JBrowse ${{ matrix.jbrowse-version }}
+      - name: Setup JBrowse nightly
         run: jbrowse create .test-jbrowse-nightly --nightly
       - name: Run E2E tests
-        run: TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} yarn vitest run test/
+        run: TEST_JBROWSE_VERSION=nightly yarn vitest run test/
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: screenshots-${{ matrix.jbrowse-version }}
+          name: screenshots-nightly
           path: test-screenshots/
