@@ -35,6 +35,9 @@ import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequenc
 import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
 import useTranscriptSelection from '../hooks/useTranscriptSelection'
 import {
+  launch3DProteinView,
+} from '../utils/launchViewUtils'
+import {
   getGeneDisplayName,
   getId,
   getTranscriptDisplayName,
@@ -269,19 +272,16 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
             ;(async () => {
               try {
                 const structureData = file ? await file.text() : undefined
-                session.addView('ProteinView', {
-                  type: 'ProteinView',
+                launch3DProteinView({
+                  session,
+                  view,
+                  feature,
+                  selectedTranscript,
+                  url: structureURL || undefined,
+                  data: structureData,
+                  userProvidedTranscriptSequence: protein?.seq ?? '',
                   alignmentAlgorithm,
                   displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
-                  structures: [
-                    {
-                      url: structureURL || undefined,
-                      data: structureData,
-                      connectedViewId: view.id,
-                      feature: selectedTranscript?.toJSON(),
-                      userProvidedTranscriptSequence: protein?.seq ?? '',
-                    },
-                  ],
                 })
                 handleClose()
               } catch (e) {

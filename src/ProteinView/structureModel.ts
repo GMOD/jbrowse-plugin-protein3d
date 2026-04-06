@@ -322,20 +322,22 @@ const Structure = types
     /**
      * #getter
      */
-    get structureSeqToTranscriptSeqPosition() {
+    get structureTranscriptMaps() {
       return self.pairwiseAlignment
         ? structureSeqVsTranscriptSeqMap(self.pairwiseAlignment)
-            .structureSeqToTranscriptSeqPosition
         : undefined
     },
     /**
      * #getter
      */
+    get structureSeqToTranscriptSeqPosition() {
+      return this.structureTranscriptMaps?.structureSeqToTranscriptSeqPosition
+    },
+    /**
+     * #getter
+     */
     get transcriptSeqToStructureSeqPosition() {
-      return self.pairwiseAlignment
-        ? structureSeqVsTranscriptSeqMap(self.pairwiseAlignment)
-            .transcriptSeqToStructureSeqPosition
-        : undefined
+      return this.structureTranscriptMaps?.transcriptSeqToStructureSeqPosition
     },
     /**
      * #getter

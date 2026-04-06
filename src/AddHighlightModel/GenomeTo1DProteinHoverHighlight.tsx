@@ -4,29 +4,11 @@ import { SimpleFeature, getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
+import { checkHovered } from '../ProteinView/util'
 import { protein1DViewRegistry } from '../Protein1DViewRegistry'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-
-interface HoveredState {
-  hoverPosition: {
-    coord: number
-    refName: string
-  }
-}
-
-function checkHoveredPosition(hovered: unknown): hovered is HoveredState {
-  return (
-    !!hovered &&
-    typeof hovered === 'object' &&
-    'hoverPosition' in hovered &&
-    !!hovered.hoverPosition &&
-    typeof hovered.hoverPosition === 'object' &&
-    'coord' in hovered.hoverPosition &&
-    'refName' in hovered.hoverPosition
-  )
-}
 
 const GenomeTo1DProteinHoverHighlight = observer(
   function GenomeTo1DProteinHoverHighlight({
@@ -48,7 +30,7 @@ const GenomeTo1DProteinHoverHighlight = observer(
       return null
     }
 
-    if (!checkHoveredPosition(hovered)) {
+    if (!checkHovered(hovered)) {
       return null
     }
 

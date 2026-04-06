@@ -51,36 +51,27 @@ export function structureSeqVsTranscriptSeqMap(
   }
 }
 
-export function structurePositionToAlignmentMap(
-  pairwiseAlignment: PairwiseAlignment,
-) {
-  const structureSeq = pairwiseAlignment.alns[1].seq
-  const structurePositionToAlignment: Record<number, number> = {}
-
-  for (let i = 0, j = 0; i < structureSeq.length; i++) {
-    if (structureSeq[i] !== '-') {
-      structurePositionToAlignment[j] = i
+function seqPositionToAlignmentMap(seq: string) {
+  const map: Record<number, number> = {}
+  for (let i = 0, j = 0; i < seq.length; i++) {
+    if (seq[i] !== '-') {
+      map[j] = i
       j++
     }
   }
+  return map
+}
 
-  return structurePositionToAlignment
+export function structurePositionToAlignmentMap(
+  pairwiseAlignment: PairwiseAlignment,
+) {
+  return seqPositionToAlignmentMap(pairwiseAlignment.alns[1].seq)
 }
 
 export function transcriptPositionToAlignmentMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
-  const transcriptSeq = pairwiseAlignment.alns[0].seq
-  const transcriptPositionToAlignment: Record<number, number> = {}
-
-  for (let i = 0, j = 0; i < transcriptSeq.length; i++) {
-    if (transcriptSeq[i] !== '-') {
-      transcriptPositionToAlignment[j] = i
-      j++
-    }
-  }
-
-  return transcriptPositionToAlignment
+  return seqPositionToAlignmentMap(pairwiseAlignment.alns[0].seq)
 }
 
 // see similar function in msaview plugin
