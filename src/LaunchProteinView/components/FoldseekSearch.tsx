@@ -55,8 +55,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
   const [sequence, setSequence] = useState('')
   const [selectedTranscriptId, setSelectedTranscriptId] = useState('')
-  const [selectedDatabases, setSelectedDatabases] =
-    useState(DEFAULT_DATABASES)
+  const [selectedDatabases, setSelectedDatabases] = useState(DEFAULT_DATABASES)
 
   const {
     results,

@@ -119,6 +119,10 @@ export default defineConfig(
       '@typescript-eslint/restrict-template-expressions': 'off',
       '@typescript-eslint/no-empty-function': 'off',
       '@typescript-eslint/no-deprecated': 'off',
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
+        { prefer: 'type-imports' },
+      ],
 
       'react-refresh/only-export-components': 'warn',
       'react/no-unescaped-entities': 'off',

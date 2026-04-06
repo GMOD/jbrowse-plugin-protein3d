@@ -8,18 +8,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - name: Install deps (with cache)
-        uses: bahmutov/npm-install@v1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Build
-        run: yarn build
+        run: pnpm build
       - name: Lint
-        run: yarn lint
+        run: pnpm lint
       - name: Unit tests
-        run: yarn vitest run --exclude 'test/**'
+        run: pnpm vitest run --exclude 'test/**'
 
   e2e-tests:
     name: E2E tests (${{ matrix.jbrowse-version }})
@@ -31,14 +34,17 @@ jobs:
         jbrowse-version: [v3.7.0, nightly]
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - name: Install deps (with cache)
-        uses: bahmutov/npm-install@v1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
       - name: Install JBrowse CLI
-        run: npm install -g @jbrowse/cli
+        run: pnpm add -g @jbrowse/cli
       - name: Setup JBrowse ${{ matrix.jbrowse-version }}
         run: |
           if [ "${{ matrix.jbrowse-version }}" = "nightly" ]; then
@@ -48,7 +54,7 @@ jobs:
           fi
       - name: Run E2E tests
         run:
-          TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} yarn vitest run
+          TEST_JBROWSE_VERSION=${{ matrix.jbrowse-version }} pnpm vitest run
           test/
       - name: Upload screenshots on failure
         if: failure()

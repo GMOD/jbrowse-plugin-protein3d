@@ -3,11 +3,11 @@ import React from 'react'
 import { getSession } from '@jbrowse/core/util'
 
 import Highlight from './Highlight'
-import {
+
+import type {
   JBrowsePluginProteinStructureModel,
   JBrowsePluginProteinViewModel,
 } from '../ProteinView/model'
-
 import type { Region } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

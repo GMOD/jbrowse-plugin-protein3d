@@ -14,7 +14,7 @@ export default function useAlphaFoldData({
   uniprotId?: string
   useApiSearch?: boolean
 }) {
-  const [selectedEntryIndex, setSelectedEntryIndex] = useState<number>(0)
+  const [selectedEntryIndex, setSelectedEntryIndex] = useState(0)
 
   const hardcodedUrl = useMemo(
     () => (uniprotId ? getAlphaFoldStructureUrl(uniprotId) : undefined),

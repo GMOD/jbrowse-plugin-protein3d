@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/restrict-plus-operands,@typescript-eslint/no-confusing-non-null-assertion */
-import { PairwiseAlignment } from '../mappings'
+import type { PairwiseAlignment } from '../mappings'
 
 // BLOSUM62 scoring matrix — standard 20 amino acids + B, Z, X, *
 // prettier-ignore

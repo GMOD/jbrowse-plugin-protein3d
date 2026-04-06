@@ -11,7 +11,7 @@ import { extractStructureSequences } from './extractStructureSequences'
 import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
-import { AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
+import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
 const SETTINGS_KEY = 'proteinView-settings'
 const PERSISTED_SETTINGS = [

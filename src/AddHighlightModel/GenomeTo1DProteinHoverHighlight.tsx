@@ -4,8 +4,8 @@ import { SimpleFeature, getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
-import { checkHovered } from '../ProteinView/util'
 import { protein1DViewRegistry } from '../Protein1DViewRegistry'
+import { checkHovered } from '../ProteinView/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

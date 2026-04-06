@@ -1,5 +1,6 @@
-import { Feature } from '@jbrowse/core/util'
 import { genomeToTranscriptSeqMapping as g2p } from 'g2p_mapper'
+
+import type { Feature } from '@jbrowse/core/util'
 export interface AlignmentRow {
   id: string
   seq: string
