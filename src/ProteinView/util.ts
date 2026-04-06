@@ -1,5 +1,3 @@
-import { Feature } from '@jbrowse/core/util'
-
 import loadMolstar from './loadMolstar'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 
