@@ -5,6 +5,8 @@ import { ObservableCreate } from '@jbrowse/core/util/rxjs'
 
 import type { BaseOptions } from '@jbrowse/core/data_adapters/BaseAdapter'
 import type { Feature, Region } from '@jbrowse/core/util'
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type { Observable } from 'rxjs'
 
 export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAdapter {
   public static capabilities = ['getFeatures', 'getRefNames']
