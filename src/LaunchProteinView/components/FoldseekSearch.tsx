@@ -17,10 +17,7 @@ import FoldseekResultsTable from './FoldseekResultsTable'
 import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
-import {
-  DEFAULT_DATABASES,
-  type FoldseekDatabaseId,
-} from '../services/foldseekApi'
+import { DEFAULT_DATABASES } from '../services/foldseekApi'
 import { getTranscriptFeatures } from '../utils/util'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
@@ -57,9 +54,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const view = getContainingView(model) as LinearGenomeViewModel
 
   const [sequence, setSequence] = useState('')
-  const [selectedTranscriptId, setSelectedTranscriptId] = useState<string>('')
-  const [selectedDatabases, setSelectedDatabases] =
-    useState<FoldseekDatabaseId[]>(DEFAULT_DATABASES)
+  const [selectedTranscriptId, setSelectedTranscriptId] = useState('')
+  const [selectedDatabases, setSelectedDatabases] = useState(DEFAULT_DATABASES)
 
   const {
     results,

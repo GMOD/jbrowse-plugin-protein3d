@@ -1,22 +1,24 @@
-import { Feature } from '@jbrowse/core/util'
-
 import loadMolstar from './loadMolstar'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
-export function checkHovered(hovered: unknown): hovered is {
-  hoverFeature: Feature
+interface HoveredState {
   hoverPosition: {
     coord: number
     refName: string
   }
-} {
+}
+
+export function checkHovered(hovered: unknown): hovered is HoveredState {
   return (
     !!hovered &&
-    typeof hovered == 'object' &&
-    'hoverFeature' in hovered &&
-    'hoverPosition' in hovered
+    typeof hovered === 'object' &&
+    'hoverPosition' in hovered &&
+    !!hovered.hoverPosition &&
+    typeof hovered.hoverPosition === 'object' &&
+    'coord' in hovered.hoverPosition &&
+    'refName' in hovered.hoverPosition
   )
 }
 

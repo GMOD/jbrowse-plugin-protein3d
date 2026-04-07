@@ -5,14 +5,15 @@ import { reaction } from 'mobx'
 import { observer } from 'mobx-react'
 
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
-import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
-import { JBrowsePluginProteinStructureModel } from '../model'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   ProteinFeatureTrackContent,
   ProteinFeatureTrackLabels,
 } from './ProteinFeatureTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
+import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
+
+import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const ProteinAlignment = observer(function ProteinAlignment({
   model,

@@ -15,18 +15,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: latest
       - name: Use Node.js 22.x
         uses: actions/setup-node@v4
         with:
           node-version: 22.x
-      - name: Install deps (with cache)
-        uses: bahmutov/npm-install@v1
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Install Puppeteer Chrome
+        run: npx puppeteer browsers install chrome
       - name: Install JBrowse CLI
-        run: npm install -g @jbrowse/cli
+        run: pnpm add -g @jbrowse/cli
       - name: Setup JBrowse nightly
         run: jbrowse create .test-jbrowse-nightly --nightly
       - name: Run E2E tests
-        run: TEST_JBROWSE_VERSION=nightly yarn vitest run test/
+        run: TEST_JBROWSE_VERSION=nightly pnpm vitest run test/
       - name: Upload screenshots
         if: always()
         uses: actions/upload-artifact@v4
