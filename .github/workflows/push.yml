@@ -43,6 +43,8 @@ jobs:
           node-version: 22.x
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Install Puppeteer Chrome
+        run: npx puppeteer browsers install chrome
       - name: Install JBrowse CLI
         run: pnpm add -g @jbrowse/cli
       - name: Setup JBrowse ${{ matrix.jbrowse-version }}
