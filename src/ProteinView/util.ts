@@ -64,9 +64,5 @@ export function toStr({
 }
 
 export function invertMap(arg: Record<number, number>): Record<number, number> {
-  return Object.fromEntries(
-    Object.entries(arg)
-      .map(([a, b]) => [b, +a])
-      .filter(f => f[0] !== undefined),
-  )
+  return Object.fromEntries(Object.entries(arg).map(([a, b]) => [b, +a]))
 }
