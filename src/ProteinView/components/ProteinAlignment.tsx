@@ -55,7 +55,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
           })
         },
       ),
-    [model, autoScrollAlignment],
+    // reaction and model property access are handled by MobX
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [autoScrollAlignment],
   )
 
   if (!pairwiseAlignment) {
