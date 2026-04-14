@@ -80,6 +80,40 @@
       "assemblyNames": ["hg38"]
     },
     {
+      "type": "VariantTrack",
+      "trackId": "clinvar_ncbi_hg38",
+      "name": "ClinVar variants (NCBI)",
+      "assemblyNames": ["hg38"],
+      "category": ["Annotation", "ClinVar"],
+      "adapter": {
+        "type": "VcfTabixAdapter",
+        "vcfGzLocation": {
+          "uri": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz",
+          "locationType": "UriLocation"
+        },
+        "index": {
+          "location": {
+            "uri": "https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz.tbi",
+            "locationType": "UriLocation"
+          }
+        }
+      },
+      "displays": [
+        {
+          "type": "LinearVariantDisplay",
+          "displayId": "clinvar_ncbi_hg38-LinearVariantDisplay",
+          "renderer": {
+            "type": "SvgFeatureRenderer",
+            "color1": "jexl:get(feature,'INFO').CLNSIG=='Benign'?'blue':get(feature,'INFO').CLNSIG=='Likely_benign'?'deepskyblue':get(feature,'INFO').CLNSIG=='Uncertain_significance'?'gray':get(feature,'INFO').CLNSIG=='Pathogenic'?'red':get(feature,'INFO').CLNSIG=='Likely_pathogenic'?'orange':get(feature,'INFO').CLNSIG=='Conflicting_interpretations_of_pathogenicity'?'brown':'purple'"
+          }
+        },
+        {
+          "type": "ChordVariantDisplay",
+          "displayId": "clinvar_ncbi_hg38-ChordVariantDisplay"
+        }
+      ]
+    },
+    {
       "type": "FeatureTrack",
       "trackId": "gencode.v44.annotation.sorted.gff3",
       "name": "GENCODE v44",
@@ -98,7 +132,22 @@
           "indexType": "TBI"
         }
       },
-      "assemblyNames": ["hg38"]
+      "assemblyNames": ["hg38"],
+      "displays": [
+        {
+          "type": "LinearBasicDisplay",
+          "renderer": {
+            "type": "SvgFeatureRenderer",
+            "labels": {
+              "name": "jexl:get(feature,'gene_name')"
+            }
+          }
+        },
+        {
+          "type": "ChordVariantDisplay",
+          "displayId": "clinvar_ncbi_hg38-ChordVariantDisplay"
+        }
+      ]
     }
   ],
   "aggregateTextSearchAdapters": [
