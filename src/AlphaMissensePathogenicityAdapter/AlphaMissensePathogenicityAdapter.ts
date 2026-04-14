@@ -60,9 +60,8 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
 
   public async getGlobalStats(_opts?: BaseOptions) {
     const data = await this.loadData()
-    const scoreMin = min(data.map(s => s.score))
-    const scoreMax = max(data.map(s => s.score))
-    return { scoreMin, scoreMax }
+    const scores = data.map(s => s.score)
+    return { scoreMin: min(scores), scoreMax: max(scores) }
   }
 
   // always render bigwig instead of calculating a feature density for it

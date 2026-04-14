@@ -11,9 +11,7 @@ import type { Feature } from '@jbrowse/core/util'
 import type { IAnyModelType } from '@jbrowse/mobx-state-tree'
 
 function isDisplay(elt: { name: string }): elt is DisplayType {
-  return (
-    elt.name === 'LinearBasicDisplay' || elt.name === 'LinearFeatureDisplay'
-  )
+  return elt.name === 'LinearBasicDisplay'
 }
 
 function extendStateModel(stateModel: IAnyModelType) {
@@ -58,12 +56,17 @@ function extendStateModel(stateModel: IAnyModelType) {
                       if (self.fetchFullFeature && contextMenuInfo) {
                         // eslint-disable-next-line @typescript-eslint/no-floating-promises
                         ;(async () => {
-                          const fullFeature = await self.fetchFullFeature!(
-                            feature.id(),
-                            contextMenuInfo.regionNumber,
-                          )
-                          if (fullFeature) {
-                            openDialog(fullFeature)
+                          try {
+                            const fullFeature = await self.fetchFullFeature!(
+                              feature.id(),
+                              contextMenuInfo.regionNumber,
+                            )
+                            if (fullFeature) {
+                              openDialog(fullFeature)
+                            }
+                          } catch (e) {
+                            console.error(e)
+                            session.notify(`${e}`, 'error')
                           }
                         })()
                       } else {

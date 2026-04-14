@@ -33,7 +33,7 @@ export default function ProteinToGenomeHighlightInner({
         (structure: JBrowsePluginProteinStructureModel, idx: number) =>
           structure[field].map((r: Region, idx2: number) => (
             <Highlight
-              key={`${JSON.stringify(r)}-${idx}-${idx2}`}
+              key={`${r.refName}-${r.start}-${r.end}-${idx}-${idx2}`}
               start={r.start}
               end={r.end}
               refName={r.refName}

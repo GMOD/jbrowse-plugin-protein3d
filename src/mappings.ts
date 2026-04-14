@@ -28,19 +28,13 @@ export function structureSeqVsTranscriptSeqMap(
     const c1 = structureSeq[i]
     const c2 = transcriptSeq[i]
 
-    if (c1 === c2) {
-      structureSeqToTranscriptSeqPosition[j] = k
-      transcriptSeqToStructureSeqPosition[k] = j
-      k++
-      j++
-    } else if (c2 === '-') {
+    if (c2 === '-') {
       j++
     } else if (c1 === '-') {
       k++
     } else {
       structureSeqToTranscriptSeqPosition[j] = k
       transcriptSeqToStructureSeqPosition[k] = j
-
       k++
       j++
     }

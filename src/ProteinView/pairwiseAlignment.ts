@@ -316,21 +316,19 @@ export function smithWaterman(
 }
 
 function buildConsensus(alignedSeq1: string, alignedSeq2: string) {
-  let consensus = ''
+  const chars: string[] = []
   for (let i = 0; i < alignedSeq1.length; i++) {
     const a = alignedSeq1[i]!
     const b = alignedSeq2[i]!
-    if (a === '-' || b === '-') {
-      consensus += ' '
-    } else if (a.toUpperCase() === b.toUpperCase()) {
-      consensus += '|'
-    } else if (getScore(a, b) > 0) {
-      consensus += ':'
+    if (a !== '-' && b !== '-' && a.toUpperCase() === b.toUpperCase()) {
+      chars.push('|')
+    } else if (a !== '-' && b !== '-' && getScore(a, b) > 0) {
+      chars.push(':')
     } else {
-      consensus += ' '
+      chars.push(' ')
     }
   }
-  return consensus
+  return chars.join('')
 }
 
 export type AlignmentType = 'needleman_wunsch' | 'smith_waterman'

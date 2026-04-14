@@ -53,8 +53,12 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const session = getSession(model)
   const view = getContainingView(model) as LinearGenomeViewModel
 
-  const [userEditedSequence, setUserEditedSequence] = useState<string | undefined>()
-  const [selectedTranscriptId, setSelectedTranscriptId] = useState<string | undefined>()
+  const [userEditedSequence, setUserEditedSequence] = useState<
+    string | undefined
+  >()
+  const [selectedTranscriptId, setSelectedTranscriptId] = useState<
+    string | undefined
+  >()
   const [selectedDatabases, setSelectedDatabases] = useState(DEFAULT_DATABASES)
 
   const {

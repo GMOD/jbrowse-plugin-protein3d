@@ -614,13 +614,8 @@ const Structure = types
             const r1 = stripStopCodon(seq1)
             const r2 = stripStopCodon(seq2)
             if (exactMatch) {
-              let consensus = ''
-              // eslint-disable-next-line @typescript-eslint/prefer-for-of
-              for (let i = 0; i < r1.length; i++) {
-                consensus += '|'
-              }
               self.setAlignment({
-                consensus,
+                consensus: '|'.repeat(r1.length),
                 alns: [
                   { id: 'seq1', seq: r1 },
                   { id: 'seq2', seq: r2 },
