@@ -78,6 +78,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     error: isoformError,
   } = useIsoformProteinSequences({ feature, view })
 
+  // SYNC: src/LaunchProteinView/hooks/useTranscriptSelection.ts, useAlphaFoldDBSearch.ts
   // Auto-select synchronously to avoid render gap
   const autoSelectedTranscriptId = useMemo(() => {
     if (isoformSequences && !selectedTranscriptId) {
