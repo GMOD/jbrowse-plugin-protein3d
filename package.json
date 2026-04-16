@@ -1,6 +1,10 @@
 {
   "version": "0.2.0",
   "name": "jbrowse-plugin-protein3d",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/GMOD/jbrowse-plugin-protein3d.git"
+  },
   "keywords": [
     "jbrowse",
     "jbrowse2"
