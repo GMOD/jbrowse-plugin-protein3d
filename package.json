@@ -15,7 +15,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest run",
+    "test": "vitest",
     "test:watch": "vitest",
     "test:all": "node scripts/test-versions.mjs setup && node scripts/test-versions.mjs run",
     "test:setup": "node scripts/test-versions.mjs setup",
@@ -59,6 +59,7 @@
     "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",
     "@rollup/plugin-typescript": "^12.3.0",
+    "@testing-library/react": "^16.3.2",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
     "esbuild": "^0.28.0",

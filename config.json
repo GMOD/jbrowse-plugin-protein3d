@@ -80,6 +80,25 @@
       "assemblyNames": ["hg38"]
     },
     {
+      "type": "FeatureTrack",
+      "trackId": "hg38-ncbiRefSeq",
+      "name": "NCBI RefSeq - RefSeq All",
+      "assemblyNames": ["hg38"],
+      "category": ["Genes and Gene Predictions"],
+      "adapter": {
+        "type": "Gff3TabixAdapter",
+        "gffGzLocation": {
+          "uri": "https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz"
+        },
+        "index": {
+          "indexType": "CSI",
+          "location": {
+            "uri": "https://jbrowse.org/ucsc/hg38/ncbiRefSeq.gff.gz.csi"
+          }
+        }
+      }
+    },
+    {
       "type": "VariantTrack",
       "trackId": "clinvar_ncbi_hg38",
       "name": "ClinVar variants (NCBI)",

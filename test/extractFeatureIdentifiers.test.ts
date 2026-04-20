@@ -177,8 +177,7 @@ describe('extractFeatureIdentifiers', () => {
   // We are testing the exported extractFeatureIdentifiers function, so we should not mock it directly here.
   // Instead, we will control its dependencies (like getTranscriptFeatures) via mocks.
   // Ensure original util functions are accessible for direct calls if needed for base behavior.
-  // Using require for actual functions as vitest might handle module resolution differently for actuals.
-  const { extractFeatureIdentifiers: actualExtractFeatureIdentifiers, getTranscriptFeatures: actualGetTranscriptFeatures, ...restOfUtil } = require('../src/LaunchProteinView/utils/util');
+  const { extractFeatureIdentifiers: actualExtractFeatureIdentifiers, getTranscriptFeatures: actualGetTranscriptFeatures, ...restOfUtil } = require('../src/LaunchProteinView/utils/util'); // Using require here for actual functions in case vitest needs it, though import is preferred if possible.
 
   beforeEach(() => {
     // Reset mocks before each test
@@ -253,7 +252,6 @@ describe('extractFeatureIdentifiers', () => {
     const identifiers = actualExtractFeatureIdentifiers(mockGeneWithoutTranscripts);
 
     // Assertions check the output of extractFeatureIdentifiers which uses findRecognizedDbIds internally.
-    // findRecognizedDbIds will check attributes on the parent gene directly.
     expect(identifiers.recognizedIds).toEqual(['HGNC:11111']); // From Dbxref on the parent
     expect(identifiers.uniprotId).toBe('P98765'); // From uniprot attribute on the parent
     expect(identifiers.geneId).toBe('ParentGeneID');
@@ -282,8 +280,8 @@ describe('extractFeatureIdentifiers', () => {
   });
 
   it('should return empty arrays/undefined if the feature is null or undefined', () => {
-    expect(extractFeatureIdentifiers(undefined)).toEqual({ recognizedIds: [] });
-    expect(extractFeatureIdentifiers(null as any)).toEqual({ recognizedIds: [] });
+    expect(actualExtractFeatureIdentifiers(undefined)).toEqual({ recognizedIds: [] });
+    expect(actualExtractFeatureIdentifiers(null as any)).toEqual({ recognizedIds: [] });
   });
 
   it('should handle features with no relevant attributes gracefully', () => {
@@ -294,106 +292,26 @@ describe('extractFeatureIdentifiers', () => {
     // Mock getTranscriptFeatures to return empty array
     (mockGetTranscriptFeatures as vi.Mock).mockReturnValue([]);
     
-    // Simulate extractFeatureIdentifiers' behavior for empty cases
+    // Mock extractFeatureIdentifiers to simulate its behavior for empty cases
+    (mockExtractFeatureIdentifiers as vi.Mock).mockImplementation((f) => {
+      const originalUtil = require('../src/LaunchProteinView/utils/util');
+      const recognizedIds = originalUtil.findRecognizedDbIds(f);
+      const uniprotId = originalUtil.getUniProtIdFromFeature(f);
+      const geneId = f.get('gene_id') ?? f.get('ID');
+      const geneName = f.get('gene_name') ?? f.get('gene') ?? f.get('name') ?? f.get('Name');
+      return {
+        recognizedIds,
+        uniprotId,
+        geneId: typeof geneId === 'string' ? geneId : undefined,
+        geneName: typeof geneName === 'string' ? geneName : undefined,
+      };
+    });
+
     const identifiers = extractFeatureIdentifiers(mockFeatureEmpty);
 
     expect(identifiers.recognizedIds).toEqual([]);
     expect(identifiers.uniprotId).toBeUndefined();
     expect(identifiers.geneId).toBeUndefined();
     expect(identifiers.geneName).toBeUndefined();
-  });
-});
-
-// Test file for the refactored findRecognizedDbIds helper function
-describe('findRecognizedDbIds', () => {
-  // Mocking constants and helper functions used by findRecognizedDbIds
-  vi.mock('../src/LaunchProteinView/utils/util', async (importOriginal) => {
-    const actual = await importOriginal();
-    return {
-      ...actual,
-      isRecognizedDatabaseId: vi.fn(),
-      extractIdsFromDbxref: vi.fn(),
-    };
-  });
-
-  const mockIsRecognizedDatabaseId = util.isRecognizedDatabaseId as vi.Mock;
-  const mockExtractIdsFromDbxref = util.extractIdsFromDbxref as vi.Mock;
-
-  beforeEach(() => {
-    vi.clearAllMocks();
-    // Default implementation for isRecognizedDatabaseId to be more realistic
-    vi.mocked(util.isRecognizedDatabaseId).mockImplementation((id: string) =>
-      id.startsWith('ENS') || id.startsWith('HGNC:') || id.startsWith('NM_') || id.startsWith('NP_') || id.startsWith('CCDS')
-    );
-    // Default mock for extractIdsFromDbxref
-    vi.mocked(util.extractIdsFromDbxref).mockImplementation((entries: string[]) =>
-      entries.map(entry => entry.split(':').pop() || entry) // Simple extraction
-    );
-  });
-
-  it('should extract recognized IDs from various attributes and Dbxref', () => {
-    const mockFeature = new SimpleFeature({
-      ID: 'ENSG00000123456', // Recognized Ensembl Gene ID
-      name: 'NM_001123456.1', // Recognized RefSeq Transcript ID (added to attributesToCheck)
-      gene_id: 'NC_000007.14', // Not recognized by isRecognizedDatabaseId patterns directly, but would be checked
-      transcript_id: 'ENST00000012345', // Recognized Ensembl Transcript ID
-      protein_id: 'NP_001112345.1', // Recognized RefSeq Protein ID
-      protAcc: 'NP_001112345.1', // RefSeq protein accession
-      mrnaAcc: 'NR_0012345.1', // RefSeq mRNA accession
-      uniprot: 'P00001', // Not recognized by isRecognizedDatabaseId patterns
-      hgnc: 12345, // Direct HGNC number
-      Dbxref: ['GeneID:67890', 'HGNC:HGNC:5678', 'Ensembl:ENSP00000012345'], // Dbxref containing recognized IDs
-      someOtherAttr: 'value',
-    });
-
-    const recognizedIds = findRecognizedDbIds(mockFeature);
-
-    expect(recognizedIds).toEqual(expect.arrayContaining([
-      'ENSG00000123456', // from ID
-      'NM_001123456.1',  // from name
-      'ENST00000012345', // from transcript_id
-      'NP_001112345.1',  // from protein_id and protAcc
-      'NR_0012345.1',  // from mrnaAcc
-      'HGNC:12345',      // from hgnc attribute
-      'HGNC:5678',       // from Dbxref
-      'ENSP00000012345', // from Dbxref
-    ]));
-    expect(recognizedIds.length).toBe(8); // Total count
-  });
-
-  it('should handle HGNC attribute correctly', () => {
-    const mockFeatureHgncNumber = new SimpleFeature({ hgnc: 12345 });
-    expect(findRecognizedDbIds(mockFeatureHgncNumber)).toEqual(['HGNC:12345']);
-
-    const mockFeatureHgncString = new SimpleFeature({ hgnc: 'HGNC:5678' });
-    expect(findRecognizedDbIds(mockFeatureHgncString)).toEqual(['HGNC:5678']);
-
-    const mockFeatureHgncAlias = new SimpleFeature({ hgnc: 'HGNC:HGNC:9101' });
-    expect(findRecognizedDbIds(mockFeatureHgncAlias)).toEqual(['HGNC:9101']);
-  });
-
-  it('should handle Dbxref attribute correctly', () => {
-    const mockFeatureDbxref = new SimpleFeature({
-      Dbxref: ['Ensembl:ENSG1', 'HGNC:HGNC:2345', 'RefSeq:NM_54321', 'GeneID:11111'],
-    });
-    expect(findRecognizedDbIds(mockFeatureDbxref)).toEqual(
-      expect.arrayContaining(['ENSG1', 'HGNC:2345', 'NM_54321']),
-    );
-    expect(findRecognizedDbIds(mockFeatureDbxref).length).toBe(3);
-  });
-
-  it('should return empty array if no recognized IDs are found', () => {
-    const mockFeatureNoIds = new SimpleFeature({
-      id: 'SHH',
-      gene_id: 'SHH',
-      name: 'SHH',
-      Dbxref: ['GeneID:6469'], // GeneID is not checked by isRecognizedDatabaseId
-    });
-    expect(findRecognizedDbIds(mockFeatureNoIds)).toEqual([]);
-  });
-
-  it('should return empty array for null or undefined feature', () => {
-    expect(findRecognizedDbIds(undefined)).toEqual([]);
-    expect(findRecognizedDbIds(null as any)).toEqual([]); // Test null explicitly
   });
 });

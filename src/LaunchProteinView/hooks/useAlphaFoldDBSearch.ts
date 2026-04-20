@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useState } from 'react'
 
 import useAlphaFoldData from './useAlphaFoldData'
@@ -28,18 +29,27 @@ export default function useAlphaFoldDBSearch({
 }) {
   const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
   const [manualUniprotId, setManualUniprotId] = useState('')
-  const [selectedQueryId, setSelectedQueryId] = useState('auto')
+  // Compute geneIds earlier to use for initializing selectedQueryId
+  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature]);
+  // Prioritize recognized IDs for initial selection if available
+  const initialSelectedQueryId = geneIds.recognizedIds.length > 0 ? geneIds.recognizedIds[0] : 'auto';
+  const [selectedQueryId, setSelectedQueryId] = useState(initialSelectedQueryId);
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
   const [userTranscriptId, setUserTranscriptId] = useState<string>()
+
+  // Log extracted identifiers
+  console.log('useAlphaFoldDBSearch: Extracted geneIds:', geneIds);
+  console.log('useAlphaFoldDBSearch: Initial selectedQueryId:', initialSelectedQueryId);
+
 
   // Gene-level identifiers for the UniProt search
   const transcriptOptions = useMemo(
     () => getTranscriptFeatures(feature),
     [feature],
   )
-  const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
+  // geneIds is now computed above
   const featureUniprotId = getUniProtIdFromFeature(feature)
 
   // Compute effective lookup mode synchronously — avoids a useEffect that
@@ -50,23 +60,31 @@ export default function useAlphaFoldDBSearch({
   const isSequenceMode = effectiveLookupMode === 'sequence'
   const isAutoMode = effectiveLookupMode === 'auto'
 
+  // Log lookup mode
+  console.log('useAlphaFoldDBSearch: Effective lookup mode:', effectiveLookupMode);
+
+
   const {
     isoformSequences,
     isLoading: isIsoformLoading,
     error: isoformError,
   } = useIsoformProteinSequences({ feature, view })
 
-  const {
-    entries: uniprotEntries,
-    isLoading: isLookupLoading,
-    error: lookupError,
-  } = useUniProtSearch({
+  const uniProtSearchParams = {
     recognizedIds: geneIds.recognizedIds,
     geneId: geneIds.geneId,
     geneName: geneIds.geneName,
     selectedQueryId,
     enabled: isAutoMode,
-  })
+  };
+  // Log UniProt search parameters
+  console.log('useAlphaFoldDBSearch: Calling useUniProtSearch with params:', uniProtSearchParams);
+  const {
+    entries: uniprotEntries,
+    isLoading: isLookupLoading,
+    error: lookupError,
+  } = useUniProtSearch(uniProtSearchParams);
+
 
   const autoUniprotId = uniprotEntries[0]?.accession
   const uniprotId =
@@ -77,6 +95,10 @@ export default function useAlphaFoldDBSearch({
         : effectiveLookupMode === 'manual'
           ? manualUniprotId
           : undefined
+
+  // Log the final uniprotId used for fetching
+  console.log('useAlphaFoldDBSearch: Determined uniprotId for fetching:', uniprotId);
+
 
   const {
     predictions,
@@ -94,17 +116,16 @@ export default function useAlphaFoldDBSearch({
   // SYNC: src/LaunchProteinView/hooks/useTranscriptSelection.ts (same pattern)
   // Auto-select transcript synchronously — avoids a useEffect that would
   // leave a one-frame gap where isLoading is false but no transcript is
-  // selected yet
-  const autoTranscriptId = useMemo(() => {
-    if (isoformSequences) {
-      return selectBestTranscript({
-        options: transcriptOptions,
-        isoformSequences,
-        structureSequence: alphaFoldStructureSequence,
-      })?.id()
-    }
-    return undefined
-  }, [transcriptOptions, alphaFoldStructureSequence, isoformSequences])
+  // selected yet. Removed useMemo as direct computation is clearer
+  // and performance impact is likely minimal for this logic.
+  let autoTranscriptId: string | undefined;
+  if (isoformSequences) {
+    autoTranscriptId = selectBestTranscript({
+      options: transcriptOptions,
+      isoformSequences,
+      structureSequence: alphaFoldStructureSequence,
+    })?.id();
+  }
 
   const effectiveTranscriptId = userTranscriptId ?? autoTranscriptId
   const selectedTranscript = transcriptOptions.find(

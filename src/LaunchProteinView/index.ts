@@ -19,25 +19,28 @@ function extendStateModel(stateModel: IAnyModelType) {
     (self: {
       contextMenuItems: () => MenuItem[]
       contextMenuFeature?: Feature
-      contextMenuInfo?: { regionNumber: number }
+      contextMenuInfo?: {
+        item: { type: string; featureId: string }
+        displayedRegionIndex: number
+      }
       fetchFullFeature?: (
         featureId: string,
-        regionNumber: number,
+        regionIndex: number,
       ) => Promise<Feature | undefined>
     }) => {
       const superContextMenuItems = self.contextMenuItems
       return {
         contextMenuItems() {
-          const feature = self.contextMenuFeature
-          const track = getContainingTrack(self)
           // DO NOT DELETE: contextMenuInfo must be captured here, not inside
           // onClick. The canvas display clears contextMenuInfo when the context
-          // menu closes, which happens before onClick fires. Capturing it here
-          // in the view ensures the regionNumber is available in the closure.
+          // menu closes, which happens before onClick fires.
           const contextMenuInfo = self.contextMenuInfo
-          const showProteinMenuItem =
-            feature &&
-            ['gene', 'mRNA', 'transcript'].includes(feature.get('type'))
+          const feature = self.contextMenuFeature
+          const featureType =
+            feature?.get('type') ?? contextMenuInfo?.item.type ?? ''
+          const showProteinMenuItem = ['gene', 'mRNA', 'transcript'].includes(
+            featureType,
+          )
           return [
             ...superContextMenuItems(),
             ...(showProteinMenuItem
@@ -46,6 +49,7 @@ function extendStateModel(stateModel: IAnyModelType) {
                     label: 'Launch protein view',
                     icon: AddIcon,
                     onClick: () => {
+                      const track = getContainingTrack(self)
                       const session = getSession(track)
                       const openDialog = (f: Feature) => {
                         session.queueDialog(handleClose => [
@@ -53,13 +57,20 @@ function extendStateModel(stateModel: IAnyModelType) {
                           { model: track, handleClose, feature: f },
                         ])
                       }
-                      if (self.fetchFullFeature && contextMenuInfo) {
+                      const featureId =
+                        feature?.id() ?? contextMenuInfo?.item.featureId
+                      const regionIndex = contextMenuInfo?.displayedRegionIndex
+                      if (
+                        self.fetchFullFeature &&
+                        featureId !== undefined &&
+                        regionIndex !== undefined
+                      ) {
                         // eslint-disable-next-line @typescript-eslint/no-floating-promises
                         ;(async () => {
                           try {
                             const fullFeature = await self.fetchFullFeature!(
-                              feature.id(),
-                              contextMenuInfo.regionNumber,
+                              featureId,
+                              regionIndex,
                             )
                             if (fullFeature) {
                               openDialog(fullFeature)
@@ -69,7 +80,7 @@ function extendStateModel(stateModel: IAnyModelType) {
                             session.notify(`${e}`, 'error')
                           }
                         })()
-                      } else {
+                      } else if (feature) {
                         openDialog(feature)
                       }
                     },
