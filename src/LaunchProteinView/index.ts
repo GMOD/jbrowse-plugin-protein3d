@@ -38,9 +38,11 @@ function extendStateModel(stateModel: IAnyModelType) {
           const feature = self.contextMenuFeature
           const featureType =
             feature?.get('type') ?? contextMenuInfo?.item.type ?? ''
-          const showProteinMenuItem = ['gene', 'mRNA', 'transcript'].includes(
-            featureType,
-          )
+          const canLaunch =
+            feature !== undefined ||
+            (self.fetchFullFeature !== undefined && contextMenuInfo !== undefined)
+          const showProteinMenuItem =
+            canLaunch && ['gene', 'mRNA', 'transcript'].includes(featureType)
           return [
             ...superContextMenuItems(),
             ...(showProteinMenuItem
