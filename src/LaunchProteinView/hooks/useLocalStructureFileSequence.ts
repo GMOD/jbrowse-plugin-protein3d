@@ -29,7 +29,6 @@ export default function useLocalStructureFileSequence({
       if (!file) {
         return undefined
       }
-
       const ext = file.name.slice(file.name.lastIndexOf('.') + 1) || 'pdb'
       const seq = await structureFileSequenceFetcher(
         file,

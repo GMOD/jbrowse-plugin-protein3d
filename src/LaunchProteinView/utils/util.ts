@@ -39,17 +39,13 @@ export function getId(val?: Feature): string {
 }
 
 export function getTranscriptDisplayName(val?: Feature): string {
-  return val === undefined
-    ? ''
-    : [val.get('name') ?? val.get('id')].filter(f => !!f).join(' ')
+  return val === undefined ? '' : (val.get('name') ?? val.get('id') ?? '')
 }
 
 export function getGeneDisplayName(val?: Feature): string {
   return val === undefined
     ? ''
-    : [val.get('gene_name') ?? val.get('name') ?? val.get('id')]
-        .filter(f => !!f)
-        .join(' ')
+    : (val.get('gene_name') ?? val.get('name') ?? val.get('id') ?? '')
 }
 
 export function getUniProtIdFromFeature(f?: Feature): string | undefined {
@@ -235,8 +231,8 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
   // If the feature is a gene, try to get identifiers from its first transcript.
   if (f.get('type') === 'gene') {
     const transcripts = getTranscriptFeatures(f)
-    if (transcripts && transcripts.length > 0) {
-      featureToProcess = transcripts[0] // Prioritize the first transcript
+    if (transcripts.length > 0) {
+      featureToProcess = transcripts[0]! // Prioritize the first transcript (length > 0 checked above)
     }
     // If no transcripts found, featureToProcess remains the parent gene 'f'.
   }

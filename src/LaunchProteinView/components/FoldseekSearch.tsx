@@ -17,6 +17,7 @@ import FoldseekResultsTable from './FoldseekResultsTable'
 import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
+import useTranscriptSelection from '../hooks/useTranscriptSelection'
 import { DEFAULT_DATABASES } from '../services/foldseekApi'
 import { getTranscriptFeatures } from '../utils/util'
 
@@ -56,9 +57,6 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const [userEditedSequence, setUserEditedSequence] = useState<
     string | undefined
   >()
-  const [selectedTranscriptId, setSelectedTranscriptId] = useState<
-    string | undefined
-  >()
   const [selectedDatabases, setSelectedDatabases] = useState(DEFAULT_DATABASES)
 
   const {
@@ -82,30 +80,15 @@ const FoldseekSearch = observer(function FoldseekSearch({
     error: isoformError,
   } = useIsoformProteinSequences({ feature, view })
 
-  // SYNC: src/LaunchProteinView/hooks/useTranscriptSelection.ts, useAlphaFoldDBSearch.ts
-  // Auto-select synchronously to avoid render gap
-  const autoSelectedTranscriptId = useMemo(() => {
-    if (isoformSequences && !selectedTranscriptId) {
-      const sortedTranscripts = [...transcripts].sort((a, b) => {
-        const seqA = isoformSequences[a.id()]?.seq
-        const seqB = isoformSequences[b.id()]?.seq
-        return (seqB?.length ?? 0) - (seqA?.length ?? 0)
-      })
-      const firstWithSeq = sortedTranscripts.find(
-        t => isoformSequences[t.id()]?.seq,
-      )
-      return firstWithSeq?.id()
-    }
-    return undefined
-  }, [isoformSequences, selectedTranscriptId, transcripts])
-
-  const effectiveSelectedTranscriptId =
-    selectedTranscriptId ?? autoSelectedTranscriptId ?? ''
+  const { userSelection: effectiveSelectedTranscriptId, setUserSelection } =
+    useTranscriptSelection({ options: transcripts, isoformSequences })
 
   const selectedTranscript = transcripts.find(
     t => t.id() === effectiveSelectedTranscriptId,
   )
-  const selectedIsoformData = isoformSequences?.[effectiveSelectedTranscriptId]
+  const selectedIsoformData = effectiveSelectedTranscriptId
+    ? isoformSequences?.[effectiveSelectedTranscriptId]
+    : undefined
 
   const cleanedSequence = selectedIsoformData?.seq.replace(/\*/g, '') ?? ''
   const sequence = userEditedSequence ?? cleanedSequence
@@ -158,7 +141,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
           <>
             <TranscriptSelector
               val={effectiveSelectedTranscriptId}
-              setVal={setSelectedTranscriptId}
+              setVal={setUserSelection}
               isoforms={transcripts}
               isoformSequences={isoformSequences}
               feature={feature}

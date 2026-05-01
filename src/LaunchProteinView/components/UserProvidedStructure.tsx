@@ -112,7 +112,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     structureSequence,
   })
   const selectedTranscript = options.find(val => getId(val) === userSelection)
-  const protein = isoformSequences?.[userSelection ?? '']
+  const protein = userSelection ? isoformSequences?.[userSelection] : undefined
 
   const error = isoformError ?? submitError ?? localFileError ?? remoteFileError
   return (
@@ -193,7 +193,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
             structureSequence ? (
               <>
                 <TranscriptSelector
-                  val={userSelection ?? ''}
+                  val={userSelection}
                   setVal={setUserSelection}
                   structureSequence={structureSequence}
                   isoforms={options}

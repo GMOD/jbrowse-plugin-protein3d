@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react'
 
 import { ErrorMessage, LoadingEllipses, ResizeHandle } from '@jbrowse/core/ui'
-import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 
 import ManualAlignmentDialog from './ManualAlignmentDialog'
@@ -26,12 +25,7 @@ const ProteinView = observer(function ProteinView({
   })
 
   useEffect(() => {
-    const disposer = autorun(() => {
-      model.setMolstarPluginContext(plugin)
-    })
-    return () => {
-      disposer()
-    }
+    model.setMolstarPluginContext(plugin)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [plugin])
 

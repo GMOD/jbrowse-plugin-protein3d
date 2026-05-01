@@ -1,5 +1,7 @@
+/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-require-imports */
 import { SimpleFeature } from '@jbrowse/core/util'
-import { renderHook, act } from '@testing-library/react' // For testing React hooks
+import { act, renderHook } from '@testing-library/react' // For testing React hooks
+
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
 // Import other necessary hooks and utilities from their respective paths
 import * as useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'

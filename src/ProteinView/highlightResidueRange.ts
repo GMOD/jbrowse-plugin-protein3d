@@ -98,7 +98,7 @@ export async function overpaintResidueRange({
     await setStructureOverpaint(
       plugin,
       structureRef.components,
-      Color(parseInt(color.replace('#', ''), 16)),
+      Color(hexToMolstarColor(color)),
       async (structure: Structure) => {
         const sel = await getMolstarRangeSelection({
           structure,

@@ -608,7 +608,7 @@ const Structure = types
             const seq1 = userProvidedTranscriptSequence
             const seq2 = structureSequences?.[0]
 
-            if (!!self.pairwiseAlignment || !seq1 || !seq2) {
+            if (self.pairwiseAlignment || !seq1 || !seq2) {
               return
             }
             const r1 = stripStopCodon(seq1)

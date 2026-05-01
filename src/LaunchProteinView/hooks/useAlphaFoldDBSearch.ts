@@ -31,8 +31,7 @@ export default function useAlphaFoldDBSearch({
   // Compute geneIds earlier to use for initializing selectedQueryId
   const geneIds = useMemo(() => extractFeatureIdentifiers(feature), [feature])
   // Prioritize recognized IDs for initial selection if available
-  const initialSelectedQueryId =
-    geneIds.recognizedIds.length > 0 ? geneIds.recognizedIds[0] : 'auto'
+  const initialSelectedQueryId = geneIds.recognizedIds[0] ?? 'auto'
   const [selectedQueryId, setSelectedQueryId] = useState(initialSelectedQueryId)
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
@@ -40,8 +39,8 @@ export default function useAlphaFoldDBSearch({
   const [userTranscriptId, setUserTranscriptId] = useState<string>()
 
   // Log extracted identifiers
-  console.log('useAlphaFoldDBSearch: Extracted geneIds:', geneIds)
-  console.log(
+  console.warn('useAlphaFoldDBSearch: Extracted geneIds:', geneIds)
+  console.warn(
     'useAlphaFoldDBSearch: Initial selectedQueryId:',
     initialSelectedQueryId,
   )
@@ -63,7 +62,7 @@ export default function useAlphaFoldDBSearch({
   const isAutoMode = effectiveLookupMode === 'auto'
 
   // Log lookup mode
-  console.log(
+  console.warn(
     'useAlphaFoldDBSearch: Effective lookup mode:',
     effectiveLookupMode,
   )
@@ -82,7 +81,7 @@ export default function useAlphaFoldDBSearch({
     enabled: isAutoMode,
   }
   // Log UniProt search parameters
-  console.log(
+  console.warn(
     'useAlphaFoldDBSearch: Calling useUniProtSearch with params:',
     uniProtSearchParams,
   )
@@ -103,7 +102,7 @@ export default function useAlphaFoldDBSearch({
           : undefined
 
   // Log the final uniprotId used for fetching
-  console.log(
+  console.warn(
     'useAlphaFoldDBSearch: Determined uniprotId for fetching:',
     uniprotId,
   )
@@ -139,8 +138,9 @@ export default function useAlphaFoldDBSearch({
   const selectedTranscript = transcriptOptions.find(
     f => getId(f) === effectiveTranscriptId,
   )
-  const userSelectedProteinSequence =
-    isoformSequences?.[effectiveTranscriptId ?? '']
+  const userSelectedProteinSequence = effectiveTranscriptId
+    ? isoformSequences?.[effectiveTranscriptId]
+    : undefined
 
   const {
     uniprotId: seqSearchUniprotId,
