@@ -59,7 +59,11 @@ export default defineConfig(
           ],
           pathGroups: [
             { group: 'builtin', pattern: 'react', position: 'before' },
-            { group: 'external', pattern: '@mui/icons-material', position: 'after' },
+            {
+              group: 'external',
+              pattern: '@mui/icons-material',
+              position: 'after',
+            },
           ],
           pathGroupsExcludedImportTypes: ['react'],
         },
@@ -86,7 +90,11 @@ export default defineConfig(
       '@typescript-eslint/prefer-nullish-coalescing': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
-        { argsIgnorePattern: '^_', ignoreRestSiblings: true, caughtErrors: 'none' },
+        {
+          argsIgnorePattern: '^_',
+          ignoreRestSiblings: true,
+          caughtErrors: 'none',
+        },
       ],
     },
   },

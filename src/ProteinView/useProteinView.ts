@@ -2,15 +2,17 @@ import { useEffect, useRef, useState } from 'react'
 
 import loadMolstar from './loadMolstar'
 
+import type { JBrowsePluginProteinViewModel } from './model'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export default function useProteinView({
   showControls,
+  model,
 }: {
   showControls: boolean
+  model?: JBrowsePluginProteinViewModel
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
-  const [plugin, setPlugin] = useState<PluginContext>()
   const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
 
@@ -53,7 +55,7 @@ export default function useProteinView({
           },
         })
         await p.initialized
-        setPlugin(p)
+        model?.setMolstarPluginContext(p)
       } catch (e) {
         console.error(e)
         setError(e)
@@ -64,7 +66,7 @@ export default function useProteinView({
     return () => {
       p?.unmount()
     }
-  }, [showControls])
+  }, [showControls, model])
 
-  return { parentRef, error, plugin, loading }
+  return { parentRef, error, loading }
 }

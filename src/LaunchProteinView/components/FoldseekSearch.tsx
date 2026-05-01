@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
@@ -72,7 +72,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     reset,
   } = useFoldseekSearch()
 
-  const transcripts = useMemo(() => getTranscriptFeatures(feature), [feature])
+  const transcripts = getTranscriptFeatures(feature)
 
   const {
     isoformSequences,
@@ -204,9 +204,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
             disabled={!canPredict}
             onClick={() => {
               if (sequence.trim()) {
-                predictStructure(sequence.trim()).catch((e: unknown) => {
-                  console.error(e)
-                })
+                void predictStructure(sequence.trim())
               }
             }}
           >
@@ -218,12 +216,12 @@ const FoldseekSearch = observer(function FoldseekSearch({
             color="primary"
             disabled={!canSearch}
             onClick={() => {
-              if (cleanedAaSequence && di3Sequence && selectedDatabases.length > 0) {
-                search(cleanedAaSequence, di3Sequence, selectedDatabases).catch(
-                  (e: unknown) => {
-                    console.error(e)
-                  },
-                )
+              if (
+                cleanedAaSequence &&
+                di3Sequence &&
+                selectedDatabases.length > 0
+              ) {
+                void search(cleanedAaSequence, di3Sequence, selectedDatabases)
               }
             }}
           >

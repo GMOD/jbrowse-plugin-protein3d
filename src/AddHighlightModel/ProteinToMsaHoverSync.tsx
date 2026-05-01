@@ -31,47 +31,43 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
     ? (views.find(f => f.id === connectedMsaViewId) as MsaView | undefined)
     : undefined
 
-  // Sync protein hover to MSA
-  useEffect(() => {
-    if (!proteinView || !msaView?.setMouseoveredColumn) {
-      return
-    }
-
-    const disposer = autorun(() => {
-      const structure = proteinView.structures[0]
-      if (structure) {
-        const pos = structure.structureSeqHoverPos
-        msaView.setMouseoveredColumn?.(pos)
-      }
-    })
-
-    return () => {
-      disposer()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  // Sync MSA hover to protein
   useEffect(() => {
     if (!proteinView || !msaView) {
       return
     }
 
-    const disposer = autorun(() => {
-      const col = msaView.mouseoveredColumn
-      const structure = proteinView.structures[0]
-      if (structure && col !== undefined) {
-        structure.highlightFromExternal(col)
-      } else if (structure && col === undefined) {
-        structure.clearHighlightFromExternal()
-      }
-    })
+    const disposers: (() => void)[] = []
+
+    if (msaView.setMouseoveredColumn) {
+      disposers.push(
+        autorun(() => {
+          const structure = proteinView.structures[0]
+          if (structure) {
+            const pos = structure.structureSeqHoverPos
+            msaView.setMouseoveredColumn?.(pos)
+          }
+        }),
+      )
+    }
+
+    disposers.push(
+      autorun(() => {
+        const col = msaView.mouseoveredColumn
+        const structure = proteinView.structures[0]
+        if (structure && col !== undefined) {
+          structure.highlightFromExternal(col)
+        } else if (structure && col === undefined) {
+          structure.clearHighlightFromExternal()
+        }
+      }),
+    )
 
     return () => {
-      disposer()
+      disposers.forEach(d => {
+        d()
+      })
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [proteinView, msaView])
 
   return null
 })

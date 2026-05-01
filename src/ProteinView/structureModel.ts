@@ -657,13 +657,11 @@ const Structure = types
             const { hoverPosition } = hovered
             const pos =
               genomeToTranscriptSeqMapping.g2p[hoverPosition.coord - 1]
-            const c0 =
-              pos === undefined
-                ? undefined
-                : transcriptSeqToStructureSeqPosition?.[pos]
-
-            if (c0 !== undefined) {
-              self.setHoveredPosition({ structureSeqPos: c0 })
+            if (pos !== undefined) {
+              const c0 = transcriptSeqToStructureSeqPosition?.[pos]
+              if (c0 !== undefined) {
+                self.setHoveredPosition({ structureSeqPos: c0 })
+              }
             }
           }
         }),
@@ -697,11 +695,10 @@ const Structure = types
                   }
                 }
               })
-            return () => {
+            addDisposer(self, () => {
               ret.unsubscribe()
-            }
+            })
           }
-          return () => {}
         }),
       )
 
@@ -727,11 +724,10 @@ const Structure = types
                   }
                 }
               })
-            return () => {
+            addDisposer(self, () => {
               ret.unsubscribe()
-            }
+            })
           }
-          return () => {}
         }),
       )
 

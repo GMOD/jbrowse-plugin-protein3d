@@ -27,9 +27,11 @@ const ProteinToGenomeHighlightInner = observer(
     const proteinView = views.find(f => f.type === 'ProteinView') as
       | JBrowsePluginProteinViewModel
       | undefined
-    const assemblyName = assemblyNames[0]!
-    const assembly = assemblyManager.get(assemblyName)
-    return assembly ? (
+    const assemblyName = assemblyNames[0]
+    const assembly = assemblyName
+      ? assemblyManager.get(assemblyName)
+      : undefined
+    return assembly && assemblyName ? (
       <>
         {proteinView?.structures.map(
           (structure: JBrowsePluginProteinStructureModel, idx: number) =>

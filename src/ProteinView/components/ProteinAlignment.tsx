@@ -29,28 +29,26 @@ const ProteinAlignment = observer(function ProteinAlignment({
     error: featureError,
   } = useProteinFeatureTrackData(model, uniprotId)
 
-  useEffect(
-    () =>
-      autorun(() => {
-        const alignmentHoverPos = model.alignmentHoverPos
-        const container = containerRef.current
-        if (
-          !model.autoScrollAlignment ||
-          model.isMouseInAlignment ||
-          alignmentHoverPos === undefined ||
-          !container
-        ) {
-          return
-        }
-        const scrollPosition = alignmentHoverPos * CHAR_WIDTH
-        container.scrollTo({
-          left: scrollPosition - container.clientWidth / 2,
-          behavior: 'smooth',
-        })
-      }),
+  useEffect(() => {
+    return autorun(() => {
+      const alignmentHoverPos = model.alignmentHoverPos
+      const container = containerRef.current
+      if (
+        !model.autoScrollAlignment ||
+        model.isMouseInAlignment ||
+        alignmentHoverPos === undefined ||
+        !container
+      ) {
+        return
+      }
+      const scrollPosition = alignmentHoverPos * CHAR_WIDTH
+      container.scrollTo({
+        left: scrollPosition - container.clientWidth / 2,
+        behavior: 'smooth',
+      })
+    })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  )
+  }, [])
 
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>

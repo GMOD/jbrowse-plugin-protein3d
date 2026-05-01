@@ -17,9 +17,10 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
-    "allowJs": true
+    "allowJs": true,
+    "types": ["vitest/globals"]
   },
 
   "include": ["src"],
-  "exclude": ["**/dist/"]
+  "exclude": ["**/dist/", "**/*.test.ts", "**/*.test.tsx"]
 }

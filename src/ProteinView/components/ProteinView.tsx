@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { ErrorMessage, LoadingEllipses, ResizeHandle } from '@jbrowse/core/ui'
 import { observer } from 'mobx-react'
@@ -20,14 +20,10 @@ const ProteinView = observer(function ProteinView({
   model: JBrowsePluginProteinViewModel
 }) {
   const { showControls } = model
-  const { plugin, parentRef, error, loading } = useProteinView({
+  const { parentRef, error, loading } = useProteinView({
     showControls,
+    model,
   })
-
-  useEffect(() => {
-    model.setMolstarPluginContext(plugin)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [plugin])
 
   if (error) {
     return <ErrorMessage error={error} />

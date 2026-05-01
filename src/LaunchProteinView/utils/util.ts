@@ -159,7 +159,7 @@ function extractIdsFromDbxref(dbxrefEntries: string[]): string[] {
 }
 
 // New helper function to extract recognized DB IDs
-function findRecognizedDbIds(f?: Feature): string[] {
+export function findRecognizedDbIds(f?: Feature): string[] {
   if (!f) {
     return []
   }

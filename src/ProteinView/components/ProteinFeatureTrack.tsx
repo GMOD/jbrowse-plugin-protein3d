@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react'
+import React, { useState } from 'react'
 
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
@@ -17,7 +17,6 @@ import highlightResidueRange, {
 } from '../highlightResidueRange'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
-import { throttle } from './throttle'
 
 import type { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import type { UniProtFeature } from '../hooks/useUniProtFeatures'
@@ -329,36 +328,22 @@ export const ProteinFeatureTrackContent = observer(
   }) {
     const { hiddenFeatureTypes } = model
     const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
-    const containerRef = useRef<HTMLDivElement>(null)
 
-    const handleMouseMove = useMemo(
-      () =>
-        throttle((e: React.MouseEvent) => {
-          const container = containerRef.current
-          if (!container) {
-            return
-          }
-          const rect = container.getBoundingClientRect()
+    return (
+      <div
+        onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
+          const rect = e.currentTarget.getBoundingClientRect()
           const x = e.clientX - rect.left
           const alignmentPos = Math.floor(x / CHAR_WIDTH)
           if (alignmentPos >= 0 && alignmentPos < data.sequenceLength) {
             model.hoverAlignmentPosition(alignmentPos)
           }
-        }, 16),
-      [model, data.sequenceLength],
-    )
-
-    const handleMouseLeave = () => {
-      model.setHoveredPosition(undefined)
-      model.clearHoverGenomeHighlights()
-      model.clearHighlightFromExternal()
-    }
-
-    return (
-      <div
-        ref={containerRef}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+        }}
+        onMouseLeave={() => {
+          model.setHoveredPosition(undefined)
+          model.clearHoverGenomeHighlights()
+          model.clearHighlightFromExternal()
+        }}
       >
         {visibleTypes.map(type => (
           <FeatureTypeTrackContent
