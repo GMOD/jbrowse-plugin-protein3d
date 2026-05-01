@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/prefer-nullish-coalescing, @typescript-eslint/no-require-imports */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-require-imports */
 import { SimpleFeature } from '@jbrowse/core/util'
 import { act, renderHook } from '@testing-library/react' // For testing React hooks
 

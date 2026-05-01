@@ -40,7 +40,6 @@ export interface UniProtEntry {
 }
 
 // Re-export for backward compatibility
-export { isRecognizedDatabaseId as isRecognizedTranscriptId }
 
 const UNIPROT_FIELDS =
   'accession,id,gene_names,organism_name,protein_name,reviewed'
@@ -153,3 +152,5 @@ export async function searchUniProtEntries({
   // Sort reviewed entries first
   return entries.toSorted((a, b) => Number(b.isReviewed) - Number(a.isReviewed))
 }
+
+export { isRecognizedDatabaseId as isRecognizedTranscriptId } from '../utils/util'

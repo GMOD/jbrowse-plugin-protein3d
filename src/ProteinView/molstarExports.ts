@@ -16,7 +16,6 @@ export { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 export { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 export { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 export { StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset'
-export { type BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 export {
   clearStructureOverpaint,
   setStructureOverpaint,

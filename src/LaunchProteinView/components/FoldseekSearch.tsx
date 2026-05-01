@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
@@ -93,24 +93,9 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const cleanedSequence = selectedIsoformData?.seq.replace(/\*/g, '') ?? ''
   const sequence = userEditedSequence ?? cleanedSequence
 
-  useEffect(() => {
+  const setUserSelectionWithReset = (id: string | undefined) => {
+    setUserSelection(id)
     setUserEditedSequence(undefined)
-  }, [effectiveSelectedTranscriptId])
-
-  const handlePredict = async () => {
-    if (sequence.trim()) {
-      await predictStructure(sequence.trim())
-    }
-  }
-
-  const handleSearch = () => {
-    if (cleanedAaSequence && di3Sequence && selectedDatabases.length > 0) {
-      search(cleanedAaSequence, di3Sequence, selectedDatabases).catch(
-        (e: unknown) => {
-          console.error(e)
-        },
-      )
-    }
   }
 
   const canPredict = sequence.trim().length > 0 && !isPredicting && !isLoading
@@ -141,7 +126,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
           <>
             <TranscriptSelector
               val={effectiveSelectedTranscriptId}
-              setVal={setUserSelection}
+              setVal={setUserSelectionWithReset}
               isoforms={transcripts}
               isoformSequences={isoformSequences}
               feature={feature}
@@ -218,9 +203,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
             color="primary"
             disabled={!canPredict}
             onClick={() => {
-              handlePredict().catch((e: unknown) => {
-                console.error(e)
-              })
+              if (sequence.trim()) {
+                predictStructure(sequence.trim()).catch((e: unknown) => {
+                  console.error(e)
+                })
+              }
             }}
           >
             {isPredicting ? 'Predicting...' : 'Predict 3Di structure'}
@@ -230,7 +217,15 @@ const FoldseekSearch = observer(function FoldseekSearch({
             variant="contained"
             color="primary"
             disabled={!canSearch}
-            onClick={handleSearch}
+            onClick={() => {
+              if (cleanedAaSequence && di3Sequence && selectedDatabases.length > 0) {
+                search(cleanedAaSequence, di3Sequence, selectedDatabases).catch(
+                  (e: unknown) => {
+                    console.error(e)
+                  },
+                )
+              }
+            }}
           >
             {isLoading ? 'Searching...' : 'Search Foldseek'}
           </Button>

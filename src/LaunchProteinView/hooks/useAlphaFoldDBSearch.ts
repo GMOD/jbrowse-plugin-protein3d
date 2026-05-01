@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 
 import useAlphaFoldData from './useAlphaFoldData'
 import useAlphaFoldSequenceSearch from './useAlphaFoldSequenceSearch'
@@ -165,10 +165,10 @@ export default function useAlphaFoldDBSearch({
     : alphaFoldStructureSequence
   const finalUniprotId = isSequenceMode ? seqSearchUniprotId : uniprotId
 
-  // Reset manual transcript selection when UniProt selection changes
-  useEffect(() => {
+  const setSelectedUniprotIdWithReset = (id: string | undefined) => {
+    setSelectedUniprotId(id)
     setUserTranscriptId(undefined)
-  }, [selectedUniprotId])
+  }
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
@@ -197,7 +197,7 @@ export default function useAlphaFoldDBSearch({
     sequenceSearchType,
     setSequenceSearchType,
     selectedUniprotId,
-    setSelectedUniprotId,
+    setSelectedUniprotId: setSelectedUniprotIdWithReset,
     userSelection: effectiveTranscriptId,
     setUserSelection: setUserTranscriptId,
 

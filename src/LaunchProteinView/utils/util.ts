@@ -281,7 +281,7 @@ export function selectBestTranscript({
   )
   const longestWithData = options
     .filter(f => !!isoformSequences[f.id()])
-    .sort(
+    .toSorted(
       (a, b) =>
         isoformSequences[b.id()]!.seq.length -
         isoformSequences[a.id()]!.seq.length,

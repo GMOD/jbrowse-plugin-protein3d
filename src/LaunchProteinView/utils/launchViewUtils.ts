@@ -182,7 +182,7 @@ export function launchMsaView({
 }
 
 export function hasMsaViewPlugin() {
-  return typeof window.JBrowsePluginMsaView !== 'undefined'
+  return window.JBrowsePluginMsaView !== undefined
 }
 
 export function launch3DProteinViewWithMsa(

@@ -44,7 +44,6 @@ function getFeatureGeometry(
   }
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
   return (
     <div>
