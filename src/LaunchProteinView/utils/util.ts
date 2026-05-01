@@ -1,4 +1,3 @@
-
 import type { Feature } from '@jbrowse/core/util'
 
 export function stripStopCodon(seq: string) {
@@ -166,10 +165,10 @@ function extractIdsFromDbxref(dbxrefEntries: string[]): string[] {
 // New helper function to extract recognized DB IDs
 function findRecognizedDbIds(f?: Feature): string[] {
   if (!f) {
-    return [];
+    return []
   }
 
-  const recognizedIds: string[] = [];
+  const recognizedIds: string[] = []
 
   // Check various feature attributes for recognized IDs
   const attributesToCheck = [
@@ -181,38 +180,37 @@ function findRecognizedDbIds(f?: Feature): string[] {
     f.get('protein_id'),
     f.get('protAcc'), // RefSeq protein accession
     f.get('mrnaAcc'), // RefSeq mRNA accession
-  ];
+  ]
 
   for (const attr of attributesToCheck) {
     if (typeof attr === 'string') {
-      const stripped = attr.replace(/\.[^./]+$/, ''); // Strip version
+      const stripped = attr.replace(/\.[^./]+$/, '') // Strip version
       if (isRecognizedDatabaseId(stripped)) {
-        recognizedIds.push(stripped);
+        recognizedIds.push(stripped)
       }
     }
   }
 
   // Handle HGNC attribute which may be just the number (e.g., "10848" instead of "HGNC:10848")
-  const hgnc = f.get('hgnc') ?? f.get('HGNC');
+  const hgnc = f.get('hgnc') ?? f.get('HGNC')
   if (typeof hgnc === 'string' || typeof hgnc === 'number') {
-    const hgncStr = String(hgnc);
+    const hgncStr = String(hgnc)
     if (/^\d+$/.test(hgncStr)) {
-      recognizedIds.push(`HGNC:${hgncStr}`);
+      recognizedIds.push(`HGNC:${hgncStr}`)
     } else if (hgncPattern.test(hgncStr)) {
-      recognizedIds.push(hgncStr);
+      recognizedIds.push(hgncStr)
     }
   }
 
   // Parse dbxref for additional IDs
-  const dbxref = f.get('Dbxref') ?? f.get('dbxref') ?? f.get('db_xref');
-  const dbxrefIds = extractIdsFromDbxref(parseDbxref(dbxref));
+  const dbxref = f.get('Dbxref') ?? f.get('dbxref') ?? f.get('db_xref')
+  const dbxrefIds = extractIdsFromDbxref(parseDbxref(dbxref))
   for (const id of dbxrefIds) {
-    recognizedIds.push(id);
+    recognizedIds.push(id)
   }
 
-  return [...new Set(recognizedIds)];
+  return [...new Set(recognizedIds)]
 }
-
 
 export interface FeatureIdentifiers {
   recognizedIds: string[]
@@ -229,46 +227,46 @@ export interface FeatureIdentifiers {
  */
 export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
   if (!f) {
-    return { recognizedIds: [] };
+    return { recognizedIds: [] }
   }
 
-  let featureToProcess = f; // Default to the parent feature
+  let featureToProcess = f // Default to the parent feature
 
   // If the feature is a gene, try to get identifiers from its first transcript.
   if (f.get('type') === 'gene') {
-    const transcripts = getTranscriptFeatures(f);
+    const transcripts = getTranscriptFeatures(f)
     if (transcripts && transcripts.length > 0) {
-      featureToProcess = transcripts[0]; // Prioritize the first transcript
+      featureToProcess = transcripts[0] // Prioritize the first transcript
     }
     // If no transcripts found, featureToProcess remains the parent gene 'f'.
   }
 
   // --- Extracting Recognized IDs and UniProt ID from featureToProcess ---
-  const recognizedIds = findRecognizedDbIds(featureToProcess);
+  const recognizedIds = findRecognizedDbIds(featureToProcess)
 
   // Handle UniProt ID from feature attributes (trust that it's valid if present)
   const uniprotIdAttr =
     featureToProcess.get('uniprot') ??
     featureToProcess.get('uniprotId') ??
     featureToProcess.get('uniprotid') ??
-    featureToProcess.get('UniProt');
+    featureToProcess.get('UniProt')
   const uniprotId =
     typeof uniprotIdAttr === 'string' && uniprotIdAttr.length > 0
       ? uniprotIdAttr
-      : undefined;
+      : undefined
 
   // --- Get gene ID and name as fallbacks from the original parent feature 'f' ---
   // This assumes gene_id and gene_name are attributes of the parent gene, not the transcript.
-  const geneId = f.get('gene_id') ?? f.get('ID');
+  const geneId = f.get('gene_id') ?? f.get('ID')
   const geneName =
-    f.get('gene_name') ?? f.get('gene') ?? f.get('name') ?? f.get('Name');
+    f.get('gene_name') ?? f.get('gene') ?? f.get('name') ?? f.get('Name')
 
   return {
     recognizedIds: [...new Set(recognizedIds)], // Ensure unique IDs
     uniprotId,
     geneId: typeof geneId === 'string' ? geneId : undefined,
     geneName: typeof geneName === 'string' ? geneName : undefined,
-  };
+  }
 }
 
 export function selectBestTranscript({

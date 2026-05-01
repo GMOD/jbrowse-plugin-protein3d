@@ -121,7 +121,7 @@ function stateModelFactory() {
       /**
        * #volatile
        */
-      error: undefined as unknown,
+      error: undefined,
       /**
        * #volatile
        */

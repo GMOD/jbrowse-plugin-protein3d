@@ -1,6 +1,6 @@
 import eslint from '@eslint/js'
 import { defineConfig } from 'eslint/config'
-import importPlugin from 'eslint-plugin-import'
+// import importPlugin from 'eslint-plugin-import'
 import eslintPluginReact from 'eslint-plugin-react'
 import eslintPluginReactHooks from 'eslint-plugin-react-hooks'
 import eslintPluginReactRefresh from 'eslint-plugin-react-refresh'
@@ -30,7 +30,7 @@ export default defineConfig(
 
     settings: {
       react: {
-        version: 'detect',
+        version: 'v19.2.5',
       },
     },
   },
@@ -38,7 +38,7 @@ export default defineConfig(
   ...tseslint.configs.recommended,
   ...tseslint.configs.stylisticTypeChecked,
   ...tseslint.configs.strictTypeChecked,
-  importPlugin.flatConfigs.recommended,
+  // importPlugin.flatConfigs.recommended,
   eslintPluginReact.configs.flat.recommended,
 
   {
@@ -78,37 +78,37 @@ export default defineConfig(
         },
       ],
 
-      'import/no-unresolved': 'off',
-      'import/order': [
-        'error',
-        {
-          named: true,
-          'newlines-between': 'always',
-          alphabetize: {
-            order: 'asc',
-          },
-          groups: [
-            'builtin',
-            ['external', 'internal'],
-            ['parent', 'sibling', 'index', 'object'],
-            'type',
-          ],
-          pathGroups: [
-            {
-              group: 'builtin',
-              pattern: 'react',
-              position: 'before',
-            },
-            {
-              group: 'external',
-              pattern: '@mui/icons-material',
-              position: 'after',
-            },
-          ],
-
-          pathGroupsExcludedImportTypes: ['react'],
-        },
-      ],
+      // 'import/no-unresolved': 'off',
+      // 'import/order': [
+      //   'error',
+      //   {
+      //     named: true,
+      //     'newlines-between': 'always',
+      //     alphabetize: {
+      //       order: 'asc',
+      //     },
+      //     groups: [
+      //       'builtin',
+      //       ['external', 'internal'],
+      //       ['parent', 'sibling', 'index', 'object'],
+      //       'type',
+      //     ],
+      //     pathGroups: [
+      //       {
+      //         group: 'builtin',
+      //         pattern: 'react',
+      //         position: 'before',
+      //       },
+      //       {
+      //         group: 'external',
+      //         pattern: '@mui/icons-material',
+      //         position: 'after',
+      //       },
+      //     ],
+      //
+      //     pathGroupsExcludedImportTypes: ['react'],
+      //   },
+      // ],
       '@typescript-eslint/require-await': 'off',
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-return': 'off',
