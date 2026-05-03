@@ -41,7 +41,7 @@
     "@jbrowse/plugin-linear-genome-view": "^4.2.0",
     "@mui/icons-material": "^7.3.10",
     "clustal-js": "^2.0.14",
-    "g2p_mapper": "^2.0.0",
+    "g2p_mapper": "^2.0.1",
     "molstar": "^5.8.0",
     "swr": "^2.4.1"
   },
@@ -61,11 +61,14 @@
     "@testing-library/react": "^16.3.2",
     "@types/node": "^25.6.0",
     "@types/react": "^19.2.14",
+    "@typescript-eslint/eslint-plugin": "^8.59.1",
+    "@typescript-eslint/parser": "^8.59.1",
     "esbuild": "^0.28.0",
     "eslint": "^10.2.1",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-unicorn": "^64.0.0",
     "fp-ts": "^2.16.11",
     "mobx": "^6.15.0",
     "mobx-react": "^9.2.1",
@@ -81,10 +84,7 @@
     "tss-react": "^4.9.20",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.59.1",
-    "vitest": "^4.1.5",
-    "@typescript-eslint/eslint-plugin": "^8.59.1",
-    "@typescript-eslint/parser": "^8.59.1",
-    "eslint-plugin-unicorn": "^64.0.0"
+    "vitest": "^4.1.5"
   },
   "author": "Colin <colin.diesh@gmail.com>",
   "license": "MIT"
