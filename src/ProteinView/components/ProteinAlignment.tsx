@@ -83,7 +83,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           model.setIsMouseInAlignment(false)
           model.setHoveredPosition(undefined)
           model.clearHoverGenomeHighlights()
-          model.clearHighlightFromExternal()
+          model.clearMolstarHoverHighlight()
         }}
       >
         <div

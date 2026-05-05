@@ -86,6 +86,14 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseEnter = () => {
     setIsHovered(true)
+    console.log(
+      '[protein3d] feature mouseenter',
+      JSON.stringify({
+        start: feature.start,
+        end: feature.end,
+        id: feature.uniqueId,
+      }),
+    )
     const structure = model.molstarStructure
     if (structure && molstarPluginContext) {
       highlightResidueRange({
@@ -101,11 +109,13 @@ const FeatureBar = observer(function FeatureBar({
     if (range) {
       model.setAlignmentHoverRange(range)
     }
+    model.setHoveredPosition(undefined)
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    molstarPluginContext?.managers.interactivity.lociHighlights.clearHighlights()
+    console.log('[protein3d] feature mouseleave', feature.uniqueId)
+    model.clearMolstarHoverHighlight()
     model.clearAlignmentHoverRange()
   }
 
@@ -342,7 +352,7 @@ export const ProteinFeatureTrackContent = observer(
         onMouseLeave={() => {
           model.setHoveredPosition(undefined)
           model.clearHoverGenomeHighlights()
-          model.clearHighlightFromExternal()
+          model.clearMolstarHoverHighlight()
         }}
       >
         {visibleTypes.map(type => (

@@ -1,0 +1,5 @@
+allowBuilds:
+  '@scarf/scarf': false
+  esbuild: true
+  puppeteer: true
+  unrs-resolver: true

@@ -37,19 +37,19 @@
     "postversion": "git push --follow-tags"
   },
   "dependencies": {
-    "@jbrowse/app-core": "^4.2.0",
-    "@jbrowse/plugin-linear-genome-view": "^4.2.0",
+    "@jbrowse/app-core": "^4.2.1",
+    "@jbrowse/plugin-linear-genome-view": "^4.2.1",
     "@mui/icons-material": "^7.3.10",
     "clustal-js": "^2.0.14",
     "g2p_mapper": "^2.0.1",
-    "molstar": "^5.8.0",
+    "molstar": "^5.9.0",
     "swr": "^2.4.1"
   },
   "devDependencies": {
     "@emotion/react": "^11.14.0",
     "@eslint/js": "^10.0.1",
     "@fal-works/esbuild-plugin-global-externals": "^2.1.2",
-    "@jbrowse/core": "^4.2.0",
+    "@jbrowse/core": "^4.2.1",
     "@jbrowse/mobx-state-tree": "^5.6.0",
     "@mui/material": "^7.3.10",
     "@mui/system": "^7.3.10",
@@ -64,7 +64,7 @@
     "@typescript-eslint/eslint-plugin": "^8.59.1",
     "@typescript-eslint/parser": "^8.59.1",
     "esbuild": "^0.28.0",
-    "eslint": "^10.2.1",
+    "eslint": "^10.3.0",
     "eslint-plugin-import-x": "^4.16.2",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",

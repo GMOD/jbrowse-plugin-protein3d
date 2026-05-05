@@ -405,6 +405,8 @@ function stateModelFactory() {
                     plugin: molstarPluginContext,
                     selectedResidue: pos,
                   })
+                } else if (pos === undefined) {
+                  molstarPluginContext.managers.interactivity.lociHighlights.clearHighlights()
                 }
               }
             }

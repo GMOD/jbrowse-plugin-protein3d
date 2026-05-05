@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
 import { getSession } from '@jbrowse/core/util'
-import { autorun } from 'mobx'
+import { autorun, untracked } from 'mobx'
 import { observer } from 'mobx-react'
 
 import type { JBrowsePluginProteinViewModel } from '../ProteinView/model'
@@ -55,9 +55,20 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
         const col = msaView.mouseoveredColumn
         const structure = proteinView.structures[0]
         if (structure && col !== undefined) {
-          structure.highlightFromExternal(col)
-        } else if (structure && col === undefined) {
-          structure.clearHighlightFromExternal()
+          const hasFeatureHoverRange = untracked(
+            () => !!structure.alignmentHoverRange,
+          )
+          console.log(
+            '[protein3d] MSA sync -> highlightFromExternal',
+            JSON.stringify({ col, hasFeatureHoverRange }),
+          )
+          if (!hasFeatureHoverRange) {
+            structure.highlightFromExternal(col)
+          }
+        } else if (structure) {
+          if (!untracked(() => structure.alignmentHoverRange)) {
+            structure.clearMolstarHoverHighlight()
+          }
         }
       }),
     )

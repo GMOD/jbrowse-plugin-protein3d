@@ -554,9 +554,9 @@ const Structure = types
 
     /**
      * #action
-     * Clear highlight from an external source
      */
-    clearHighlightFromExternal() {
+    clearMolstarHoverHighlight() {
+      console.log('[protein3d] clearMolstarHoverHighlight called')
       const plugin = self.molstarPluginContext
       plugin?.managers.interactivity.lociHighlights.clearHighlights()
     },
@@ -565,10 +565,19 @@ const Structure = types
      * #action
      */
     hoverAlignmentPosition(alignmentPos: number) {
-      const structureSeqPos =
-        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      self.setHoveredPosition({ structureSeqPos })
-      if (structureSeqPos !== undefined) {
+      console.log(
+        '[protein3d] hoverAlignmentPosition',
+        JSON.stringify({
+          alignmentPos,
+          hasFeatureHoverRange: !!self.alignmentHoverRange,
+        }),
+      )
+      if (!self.alignmentHoverRange) {
+        const structureSeqPos =
+          self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+        self.setHoveredPosition(
+          structureSeqPos !== undefined ? { structureSeqPos } : undefined,
+        )
         hoverProteinToGenome({
           model: self as JBrowsePluginProteinStructureModel,
           structureSeqPos,
@@ -722,6 +731,9 @@ const Structure = types
                       structureSeqPos: locationInfo.structureSeqPos,
                     })
                   }
+                } else {
+                  self.setHoveredPosition(undefined)
+                  self.clearHoverGenomeHighlights()
                 }
               })
             addDisposer(self, () => {
