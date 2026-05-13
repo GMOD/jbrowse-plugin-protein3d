@@ -115,58 +115,66 @@ describe('Protein3d Plugin E2E', () => {
   it('should launch protein view from gene context menu', async () => {
     expect(page).toBeDefined()
 
-    // The default session is already showing a region with gene features
-    // Wait for tracks to fully render
-    await new Promise(r => setTimeout(r, 5000))
     await page!.screenshot({ path: screenshot('before-click') })
 
-    // Find the track label to locate the track area
-    const trackLabel = await page!.evaluateHandle(() => {
-      const labels = document.querySelectorAll('[data-testid="track_label"]')
-      for (const label of labels) {
-        if (label.textContent?.includes('GENCODE')) {
-          return label
-        }
-      }
-      // Fallback: find any element containing GENCODE text
-      const allElements = document.querySelectorAll('*')
-      for (const el of allElements) {
-        if (
-          el.textContent?.includes('GENCODE') &&
+    // Find the track content canvas by locating the GENCODE label and reading
+    // the canvas that lives in the same track row.
+    const trackInfo = await page!.evaluate(() => {
+      // Find the element that contains only "GENCODE" text (the track label)
+      const gencodeLabelEl = [...document.querySelectorAll('*')].find(
+        el =>
           el.children.length === 0 &&
-          (el as HTMLElement).offsetHeight > 0
-        ) {
-          return el
-        }
+          el.textContent?.trim() === 'GENCODE v44' &&
+          (el as HTMLElement).offsetHeight > 0,
+      ) as HTMLElement | undefined
+
+      if (!gencodeLabelEl) {
+        return null
       }
-      return null
+
+      // Walk up the DOM to find the track row, then find its canvas
+      let row: HTMLElement | null = gencodeLabelEl
+      while (row && !row.querySelector('canvas')) {
+        row = row.parentElement
+      }
+      const canvas = row?.querySelector('canvas') as HTMLCanvasElement | null
+      if (!canvas) {
+        return null
+      }
+
+      const rect = canvas.getBoundingClientRect()
+      // Skip off-screen canvases (e.g. minimap/overview ruler)
+      if (rect.left < 0) {
+        return null
+      }
+      return { x: rect.left + rect.width / 2, y: rect.top + 10 }
     })
 
-    const labelElement = trackLabel.asElement()
-    let clickY = 170 // Default fallback position
+    console.log(`Track canvas center: ${JSON.stringify(trackInfo)}`)
 
-    if (labelElement) {
-      const labelBox = await labelElement.boundingBox()
-      if (labelBox) {
-        // Click in the track area, which is to the right and slightly below the label
-        clickY = labelBox.y + labelBox.height / 2
-        console.log(`Found track label at y=${clickY}`)
+    // Try several x positions across the track to land on a feature
+    const viewport = await page!.viewport()
+    const clickY = trackInfo?.y ?? 170
+    const xPositions = trackInfo
+      ? [trackInfo.x, viewport!.width * 0.3, viewport!.width * 0.5, viewport!.width * 0.7]
+      : [viewport!.width * 0.35, viewport!.width * 0.5, viewport!.width * 0.65]
+
+    let menuItems: Awaited<ReturnType<typeof page.$$>> = []
+    for (const clickX of xPositions) {
+      console.log(`Right-clicking at (${clickX}, ${clickY})`)
+      await page!.mouse.click(clickX, clickY, { button: 'right' })
+      await new Promise(r => setTimeout(r, 1000))
+      menuItems = await page!.$$('[role="menuitem"]')
+      if (menuItems.length > 0) {
+        break
       }
+      // Dismiss any empty menu before trying next position
+      await page!.keyboard.press('Escape')
+      await new Promise(r => setTimeout(r, 300))
     }
 
-    // Click in the middle of the viewport width where features should be visible
-    const viewport = await page!.viewport()
-    const clickX = viewport!.width * 0.35 // ~35% from left where features are
-
-    console.log(`Right-clicking at (${clickX}, ${clickY})`)
-    await page!.mouse.click(clickX, clickY, { button: 'right' })
-
-    // Wait for context menu to appear
-    await new Promise(r => setTimeout(r, 1000))
     await page!.screenshot({ path: screenshot('context-menu') })
 
-    // Look for menu items
-    const menuItems = await page!.$$('[role="menuitem"]')
     console.log(`Found ${menuItems.length} menu items`)
 
     if (menuItems.length === 0) {
@@ -214,7 +222,7 @@ describe('Protein3d Plugin E2E', () => {
     await page!.screenshot({ path: screenshot('protein-dialog') })
 
     // Wait for the dialog to finish loading (the Launch button becomes enabled)
-    await new Promise(r => setTimeout(r, 5000))
+    await new Promise(r => setTimeout(r, 15000))
     await page!.screenshot({ path: screenshot('dialog-after-wait') })
 
     // Look for Launch button and click it
@@ -243,49 +251,22 @@ describe('Protein3d Plugin E2E', () => {
       if (!isDisabled) {
         await launchButton.click()
         console.log('Clicked Launch button')
-        await new Promise(r => setTimeout(r, 2000))
-        await page!.screenshot({ path: screenshot('launch-options') })
 
-        // Look for "Launch 3D protein structure view" option in the popup menu
-        const menuItems = await page!.$$(
-          '[role="menuitem"], [role="option"], li',
-        )
-        let launch3dOption = null
-        for (const item of menuItems) {
-          const text = await page!.evaluate(
-            el => (el as HTMLElement).textContent,
-            item,
+        // Wait for the protein view to mount (molstar plugin container)
+        try {
+          await page!.waitForFunction(
+            () =>
+              !!(
+                document.querySelector('[class*="msp-plugin"]') ||
+                document.querySelector('[class*="molstar"]')
+              ),
+            { timeout: 20_000 },
           )
-          console.log(`Launch option: ${text}`)
-          if (text?.includes('3D protein structure')) {
-            launch3dOption = item
-            break
-          }
+          console.log('Protein view opened')
+        } catch {
+          console.log('Protein view did not open within 20s')
         }
-
-        if (launch3dOption) {
-          await launch3dOption.click()
-          console.log('Clicked Launch 3D protein structure view')
-          await new Promise(r => setTimeout(r, 10000))
-          await page!.screenshot({ path: screenshot('protein-view-loading') })
-
-          // Check if protein view opened (look for molstar elements)
-          const proteinViewOpened = await page!.evaluate(() => {
-            // Check for molstar/protein view specific elements
-            const molstarCanvas =
-              document.querySelector('[class*="msp-plugin"]') ||
-              document.querySelector('canvas[class*="msp"]') ||
-              document.querySelector('[class*="Molstar"]') ||
-              document.querySelector('[class*="molstar"]')
-            return !!molstarCanvas
-          })
-
-          console.log(`Protein view opened: ${proteinViewOpened}`)
-          await page!.screenshot({ path: screenshot('protein-view-success') })
-        } else {
-          console.log('Launch 3D option not found')
-          await page!.screenshot({ path: screenshot('no-3d-option') })
-        }
+        await page!.screenshot({ path: screenshot('protein-view') })
       } else {
         console.log('Launch button is disabled - data may still be loading')
         await page!.screenshot({ path: screenshot('launch-disabled') })

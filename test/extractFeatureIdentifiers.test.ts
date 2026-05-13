@@ -1,12 +1,13 @@
+// @vitest-environment jsdom
 import { SimpleFeature } from '@jbrowse/core/util'
-import { renderHook, act } from '@testing-library/react' // For testing React hooks
+import { renderHook } from '@testing-library/react'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
 // Import other necessary hooks and utilities from their respective paths
-import * as useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
-import * as useAlphaFoldSequenceSearch from '../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch'
-import * as useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsoformProteinSequences'
-import * as useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
-import * as getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
+import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
+import useAlphaFoldSequenceSearch from '../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch'
+import useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsoformProteinSequences'
+import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
+import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
 // Import utility functions and constants directly
 import * as util from '../src/LaunchProteinView/utils/util' // Import all utilities from util
 
@@ -28,23 +29,11 @@ vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
 })
 
 // Import the mocked functions after mocking
-const mockUseAlphaFoldData = useAlphaFoldData as vi.MockedFunction<
-  typeof useAlphaFoldData
->
-const mockUseAlphaFoldSequenceSearch =
-  useAlphaFoldSequenceSearch as vi.MockedFunction<
-    typeof useAlphaFoldSequenceSearch
-  >
-const mockUseIsoformProteinSequences =
-  useIsoformProteinSequences as vi.MockedFunction<
-    typeof useIsoformProteinSequences
-  >
-const mockUseUniProtSearch = useUniProtSearch as vi.MockedFunction<
-  typeof useUniProtSearch
->
-const mockGetSearchDescription = getSearchDescription as vi.MockedFunction<
-  typeof getSearchDescription
->
+const mockUseAlphaFoldData = vi.mocked(useAlphaFoldData)
+const mockUseAlphaFoldSequenceSearch = vi.mocked(useAlphaFoldSequenceSearch)
+const mockUseIsoformProteinSequences = vi.mocked(useIsoformProteinSequences)
+const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
+const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
 const mockGetTranscriptFeatures = util.getTranscriptFeatures as vi.Mock
 const mockGetId = util.getId as vi.Mock
@@ -103,7 +92,12 @@ describe('useAlphaFoldDBSearch', () => {
     ;(mockGetId as vi.Mock).mockImplementation(f => f?.id() || '')
 
     // Create a mock feature and view
-    mockFeature = new SimpleFeature({ id: 'mock-feature-id' })
+    mockFeature = new SimpleFeature({
+      uniqueId: 'mock-feature-id',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+    })
     mockView = { id: 'mock-view-id' } // Mock LinearGenomeViewModel
   })
 
@@ -161,11 +155,17 @@ describe('useAlphaFoldDBSearch', () => {
   // Test case to ensure autoTranscriptId is computed correctly directly
   it('should compute autoTranscriptId correctly directly', () => {
     const mockTranscript1 = new SimpleFeature({
-      id: 'transcript1',
+      uniqueId: 'transcript1',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
       seq: 'MALS...',
     })
     const mockTranscript2 = new SimpleFeature({
-      id: 'transcript2',
+      uniqueId: 'transcript2',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
       seq: 'MALS....*',
     })
     const mockTranscriptOptions = [mockTranscript1, mockTranscript2]
@@ -218,65 +218,44 @@ describe('useAlphaFoldDBSearch', () => {
 // New test file for extractFeatureIdentifiers, specifically testing the gene vs transcript prioritization.
 // Note: This assumes that other helper functions like isRecognizedDatabaseId, hgncPattern, etc., are correctly exported/available from util.ts
 describe('extractFeatureIdentifiers', () => {
-  // Mock getTranscriptFeatures to control its output for specific test cases
-  const mockGetTranscriptFeatures = vi.spyOn(util, 'getTranscriptFeatures')
-  // We are testing the exported extractFeatureIdentifiers function, so we should not mock it directly here.
-  // Instead, we will control its dependencies (like getTranscriptFeatures) via mocks.
-  // Ensure original util functions are accessible for direct calls if needed for base behavior.
-  const {
-    extractFeatureIdentifiers: actualExtractFeatureIdentifiers,
-    getTranscriptFeatures: actualGetTranscriptFeatures,
-    ...restOfUtil
-  } = require('../src/LaunchProteinView/utils/util') // Using require here for actual functions in case vitest needs it, though import is preferred if possible.
+  let actualExtractFeatureIdentifiers!: typeof util.extractFeatureIdentifiers
+
+  beforeAll(async () => {
+    const actualUtil = await vi.importActual<typeof util>(
+      '../src/LaunchProteinView/utils/util',
+    )
+    actualExtractFeatureIdentifiers = actualUtil.extractFeatureIdentifiers
+  })
 
   beforeEach(() => {
-    // Reset mocks before each test
     vi.clearAllMocks()
-
-    // Default mock for getTranscriptFeatures if not overridden
-    ;(mockGetTranscriptFeatures as vi.Mock).mockImplementation(f => {
-      if (f.get('type') === 'gene') {
-        // Return some mock transcripts if they exist in the feature data
-        return (
-          f
-            .get('subfeatures')
-            ?.filter(
-              (sf: Feature) =>
-                sf.get('type') === 'transcript' || sf.get('type') === 'mRNA',
-            ) || []
-        )
-      }
-      return []
-    })
-    // Mock getId for consistency
-    ;(util.getId as vi.Mock).mockImplementation(f => f?.id() || '')
   })
 
   it('should extract identifiers from the first transcript subfeature if the input is a gene with transcripts', () => {
     // Mock transcript subfeature with recognized IDs and UniProt ID
     const mockTranscript = new SimpleFeature({
-      id: 'transcript1_id',
-      type: 'transcript', // type is transcript
-      name: 'NM_001310462.2', // This should NOT be picked up as geneName for the gene
-      transcript_id: 'ENST00000123456', // Recognized ID
-      uniprot: 'P12345', // UniProt ID
-      Dbxref: ['HGNC:HGNC:5678', 'RefSeq:NM_001310462.2'], // Dbxref containing recognized IDs
-      // Other transcript-specific attributes
+      uniqueId: 'transcript1_id',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      type: 'transcript',
+      name: 'NM_001310462.2',
+      transcript_id: 'ENST00000123456',
+      uniprot: 'P12345',
+      Dbxref: ['HGNC:HGNC:5678', 'RefSeq:NM_001310462.2'],
     })
 
-    // Mock parent gene feature
     const mockGene = new SimpleFeature({
-      id: 'SHH_gene_id', // Parent gene ID
-      gene_id: 'SHH_gene_id', // Parent gene gene_id
-      name: 'SHH_gene_name_fallback', // Parent gene name (should be picked up as geneName)
+      uniqueId: 'SHH_gene_id',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      gene_id: 'SHH_gene_id',
+      name: 'SHH_gene_name_fallback',
       type: 'gene',
-      subfeatures: [mockTranscript], // Gene has a transcript subfeature
+      subfeatures: [mockTranscript],
     })
 
-    // Ensure getTranscriptFeatures returns our mock transcript for this gene
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue([mockTranscript])
-
-    // Call the actual extractFeatureIdentifiers function
     const identifiers = actualExtractFeatureIdentifiers(mockGene)
 
     // Assertions:
@@ -297,17 +276,16 @@ describe('extractFeatureIdentifiers', () => {
 
   it('should extract identifiers from the parent gene if it is not of type "gene" or has no transcripts', () => {
     const mockGeneWithoutTranscripts = new SimpleFeature({
-      id: 'ParentGeneID',
+      uniqueId: 'ParentGeneID',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
       gene_id: 'ParentGeneID',
       name: 'ParentGeneName',
       uniprot: 'P98765',
       Dbxref: ['HGNC:HGNC:11111'],
-      type: 'gene', // Explicitly type as gene, but mock getTranscriptFeatures to return empty
+      type: 'gene',
     })
-    // Mock getTranscriptFeatures to return empty array for this gene
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue([])
-
-    // Call the actual extractFeatureIdentifiers function
     const identifiers = actualExtractFeatureIdentifiers(
       mockGeneWithoutTranscripts,
     )
@@ -321,17 +299,16 @@ describe('extractFeatureIdentifiers', () => {
 
   it('should extract identifiers from the parent feature if it is not of type "gene"', () => {
     const mockNonGeneFeature = new SimpleFeature({
-      id: 'nonGeneFeature',
+      uniqueId: 'nonGeneFeature',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
       name: 'SomeFeature',
-      type: 'exon', // Not a gene
+      type: 'exon',
       gene_id: 'ParentGeneID',
       uniprot: 'P98765',
       Dbxref: ['HGNC:HGNC:11111'],
     })
-    // Mock getTranscriptFeatures won't be called if type is not 'gene'
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue([])
-
-    // Call the actual extractFeatureIdentifiers function
     const identifiers = actualExtractFeatureIdentifiers(mockNonGeneFeature)
 
     expect(identifiers.recognizedIds).toEqual(['HGNC:11111'])
@@ -351,29 +328,13 @@ describe('extractFeatureIdentifiers', () => {
 
   it('should handle features with no relevant attributes gracefully', () => {
     const mockFeatureEmpty = new SimpleFeature({
-      id: 'emptyFeature',
-      type: 'gene', // Type is gene, but no relevant IDs or names
+      uniqueId: 'emptyFeature',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      type: 'gene',
     })
-    // Mock getTranscriptFeatures to return empty array
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue([])
-
-    // Mock extractFeatureIdentifiers to simulate its behavior for empty cases
-    ;(mockExtractFeatureIdentifiers as vi.Mock).mockImplementation(f => {
-      const originalUtil = require('../src/LaunchProteinView/utils/util')
-      const recognizedIds = originalUtil.findRecognizedDbIds(f)
-      const uniprotId = originalUtil.getUniProtIdFromFeature(f)
-      const geneId = f.get('gene_id') ?? f.get('ID')
-      const geneName =
-        f.get('gene_name') ?? f.get('gene') ?? f.get('name') ?? f.get('Name')
-      return {
-        recognizedIds,
-        uniprotId,
-        geneId: typeof geneId === 'string' ? geneId : undefined,
-        geneName: typeof geneName === 'string' ? geneName : undefined,
-      }
-    })
-
-    const identifiers = extractFeatureIdentifiers(mockFeatureEmpty)
+    const identifiers = actualExtractFeatureIdentifiers(mockFeatureEmpty)
 
     expect(identifiers.recognizedIds).toEqual([])
     expect(identifiers.uniprotId).toBeUndefined()

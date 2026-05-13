@@ -279,12 +279,9 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 900 })
 
-  // Enable console logging from the page
+  // Forward all browser console output to the test runner
   page.on('console', msg => {
-    const type = msg.type()
-    if (type === 'error' || type === 'warning') {
-      console.log(`[browser ${type}] ${msg.text()}`)
-    }
+    console.log(`[browser ${msg.type()}] ${msg.text()}`)
   })
 
   page.on('pageerror', err => {
@@ -297,7 +294,7 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
     )
   })
 
-  const jbrowseUrl = `http://localhost:${JBROWSE_PORT}/?sessionName=mysession`
+  const jbrowseUrl = `http://localhost:${JBROWSE_PORT}/`
   console.log(`Navigating to: ${jbrowseUrl}`)
   await page.goto(jbrowseUrl, { waitUntil: 'networkidle2', timeout: 60_000 })
 
@@ -305,7 +302,6 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
 }
 
 export async function waitForJBrowseLoad(page: Page): Promise<void> {
-  // First wait for React app to mount - look for root div with content
   await page.waitForFunction(
     () => {
       const root = document.querySelector('#root')
@@ -315,30 +311,56 @@ export async function waitForJBrowseLoad(page: Page): Promise<void> {
   )
   console.log('React app mounted')
 
-  // Take a screenshot to see current state
-  await page.screenshot({ path: 'debug-after-mount.png' })
 
-  // Try to wait for canvas, but don't fail if not found
+  // Wait for the track label to appear, confirming defaultSession loaded with tracks
   try {
-    await page.waitForSelector('canvas', { timeout: 30_000 })
-    console.log('Canvas found')
+    await page.waitForFunction(
+      () =>
+        [...document.querySelectorAll('*')].some(el =>
+          el.textContent?.includes('GENCODE'),
+        ),
+      { timeout: 30_000 },
+    )
+    console.log('GENCODE track label visible')
   } catch {
-    console.log('No canvas found after 30s, continuing anyway...')
-    await page.screenshot({ path: 'debug-no-canvas.png' })
+    console.log('GENCODE track label not found after 30s, continuing...')
+    await page.screenshot({ path: 'debug-no-track.png' })
   }
-
-  // Give additional time for any loading
-  await new Promise(r => setTimeout(r, 3000))
 }
 
 export async function waitForTrackLoad(page: Page): Promise<void> {
-  // Wait for feature track to have rendered content
+  // Wait for features to paint on the track canvas.
+  // JBrowse renders gene features as dark/colored pixels at the top of the canvas;
+  // poll until at least one canvas has a non-white pixel in its top rows.
   try {
-    await page.waitForSelector('canvas', { timeout: 30_000 })
-    console.log('Track canvas found')
+    await page.waitForFunction(
+      () => {
+        const canvases = document.querySelectorAll('canvas')
+        for (const canvas of canvases as NodeListOf<HTMLCanvasElement>) {
+          if (canvas.width < 200) {
+            continue
+          }
+          try {
+            const ctx = canvas.getContext('2d')
+            if (!ctx) {
+              continue
+            }
+            const { data } = ctx.getImageData(0, 0, canvas.width, 20)
+            for (let i = 0; i < data.length; i += 4) {
+              if (data[i]! < 200 || data[i + 1]! < 200 || data[i + 2]! < 200) {
+                return true
+              }
+            }
+          } catch {
+            // cross-origin or tainted canvas — skip
+          }
+        }
+        return false
+      },
+      { timeout: 30_000 },
+    )
+    console.log('Track features rendered')
   } catch {
-    console.log('No track canvas found, continuing...')
+    console.log('Track features not detected after 30s, continuing...')
   }
-  // Wait for any loading
-  await new Promise(r => setTimeout(r, 3000))
 }
