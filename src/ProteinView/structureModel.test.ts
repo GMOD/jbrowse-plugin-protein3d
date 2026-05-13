@@ -4,9 +4,10 @@ import { expect, test, vi } from 'vitest'
 import Structure from './structureModel'
 
 import type { AlignmentAlgorithm } from './types'
+import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 
 vi.mock('@jbrowse/core/util', async importActual => {
-  const actual = await importActual<typeof import('@jbrowse/core/util')>()
+  const actual = await importActual<typeof JBrowseCoreUtil>()
   return { ...actual, getSession: () => ({ hovered: undefined, views: [] }) }
 })
 

@@ -19,7 +19,6 @@ export default async function highlightResidue({
     selectedResidue: selectedResidue + 1,
   })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
-  console.log('[protein3d] highlightResidue (single)', selectedResidue)
   plugin.managers.interactivity.lociHighlights.clearHighlights()
   plugin.managers.interactivity.lociHighlights.highlight({
     loci,

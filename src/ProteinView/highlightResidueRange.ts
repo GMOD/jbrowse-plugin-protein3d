@@ -50,10 +50,6 @@ export default async function highlightResidueRange({
     endResidue,
   })
   const loci = StructureSelection.toLociWithSourceUnits(sel)
-  console.log(
-    '[protein3d] highlightResidueRange',
-    JSON.stringify({ startResidue, endResidue }),
-  )
   plugin.managers.interactivity.lociHighlights.clearHighlights()
   plugin.managers.interactivity.lociHighlights.highlight({ loci })
 }

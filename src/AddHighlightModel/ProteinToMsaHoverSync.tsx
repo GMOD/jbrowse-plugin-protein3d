@@ -39,12 +39,12 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
     const disposers: (() => void)[] = []
 
     if (msaView.setMouseoveredColumn) {
+      const { setMouseoveredColumn } = msaView
       disposers.push(
         autorun(() => {
           const structure = proteinView.structures[0]
           if (structure) {
-            const pos = structure.structureSeqHoverPos
-            msaView.setMouseoveredColumn?.(pos)
+            setMouseoveredColumn(structure.structureSeqHoverPos)
           }
         }),
       )
@@ -57,10 +57,6 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
         if (structure && col !== undefined) {
           const hasFeatureHoverRange = untracked(
             () => !!structure.alignmentHoverRange,
-          )
-          console.log(
-            '[protein3d] MSA sync -> highlightFromExternal',
-            JSON.stringify({ col, hasFeatureHoverRange }),
           )
           if (!hasFeatureHoverRange) {
             structure.highlightFromExternal(col)

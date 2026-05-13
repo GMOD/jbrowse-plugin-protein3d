@@ -17,7 +17,7 @@ import {
   hoverProteinToGenome,
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
-import { checkHovered, invertMap, toStr } from './util'
+import { checkHovered, invertMap } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import {
@@ -105,16 +105,6 @@ const Structure = types
     /**
      * #volatile
      */
-    clickPosition: undefined as
-      | {
-          structureSeqPos: number
-          code: string
-          chain: string
-        }
-      | undefined,
-    /**
-     * #volatile
-     */
     hoverPosition: undefined as
       | {
           structureSeqPos?: number
@@ -122,10 +112,6 @@ const Structure = types
           chain?: string
         }
       | undefined,
-    /**
-     * #volatile
-     */
-    pairwiseAlignmentStatus: '',
     /**
      * #volatile
      */
@@ -208,16 +194,6 @@ const Structure = types
     /**
      * #action
      */
-    setClickedPosition(arg?: {
-      structureSeqPos: number
-      code: string
-      chain: string
-    }) {
-      self.clickPosition = arg
-    },
-    /**
-     * #action
-     */
     setClickGenomeHighlights(r: IRegion[]) {
       self.clickGenomeHighlights = r
     },
@@ -294,12 +270,6 @@ const Structure = types
     /**
      * #action
      */
-    setAlignmentStatus(str: string) {
-      self.pairwiseAlignmentStatus = str
-    },
-    /**
-     * #action
-     */
     setIsMouseInAlignment(val: boolean) {
       self.isMouseInAlignment = val
     },
@@ -367,13 +337,6 @@ const Structure = types
       return this.structurePositionToAlignmentMap
         ? invertMap(this.structurePositionToAlignmentMap)
         : undefined
-    },
-    /**
-     * #getter
-     */
-    get clickString() {
-      const r = self.clickPosition
-      return r === undefined ? '' : toStr(r)
     },
     /**
      * #getter
@@ -556,7 +519,6 @@ const Structure = types
      * #action
      */
     clearMolstarHoverHighlight() {
-      console.log('[protein3d] clearMolstarHoverHighlight called')
       const plugin = self.molstarPluginContext
       plugin?.managers.interactivity.lociHighlights.clearHighlights()
     },
@@ -565,13 +527,6 @@ const Structure = types
      * #action
      */
     hoverAlignmentPosition(alignmentPos: number) {
-      console.log(
-        '[protein3d] hoverAlignmentPosition',
-        JSON.stringify({
-          alignmentPos,
-          hasFeatureHoverRange: !!self.alignmentHoverRange,
-        }),
-      )
       if (!self.alignmentHoverRange) {
         const structureSeqPos =
           self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
@@ -631,15 +586,12 @@ const Structure = types
                 ],
               })
             } else {
-              self.setAlignmentStatus('Running alignment...')
               const pairwiseAlignment = runLocalAlignment(
                 r1,
                 r2,
                 alignmentAlgorithm,
               )
               self.setAlignment(pairwiseAlignment)
-              self.setAlignmentStatus('')
-
               self.parentView.setShowAlignment(true)
             }
           } catch (e) {

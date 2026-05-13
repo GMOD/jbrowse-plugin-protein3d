@@ -117,7 +117,7 @@ export async function clickProteinToGenome({
       0.2,
     )
   } else {
-    const assembly = assemblyManager.get(connectedView.assemblyNames[0]!)
+    const assembly = assemblyManager.get(assemblyName)
     connectedView.centerAt(
       start,
       assembly?.getCanonicalRefName(refName) ?? refName,

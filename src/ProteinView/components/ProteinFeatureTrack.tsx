@@ -86,14 +86,6 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    console.log(
-      '[protein3d] feature mouseenter',
-      JSON.stringify({
-        start: feature.start,
-        end: feature.end,
-        id: feature.uniqueId,
-      }),
-    )
     const structure = model.molstarStructure
     if (structure && molstarPluginContext) {
       highlightResidueRange({
@@ -114,7 +106,6 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    console.log('[protein3d] feature mouseleave', feature.uniqueId)
     model.clearMolstarHoverHighlight()
     model.clearAlignmentHoverRange()
   }
@@ -167,9 +158,9 @@ const FeatureBar = observer(function FeatureBar({
   return (
     <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
       <div
-        onClick={handleClick}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onClick={() => handleClick()}
+        onMouseEnter={() => handleMouseEnter()}
+        onMouseLeave={() => handleMouseLeave()}
         style={{
           position: 'absolute',
           left,
