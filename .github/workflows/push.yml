@@ -46,7 +46,7 @@ jobs:
       - name: Install Puppeteer Chrome
         run: npx puppeteer browsers install chrome
       - name: Install JBrowse CLI
-        run: pnpm add -g @jbrowse/cli
+        run: npm install -g @jbrowse/cli
       - name: Setup JBrowse ${{ matrix.jbrowse-version }}
         run: |
           if [ "${{ matrix.jbrowse-version }}" = "nightly" ]; then
