@@ -23,10 +23,10 @@ interface ProteinGenomeMappingModel {
 type NavigateToProteinPositionModel = IAnyStateTreeNode &
   ProteinGenomeMappingModel & {
     connectedView: LinearGenomeViewModel | undefined
-    zoomToBaseLevel: boolean
   }
 
 type ClickProteinToGenomeModel = NavigateToProteinPositionModel & {
+  zoomToBaseLevel: boolean
   setClickedStructureRange: (range?: { start: number; end: number }) => void
 }
 
@@ -98,13 +98,15 @@ export async function navigateToProteinPosition({
   model,
   structureSeqPos,
   structureSeqEndPos,
+  zoomToBaseLevel,
 }: {
   structureSeqPos: number
   structureSeqEndPos?: number
   model: NavigateToProteinPositionModel
+  zoomToBaseLevel: boolean
 }) {
   const session = getSession(model)
-  const { connectedView, genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
+  const { connectedView, genomeToTranscriptSeqMapping } = model
   if (!genomeToTranscriptSeqMapping || !connectedView) {
     return
   }
@@ -153,5 +155,10 @@ export async function clickProteinToGenome({
     start: structureSeqPos,
     end: structureSeqEndPos ?? structureSeqPos + 1,
   })
-  await navigateToProteinPosition({ model, structureSeqPos, structureSeqEndPos })
+  await navigateToProteinPosition({
+    model,
+    structureSeqPos,
+    structureSeqEndPos,
+    zoomToBaseLevel: model.zoomToBaseLevel,
+  })
 }

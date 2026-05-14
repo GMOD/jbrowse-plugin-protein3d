@@ -697,8 +697,9 @@ const Structure = types
           const { followCursor, connectedView, structureSeqHoverPos } = self
           if (followCursor && connectedView?.initialized && structureSeqHoverPos !== undefined) {
             navigateToProteinPosition({
-              model: { ...self, zoomToBaseLevel: false },
+              model: self,
               structureSeqPos: structureSeqHoverPos,
+              zoomToBaseLevel: false,
             }).catch((e: unknown) => {
               console.error(e)
             })
