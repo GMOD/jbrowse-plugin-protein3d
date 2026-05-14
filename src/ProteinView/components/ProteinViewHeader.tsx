@@ -28,6 +28,16 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           <FormControlLabel
             control={
               <Checkbox
+                checked={showAlignment}
+                onChange={() => model.setShowAlignment(!showAlignment)}
+                size="small"
+              />
+            }
+            label="Alignment"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
                 checked={autoScrollAlignment}
                 onChange={() => model.setAutoScrollAlignment(!autoScrollAlignment)}
                 size="small"
