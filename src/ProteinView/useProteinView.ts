@@ -17,8 +17,10 @@ export default function useProteinView({
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    let p: PluginContext | undefined
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises
+    const state: { cancelled: boolean; plugin?: PluginContext } = {
+      cancelled: false,
+    }
+    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     ;(async () => {
       try {
         if (!parentRef.current) {
@@ -36,7 +38,7 @@ export default function useProteinView({
         const d = document.createElement('div')
         parentRef.current.append(d)
         const defaultSpec = DefaultPluginUISpec()
-        p = await createPluginUI({
+        const created = await createPluginUI({
           target: d,
           render: renderReact18,
           spec: {
@@ -54,8 +56,13 @@ export default function useProteinView({
             config: [[PluginConfig.Viewport.ShowExpand, false]],
           },
         })
-        await p.initialized
-        model?.setMolstarPluginContext(p)
+        await created.initialized
+        if (state.cancelled) {
+          created.unmount()
+        } else {
+          state.plugin = created
+          model?.setMolstarPluginContext(created)
+        }
       } catch (e) {
         console.error(e)
         setError(e)
@@ -64,7 +71,8 @@ export default function useProteinView({
       }
     })()
     return () => {
-      p?.unmount()
+      state.cancelled = true
+      state.plugin?.unmount()
     }
   }, [showControls, model])
 

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-confusing-non-null-assertion */
 import type { PairwiseAlignment } from '../mappings'
+import type { AlignmentAlgorithm } from './types'
 
 // BLOSUM62 scoring matrix — standard 20 amino acids + B, Z, X, *
 // prettier-ignore
@@ -323,12 +324,10 @@ function buildConsensus(alignedSeq1: string, alignedSeq2: string) {
   return chars.join('')
 }
 
-export type AlignmentType = 'needleman_wunsch' | 'smith_waterman'
-
 export function runLocalAlignment(
   seq1: string,
   seq2: string,
-  algorithm: AlignmentType = 'needleman_wunsch',
+  algorithm: AlignmentAlgorithm,
 ): PairwiseAlignment {
   const { alignedSeq1, alignedSeq2 } =
     algorithm === 'smith_waterman'

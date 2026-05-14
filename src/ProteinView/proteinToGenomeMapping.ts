@@ -76,14 +76,18 @@ export async function clickProteinToGenome({
   structureSeqEndPos?: number
   model: JBrowsePluginProteinStructureModel
 }) {
+  model.setClickedStructureRange({
+    start: structureSeqPos,
+    end: structureSeqEndPos ?? structureSeqPos + 1,
+  })
+
   const session = getSession(model)
   const { connectedView, genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
-  const { assemblyManager } = session
-  if (!genomeToTranscriptSeqMapping) {
+  if (!genomeToTranscriptSeqMapping || !connectedView) {
     return undefined
   }
   const { strand, refName } = genomeToTranscriptSeqMapping
-  const assemblyName = connectedView?.assemblyNames[0]
+  const assemblyName = connectedView.assemblyNames[0]
   if (!assemblyName) {
     return undefined
   }
@@ -102,14 +106,6 @@ export async function clickProteinToGenome({
   }
   const [start, end] = result
 
-  model.setClickGenomeHighlights([
-    {
-      assemblyName,
-      refName,
-      start,
-      end,
-    },
-  ])
   if (zoomToBaseLevel) {
     await connectedView.navToLocString(
       `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
@@ -117,42 +113,11 @@ export async function clickProteinToGenome({
       0.2,
     )
   } else {
+    const { assemblyManager } = session
     const assembly = assemblyManager.get(assemblyName)
     connectedView.centerAt(
       start,
       assembly?.getCanonicalRefName(refName) ?? refName,
     )
-  }
-}
-
-export function hoverProteinToGenome({
-  model,
-  structureSeqPos,
-}: {
-  structureSeqPos?: number
-  model: JBrowsePluginProteinStructureModel
-}) {
-  if (structureSeqPos === undefined) {
-    model.setHoverGenomeHighlights([])
-    return
-  }
-
-  const mappedCoords = proteinToGenomeMapping({
-    structureSeqPos,
-    model,
-  })
-  const { genomeToTranscriptSeqMapping, connectedView } = model
-  const assemblyName = connectedView?.assemblyNames[0]
-
-  if (genomeToTranscriptSeqMapping && mappedCoords && assemblyName) {
-    const [start, end] = mappedCoords
-    model.setHoverGenomeHighlights([
-      {
-        assemblyName,
-        refName: genomeToTranscriptSeqMapping.refName,
-        start,
-        end,
-      },
-    ])
   }
 }

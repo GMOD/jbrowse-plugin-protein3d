@@ -13,13 +13,11 @@ function setupSyncAutorun(
 ) {
   return autorun(() => {
     const col = msaView.mouseoveredColumn
-    if (col !== undefined) {
-      if (!untracked(() => structure.alignmentHoverRange)) {
-        onHighlight(col)
-      }
-    } else {
-      if (!untracked(() => structure.alignmentHoverRange)) {
+    if (!untracked(() => structure.alignmentHoverRange)) {
+      if (col === undefined) {
         onClear()
+      } else {
+        onHighlight(col)
       }
     }
   })

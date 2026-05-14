@@ -29,26 +29,25 @@ const ProteinAlignment = observer(function ProteinAlignment({
     error: featureError,
   } = useProteinFeatureTrackData(model, uniprotId)
 
-  useEffect(() => {
-    return autorun(() => {
-      const alignmentHoverPos = model.alignmentHoverPos
-      const container = containerRef.current
-      if (
-        !model.autoScrollAlignment ||
-        model.isMouseInAlignment ||
-        alignmentHoverPos === undefined ||
-        !container
-      ) {
-        return
-      }
-      const scrollPosition = alignmentHoverPos * CHAR_WIDTH
-      container.scrollTo({
-        left: scrollPosition - container.clientWidth / 2,
-        behavior: 'smooth',
-      })
-    })
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  useEffect(
+    () =>
+      autorun(() => {
+        const container = containerRef.current
+        if (
+          model.autoScrollAlignment &&
+          !model.isMouseInAlignment &&
+          model.alignmentHoverPos !== undefined &&
+          container
+        ) {
+          container.scrollTo({
+            left:
+              model.alignmentHoverPos * CHAR_WIDTH - container.clientWidth / 2,
+            behavior: 'smooth',
+          })
+        }
+      }),
+    [model],
+  )
 
   if (!pairwiseAlignment) {
     return <div>No pairwiseAlignment</div>
@@ -82,8 +81,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
         onMouseLeave={() => {
           model.setIsMouseInAlignment(false)
           model.setHoveredPosition(undefined)
-          model.clearHoverGenomeHighlights()
-          model.clearMolstarHoverHighlight()
         }}
       >
         <div

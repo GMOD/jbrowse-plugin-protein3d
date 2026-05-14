@@ -12,9 +12,7 @@ import {
   TRACK_GAP,
   TRACK_HEIGHT,
 } from '../constants'
-import highlightResidueRange, {
-  selectResidueRange,
-} from '../highlightResidueRange'
+import { selectResidueRange } from '../highlightResidueRange'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
@@ -86,17 +84,6 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    const structure = model.molstarStructure
-    if (structure && molstarPluginContext) {
-      highlightResidueRange({
-        structure,
-        startResidue: feature.start,
-        endResidue: feature.end,
-        plugin: molstarPluginContext,
-      }).catch((e: unknown) => {
-        console.error(e)
-      })
-    }
     const range = getAlignmentRange()
     if (range) {
       model.setAlignmentHoverRange(range)
@@ -106,7 +93,6 @@ const FeatureBar = observer(function FeatureBar({
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    model.clearMolstarHoverHighlight()
     model.clearAlignmentHoverRange()
   }
 
@@ -145,7 +131,7 @@ const FeatureBar = observer(function FeatureBar({
     } else {
       model.clearSelectedFeatureId()
       model.clearClickAlignmentRange()
-      model.clearClickGenomeHighlights()
+      model.clearClickedStructureRange()
     }
   }
 
@@ -348,8 +334,6 @@ export const ProteinFeatureTrackContent = observer(
         }}
         onMouseLeave={() => {
           model.setHoveredPosition(undefined)
-          model.clearHoverGenomeHighlights()
-          model.clearMolstarHoverHighlight()
         }}
       >
         {visibleTypes.map(type => (

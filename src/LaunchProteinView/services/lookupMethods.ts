@@ -152,5 +152,3 @@ export async function searchUniProtEntries({
   // Sort reviewed entries first
   return entries.toSorted((a, b) => Number(b.isReviewed) - Number(a.isReviewed))
 }
-
-export { isRecognizedDatabaseId as isRecognizedTranscriptId } from '../utils/util'

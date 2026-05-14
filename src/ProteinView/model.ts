@@ -8,7 +8,6 @@ import { autorun } from 'mobx'
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
 import { extractStructureSequences } from './extractStructureSequences'
-import highlightResidue from './highlightResidue'
 import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
 import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
@@ -383,30 +382,6 @@ function stateModelFactory() {
                 } catch (e) {
                   self.setError(e)
                   console.error(e)
-                }
-              }
-            }
-          }),
-        )
-
-        addDisposer(
-          self,
-          autorun(async () => {
-            const { structures, molstarPluginContext } = self
-            if (molstarPluginContext) {
-              for (const [i, s0] of structures.entries()) {
-                const structure =
-                  molstarPluginContext.managers.structure.hierarchy.current
-                    .structures[i]?.cell.obj?.data
-                const pos = s0.structureSeqHoverPos
-                if (structure && pos !== undefined) {
-                  await highlightResidue({
-                    structure,
-                    plugin: molstarPluginContext,
-                    selectedResidue: pos,
-                  })
-                } else if (pos === undefined) {
-                  molstarPluginContext.managers.interactivity.lociHighlights.clearHighlights()
                 }
               }
             }

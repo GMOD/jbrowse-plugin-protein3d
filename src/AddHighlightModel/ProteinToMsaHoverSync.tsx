@@ -4,7 +4,8 @@ import { getSession } from '@jbrowse/core/util'
 import { autorun, untracked } from 'mobx'
 import { observer } from 'mobx-react'
 
-import type { JBrowsePluginProteinViewModel } from '../ProteinView/model'
+import { getProteinView } from './util'
+
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 interface MsaView {
@@ -22,9 +23,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
   const session = getSession(model)
   const { views } = session
 
-  const proteinView = views.find(f => f.type === 'ProteinView') as
-    | JBrowsePluginProteinViewModel
-    | undefined
+  const proteinView = getProteinView(session)
 
   const connectedMsaViewId = proteinView?.connectedMsaViewId
   const msaView = connectedMsaViewId
@@ -54,16 +53,14 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
       autorun(() => {
         const col = msaView.mouseoveredColumn
         const structure = proteinView.structures[0]
-        if (structure && col !== undefined) {
+        if (structure) {
           const hasFeatureHoverRange = untracked(
             () => !!structure.alignmentHoverRange,
           )
           if (!hasFeatureHoverRange) {
-            structure.highlightFromExternal(col)
-          }
-        } else if (structure) {
-          if (!untracked(() => structure.alignmentHoverRange)) {
-            structure.clearMolstarHoverHighlight()
+            structure.setHoveredPosition(
+              col === undefined ? undefined : { structureSeqPos: col },
+            )
           }
         }
       }),

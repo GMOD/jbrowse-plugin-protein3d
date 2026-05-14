@@ -50,11 +50,7 @@ export default function useFoldseekSearch() {
     setStatusMessage('Submitting search...')
     try {
       const ticket = await submitFoldseekSearch(aaSeq, di3Seq, databases)
-      const result = await waitForFoldseekResults(
-        ticket.id,
-        databases,
-        setStatusMessage,
-      )
+      const result = await waitForFoldseekResults(ticket.id, setStatusMessage)
       setResults(result)
       return result
     } catch (e) {

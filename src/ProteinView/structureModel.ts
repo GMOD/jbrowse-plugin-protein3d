@@ -9,12 +9,14 @@ import { autorun } from 'mobx'
 
 import clearSelection from './clearSelection'
 import highlightResidue from './highlightResidue'
+import highlightResidueRange from './highlightResidueRange'
 import loadMolstar from './loadMolstar'
 import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
-  hoverProteinToGenome,
+  proteinRangeToGenomeMapping,
+  proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
 import selectResidue from './selectResidue'
 import { checkHovered, invertMap } from './util'
@@ -95,12 +97,12 @@ const Structure = types
   .volatile(() => ({
     /**
      * #volatile
+     * Inclusive-exclusive structure-residue range from a click; drives the
+     * derived clickGenomeHighlights getter.
      */
-    clickGenomeHighlights: [] as IRegion[],
-    /**
-     * #volatile
-     */
-    hoverGenomeHighlights: [] as IRegion[],
+    clickedStructureRange: undefined as
+      | { start: number; end: number }
+      | undefined,
 
     /**
      * #volatile
@@ -194,26 +196,14 @@ const Structure = types
     /**
      * #action
      */
-    setClickGenomeHighlights(r: IRegion[]) {
-      self.clickGenomeHighlights = r
+    setClickedStructureRange(range?: { start: number; end: number }) {
+      self.clickedStructureRange = range
     },
     /**
      * #action
      */
-    clearClickGenomeHighlights() {
-      self.clickGenomeHighlights = []
-    },
-    /**
-     * #action
-     */
-    setHoverGenomeHighlights(r: IRegion[]) {
-      self.hoverGenomeHighlights = r
-    },
-    /**
-     * #action
-     */
-    clearHoverGenomeHighlights() {
-      self.hoverGenomeHighlights = []
+    clearClickedStructureRange() {
+      self.clickedStructureRange = undefined
     },
     /**
      * #action
@@ -395,6 +385,59 @@ const Structure = types
 
     /**
      * #getter
+     * Genome regions to highlight in the LGV based on the current hover
+     * position. Derived; no manual set/clear actions are needed.
+     */
+    get hoverGenomeHighlights(): IRegion[] {
+      const structureSeqPos = this.structureSeqHoverPos
+      const assemblyName = self.connectedView?.assemblyNames[0]
+      const mapping = this.genomeToTranscriptSeqMapping
+      if (structureSeqPos === undefined || !assemblyName || !mapping) {
+        return []
+      }
+      const mapped = proteinToGenomeMapping({
+        model: self as JBrowsePluginProteinStructureModel,
+        structureSeqPos,
+      })
+      if (!mapped) {
+        return []
+      }
+      const [start, end] = mapped
+      return [{ assemblyName, refName: mapping.refName, start, end }]
+    },
+
+    /**
+     * #getter
+     * Genome regions to highlight in the LGV from the persistent click
+     * selection. Derived from clickedStructureRange.
+     */
+    get clickGenomeHighlights(): IRegion[] {
+      const range = self.clickedStructureRange
+      const assemblyName = self.connectedView?.assemblyNames[0]
+      const mapping = this.genomeToTranscriptSeqMapping
+      if (!range || !assemblyName || !mapping) {
+        return []
+      }
+      const mapped =
+        range.end > range.start + 1
+          ? proteinRangeToGenomeMapping({
+              model: self as JBrowsePluginProteinStructureModel,
+              structureSeqPos: range.start,
+              structureSeqEndPos: range.end,
+            })
+          : proteinToGenomeMapping({
+              model: self as JBrowsePluginProteinStructureModel,
+              structureSeqPos: range.start,
+            })
+      if (!mapped) {
+        return []
+      }
+      const [start, end] = mapped
+      return [{ assemblyName, refName: mapping.refName, start, end }]
+    },
+
+    /**
+     * #getter
      * Returns the single-letter amino acid code from the structure at hover position
      */
     get hoverStructureLetter() {
@@ -499,32 +542,6 @@ const Structure = types
   .actions(self => ({
     /**
      * #action
-     * Highlight a residue from an external source (e.g., MSA view)
-     */
-    highlightFromExternal(structureSeqPos: number) {
-      const structure = self.molstarStructure
-      const plugin = self.molstarPluginContext
-      if (structure && plugin) {
-        highlightResidue({
-          structure,
-          selectedResidue: structureSeqPos,
-          plugin,
-        }).catch((e: unknown) => {
-          console.error(e)
-        })
-      }
-    },
-
-    /**
-     * #action
-     */
-    clearMolstarHoverHighlight() {
-      const plugin = self.molstarPluginContext
-      plugin?.managers.interactivity.lociHighlights.clearHighlights()
-    },
-
-    /**
-     * #action
      */
     hoverAlignmentPosition(alignmentPos: number) {
       if (!self.alignmentHoverRange) {
@@ -533,10 +550,6 @@ const Structure = types
         self.setHoveredPosition(
           structureSeqPos !== undefined ? { structureSeqPos } : undefined,
         )
-        hoverProteinToGenome({
-          model: self as JBrowsePluginProteinStructureModel,
-          structureSeqPos,
-        })
       }
     },
     /**
@@ -678,14 +691,9 @@ const Structure = types
                   if (loc) {
                     const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
-                    hoverProteinToGenome({
-                      model: self as JBrowsePluginProteinStructureModel,
-                      structureSeqPos: locationInfo.structureSeqPos,
-                    })
                   }
                 } else {
                   self.setHoveredPosition(undefined)
-                  self.clearHoverGenomeHighlights()
                 }
               })
             addDisposer(self, () => {
@@ -723,6 +731,49 @@ const Structure = types
               clearSelection({
                 plugin: molstarPluginContext,
               })
+            }
+          }
+        }),
+      )
+
+      // Drive molstar hover-highlight state from the model. A feature-range
+      // hover (alignmentHoverRange) takes priority over a single-residue
+      // hover (structureSeqHoverPos); otherwise clear.
+      addDisposer(
+        self,
+        autorun(async () => {
+          const {
+            molstarStructure,
+            molstarPluginContext,
+            alignmentHoverRange,
+            structureSeqHoverPos,
+            pairwiseAlignmentToStructurePosition,
+          } = self
+          if (molstarStructure && molstarPluginContext) {
+            const rangeStartStruct =
+              alignmentHoverRange &&
+              pairwiseAlignmentToStructurePosition?.[alignmentHoverRange.start]
+            const rangeEndStruct =
+              alignmentHoverRange &&
+              pairwiseAlignmentToStructurePosition?.[alignmentHoverRange.end]
+            if (
+              rangeStartStruct !== undefined &&
+              rangeEndStruct !== undefined
+            ) {
+              await highlightResidueRange({
+                structure: molstarStructure,
+                plugin: molstarPluginContext,
+                startResidue: rangeStartStruct + 1,
+                endResidue: rangeEndStruct + 1,
+              })
+            } else if (structureSeqHoverPos !== undefined) {
+              await highlightResidue({
+                structure: molstarStructure,
+                plugin: molstarPluginContext,
+                selectedResidue: structureSeqHoverPos,
+              })
+            } else {
+              molstarPluginContext.managers.interactivity.lociHighlights.clearHighlights()
             }
           }
         }),

@@ -26,10 +26,6 @@ export function stripTrailingVersion(s?: string) {
   return s?.replace(/\.[^./]+$/, '')
 }
 
-export function z(n: number) {
-  return n.toLocaleString('en-US')
-}
-
 export function getDisplayName(f: Feature): string {
   return f.get('name') ?? f.get('id')
 }

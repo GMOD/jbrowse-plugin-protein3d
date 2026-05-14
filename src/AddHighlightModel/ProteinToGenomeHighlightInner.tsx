@@ -4,11 +4,9 @@ import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
+import { getProteinView } from './util'
 
-import type {
-  JBrowsePluginProteinStructureModel,
-  JBrowsePluginProteinViewModel,
-} from '../ProteinView/model'
+import type { JBrowsePluginProteinStructureModel } from '../ProteinView/model'
 import type { Region } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -22,11 +20,10 @@ const ProteinToGenomeHighlightInner = observer(
     model: LinearGenomeViewModel
     field: HighlightField
   }) {
-    const { assemblyManager, views } = getSession(model)
+    const session = getSession(model)
+    const { assemblyManager } = session
     const { assemblyNames } = model
-    const proteinView = views.find(f => f.type === 'ProteinView') as
-      | JBrowsePluginProteinViewModel
-      | undefined
+    const proteinView = getProteinView(session)
     const assemblyName = assemblyNames[0]
     const assembly = assemblyName
       ? assemblyManager.get(assemblyName)
