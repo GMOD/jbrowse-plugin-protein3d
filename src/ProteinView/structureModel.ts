@@ -7,8 +7,10 @@ import {
 } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
 
-import clearSelection from './clearSelection'
-import highlightResidue from './highlightResidue'
+import {
+  applyLociInteractivityMultiple,
+  applyLociInteractivitySingle,
+} from './applyLociInteractivity'
 import highlightResidueRange from './highlightResidueRange'
 import loadMolstar from './loadMolstar'
 import { runLocalAlignment } from './pairwiseAlignment'
@@ -19,7 +21,6 @@ import {
   proteinRangeToGenomeMapping,
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
-import selectResidue from './selectResidue'
 import { checkHovered, invertMap } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
@@ -306,7 +307,7 @@ const Structure = types
       const parts = []
 
       if (r.structureSeqPos !== undefined) {
-        parts.push(`Position: ${r.structureSeqPos + 1}`)
+        parts.push(`${r.structureSeqPos + 1}`)
       }
 
       if (structureLetter) {
@@ -555,6 +556,9 @@ const Structure = types
     },
   }))
   .actions(self => ({
+    setError(e: unknown) {
+      self.parentView.setError(e)
+    },
     /**
      * #action
      */
@@ -580,6 +584,7 @@ const Structure = types
           structureSeqPos,
         }).catch((e: unknown) => {
           console.error(e)
+          self.parentView.setError(e)
         })
       } else {
         self.setClickedStructureRange(undefined)
@@ -742,19 +747,17 @@ const Structure = types
             structureSeqToTranscriptSeqPosition
           ) {
             if (showHighlight) {
-              for (const coord of Object.keys(
+              const residues = Object.keys(
                 structureSeqToTranscriptSeqPosition,
-              )) {
-                await selectResidue({
-                  structure: molstarStructure,
-                  plugin: molstarPluginContext,
-                  selectedResidue: +coord + 1,
-                })
-              }
-            } else {
-              clearSelection({
+              ).map(coord => +coord + 1)
+              await applyLociInteractivityMultiple({
+                structure: molstarStructure,
+                residues,
                 plugin: molstarPluginContext,
+                mode: 'select',
               })
+            } else {
+              molstarPluginContext.managers.interactivity.lociSelects.deselectAll()
             }
           }
         }),
@@ -781,10 +784,11 @@ const Structure = types
                 endResidue: hoverStructureRange.end,
               })
             } else if (structureSeqHoverPos !== undefined) {
-              await highlightResidue({
+              await applyLociInteractivitySingle({
                 structure: molstarStructure,
                 plugin: molstarPluginContext,
                 selectedResidue: structureSeqHoverPos,
+                mode: 'highlight',
               })
             } else {
               molstarPluginContext.managers.interactivity.lociHighlights.clearHighlights()

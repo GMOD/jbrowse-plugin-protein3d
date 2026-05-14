@@ -456,7 +456,7 @@ function stateModelFactory() {
                 },
               },
               {
-                label: 'Auto-scroll alignment on hover',
+                label: 'Auto-scroll protein feature view on hover',
                 type: 'checkbox',
                 checked: self.autoScrollAlignment,
                 onClick: () => {
@@ -464,7 +464,7 @@ function stateModelFactory() {
                 },
               },
               {
-                label: 'Follow cursor in genome view',
+                label: 'Auto-scroll linear genome view on hover',
                 type: 'checkbox',
                 checked: self.followCursor,
                 onClick: () => {

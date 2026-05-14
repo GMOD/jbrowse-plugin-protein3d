@@ -108,6 +108,7 @@ const FeatureBar = observer(function FeatureBar({
           plugin: molstarPluginContext,
         }).catch((e: unknown) => {
           console.error(e)
+          model.setError(e)
         })
       } else {
         molstarPluginContext.managers.interactivity.lociSelects.deselectAll()
@@ -122,6 +123,7 @@ const FeatureBar = observer(function FeatureBar({
         structureSeqEndPos: feature.end,
       }).catch((e: unknown) => {
         console.error(e)
+        model.setError(e)
       })
     } else {
       model.setSelectedFeatureId(undefined)

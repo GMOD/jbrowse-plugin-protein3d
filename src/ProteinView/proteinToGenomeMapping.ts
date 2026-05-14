@@ -139,10 +139,8 @@ export async function navigateToProteinPosition({
   } else {
     const { assemblyManager } = session
     const assembly = assemblyManager.get(assemblyName)
-    connectedView.centerAt(
-      start,
-      assembly?.getCanonicalRefName(refName) ?? refName,
-    )
+    const canonicalRefName = assembly?.getCanonicalRefName(refName) ?? refName
+    connectedView.centerAt(start, canonicalRefName)
   }
 }
 

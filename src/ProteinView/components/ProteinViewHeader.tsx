@@ -14,12 +14,43 @@ import type {
   JBrowsePluginProteinViewModel,
 } from '../model'
 
+function ToggleCheckbox({
+  checked,
+  label,
+  onToggle,
+}: {
+  checked: boolean
+  label: string
+  onToggle: () => void
+}) {
+  return (
+    <FormControlLabel
+      control={
+        <Checkbox
+          checked={checked}
+          onChange={() => {
+            onToggle()
+          }}
+          size="small"
+        />
+      }
+      label={label}
+    />
+  )
+}
+
 const ProteinViewHeader = observer(function ProteinViewHeader({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { structures, showAlignment, showProteinTracks, followCursor, autoScrollAlignment } = model
+  const {
+    structures,
+    showAlignment,
+    showProteinTracks,
+    followCursor,
+    autoScrollAlignment,
+  } = model
   return (
     <div>
       <div
@@ -31,45 +62,33 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
       >
         <HeaderStructureInfo model={model} />
         <div style={{ display: 'flex', gap: '8px' }}>
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showAlignment}
-                onChange={() => model.setShowAlignment(!showAlignment)}
-                size="small"
-              />
-            }
+          <ToggleCheckbox
+            checked={showAlignment}
             label="Show alignment"
+            onToggle={() => {
+              model.setShowAlignment(!showAlignment)
+            }}
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={showProteinTracks}
-                onChange={() => model.setShowProteinTracks(!showProteinTracks)}
-                size="small"
-              />
-            }
+          <ToggleCheckbox
+            checked={showProteinTracks}
             label="Show features"
+            onToggle={() => {
+              model.setShowProteinTracks(!showProteinTracks)
+            }}
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={autoScrollAlignment}
-                onChange={() => model.setAutoScrollAlignment(!autoScrollAlignment)}
-                size="small"
-              />
-            }
-            label="Auto-scroll"
+          <ToggleCheckbox
+            checked={autoScrollAlignment}
+            label="Auto-scroll features"
+            onToggle={() => {
+              model.setAutoScrollAlignment(!autoScrollAlignment)
+            }}
           />
-          <FormControlLabel
-            control={
-              <Checkbox
-                checked={followCursor}
-                onChange={() => model.setFollowCursor(!followCursor)}
-                size="small"
-              />
-            }
-            label="Follow cursor"
+          <ToggleCheckbox
+            checked={followCursor}
+            label="Auto-scroll genome"
+            onToggle={() => {
+              model.setFollowCursor(!followCursor)
+            }}
           />
         </div>
       </div>

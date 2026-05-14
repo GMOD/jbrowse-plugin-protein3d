@@ -20,8 +20,7 @@ export default function useProteinView({
     const state: { cancelled: boolean; plugin?: PluginContext } = {
       cancelled: false,
     }
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    ;(async () => {
+    void (async () => {
       try {
         if (!parentRef.current) {
           return
@@ -74,7 +73,8 @@ export default function useProteinView({
       state.cancelled = true
       state.plugin?.unmount()
     }
-  }, [showControls, model])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showControls])
 
   return { parentRef, error, loading }
 }
