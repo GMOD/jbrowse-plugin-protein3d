@@ -118,7 +118,11 @@ export async function navigateToProteinPosition({
 
   const result =
     structureSeqEndPos !== undefined
-      ? proteinRangeToGenomeMapping({ structureSeqPos, structureSeqEndPos, model })
+      ? proteinRangeToGenomeMapping({
+          structureSeqPos,
+          structureSeqEndPos,
+          model,
+        })
       : proteinToGenomeMapping({ structureSeqPos, model })
 
   if (!result) {

@@ -463,6 +463,14 @@ function stateModelFactory() {
                   self.setAutoScrollAlignment(!self.autoScrollAlignment)
                 },
               },
+              {
+                label: 'Follow cursor in genome view',
+                type: 'checkbox',
+                checked: self.followCursor,
+                onClick: () => {
+                  self.setFollowCursor(!self.followCursor)
+                },
+              },
             ],
           },
           {

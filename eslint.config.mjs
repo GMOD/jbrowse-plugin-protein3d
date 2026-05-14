@@ -40,6 +40,7 @@ export default defineConfig(
       'no-empty': 'off',
       'no-underscore-dangle': 'off',
       curly: 'error',
+      'object-shorthand': 'error',
       semi: ['error', 'never'],
       'spaced-comment': ['error', 'always', { markers: ['/'] }],
       'one-var': ['error', 'never'],

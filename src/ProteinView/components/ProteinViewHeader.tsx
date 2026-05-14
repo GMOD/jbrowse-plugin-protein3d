@@ -28,7 +28,9 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           control={
             <Checkbox
               checked={followCursor}
-              onChange={() => model.setFollowCursor(!followCursor)}
+              onChange={() => {
+                model.setFollowCursor(!followCursor)
+              }}
               size="small"
             />
           }
