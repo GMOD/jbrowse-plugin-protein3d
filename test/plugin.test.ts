@@ -156,7 +156,12 @@ describe('Protein3d Plugin E2E', () => {
     const viewport = await page!.viewport()
     const clickY = trackInfo?.y ?? 170
     const xPositions = trackInfo
-      ? [trackInfo.x, viewport!.width * 0.3, viewport!.width * 0.5, viewport!.width * 0.7]
+      ? [
+          trackInfo.x,
+          viewport!.width * 0.3,
+          viewport!.width * 0.5,
+          viewport!.width * 0.7,
+        ]
       : [viewport!.width * 0.35, viewport!.width * 0.5, viewport!.width * 0.65]
 
     let menuItems: Awaited<ReturnType<typeof page.$$>> = []

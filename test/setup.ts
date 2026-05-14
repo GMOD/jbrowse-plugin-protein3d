@@ -311,7 +311,6 @@ export async function waitForJBrowseLoad(page: Page): Promise<void> {
   )
   console.log('React app mounted')
 
-
   // Wait for the track label to appear, confirming defaultSession loaded with tracks
   try {
     await page.waitForFunction(

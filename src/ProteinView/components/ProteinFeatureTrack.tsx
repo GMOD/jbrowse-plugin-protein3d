@@ -158,9 +158,15 @@ const FeatureBar = observer(function FeatureBar({
   return (
     <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
       <div
-        onClick={() => handleClick()}
-        onMouseEnter={() => handleMouseEnter()}
-        onMouseLeave={() => handleMouseLeave()}
+        onClick={() => {
+          handleClick()
+        }}
+        onMouseEnter={() => {
+          handleMouseEnter()
+        }}
+        onMouseLeave={() => {
+          handleMouseLeave()
+        }}
         style={{
           position: 'absolute',
           left,
