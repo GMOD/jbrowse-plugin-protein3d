@@ -22,15 +22,13 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
   const { structures, showAlignment, followCursor } = model
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <HeaderStructureInfo model={model} />
         <FormControlLabel
           control={
             <Checkbox
               checked={followCursor}
-              onChange={() => {
-                model.setFollowCursor(!followCursor)
-              }}
+              onChange={() => model.setFollowCursor(!followCursor)}
               size="small"
             />
           }
