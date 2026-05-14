@@ -76,19 +76,19 @@ test('hoverAlignmentPosition resumes after alignmentHoverRange is cleared', () =
   model.hoverAlignmentPosition(2)
   expect(model.hoverPosition).toBeUndefined()
 
-  model.clearAlignmentHoverRange()
+  model.setAlignmentHoverRange(undefined)
   model.hoverAlignmentPosition(1)
   expect(model.hoverPosition?.structureSeqPos).toBe(1)
 })
 
-test('setAlignmentHoverRange and clearAlignmentHoverRange manage state', () => {
+test('setAlignmentHoverRange manages state', () => {
   const model = makeModel()
   expect(model.alignmentHoverRange).toBeUndefined()
 
   model.setAlignmentHoverRange({ start: 3, end: 8 })
   expect(model.alignmentHoverRange).toEqual({ start: 3, end: 8 })
 
-  model.clearAlignmentHoverRange()
+  model.setAlignmentHoverRange(undefined)
   expect(model.alignmentHoverRange).toBeUndefined()
 })
 

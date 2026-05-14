@@ -88,12 +88,11 @@ const FeatureBar = observer(function FeatureBar({
     if (range) {
       model.setAlignmentHoverRange(range)
     }
-    model.setHoveredPosition(undefined)
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
-    model.clearAlignmentHoverRange()
+    model.setAlignmentHoverRange(undefined)
   }
 
   const handleClick = () => {
@@ -117,10 +116,6 @@ const FeatureBar = observer(function FeatureBar({
 
     if (newSelected) {
       model.setSelectedFeatureId(feature.uniqueId)
-      const range = getAlignmentRange()
-      if (range) {
-        model.setClickAlignmentRange(range)
-      }
       clickProteinToGenome({
         model,
         structureSeqPos: feature.start - 1,
@@ -129,9 +124,8 @@ const FeatureBar = observer(function FeatureBar({
         console.error(e)
       })
     } else {
-      model.clearSelectedFeatureId()
-      model.clearClickAlignmentRange()
-      model.clearClickedStructureRange()
+      model.setSelectedFeatureId(undefined)
+      model.setClickedStructureRange(undefined)
     }
   }
 

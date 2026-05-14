@@ -136,13 +136,6 @@ const Structure = types
       | undefined,
     /**
      * #volatile
-     * Persistent range of alignment positions from click (e.g., when clicking a protein feature)
-     */
-    clickAlignmentRange: undefined as
-      | { start: number; end: number }
-      | undefined,
-    /**
-     * #volatile
      * The uniqueId of the currently selected protein feature (for persistent highlight)
      */
     selectedFeatureId: undefined as string | undefined,
@@ -202,44 +195,14 @@ const Structure = types
     /**
      * #action
      */
-    clearClickedStructureRange() {
-      self.clickedStructureRange = undefined
-    },
-    /**
-     * #action
-     */
     setAlignmentHoverRange(range?: { start: number; end: number }) {
       self.alignmentHoverRange = range
     },
     /**
      * #action
      */
-    clearAlignmentHoverRange() {
-      self.alignmentHoverRange = undefined
-    },
-    /**
-     * #action
-     */
-    setClickAlignmentRange(range?: { start: number; end: number }) {
-      self.clickAlignmentRange = range
-    },
-    /**
-     * #action
-     */
-    clearClickAlignmentRange() {
-      self.clickAlignmentRange = undefined
-    },
-    /**
-     * #action
-     */
     setSelectedFeatureId(uniqueId?: string) {
       self.selectedFeatureId = uniqueId
-    },
-    /**
-     * #action
-     */
-    clearSelectedFeatureId() {
-      self.selectedFeatureId = undefined
     },
     /**
      * #action
@@ -385,20 +348,68 @@ const Structure = types
 
     /**
      * #getter
-     * Genome regions to highlight in the LGV based on the current hover
-     * position. Derived; no manual set/clear actions are needed.
+     * Structure-residue range from a feature-bar hover, derived by mapping
+     * alignmentHoverRange through pairwiseAlignmentToStructurePosition.
+     * End is exclusive, matching clickedStructureRange.
      */
-    get hoverGenomeHighlights(): IRegion[] {
-      const structureSeqPos = this.structureSeqHoverPos
+    get hoverStructureRange() {
+      const { alignmentHoverRange } = self
+      const a2s = this.pairwiseAlignmentToStructurePosition
+      if (!alignmentHoverRange || !a2s) {
+        return undefined
+      }
+      const start = a2s[alignmentHoverRange.start]
+      const end = a2s[alignmentHoverRange.end]
+      return start === undefined || end === undefined
+        ? undefined
+        : { start, end: end + 1 }
+    },
+
+    /**
+     * #getter
+     * Persistent click selection in alignment coordinates, derived from
+     * clickedStructureRange via structurePositionToAlignmentMap.
+     */
+    get clickAlignmentRange() {
+      const range = self.clickedStructureRange
+      const s2a = this.structurePositionToAlignmentMap
+      if (!range || !s2a) {
+        return undefined
+      }
+      const start = s2a[range.start]
+      const end = s2a[range.end - 1]
+      return start === undefined || end === undefined
+        ? undefined
+        : { start, end }
+    },
+
+    /**
+     * #getter
+     * Maps a structure-residue range to genome coordinates as a single
+     * IRegion. Handles single-residue and multi-residue ranges.
+     */
+    structureRangeToGenomeHighlight(
+      range: { start: number; end: number } | undefined,
+    ): IRegion[] {
       const assemblyName = self.connectedView?.assemblyNames[0]
       const mapping = this.genomeToTranscriptSeqMapping
-      if (structureSeqPos === undefined || !assemblyName || !mapping) {
+      if (!range || !assemblyName || !mapping) {
         return []
       }
-      const mapped = proteinToGenomeMapping({
-        model: self as JBrowsePluginProteinStructureModel,
-        structureSeqPos,
-      })
+      const model = {
+        genomeToTranscriptSeqMapping: mapping,
+        pairwiseAlignment: self.pairwiseAlignment,
+        structureSeqToTranscriptSeqPosition:
+          this.structureSeqToTranscriptSeqPosition,
+      }
+      const mapped =
+        range.end > range.start + 1
+          ? proteinRangeToGenomeMapping({
+              model,
+              structureSeqPos: range.start,
+              structureSeqEndPos: range.end,
+            })
+          : proteinToGenomeMapping({ model, structureSeqPos: range.start })
       if (!mapped) {
         return []
       }
@@ -408,32 +419,31 @@ const Structure = types
 
     /**
      * #getter
+     * Genome regions to highlight in the LGV based on the current hover.
+     * A feature-range hover (hoverStructureRange) takes priority over a
+     * single-residue hover (structureSeqHoverPos).
+     */
+    get hoverGenomeHighlights(): IRegion[] {
+      const range = this.hoverStructureRange
+      if (range) {
+        return this.structureRangeToGenomeHighlight(range)
+      }
+      const structureSeqPos = this.structureSeqHoverPos
+      return structureSeqPos === undefined
+        ? []
+        : this.structureRangeToGenomeHighlight({
+            start: structureSeqPos,
+            end: structureSeqPos + 1,
+          })
+    },
+
+    /**
+     * #getter
      * Genome regions to highlight in the LGV from the persistent click
      * selection. Derived from clickedStructureRange.
      */
     get clickGenomeHighlights(): IRegion[] {
-      const range = self.clickedStructureRange
-      const assemblyName = self.connectedView?.assemblyNames[0]
-      const mapping = this.genomeToTranscriptSeqMapping
-      if (!range || !assemblyName || !mapping) {
-        return []
-      }
-      const mapped =
-        range.end > range.start + 1
-          ? proteinRangeToGenomeMapping({
-              model: self as JBrowsePluginProteinStructureModel,
-              structureSeqPos: range.start,
-              structureSeqEndPos: range.end,
-            })
-          : proteinToGenomeMapping({
-              model: self as JBrowsePluginProteinStructureModel,
-              structureSeqPos: range.start,
-            })
-      if (!mapped) {
-        return []
-      }
-      const [start, end] = mapped
-      return [{ assemblyName, refName: mapping.refName, start, end }]
+      return this.structureRangeToGenomeHighlight(self.clickedStructureRange)
     },
 
     /**
@@ -558,15 +568,16 @@ const Structure = types
     clickAlignmentPosition(alignmentPos: number) {
       const structureSeqPos =
         self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
-      self.clearSelectedFeatureId()
-      self.setClickAlignmentRange({ start: alignmentPos, end: alignmentPos })
+      self.setSelectedFeatureId(undefined)
       if (structureSeqPos !== undefined) {
         clickProteinToGenome({
-          model: self as JBrowsePluginProteinStructureModel,
+          model: self,
           structureSeqPos,
         }).catch((e: unknown) => {
           console.error(e)
         })
+      } else {
+        self.setClickedStructureRange(undefined)
       }
     },
   }))
@@ -656,11 +667,10 @@ const Structure = types
                   if (loc) {
                     const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
-                    self.clearClickAlignmentRange()
-                    self.clearSelectedFeatureId()
+                    self.setSelectedFeatureId(undefined)
 
                     clickProteinToGenome({
-                      model: self as JBrowsePluginProteinStructureModel,
+                      model: self,
                       structureSeqPos: locationInfo.structureSeqPos,
                     }).catch((e: unknown) => {
                       console.error(e)
@@ -737,7 +747,7 @@ const Structure = types
       )
 
       // Drive molstar hover-highlight state from the model. A feature-range
-      // hover (alignmentHoverRange) takes priority over a single-residue
+      // hover (hoverStructureRange) takes priority over a single-residue
       // hover (structureSeqHoverPos); otherwise clear.
       addDisposer(
         self,
@@ -745,26 +755,16 @@ const Structure = types
           const {
             molstarStructure,
             molstarPluginContext,
-            alignmentHoverRange,
+            hoverStructureRange,
             structureSeqHoverPos,
-            pairwiseAlignmentToStructurePosition,
           } = self
           if (molstarStructure && molstarPluginContext) {
-            const rangeStartStruct =
-              alignmentHoverRange &&
-              pairwiseAlignmentToStructurePosition?.[alignmentHoverRange.start]
-            const rangeEndStruct =
-              alignmentHoverRange &&
-              pairwiseAlignmentToStructurePosition?.[alignmentHoverRange.end]
-            if (
-              rangeStartStruct !== undefined &&
-              rangeEndStruct !== undefined
-            ) {
+            if (hoverStructureRange) {
               await highlightResidueRange({
                 structure: molstarStructure,
                 plugin: molstarPluginContext,
-                startResidue: rangeStartStruct + 1,
-                endResidue: rangeEndStruct + 1,
+                startResidue: hoverStructureRange.start + 1,
+                endResidue: hoverStructureRange.end,
               })
             } else if (structureSeqHoverPos !== undefined) {
               await highlightResidue({

@@ -1,7 +1,37 @@
 import { getSession } from '@jbrowse/core/util'
 import { getCodonRange } from 'g2p_mapper'
 
-import type { JBrowsePluginProteinStructureModel } from './model'
+import type { PairwiseAlignment } from '../mappings'
+import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+
+interface GenomeToTranscriptSeqMapping {
+  p2g: Record<number, number>
+  strand: number
+  refName: string
+}
+
+/**
+ * Minimal model shape needed to map structure positions to genome coords.
+ */
+interface ProteinGenomeMappingModel {
+  genomeToTranscriptSeqMapping: GenomeToTranscriptSeqMapping | undefined
+  pairwiseAlignment: PairwiseAlignment | undefined
+  structureSeqToTranscriptSeqPosition: Record<number, number> | undefined
+}
+
+/**
+ * Adds the parent-view state and action that clickProteinToGenome navigates with.
+ */
+type ClickProteinToGenomeModel = IAnyStateTreeNode &
+  ProteinGenomeMappingModel & {
+    connectedView: LinearGenomeViewModel | undefined
+    zoomToBaseLevel: boolean
+    setClickedStructureRange: (range?: {
+      start: number
+      end: number
+    }) => void
+  }
 
 /**
  * Maps a protein structure position to genome coordinates
@@ -12,7 +42,7 @@ export function proteinToGenomeMapping({
   structureSeqPos,
 }: {
   structureSeqPos: number
-  model: JBrowsePluginProteinStructureModel
+  model: ProteinGenomeMappingModel
 }) {
   const {
     genomeToTranscriptSeqMapping,
@@ -45,7 +75,7 @@ export function proteinRangeToGenomeMapping({
 }: {
   structureSeqPos: number
   structureSeqEndPos: number
-  model: JBrowsePluginProteinStructureModel
+  model: ProteinGenomeMappingModel
 }) {
   let minStart: number | undefined
   let maxEnd: number | undefined
@@ -74,7 +104,7 @@ export async function clickProteinToGenome({
 }: {
   structureSeqPos: number
   structureSeqEndPos?: number
-  model: JBrowsePluginProteinStructureModel
+  model: ClickProteinToGenomeModel
 }) {
   model.setClickedStructureRange({
     start: structureSeqPos,
