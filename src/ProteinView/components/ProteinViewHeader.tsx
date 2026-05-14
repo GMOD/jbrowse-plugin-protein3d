@@ -19,10 +19,16 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { structures, showAlignment, followCursor, autoScrollAlignment } = model
+  const { structures, showAlignment, showProteinTracks, followCursor, autoScrollAlignment } = model
   return (
     <div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
         <HeaderStructureInfo model={model} />
         <div style={{ display: 'flex', gap: '8px' }}>
           <FormControlLabel
@@ -33,7 +39,17 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
                 size="small"
               />
             }
-            label="Alignment"
+            label="Show alignment"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={showProteinTracks}
+                onChange={() => model.setShowProteinTracks(!showProteinTracks)}
+                size="small"
+              />
+            }
+            label="Show features"
           />
           <FormControlLabel
             control={
