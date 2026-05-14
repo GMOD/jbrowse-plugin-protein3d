@@ -693,22 +693,6 @@ const Structure = types
 
       addDisposer(
         self,
-        autorun(() => {
-          const { followCursor, connectedView, structureSeqHoverPos } = self
-          if (followCursor && connectedView?.initialized && structureSeqHoverPos !== undefined) {
-            navigateToProteinPosition({
-              model: self,
-              structureSeqPos: structureSeqHoverPos,
-              zoomToBaseLevel: false,
-            }).catch((e: unknown) => {
-              console.error(e)
-            })
-          }
-        }),
-      )
-
-      addDisposer(
-        self,
         autorun(async () => {
           const { molstarPluginContext } = self
           if (molstarPluginContext) {
@@ -722,6 +706,15 @@ const Structure = types
                   if (loc) {
                     const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
+                    if (self.followCursor) {
+                      navigateToProteinPosition({
+                        model: self,
+                        structureSeqPos: locationInfo.structureSeqPos,
+                        zoomToBaseLevel: false,
+                      }).catch((e: unknown) => {
+                        console.error(e)
+                      })
+                    }
                   }
                 } else {
                   self.setHoveredPosition(undefined)
