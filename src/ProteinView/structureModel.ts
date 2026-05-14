@@ -697,6 +697,15 @@ const Structure = types
           const { molstarPluginContext } = self
           if (molstarPluginContext) {
             const molstar = await loadMolstar()
+            const handleMolstarHoverNavigation = async (structureSeqPos: number) => {
+              if (self.followCursor) {
+                await navigateToProteinPosition({
+                  model: self,
+                  structureSeqPos,
+                  zoomToBaseLevel: false,
+                })
+              }
+            }
             const ret =
               molstarPluginContext.behaviors.interaction.hover.subscribe(e => {
                 if (molstar.StructureElement.Loci.is(e.current.loci)) {
@@ -706,15 +715,11 @@ const Structure = types
                   if (loc) {
                     const locationInfo = extractLocationInfo(molstar, loc)
                     self.setHoveredPosition(locationInfo)
-                    if (self.followCursor) {
-                      navigateToProteinPosition({
-                        model: self,
-                        structureSeqPos: locationInfo.structureSeqPos,
-                        zoomToBaseLevel: false,
-                      }).catch((e: unknown) => {
+                    handleMolstarHoverNavigation(locationInfo.structureSeqPos).catch(
+                      (e: unknown) => {
                         console.error(e)
-                      })
-                    }
+                      },
+                    )
                   }
                 } else {
                   self.setHoveredPosition(undefined)
