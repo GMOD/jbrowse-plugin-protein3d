@@ -27,10 +27,7 @@ type ClickProteinToGenomeModel = IAnyStateTreeNode &
   ProteinGenomeMappingModel & {
     connectedView: LinearGenomeViewModel | undefined
     zoomToBaseLevel: boolean
-    setClickedStructureRange: (range?: {
-      start: number
-      end: number
-    }) => void
+    setClickedStructureRange: (range?: { start: number; end: number }) => void
   }
 
 /**
