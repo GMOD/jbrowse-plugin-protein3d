@@ -44,13 +44,8 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const {
-    structures,
-    showAlignment,
-    showProteinTracks,
-    followCursor,
-    autoScrollAlignment,
-  } = model
+  const { structures, showAlignment, showProteinTracks, autoScrollAlignment } =
+    model
   return (
     <div>
       <div
@@ -81,13 +76,6 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
             label="Auto-scroll features"
             onToggle={() => {
               model.setAutoScrollAlignment(!autoScrollAlignment)
-            }}
-          />
-          <ToggleCheckbox
-            checked={followCursor}
-            label="Auto-scroll genome"
-            onToggle={() => {
-              model.setFollowCursor(!followCursor)
             }}
           />
         </div>
