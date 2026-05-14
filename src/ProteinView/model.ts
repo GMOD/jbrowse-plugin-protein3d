@@ -97,7 +97,7 @@ function stateModelFactory() {
         /**
          * #property
          */
-        autoScrollAlignment: true,
+        autoScrollAlignment: false,
         /**
          * #property
          */
