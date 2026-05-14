@@ -15,6 +15,7 @@ import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
+  navigateToProteinPosition,
   proteinRangeToGenomeMapping,
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
@@ -43,6 +44,7 @@ type MaybePairwiseAlignment = PairwiseAlignment | undefined
 export interface ParentProteinView {
   zoomToBaseLevel: boolean
   autoScrollAlignment: boolean
+  followCursor: boolean
   showHighlight: boolean
   showProteinTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
@@ -516,6 +518,9 @@ const Structure = types
     get autoScrollAlignment(): boolean {
       return this.parentView.autoScrollAlignment
     },
+    get followCursor(): boolean {
+      return this.parentView.followCursor
+    },
     get showHighlight(): boolean {
       return this.parentView.showHighlight
     },
@@ -681,6 +686,21 @@ const Structure = types
               })
             addDisposer(self, () => {
               ret.unsubscribe()
+            })
+          }
+        }),
+      )
+
+      addDisposer(
+        self,
+        autorun(() => {
+          const { followCursor, connectedView, structureSeqHoverPos } = self
+          if (followCursor && connectedView?.initialized && structureSeqHoverPos !== undefined) {
+            navigateToProteinPosition({
+              model: { ...self, zoomToBaseLevel: false },
+              structureSeqPos: structureSeqHoverPos,
+            }).catch((e: unknown) => {
+              console.error(e)
             })
           }
         }),

@@ -20,15 +20,15 @@ interface ProteinGenomeMappingModel {
   structureSeqToTranscriptSeqPosition: Record<number, number> | undefined
 }
 
-/**
- * Adds the parent-view state and action that clickProteinToGenome navigates with.
- */
-type ClickProteinToGenomeModel = IAnyStateTreeNode &
+type NavigateToProteinPositionModel = IAnyStateTreeNode &
   ProteinGenomeMappingModel & {
     connectedView: LinearGenomeViewModel | undefined
     zoomToBaseLevel: boolean
-    setClickedStructureRange: (range?: { start: number; end: number }) => void
   }
+
+type ClickProteinToGenomeModel = NavigateToProteinPositionModel & {
+  setClickedStructureRange: (range?: { start: number; end: number }) => void
+}
 
 /**
  * Maps a protein structure position to genome coordinates
@@ -94,42 +94,33 @@ export function proteinRangeToGenomeMapping({
   return undefined
 }
 
-export async function clickProteinToGenome({
+export async function navigateToProteinPosition({
   model,
   structureSeqPos,
   structureSeqEndPos,
 }: {
   structureSeqPos: number
   structureSeqEndPos?: number
-  model: ClickProteinToGenomeModel
+  model: NavigateToProteinPositionModel
 }) {
-  model.setClickedStructureRange({
-    start: structureSeqPos,
-    end: structureSeqEndPos ?? structureSeqPos + 1,
-  })
-
   const session = getSession(model)
   const { connectedView, genomeToTranscriptSeqMapping, zoomToBaseLevel } = model
   if (!genomeToTranscriptSeqMapping || !connectedView) {
-    return undefined
+    return
   }
   const { strand, refName } = genomeToTranscriptSeqMapping
   const assemblyName = connectedView.assemblyNames[0]
   if (!assemblyName) {
-    return undefined
+    return
   }
 
   const result =
     structureSeqEndPos !== undefined
-      ? proteinRangeToGenomeMapping({
-          structureSeqPos,
-          structureSeqEndPos,
-          model,
-        })
+      ? proteinRangeToGenomeMapping({ structureSeqPos, structureSeqEndPos, model })
       : proteinToGenomeMapping({ structureSeqPos, model })
 
   if (!result) {
-    return undefined
+    return
   }
   const [start, end] = result
 
@@ -147,4 +138,20 @@ export async function clickProteinToGenome({
       assembly?.getCanonicalRefName(refName) ?? refName,
     )
   }
+}
+
+export async function clickProteinToGenome({
+  model,
+  structureSeqPos,
+  structureSeqEndPos,
+}: {
+  structureSeqPos: number
+  structureSeqEndPos?: number
+  model: ClickProteinToGenomeModel
+}) {
+  model.setClickedStructureRange({
+    start: structureSeqPos,
+    end: structureSeqEndPos ?? structureSeqPos + 1,
+  })
+  await navigateToProteinPosition({ model, structureSeqPos, structureSeqEndPos })
 }

@@ -23,6 +23,7 @@ const PERSISTED_SETTINGS = [
   'showHighlight',
   'zoomToBaseLevel',
   'autoScrollAlignment',
+  'followCursor',
 ] as const
 
 import type { Instance } from '@jbrowse/mobx-state-tree'
@@ -105,6 +106,10 @@ function stateModelFactory() {
          * #property
          */
         showProteinTracks: true,
+        /**
+         * #property
+         */
+        followCursor: false,
         /**
          * #property
          */
@@ -210,6 +215,12 @@ function stateModelFactory() {
        */
       setAutoScrollAlignment(arg: boolean) {
         self.autoScrollAlignment = arg
+      },
+      /**
+       * #action
+       */
+      setFollowCursor(arg: boolean) {
+        self.followCursor = arg
       },
       /**
        * #action
