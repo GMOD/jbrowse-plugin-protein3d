@@ -1,19 +1,15 @@
 import React, { useState } from 'react'
 
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import {
-  Button,
-  ButtonGroup,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  MenuItem,
-  MenuList,
-  Typography,
-} from '@mui/material'
+import { Button, ButtonGroup, Typography } from '@mui/material'
 
 import AlignmentSettingsButton from './AlignmentSettingsButton'
+import LaunchOptionsDialog from './LaunchOptionsDialog'
 import { ALIGNMENT_ALGORITHM_LABELS } from '../../ProteinView/types'
+import {
+  getLaunchMissingReasons,
+  safeLaunch,
+} from '../utils/launchHelpers'
 import {
   hasMsaViewPlugin,
   launch1DProteinView,
@@ -40,6 +36,12 @@ interface ProteinViewActionsProps {
   onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
   sequencesMatch?: boolean
   isLoading?: boolean
+  /**
+   * Real error from the lookup/data pipeline. When present, "No UniProt ID
+   * found" is suppressed so it doesn't compete with the actual error message
+   * shown above by <ErrorMessage>.
+   */
+  error?: unknown
 }
 
 export default function ProteinViewActions({
@@ -56,38 +58,146 @@ export default function ProteinViewActions({
   onAlignmentAlgorithmChange,
   sequencesMatch,
   isLoading,
+  error,
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  // Disable launch while loading — SWR's keepPreviousData would otherwise let
+  // a user click Launch on stale results (wrong UniProt ID) during a refetch.
   const canLaunch =
-    !!uniprotId && !!userSelectedProteinSequence && !!selectedTranscript
+    !isLoading &&
+    !!uniprotId &&
+    !!userSelectedProteinSequence &&
+    !!selectedTranscript
 
-  const missingReasons = isLoading
-    ? []
-    : [
-        !uniprotId && 'No UniProt ID found',
-        !userSelectedProteinSequence &&
-          'Could not compute protein sequence (feature may be missing CDS subfeatures)',
-        !selectedTranscript && 'No transcript selected',
-      ].filter(Boolean)
+  const missingReasons = getLaunchMissingReasons({
+    uniprotId,
+    userSelectedProteinSequence,
+    selectedTranscript,
+    isLoading,
+    error,
+  })
+
+  const closeMenu = () => {
+    setDialogOpen(false)
+  }
 
   const handleLaunch3DView = () => {
-    setDialogOpen(false)
+    closeMenu()
     if (!selectedTranscript) {
       return
     }
-    launch3DProteinView({
+    safeLaunch(
       session,
-      view,
-      feature,
-      selectedTranscript,
-      uniprotId,
-      url,
-      userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
-      alignmentAlgorithm,
-    })
-
-    handleClose()
+      () => {
+        launch3DProteinView({
+          session,
+          view,
+          feature,
+          selectedTranscript,
+          uniprotId,
+          url,
+          userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
+          alignmentAlgorithm,
+        })
+      },
+      handleClose,
+    )
   }
+
+  const handleLaunch1DView = () => {
+    closeMenu()
+    if (!uniprotId || !selectedTranscript) {
+      return
+    }
+    // 1D launch is async (creates assembly + tracks + view + navigates); it
+    // can throw at any of those steps, so wrap manually rather than via
+    // safeLaunch which is sync-only.
+    void (async () => {
+      try {
+        await launch1DProteinView({
+          session,
+          view,
+          feature,
+          selectedTranscript,
+          uniprotId,
+          confidenceUrl,
+        })
+        handleClose()
+      } catch (e) {
+        console.error(e)
+        session.notifyError(`${e}`, e)
+      }
+    })()
+  }
+
+  const handleLaunchMsa = () => {
+    closeMenu()
+    if (!selectedTranscript || !uniprotId) {
+      return
+    }
+    safeLaunch(
+      session,
+      () => {
+        launchMsaView({ session, view, feature, selectedTranscript, uniprotId })
+      },
+      handleClose,
+    )
+  }
+
+  const handleLaunch3DWithMsa = () => {
+    closeMenu()
+    if (!selectedTranscript || !uniprotId) {
+      return
+    }
+    safeLaunch(
+      session,
+      () => {
+        launch3DProteinViewWithMsa({
+          session,
+          view,
+          feature,
+          selectedTranscript,
+          uniprotId,
+          url,
+          userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
+          alignmentAlgorithm,
+        })
+      },
+      handleClose,
+    )
+  }
+
+  const launchOptions = [
+    {
+      key: '3d',
+      title: 'Launch 3D protein structure view',
+      description:
+        'View protein structure with genome-to-structure coordinate mapping',
+      onClick: handleLaunch3DView,
+    },
+    {
+      key: '1d',
+      title: 'Launch 1D protein annotation view',
+      description: 'View protein features and annotations as a linear track',
+      onClick: handleLaunch1DView,
+    },
+    ...(hasMsaViewPlugin()
+      ? [
+          {
+            key: 'msa',
+            title: 'Launch MSA view',
+            description: 'View AlphaFold a3m multiple sequence alignment',
+            onClick: handleLaunchMsa,
+          },
+          {
+            key: '3d-msa',
+            title: 'Launch 3D structure + MSA view',
+            description: 'Launch both views with AlphaFold a3m MSA',
+            onClick: handleLaunch3DWithMsa,
+          },
+        ]
+      : []),
+  ]
 
   return (
     <>
@@ -109,11 +219,13 @@ export default function ProteinViewActions({
         variant="contained"
         color="secondary"
         size="small"
-        onClick={handleClose}
+        onClick={() => {
+          handleClose()
+        }}
       >
         Cancel
       </Button>
-      {!canLaunch ? (
+      {!canLaunch && missingReasons.length > 0 ? (
         <Typography variant="body2" color="error" sx={{ mr: 2 }}>
           {missingReasons.join('. ')}
         </Typography>
@@ -132,120 +244,11 @@ export default function ProteinViewActions({
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <Dialog
+      <LaunchOptionsDialog
         open={dialogOpen}
-        onClose={() => {
-          setDialogOpen(false)
-        }}
-      >
-        <DialogTitle>Launch options</DialogTitle>
-        <DialogContent>
-          <MenuList>
-            <MenuItem onClick={handleLaunch3DView}>
-              <div>
-                <Typography variant="body1">
-                  Launch 3D protein structure view
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  View protein structure with genome-to-structure coordinate
-                  mapping
-                </Typography>
-              </div>
-            </MenuItem>
-            <MenuItem
-              onClick={async () => {
-                setDialogOpen(false)
-                if (!uniprotId || !selectedTranscript) {
-                  return
-                }
-                try {
-                  await launch1DProteinView({
-                    session,
-                    view,
-                    feature,
-                    selectedTranscript,
-                    uniprotId,
-                    confidenceUrl,
-                  })
-                } catch (e) {
-                  console.error(e)
-                  session.notifyError(`${e}`, e)
-                }
-                handleClose()
-              }}
-            >
-              <div>
-                <Typography variant="body1">
-                  Launch 1D protein annotation view
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  View protein features and annotations as a linear track
-                </Typography>
-              </div>
-            </MenuItem>
-            {hasMsaViewPlugin()
-              ? [
-                  <MenuItem
-                    key="msa"
-                    onClick={() => {
-                      setDialogOpen(false)
-                      if (!selectedTranscript || !uniprotId) {
-                        return
-                      }
-                      launchMsaView({
-                        session,
-                        view,
-                        feature,
-                        selectedTranscript,
-                        uniprotId,
-                      })
-
-                      handleClose()
-                    }}
-                  >
-                    <div>
-                      <Typography variant="body1">Launch MSA view</Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        View AlphaFold a3m multiple sequence alignment
-                      </Typography>
-                    </div>
-                  </MenuItem>,
-                  <MenuItem
-                    key="3d-msa"
-                    onClick={() => {
-                      setDialogOpen(false)
-                      if (!selectedTranscript || !uniprotId) {
-                        return
-                      }
-                      launch3DProteinViewWithMsa({
-                        session,
-                        view,
-                        feature,
-                        selectedTranscript,
-                        uniprotId,
-                        url,
-                        userProvidedTranscriptSequence:
-                          userSelectedProteinSequence?.seq,
-                        alignmentAlgorithm,
-                      })
-
-                      handleClose()
-                    }}
-                  >
-                    <div>
-                      <Typography variant="body1">
-                        Launch 3D structure + MSA view
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Launch both views with AlphaFold a3m MSA
-                      </Typography>
-                    </div>
-                  </MenuItem>,
-                ]
-              : null}
-          </MenuList>
-        </DialogContent>
-      </Dialog>
+        onClose={closeMenu}
+        options={launchOptions}
+      />
     </>
   )
 }

@@ -112,7 +112,7 @@ export function launch3DProteinView({
       {
         url,
         data,
-        userProvidedTranscriptSequence,
+        userProvidedTranscriptSequence: userProvidedTranscriptSequence ?? '',
         feature: selectedTranscript?.toJSON(),
         connectedViewId: view.id,
       },
