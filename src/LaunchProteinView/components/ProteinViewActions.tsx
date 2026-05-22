@@ -3,9 +3,8 @@ import React, { useState } from 'react'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { Button, ButtonGroup, Typography } from '@mui/material'
 
-import AlignmentSettingsButton from './AlignmentSettingsButton'
 import LaunchOptionsDialog from './LaunchOptionsDialog'
-import { ALIGNMENT_ALGORITHM_LABELS } from '../../ProteinView/types'
+import SequenceMismatchNotice from './SequenceMismatchNotice'
 import {
   getLaunchMissingReasons,
   safeLaunch,
@@ -81,91 +80,48 @@ export default function ProteinViewActions({
     setDialogOpen(false)
   }
 
-  const handleLaunch3DView = () => {
-    closeMenu()
-    if (!selectedTranscript) {
-      return
-    }
-    safeLaunch(
-      session,
-      () => {
-        launch3DProteinView({
-          session,
-          view,
-          feature,
-          selectedTranscript,
-          uniprotId,
-          url,
-          userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
-          alignmentAlgorithm,
-        })
-      },
-      handleClose,
-    )
+  const baseParams = {
+    session,
+    view,
+    feature,
+    selectedTranscript,
+    uniprotId,
+  }
+  const launch3DParams = {
+    ...baseParams,
+    url,
+    userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
+    alignmentAlgorithm,
   }
 
-  const handleLaunch1DView = () => {
+  const runLaunch = (fn: () => void | Promise<void>) => () => {
     closeMenu()
-    if (!uniprotId || !selectedTranscript) {
-      return
-    }
-    // 1D launch is async (creates assembly + tracks + view + navigates); it
-    // can throw at any of those steps, so wrap manually rather than via
-    // safeLaunch which is sync-only.
-    void (async () => {
-      try {
-        await launch1DProteinView({
-          session,
-          view,
-          feature,
-          selectedTranscript,
-          uniprotId,
-          confidenceUrl,
-        })
-        handleClose()
-      } catch (e) {
-        console.error(e)
-        session.notifyError(`${e}`, e)
-      }
-    })()
+    void safeLaunch(session, fn, handleClose)
   }
 
-  const handleLaunchMsa = () => {
-    closeMenu()
-    if (!selectedTranscript || !uniprotId) {
-      return
+  const handleLaunch3DView = runLaunch(() => {
+    if (selectedTranscript) {
+      launch3DProteinView(launch3DParams)
     }
-    safeLaunch(
-      session,
-      () => {
-        launchMsaView({ session, view, feature, selectedTranscript, uniprotId })
-      },
-      handleClose,
-    )
-  }
+  })
 
-  const handleLaunch3DWithMsa = () => {
-    closeMenu()
-    if (!selectedTranscript || !uniprotId) {
-      return
+  const handleLaunch1DView = runLaunch(async () => {
+    if (uniprotId && selectedTranscript) {
+      await launch1DProteinView({ ...baseParams, confidenceUrl })
     }
-    safeLaunch(
-      session,
-      () => {
-        launch3DProteinViewWithMsa({
-          session,
-          view,
-          feature,
-          selectedTranscript,
-          uniprotId,
-          url,
-          userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
-          alignmentAlgorithm,
-        })
-      },
-      handleClose,
-    )
-  }
+  })
+
+  const handleLaunchMsa = runLaunch(() => {
+    if (selectedTranscript && uniprotId) {
+      launchMsaView(baseParams)
+    }
+  })
+
+  const handleLaunch3DWithMsa = runLaunch(() => {
+    if (selectedTranscript && uniprotId) {
+      launch3DProteinViewWithMsa(launch3DParams)
+    }
+  })
 
   const launchOptions = [
     {
@@ -202,18 +158,10 @@ export default function ProteinViewActions({
   return (
     <>
       {sequencesMatch === false ? (
-        <Typography
-          variant="body2"
-          sx={{ mr: 2, display: 'flex', alignItems: 'center' }}
-        >
-          Transcript and structure sequences differ, will run{' '}
-          {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ?? alignmentAlgorithm}{' '}
-          alignment
-          <AlignmentSettingsButton
-            value={alignmentAlgorithm}
-            onChange={onAlignmentAlgorithmChange}
-          />
-        </Typography>
+        <SequenceMismatchNotice
+          alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
+        />
       ) : null}
       <Button
         variant="contained"

@@ -10,7 +10,6 @@ import {
   extractFeatureIdentifiers,
   getId,
   getTranscriptFeatures,
-  getUniProtIdFromFeature,
   selectBestTranscript,
   stripStopCodon,
 } from '../utils/util'
@@ -39,7 +38,7 @@ export default function useAlphaFoldDBSearch({
   const [userTranscriptId, setUserTranscriptId] = useState<string>()
 
   const transcriptOptions = getTranscriptFeatures(feature)
-  const featureUniprotId = getUniProtIdFromFeature(feature)
+  const featureUniprotId = geneIds.uniprotId
 
   const effectiveLookupMode =
     lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
