@@ -6,10 +6,7 @@ import { Button, ButtonGroup, Typography } from '@mui/material'
 
 import LaunchOptionsDialog from './LaunchOptionsDialog'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
-import {
-  getLaunchMissingReasons,
-  safeLaunch,
-} from '../utils/launchHelpers'
+import { getLaunchMissingReasons, safeLaunch } from '../utils/launchHelpers'
 import {
   hasMsaViewPlugin,
   launch1DProteinView,
