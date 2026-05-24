@@ -43,8 +43,8 @@ importers:
         specifier: ^4.3.0
         version: 4.3.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@jbrowse/mobx-state-tree':
-        specifier: ^5.6.6
-        version: 5.6.6(mobx@6.15.3)
+        specifier: ^5.8.7
+        version: 5.8.7(mobx@6.15.3)
       '@mui/material':
         specifier: ^7.3.11
         version: 7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -601,8 +601,8 @@ packages:
   '@jbrowse/jexl@3.0.2':
     resolution: {integrity: sha512-9Q1elTlSW0Pn9dHpqYvdx2FqcUvd8CPNqx5KvNjEjJLARcRtC2sebATHtl4S1njz6Rm6F2JC2ngKAlODq0LjCA==}
 
-  '@jbrowse/mobx-state-tree@5.6.6':
-    resolution: {integrity: sha512-ySIQMfXZ5JzcDTb7hcyL9oYUNIej5Oi/PUuPNGTqSnmv2w2hsXLNdH5uN0PBDZUSTRmdSDESTtwGEvLxu08yhg==}
+  '@jbrowse/mobx-state-tree@5.8.7':
+    resolution: {integrity: sha512-KTMFEr5/youH4Bxv2PRy+na34QDXZpulygNI9jqmE5XQhSIyia5NIdTLl6BdgfJqFqw7/BMm/dDni4uS6Vb3QA==}
     peerDependencies:
       mobx: ^6.3.0
 
@@ -4443,7 +4443,7 @@ snapshots:
   '@jbrowse/app-core@4.3.0(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
       '@jbrowse/core': 4.3.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@jbrowse/mobx-state-tree': 5.6.6(mobx@6.15.3)
+      '@jbrowse/mobx-state-tree': 5.8.7(mobx@6.15.3)
       '@jbrowse/product-core': 4.3.0(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@mui/icons-material': 7.3.11(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@types/react@19.2.15)(react@19.2.6)
       '@mui/material': 7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -4471,7 +4471,7 @@ snapshots:
       '@gmod/bgzf-filehandle': 6.0.26
       '@gmod/http-range-fetcher': 5.0.7
       '@jbrowse/jexl': 3.0.2
-      '@jbrowse/mobx-state-tree': 5.6.6(mobx@6.15.3)
+      '@jbrowse/mobx-state-tree': 5.8.7(mobx@6.15.3)
       '@jbrowse/quick-lru': 7.3.5
       '@leeoniya/ufuzzy': 1.0.19
       '@mui/icons-material': 7.3.11(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@types/react@19.2.15)(react@19.2.6)
@@ -4508,14 +4508,14 @@ snapshots:
 
   '@jbrowse/jexl@3.0.2': {}
 
-  '@jbrowse/mobx-state-tree@5.6.6(mobx@6.15.3)':
+  '@jbrowse/mobx-state-tree@5.8.7(mobx@6.15.3)':
     dependencies:
       mobx: 6.15.3
 
   '@jbrowse/plugin-linear-genome-view@4.3.0(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
       '@jbrowse/core': 4.3.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@jbrowse/mobx-state-tree': 5.6.6(mobx@6.15.3)
+      '@jbrowse/mobx-state-tree': 5.8.7(mobx@6.15.3)
       '@jbrowse/product-core': 4.3.0(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       '@mui/icons-material': 7.3.11(@mui/material@7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6))(@types/react@19.2.15)(react@19.2.6)
       '@mui/material': 7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
@@ -4537,7 +4537,7 @@ snapshots:
   '@jbrowse/product-core@4.3.0(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)':
     dependencies:
       '@jbrowse/core': 4.3.0(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
-      '@jbrowse/mobx-state-tree': 5.6.6(mobx@6.15.3)
+      '@jbrowse/mobx-state-tree': 5.8.7(mobx@6.15.3)
       '@mui/material': 7.3.11(@emotion/react@11.14.0(@types/react@19.2.15)(react@19.2.6))(@types/react@19.2.15)(react-dom@19.2.6(react@19.2.6))(react@19.2.6)
       copy-to-clipboard: 3.3.3
       librpc-web-mod: 2.1.1
