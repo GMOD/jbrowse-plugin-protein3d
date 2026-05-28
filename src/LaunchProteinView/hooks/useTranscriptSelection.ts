@@ -18,7 +18,11 @@ export default function useTranscriptSelection({
   const autoSelection = useMemo(
     () =>
       isoformSequences !== undefined
-        ? selectBestTranscript({ options, isoformSequences, structureSequence })?.id()
+        ? selectBestTranscript({
+            options,
+            isoformSequences,
+            structureSequence,
+          })?.id()
         : undefined,
     [options, structureSequence, isoformSequences],
   )

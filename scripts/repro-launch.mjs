@@ -79,11 +79,9 @@ try {
   })
 } catch {}
 
-const server = spawn(
-  'npx',
-  ['serve', '-p', String(PORT), '-s', JBROWSE_DIR],
-  { stdio: ['ignore', 'pipe', 'pipe'] },
-)
+const server = spawn('npx', ['serve', '-p', String(PORT), '-s', JBROWSE_DIR], {
+  stdio: ['ignore', 'pipe', 'pipe'],
+})
 await new Promise(resolve => {
   const onData = data => {
     const s = data.toString()
@@ -201,7 +199,9 @@ const result = await page.evaluate(async () => {
     return {
       error:
         'no JBrowseSession; keys=' +
-        Object.keys(window).filter(k => k.startsWith('JBrowse')).join(','),
+        Object.keys(window)
+          .filter(k => k.startsWith('JBrowse'))
+          .join(','),
     }
   }
   const view = session.views.find(v => v.type === 'LinearGenomeView')
