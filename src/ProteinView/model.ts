@@ -407,6 +407,7 @@ function stateModelFactory() {
               applyColorTheme({ plugin: molstarPluginContext, colorScheme }).catch(
                 (e: unknown) => {
                   console.error(e)
+                  self.setError(e)
                 },
               )
             }
@@ -509,6 +510,7 @@ function stateModelFactory() {
                   if (self.molstarPluginContext) {
                     superposeStructures(self.molstarPluginContext).catch(
                       (e: unknown) => {
+                        console.error(e)
                         self.setError(e)
                       },
                     )
