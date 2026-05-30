@@ -21,7 +21,7 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
 }) {
   const [alignment, setAlignment] = useState('')
   const [parseError, setParseError] = useState<string>()
-  const { showManualAlignmentDialog, structures } = model
+  const { showManualAlignmentDialog, primaryStructure } = model
 
   const handleClose = () => {
     setAlignment('')
@@ -35,12 +35,11 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
     }
     try {
       const parsed = parsePairwise(alignment.trim())
-      const structure = structures[0]
-      if (!structure) {
+      if (!primaryStructure) {
         setParseError('No structure loaded to apply alignment to')
         return
       }
-      structure.setAlignment(parsed)
+      primaryStructure.setAlignment(parsed)
       handleClose()
     } catch (e) {
       setParseError(`Failed to parse alignment: ${e}`)

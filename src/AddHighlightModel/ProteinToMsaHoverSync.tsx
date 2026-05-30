@@ -66,7 +66,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
     let structureRowName: string | undefined
     disposers.push(
       autorun(() => {
-        const seq = proteinView.structures[0]?.structureSequences?.[0]
+        const seq = proteinView.primaryStructure?.structureSequences?.[0]
         structureRowName = findStructureRowName(
           msaView.rowMap,
           seq === undefined ? undefined : stripStopCodon(seq),
@@ -78,7 +78,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
       const { setMousePos } = msaView
       disposers.push(
         autorun(() => {
-          const structure = proteinView.structures[0]
+          const structure = proteinView.primaryStructure
           if (structure) {
             const seqPos = structure.structureSeqHoverPos
             const col =
@@ -96,7 +96,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
     disposers.push(
       autorun(() => {
         const col = msaView.mouseCol
-        const structure = proteinView.structures[0]
+        const structure = proteinView.primaryStructure
         if (structure) {
           const hasFeatureHoverRange = untracked(
             () => !!structure.alignmentHoverRange,

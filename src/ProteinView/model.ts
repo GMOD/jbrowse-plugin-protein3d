@@ -441,6 +441,9 @@ function stateModelFactory() {
       },
     }))
     .views(self => ({
+      get primaryStructure() {
+        return self.structures[0]
+      },
       menuItems() {
         return [
           {

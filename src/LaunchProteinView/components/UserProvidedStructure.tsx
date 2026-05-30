@@ -6,18 +6,13 @@ import {
   Button,
   DialogActions,
   DialogContent,
-  FormControl,
-  FormControlLabel,
-  Radio,
-  RadioGroup,
-  TextField,
   Typography,
 } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import HelpButton from './HelpButton'
 import MSATable from './MSATable'
+import StructureSourcePicker from './StructureSourcePicker'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import TranscriptSelector from './TranscriptSelector'
 import ExternalLink from '../../components/ExternalLink'
@@ -25,10 +20,7 @@ import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
 import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
 import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
 import useTranscriptSelection from '../hooks/useTranscriptSelection'
-import {
-  getPdbStructureUrl,
-  launch3DProteinView,
-} from '../utils/launchViewUtils'
+import { launch3DProteinView } from '../utils/launchViewUtils'
 import {
   getGeneDisplayName,
   getId,
@@ -160,73 +152,16 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         {error ? <ErrorMessage error={error} /> : null}
         <HelpText />
 
-        <div style={{ display: 'flex', margin: 30 }}>
-          <Typography>
-            Open your structure file <HelpButton />
-          </Typography>
-
-          <FormControl component="fieldset">
-            <RadioGroup
-              value={choice}
-              onChange={event => {
-                setChoice(event.target.value)
-              }}
-            >
-              <FormControlLabel value="url" control={<Radio />} label="URL" />
-              <FormControlLabel value="file" control={<Radio />} label="File" />
-              <FormControlLabel
-                value="pdb"
-                control={<Radio />}
-                label="PDB ID"
-              />
-            </RadioGroup>
-          </FormControl>
-          {choice === 'url' ? (
-            <div>
-              <Typography>
-                Open a PDB/mmCIF/etc. file from remote URL
-              </Typography>
-              <TextField
-                label="URL"
-                value={structureURL}
-                onChange={event => {
-                  setStructureURL(event.target.value)
-                }}
-              />
-            </div>
-          ) : null}
-          {choice === 'file' ? (
-            <div style={{ paddingTop: 20 }}>
-              <Typography>
-                Open a PDB/mmCIF/etc. file from your local drive
-              </Typography>
-              <Button variant="outlined" component="label">
-                Choose File
-                <input
-                  type="file"
-                  hidden
-                  onChange={({ target }) => {
-                    const file = target.files?.[0]
-                    if (file) {
-                      setFile(file)
-                    }
-                  }}
-                />
-              </Button>
-            </div>
-          ) : null}
-          {choice === 'pdb' ? (
-            <TextField
-              value={pdbId}
-              onChange={event => {
-                const s = event.target.value
-                setPdbId(s)
-                setStructureURL(getPdbStructureUrl(s))
-              }}
-              label="PDB ID"
-            />
-          ) : null}
-        </div>
+        <StructureSourcePicker
+          choice={choice}
+          setChoice={setChoice}
+          structureURL={structureURL}
+          setStructureURL={setStructureURL}
+          file={file}
+          setFile={setFile}
+          pdbId={pdbId}
+          setPdbId={setPdbId}
+        />
         <div style={{ margin: 20 }}>
           {isoformSequences ? (
             structureSequence ? (
