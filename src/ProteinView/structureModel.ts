@@ -11,6 +11,12 @@ import {
   applyLociInteractivityMultiple,
   applyLociInteractivitySingle,
 } from './applyLociInteractivity'
+import {
+  type CoordinateMapper,
+  alignmentCol,
+  makeCoordinateMapper,
+  structurePos,
+} from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
 import highlightResidueRange from './highlightResidueRange'
 import { runLocalAlignment } from './pairwiseAlignment'
@@ -25,15 +31,10 @@ import {
   mapResidueValuesToColumns,
 } from './residueTracks'
 import subscribeMolstarInteraction from './subscribeMolstarInteraction'
-import { checkHovered, invertMap } from './util'
+import { checkHovered } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import {
-  genomeToTranscriptSeqMapping,
-  structurePositionToAlignmentMap,
-  structureSeqVsTranscriptSeqMap,
-  transcriptPositionToAlignmentMap,
-} from '../mappings'
+import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
@@ -242,39 +243,39 @@ const Structure = types
     },
     /**
      * #getter
+     * All structure/transcript/alignment coordinate conversions, built once
+     * from the pairwise alignment (see coordinates.ts). Use its typed methods
+     * for point conversions; the getters below expose the raw maps for
+     * whole-map consumers.
      */
-    get structureTranscriptMaps() {
+    get coordinateMapper(): CoordinateMapper | undefined {
       return self.pairwiseAlignment
-        ? structureSeqVsTranscriptSeqMap(self.pairwiseAlignment)
+        ? makeCoordinateMapper(self.pairwiseAlignment)
         : undefined
     },
     /**
      * #getter
      */
     get structureSeqToTranscriptSeqPosition() {
-      return this.structureTranscriptMaps?.structureSeqToTranscriptSeqPosition
+      return this.coordinateMapper?.maps.structureSeqToTranscriptSeqPosition
     },
     /**
      * #getter
      */
     get transcriptSeqToStructureSeqPosition() {
-      return this.structureTranscriptMaps?.transcriptSeqToStructureSeqPosition
+      return this.coordinateMapper?.maps.transcriptSeqToStructureSeqPosition
     },
     /**
      * #getter
      */
     get structurePositionToAlignmentMap() {
-      return self.pairwiseAlignment
-        ? structurePositionToAlignmentMap(self.pairwiseAlignment)
-        : undefined
+      return this.coordinateMapper?.maps.structurePositionToAlignmentMap
     },
     /**
      * #getter
      */
     get transcriptPositionToAlignmentMap() {
-      return self.pairwiseAlignment
-        ? transcriptPositionToAlignmentMap(self.pairwiseAlignment)
-        : undefined
+      return this.coordinateMapper?.maps.transcriptPositionToAlignmentMap
     },
     /**
      * #getter
@@ -304,17 +305,13 @@ const Structure = types
      * #getter
      */
     get pairwiseAlignmentToTranscriptPosition() {
-      return this.transcriptPositionToAlignmentMap
-        ? invertMap(this.transcriptPositionToAlignmentMap)
-        : undefined
+      return this.coordinateMapper?.maps.alignmentToTranscriptPosition
     },
     /**
      * #getter
      */
     get pairwiseAlignmentToStructurePosition() {
-      return this.structurePositionToAlignmentMap
-        ? invertMap(this.structurePositionToAlignmentMap)
-        : undefined
+      return this.coordinateMapper?.maps.alignmentToStructurePosition
     },
     /**
      * #getter
@@ -368,7 +365,7 @@ const Structure = types
       const pos = this.structureSeqHoverPos
       return pos === undefined
         ? undefined
-        : this.structurePositionToAlignmentMap?.[pos]
+        : this.coordinateMapper?.structureToAlignment(structurePos(pos))
     },
 
     /**
@@ -583,8 +580,9 @@ const Structure = types
      */
     hoverAlignmentPosition(alignmentPos: number) {
       if (!self.alignmentHoverRange) {
-        const structureSeqPos =
-          self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+        const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
+          alignmentCol(alignmentPos),
+        )
         self.setHoveredPosition(
           structureSeqPos !== undefined ? { structureSeqPos } : undefined,
         )
@@ -594,8 +592,9 @@ const Structure = types
      * #action
      */
     clickAlignmentPosition(alignmentPos: number) {
-      const structureSeqPos =
-        self.pairwiseAlignmentToStructurePosition?.[alignmentPos]
+      const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
+        alignmentCol(alignmentPos),
+      )
       self.setSelectedFeatureId(undefined)
       if (structureSeqPos !== undefined) {
         clickProteinToGenome({
