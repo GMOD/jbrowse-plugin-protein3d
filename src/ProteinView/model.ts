@@ -443,25 +443,44 @@ function stateModelFactory() {
       menuItems() {
         return [
           {
-            label: 'Show...',
+            label: 'Pairwise alignment',
             icon: Visibility,
+            type: 'checkbox',
+            checked: self.showAlignment,
+            onClick: () => {
+              self.setShowAlignment(!self.showAlignment)
+            },
+          },
+          {
+            label: 'Protein feature tracks',
+            icon: Visibility,
+            type: 'checkbox',
+            checked: self.showProteinTracks,
+            onClick: () => {
+              self.setShowProteinTracks(!self.showProteinTracks)
+            },
+          },
+          {
+            label: 'Color scheme...',
+            subMenu: COLOR_SCHEMES.map(scheme => ({
+              label: scheme.label,
+              type: 'radio' as const,
+              checked: self.colorScheme === scheme.value,
+              onClick: () => {
+                self.setColorScheme(scheme.value)
+              },
+            })),
+          },
+          {
+            label: 'Add structure...',
+            onClick: () => {
+              self.setShowAddStructureDialog(true)
+            },
+          },
+          {
+            label: 'Advanced...',
+            icon: SettingsIcon,
             subMenu: [
-              {
-                label: 'Pairwise alignment',
-                type: 'checkbox',
-                checked: self.showAlignment,
-                onClick: () => {
-                  self.setShowAlignment(!self.showAlignment)
-                },
-              },
-              {
-                label: 'Protein feature tracks',
-                type: 'checkbox',
-                checked: self.showProteinTracks,
-                onClick: () => {
-                  self.setShowProteinTracks(!self.showProteinTracks)
-                },
-              },
               {
                 label: 'Pairwise alignment as green highlight',
                 type: 'checkbox',
@@ -478,23 +497,24 @@ function stateModelFactory() {
                   }
                 },
               },
-            ],
-          },
-          {
-            label: 'Color scheme...',
-            subMenu: COLOR_SCHEMES.map(scheme => ({
-              label: scheme.label,
-              type: 'radio' as const,
-              checked: self.colorScheme === scheme.value,
-              onClick: () => {
-                self.setColorScheme(scheme.value)
+              {
+                label: 'Import manual alignment...',
+                onClick: () => {
+                  self.setShowManualAlignmentDialog(true)
+                },
               },
-            })),
-          },
-          {
-            label: 'Settings...',
-            icon: SettingsIcon,
-            subMenu: [
+              {
+                label: 'Re-align structures (TM-align)',
+                onClick: () => {
+                  if (self.molstarPluginContext) {
+                    superposeStructures(self.molstarPluginContext).catch(
+                      (e: unknown) => {
+                        console.error(e)
+                      },
+                    )
+                  }
+                },
+              },
               {
                 label: 'Zoom to base level on click',
                 type: 'checkbox',
@@ -512,30 +532,6 @@ function stateModelFactory() {
                 },
               },
             ],
-          },
-          {
-            label: 'Import manual alignment...',
-            onClick: () => {
-              self.setShowManualAlignmentDialog(true)
-            },
-          },
-          {
-            label: 'Add structure...',
-            onClick: () => {
-              self.setShowAddStructureDialog(true)
-            },
-          },
-          {
-            label: 'Re-align structures (TM-align)',
-            onClick: () => {
-              if (self.molstarPluginContext) {
-                superposeStructures(self.molstarPluginContext).catch(
-                  (e: unknown) => {
-                    console.error(e)
-                  },
-                )
-              }
-            },
           },
         ]
       },
