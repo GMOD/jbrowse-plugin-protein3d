@@ -4,7 +4,9 @@ import { getSession } from '@jbrowse/core/util'
 import { autorun, untracked } from 'mobx'
 import { observer } from 'mobx-react'
 
+import { findStructureRowName } from './msaRowMatch'
 import { getProteinView } from './util'
+import { stripStopCodon } from '../LaunchProteinView/utils/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -18,19 +20,22 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 // names change there, this sync silently stops working, so the two repos must
 // be kept in step.
 //
-// NOTE on coordinates: `mouseCol` is an MSA *column* (gaps included), whereas
-// `structureSeqHoverPos` is an ungapped residue index in the structure's
-// sequence. We currently map them 1:1, which is only correct when the
-// structure's MSA row has no leading gaps/insertions. A fully robust mapping
-// needs the structure's row name plus react-msaview's
-// `visibleColToSeqPos(rowName, col)` / `seqPosToVisibleCol(rowName, seqPos)` to
-// translate across gaps. TODO: thread the structure's row identity through and
-// use those helpers.
+// NOTE on coordinates: `mouseCol` is an MSA *visible column* (accounts for both
+// alignment gaps and hidden gappy columns), whereas `structureSeqHoverPos` is an
+// ungapped residue index in the structure's sequence. We translate across gaps
+// with react-msaview's `visibleColToSeqPos(rowName, col)` /
+// `seqPosToVisibleCol(rowName, seqPos)`, anchoring the structure to its MSA row
+// by matching sequences (see findStructureRowName). When the row can't be
+// resolved (MSA not loaded, no matching row) we fall back to the 1:1 mapping,
+// which is correct when the structure's row has no gaps and no columns hidden.
 interface MsaView {
   id: string
   type: string
   mouseCol?: number
   setMousePos?: (col?: number, row?: number) => void
+  rowMap?: Map<string, string>
+  seqPosToVisibleCol?: (rowName: string, seqPos: number) => number | undefined
+  visibleColToSeqPos?: (rowName: string, visibleCol: number) => number | undefined
 }
 
 const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
@@ -55,13 +60,34 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
 
     const disposers: (() => void)[] = []
 
+    // Resolve which MSA row corresponds to the structure once the MSA loads.
+    // Recomputes only when the alignment rows or structure sequence change, not
+    // on every hover, so the per-hover conversions below stay cheap.
+    let structureRowName: string | undefined
+    disposers.push(
+      autorun(() => {
+        const seq = proteinView.structures[0]?.structureSequences?.[0]
+        structureRowName = findStructureRowName(
+          msaView.rowMap,
+          seq === undefined ? undefined : stripStopCodon(seq),
+        )
+      }),
+    )
+
     if (msaView.setMousePos) {
       const { setMousePos } = msaView
       disposers.push(
         autorun(() => {
           const structure = proteinView.structures[0]
           if (structure) {
-            setMousePos(structure.structureSeqHoverPos)
+            const seqPos = structure.structureSeqHoverPos
+            const col =
+              seqPos !== undefined &&
+              structureRowName !== undefined &&
+              msaView.seqPosToVisibleCol
+                ? msaView.seqPosToVisibleCol(structureRowName, seqPos)
+                : seqPos
+            setMousePos(col)
           }
         }),
       )
@@ -76,8 +102,16 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
             () => !!structure.alignmentHoverRange,
           )
           if (!hasFeatureHoverRange) {
+            const structureSeqPos =
+              col !== undefined &&
+              structureRowName !== undefined &&
+              msaView.visibleColToSeqPos
+                ? msaView.visibleColToSeqPos(structureRowName, col)
+                : col
             structure.setHoveredPosition(
-              col === undefined ? undefined : { structureSeqPos: col },
+              structureSeqPos === undefined
+                ? undefined
+                : { structureSeqPos },
             )
           }
         }
