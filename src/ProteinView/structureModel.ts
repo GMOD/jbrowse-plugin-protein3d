@@ -11,6 +11,7 @@ import {
   applyLociInteractivityMultiple,
   applyLociInteractivitySingle,
 } from './applyLociInteractivity'
+import { looksLikePlddt } from './extractPerResidueConfidence'
 import highlightResidueRange from './highlightResidueRange'
 import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
@@ -19,6 +20,10 @@ import {
   proteinRangeToGenomeMapping,
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
+import {
+  kyteDoolittleScores,
+  mapResidueValuesToColumns,
+} from './residueTracks'
 import subscribeMolstarInteraction from './subscribeMolstarInteraction'
 import { checkHovered, invertMap } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
@@ -106,6 +111,12 @@ const Structure = types
     structureSequences: undefined as string[] | undefined,
     /**
      * #volatile
+     * Per-residue B-factor / pLDDT for the first chain, indexed by 0-based
+     * structure sequence position. Drives the confidence feature track.
+     */
+    structureConfidence: undefined as number[] | undefined,
+    /**
+     * #volatile
      */
     isMouseInAlignment: false,
     /**
@@ -132,8 +143,12 @@ const Structure = types
     hiddenFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
-    setSequences(str?: string[]) {
-      self.structureSequences = str
+    setStructureData(data: {
+      sequences?: string[]
+      confidence?: number[]
+    }) {
+      self.structureSequences = data.sequences
+      self.structureConfidence = data.confidence
     },
     /**
      * #action
@@ -260,6 +275,30 @@ const Structure = types
       return self.pairwiseAlignment
         ? transcriptPositionToAlignmentMap(self.pairwiseAlignment)
         : undefined
+    },
+    /**
+     * #getter
+     * Per-residue pLDDT values mapped to alignment columns, shown only when the
+     * structure's B-factor column actually looks like AlphaFold confidence.
+     */
+    get confidenceCells() {
+      const c = self.structureConfidence
+      return looksLikePlddt(c)
+        ? mapResidueValuesToColumns(c, this.structurePositionToAlignmentMap)
+        : []
+    },
+    /**
+     * #getter
+     * Per-residue Kyte-Doolittle hydrophobicity mapped to alignment columns.
+     */
+    get hydrophobicityCells() {
+      const seq = self.structureSequences?.[0]
+      return seq
+        ? mapResidueValuesToColumns(
+            kyteDoolittleScores(stripStopCodon(seq)),
+            this.structurePositionToAlignmentMap,
+          )
+        : []
     },
     /**
      * #getter
