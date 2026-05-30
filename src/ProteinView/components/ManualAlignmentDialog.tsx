@@ -36,9 +36,11 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
     try {
       const parsed = parsePairwise(alignment.trim())
       const structure = structures[0]
-      if (structure) {
-        structure.setAlignment(parsed)
+      if (!structure) {
+        setParseError('No structure loaded to apply alignment to')
+        return
       }
+      structure.setAlignment(parsed)
       handleClose()
     } catch (e) {
       setParseError(`Failed to parse alignment: ${e}`)
@@ -62,9 +64,9 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
           rows={12}
           fullWidth
           placeholder={`Example:
-a  MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG
-   |||||||||||||||||||||||||||||||||||||
-b  MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG`}
+transcript  MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG
+            |||||||||||||||||||||||||||||||||||||
+structure   MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG`}
           value={alignment}
           onChange={e => {
             setAlignment(e.target.value)
