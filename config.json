@@ -3,7 +3,7 @@
     {
       "name": "Protein3d",
       "url": "http://localhost:9000/dist/out.js"
-    },
+    }
   ],
   "assemblies": [
     {

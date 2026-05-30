@@ -14,15 +14,18 @@ characterization tests that pin current behavior, then refactor against them.
   `extractPerResidueConfidence.ts`, `components/ResidueValueTrack.tsx`): pLDDT
   and Kyte-Doolittle hydrophobicity rendered in the alignment area, mapped to
   alignment columns. Verified in-browser.
-- **MSA↔structure hover is gap-aware** (`AddHighlightModel/ProteinToMsaHoverSync`,
-  `msaRowMatch.ts`): uses react-msaview's `seqPosToVisibleCol` /
-  `visibleColToSeqPos`, anchored by sequence match, with a 1:1 fallback.
-- **Branded coordinate types + `CoordinateMapper`** (`ProteinView/coordinates.ts`):
-  `StructurePos` / `TranscriptPos` / `AlignmentCol` brands; all conversions
-  built once from the pairwise alignment. `structureModel` coordinate getters
-  delegate to it. Characterization tests in `mappings.test.characterization.test.ts`
-  and `coordinates.test.ts`. (Refactor #1 below — done, verified.)
-- **AlphaMissense parser hardened** (`parseAlphaMissense`): skips malformed rows.
+- **MSA↔structure hover is gap-aware**
+  (`AddHighlightModel/ProteinToMsaHoverSync`, `msaRowMatch.ts`): uses
+  react-msaview's `seqPosToVisibleCol` / `visibleColToSeqPos`, anchored by
+  sequence match, with a 1:1 fallback.
+- **Branded coordinate types + `CoordinateMapper`**
+  (`ProteinView/coordinates.ts`): `StructurePos` / `TranscriptPos` /
+  `AlignmentCol` brands; all conversions built once from the pairwise alignment.
+  `structureModel` coordinate getters delegate to it. Characterization tests in
+  `mappings.test.characterization.test.ts` and `coordinates.test.ts`. (Refactor
+  #1 below — done, verified.)
+- **AlphaMissense parser hardened** (`parseAlphaMissense`): skips malformed
+  rows.
 
 ---
 
@@ -34,6 +37,7 @@ autoruns. Coordinate maps already moved to the `CoordinateMapper` (#1); the
 remaining concerns are still tangled.
 
 **Steps.**
+
 - Extract the alignment-building autorun (the one calling `runLocalAlignment` /
   `setAlignment`) into a small `useAlignment`-style helper or a dedicated
   sub-model.
@@ -52,19 +56,19 @@ gating; add tests pinning `hoverStructureRange` / `clickAlignmentRange`
 ## Refactor #3 — `MolstarController` facade (highest remaining leverage)
 
 **Problem.** Imperative molstar calls are spread across ~8 files
-(`applyLociInteractivity`, `highlightResidueRange`, `subscribeMolstarInteraction`,
-`superposeStructures`, `addStructureFrom*`, `extractStructureSequences`,
-`extractPerResidueConfidence`, `applyColorTheme`) and invoked from ~6 autoruns
-inside `structureModel`. The model mixes declarative state with imperative,
-order-sensitive, async 3D side effects — there is already a documented load
-race in `model.ts addStructureAndSuperpose`.
+(`applyLociInteractivity`, `highlightResidueRange`,
+`subscribeMolstarInteraction`, `superposeStructures`, `addStructureFrom*`,
+`extractStructureSequences`, `extractPerResidueConfidence`, `applyColorTheme`)
+and invoked from ~6 autoruns inside `structureModel`. The model mixes
+declarative state with imperative, order-sensitive, async 3D side effects —
+there is already a documented load race in `model.ts addStructureAndSuperpose`.
 
 **Proposal.** One `MolstarController` per structure owns the plugin handle and
-*all* imperative calls behind a typed API:
-`highlight(range)`, `select(range)`, `clear()`, `setColorScheme(scheme)`,
-`onPick(cb)`, `addStructure()`, `superpose()`. The MST model holds only
-declarative state; a **single reconciler** autorun diffs state → controller
-(replacing the scattered autoruns).
+_all_ imperative calls behind a typed API: `highlight(range)`, `select(range)`,
+`clear()`, `setColorScheme(scheme)`, `onPick(cb)`, `addStructure()`,
+`superpose()`. The MST model holds only declarative state; a **single
+reconciler** autorun diffs state → controller (replacing the scattered
+autoruns).
 
 **Payoff.** molstar becomes swappable/mockable → real integration tests become
 possible; the model stops hosting async races.
@@ -72,9 +76,10 @@ possible; the model stops hosting async races.
 **Risk.** High — touches every interaction (hover, click, highlight, select,
 color, superpose, add). **Do this as a dedicated effort when the tree is quiet**
 (multiple agents share this worktree). Mandatory prerequisites:
+
 1. A puppeteer smoke harness (see `scripts/repro-launch.mjs` as the template)
-   covering hover→3D highlight, click→genome nav, color switch, add-2nd-structure
-   superpose, and the per-residue tracks.
+   covering hover→3D highlight, click→genome nav, color switch,
+   add-2nd-structure superpose, and the per-residue tracks.
 2. Run it before and after to prove behavior parity.
 
 ---
@@ -100,7 +105,7 @@ benefits from #3.
 ## Feature follow-ups (independent of the refactors)
 
 - **Custom AlphaMissense → 3D color theme.** All built-in molstar themes work,
-  but coloring the 3D structure by *adapter data* (AlphaMissense pathogenicity,
+  but coloring the 3D structure by _adapter data_ (AlphaMissense pathogenicity,
   MSA-derived conservation) needs a custom molstar `ColorTheme` provider that
   reads per-residue scores and maps them through the `CoordinateMapper`,
   registered the same way as `MAQualityAssessment`. Highest scientific payoff;
@@ -113,8 +118,8 @@ benefits from #3.
 
 - Shared worktree: multiple agents edit concurrently. Stage only your own files;
   never `git stash`. Leave others' in-progress edits alone.
-- Coordinate spaces are 0-based; ranges are inclusive-start/exclusive-end
-  (see `hoverStructureRange` / `clickedStructureRange`). Use the branded
+- Coordinate spaces are 0-based; ranges are inclusive-start/exclusive-end (see
+  `hoverStructureRange` / `clickedStructureRange`). Use the branded
   `CoordinateMapper` methods for point conversions.
 - molstar extension theme names (e.g. `plddt-confidence`) aren't in the built-in
   union — widen at the one boundary in `applyColorTheme.ts` (documented there).

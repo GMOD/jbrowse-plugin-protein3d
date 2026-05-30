@@ -63,13 +63,19 @@ const FeatureBar = observer(function FeatureBar({
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const { molstarPluginContext, selectedFeatureId, structurePositionToAlignmentMap } =
-    model
+  const {
+    molstarPluginContext,
+    selectedFeatureId,
+    structurePositionToAlignmentMap,
+  } = model
   const isSelected = selectedFeatureId === feature.uniqueId
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    const range = getFeatureAlignmentRange(feature, structurePositionToAlignmentMap)
+    const range = getFeatureAlignmentRange(
+      feature,
+      structurePositionToAlignmentMap,
+    )
     if (range) {
       model.setAlignmentHoverRange(range)
     }
@@ -116,7 +122,10 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  const { left, width } = getFeatureGeometry(feature, structurePositionToAlignmentMap)
+  const { left, width } = getFeatureGeometry(
+    feature,
+    structurePositionToAlignmentMap,
+  )
   const color = getFeatureColor(feature.type)
 
   return (

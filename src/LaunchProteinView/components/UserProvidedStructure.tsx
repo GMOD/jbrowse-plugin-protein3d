@@ -2,18 +2,13 @@ import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { getContainingView, getSession } from '@jbrowse/core/util'
-import {
-  Button,
-  DialogActions,
-  DialogContent,
-  Typography,
-} from '@mui/material'
+import { Button, DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import MSATable from './MSATable'
-import StructureSourcePicker from './StructureSourcePicker'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
+import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 import ExternalLink from '../../components/ExternalLink'
 import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'

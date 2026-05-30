@@ -22,21 +22,15 @@ test('parses well-formed rows, 1-based coord to half-open interval', () => {
 })
 
 test('handles multi-digit coordinates', () => {
-  const [row] = parseAlphaMissense(
-    ['header', 'M1024K,0.1,benign'].join('\n'),
-  )
+  const [row] = parseAlphaMissense(['header', 'M1024K,0.1,benign'].join('\n'))
   expect(row).toMatchObject({ ref: 'M', variant: 'K', start: 1024, end: 1025 })
 })
 
 test('skips malformed rows instead of emitting position-0 features', () => {
   const rows = parseAlphaMissense(
-    [
-      'header',
-      'V10L,0.5,benign',
-      'garbage',
-      ',,,',
-      'V20A,0.7,pathogenic',
-    ].join('\n'),
+    ['header', 'V10L,0.5,benign', 'garbage', ',,,', 'V20A,0.7,pathogenic'].join(
+      '\n',
+    ),
   )
   expect(rows.map(r => r.start)).toEqual([10, 20])
   expect(rows.every(r => !Number.isNaN(r.start))).toBe(true)

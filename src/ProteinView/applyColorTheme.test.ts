@@ -18,7 +18,10 @@ function makePlugin(structureComponents: unknown[]) {
       },
     },
   }
-  return { plugin: plugin as unknown as PluginContext, updateRepresentationsTheme }
+  return {
+    plugin: plugin as unknown as PluginContext,
+    updateRepresentationsTheme,
+  }
 }
 
 test('exposes pLDDT among the color schemes', () => {

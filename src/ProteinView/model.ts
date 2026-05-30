@@ -404,12 +404,13 @@ function stateModelFactory() {
               s => s.structureSequences !== undefined,
             ).length
             if (molstarPluginContext && readyCount > 0) {
-              applyColorTheme({ plugin: molstarPluginContext, colorScheme }).catch(
-                (e: unknown) => {
-                  console.error(e)
-                  self.setError(e)
-                },
-              )
+              applyColorTheme({
+                plugin: molstarPluginContext,
+                colorScheme,
+              }).catch((e: unknown) => {
+                console.error(e)
+                self.setError(e)
+              })
             }
           }),
         )

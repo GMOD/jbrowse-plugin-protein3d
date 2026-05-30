@@ -26,10 +26,7 @@ import {
   proteinRangeToGenomeMapping,
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
-import {
-  kyteDoolittleScores,
-  mapResidueValuesToColumns,
-} from './residueTracks'
+import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction from './subscribeMolstarInteraction'
 import { checkHovered } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
@@ -144,10 +141,7 @@ const Structure = types
     hiddenFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
-    setStructureData(data: {
-      sequences?: string[]
-      confidence?: number[]
-    }) {
+    setStructureData(data: { sequences?: string[]; confidence?: number[] }) {
       self.structureSequences = data.sequences
       self.structureConfidence = data.confidence
     },

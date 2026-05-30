@@ -35,7 +35,10 @@ interface MsaView {
   setMousePos?: (col?: number, row?: number) => void
   rowMap?: Map<string, string>
   seqPosToVisibleCol?: (rowName: string, seqPos: number) => number | undefined
-  visibleColToSeqPos?: (rowName: string, visibleCol: number) => number | undefined
+  visibleColToSeqPos?: (
+    rowName: string,
+    visibleCol: number,
+  ) => number | undefined
 }
 
 const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
@@ -109,9 +112,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
                 ? msaView.visibleColToSeqPos(structureRowName, col)
                 : col
             structure.setHoveredPosition(
-              structureSeqPos === undefined
-                ? undefined
-                : { structureSeqPos },
+              structureSeqPos === undefined ? undefined : { structureSeqPos },
             )
           }
         }

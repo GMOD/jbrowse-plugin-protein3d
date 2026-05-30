@@ -61,8 +61,10 @@ export interface CoordinateMapper {
 export function makeCoordinateMapper(
   pairwiseAlignment: PairwiseAlignment,
 ): CoordinateMapper {
-  const { structureSeqToTranscriptSeqPosition, transcriptSeqToStructureSeqPosition } =
-    structureSeqVsTranscriptSeqMap(pairwiseAlignment)
+  const {
+    structureSeqToTranscriptSeqPosition,
+    transcriptSeqToStructureSeqPosition,
+  } = structureSeqVsTranscriptSeqMap(pairwiseAlignment)
   const s2aln = structurePositionToAlignmentMap(pairwiseAlignment)
   const t2aln = transcriptPositionToAlignmentMap(pairwiseAlignment)
   const aln2s = invertMap(s2aln)

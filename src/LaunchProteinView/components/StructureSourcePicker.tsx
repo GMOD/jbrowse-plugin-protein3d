@@ -18,7 +18,7 @@ export default function StructureSourcePicker({
   setChoice,
   structureURL,
   setStructureURL,
-  file,
+  _file,
   setFile,
   pdbId,
   setPdbId,
@@ -66,7 +66,9 @@ export default function StructureSourcePicker({
 
       {choice === 'file' ? (
         <div style={{ paddingTop: 20 }}>
-          <Typography>Open a PDB/mmCIF/etc. file from your local drive</Typography>
+          <Typography>
+            Open a PDB/mmCIF/etc. file from your local drive
+          </Typography>
           <Button variant="outlined" component="label">
             Choose File
             <input

@@ -47,7 +47,24 @@ test('unaligned residues and gap columns convert to undefined', () => {
 
 test('maps match the underlying mappings functions', () => {
   const m = makeCoordinateMapper(PA)
-  expect(m.maps.structureSeqToTranscriptSeqPosition).toEqual({ 0: 0, 1: 1, 3: 2, 4: 4 })
-  expect(m.maps.structurePositionToAlignmentMap).toEqual({ 0: 0, 1: 1, 2: 2, 3: 3, 4: 5 })
-  expect(m.maps.alignmentToStructurePosition).toEqual({ 0: 0, 1: 1, 2: 2, 3: 3, 5: 4 })
+  expect(m.maps.structureSeqToTranscriptSeqPosition).toEqual({
+    0: 0,
+    1: 1,
+    3: 2,
+    4: 4,
+  })
+  expect(m.maps.structurePositionToAlignmentMap).toEqual({
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    4: 5,
+  })
+  expect(m.maps.alignmentToStructurePosition).toEqual({
+    0: 0,
+    1: 1,
+    2: 2,
+    3: 3,
+    5: 4,
+  })
 })

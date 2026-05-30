@@ -79,9 +79,7 @@ export function mapResidueValuesToColumns(
   return structurePositionToAlignmentMap
     ? values.flatMap((value, structurePos) => {
         const col = structurePositionToAlignmentMap[structurePos]
-        return value !== undefined && col !== undefined
-          ? [{ col, value }]
-          : []
+        return value !== undefined && col !== undefined ? [{ col, value }] : []
       })
     : []
 }
