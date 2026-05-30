@@ -70,8 +70,8 @@ b  MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG`}
             setAlignment(e.target.value)
             setParseError(undefined)
           }}
-          InputProps={{
-            sx: { fontFamily: 'monospace', fontSize: 12 },
+          slotProps={{
+            htmlInput: { style: { fontFamily: 'monospace', fontSize: 12 } },
           }}
         />
         {parseError ? (
