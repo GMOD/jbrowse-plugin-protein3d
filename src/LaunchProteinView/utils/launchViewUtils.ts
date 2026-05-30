@@ -164,6 +164,12 @@ export async function launch1DProteinView({
   })
 }
 
+// CROSS-REPO DEPENDENCY: the 'MsaView' view type is registered by
+// jbrowse-plugin-msaview, which wraps the `react-msaview` library. The `init`
+// keys below (msaUrl, colorSchemeName) and the connected* props are a runtime
+// contract with that plugin's model — they are NOT type-checked here because we
+// only depend on it at runtime (gated by hasMsaViewPlugin()). If react-msaview
+// renames these, the launch silently degrades. Keep in step with that repo.
 export function launchMsaView({
   session,
   view,
