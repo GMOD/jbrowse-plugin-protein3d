@@ -120,9 +120,6 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     try {
       const structureData = activeFile ? await activeFile.text() : undefined
       const url = activeURL ? activeURL : undefined
-      if (!url && !structureData) {
-        return
-      }
       launch3DProteinView({
         session,
         view,
