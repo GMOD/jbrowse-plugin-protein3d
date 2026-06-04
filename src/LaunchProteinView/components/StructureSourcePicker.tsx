@@ -18,7 +18,7 @@ export default function StructureSourcePicker({
   setChoice,
   structureURL,
   setStructureURL,
-  _file,
+  file: _file,
   setFile,
   pdbId,
   setPdbId,
