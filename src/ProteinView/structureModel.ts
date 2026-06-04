@@ -32,6 +32,7 @@ import { checkHovered } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
+import { coerceAlignmentAlgorithm } from './types'
 
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
@@ -49,7 +50,7 @@ export interface ParentProteinView {
   autoScrollAlignment: boolean
   showHighlight: boolean
   showProteinTracks: boolean
-  alignmentAlgorithm: AlignmentAlgorithm
+  alignmentAlgorithm: string
   molstarPluginContext: PluginContext | undefined
   structures: { url?: string }[]
   setShowAlignment: (f: boolean) => void
@@ -539,7 +540,7 @@ const Structure = types
       return this.parentView.showProteinTracks
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
-      return this.parentView.alignmentAlgorithm
+      return coerceAlignmentAlgorithm(this.parentView.alignmentAlgorithm)
     },
     get molstarPluginContext(): PluginContext | undefined {
       return this.parentView.molstarPluginContext

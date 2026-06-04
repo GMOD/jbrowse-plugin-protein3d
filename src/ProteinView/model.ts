@@ -17,11 +17,7 @@ import { extractPerResidueConfidence } from './extractPerResidueConfidence'
 import { extractStructureSequences } from './extractStructureSequences'
 import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
-import {
-  ALIGNMENT_ALGORITHMS,
-  type AlignmentAlgorithm,
-  DEFAULT_ALIGNMENT_ALGORITHM,
-} from './types'
+import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
 const SETTINGS_KEY = 'proteinView-settings'
 const PERSISTED_SETTINGS = [
@@ -131,10 +127,7 @@ function stateModelFactory() {
          * #property
          */
         alignmentAlgorithm: types.optional(
-          types.enumeration<AlignmentAlgorithm>('AlignmentAlgorithm', [
-            ALIGNMENT_ALGORITHMS.NEEDLEMAN_WUNSCH,
-            ALIGNMENT_ALGORITHMS.SMITH_WATERMAN,
-          ]),
+          types.string,
           DEFAULT_ALIGNMENT_ALGORITHM,
         ),
 

@@ -31,7 +31,12 @@ export async function launchProteinAnnotationView({
 
   const view = session.addView('LinearGenomeView', {
     type: 'LinearGenomeView',
-    displayName: formatViewName('Protein view', feature, selectedTranscript, uniprotId),
+    displayName: formatViewName(
+      'Protein view',
+      feature,
+      selectedTranscript,
+      uniprotId,
+    ),
   }) as LinearGenomeViewModel
 
   // Register for linked highlighting between 1D and 3D views
