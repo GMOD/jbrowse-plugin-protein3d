@@ -2,10 +2,12 @@
 // real browser, so the docs can't silently rot (e.g. an AlphaFold URL version
 // bump, or a regression in the connectedView launch wiring).
 //
-// It loads two specs through the local dev app:
+// It loads three specs through the local dev app:
 //   1. standalone ProteinView (structure streams + sequence extracted)
 //   2. connected ProteinView + LinearGenomeView via the `connectedView` param
 //      (genome<->protein mapping built, structure aligned, genome tracks render)
+//   3. short form: uniprotId + transcriptId derive url/feature/sequence from
+//      the connected track (no explicit url/feature/userProvidedTranscriptSeq)
 //
 // Usage:
 //   pnpm test:docs                 # auto-starts `pnpm start` if :9000 is down
@@ -65,6 +67,11 @@ const STRUCTURE_URL =
   'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif'
 
 const standaloneSpec = { views: [{ type: 'ProteinView', url: STRUCTURE_URL }] }
+const CONNECTED_VIEW = {
+  assembly: 'hg38',
+  loc: 'chr17:7,668,421-7,687,550',
+  tracks: ['hg38-ncbiRefSeq', 'clinvar_ncbi_hg38'],
+}
 const connectedSpec = {
   views: [
     {
@@ -73,11 +80,20 @@ const connectedSpec = {
       height: 540,
       userProvidedTranscriptSequence: TP53_PROTEIN,
       feature: TP53_FEATURE,
-      connectedView: {
-        assembly: 'hg38',
-        loc: 'chr17:7,668,421-7,687,550',
-        tracks: ['hg38-ncbiRefSeq', 'clinvar_ncbi_hg38'],
-      },
+      connectedView: CONNECTED_VIEW,
+    },
+  ],
+}
+// Short form: url/feature/sequence all derived from uniprotId + transcriptId,
+// resolved out of the hg38-ncbiRefSeq track at `loc`.
+const shortSpec = {
+  views: [
+    {
+      type: 'ProteinView',
+      height: 540,
+      uniprotId: 'P04637',
+      transcriptId: 'NM_000546.6',
+      connectedView: CONNECTED_VIEW,
     },
   ],
 }
@@ -231,6 +247,83 @@ try {
 
     fs.mkdirSync('test-screenshots', { recursive: true })
     await page.screenshot({ path: 'test-screenshots/docs-connected.png' })
+    await page.close()
+  }
+
+  // 3. short form: uniprotId + transcriptId derive everything from the track
+  {
+    const page = await browser.newPage()
+    await page.setViewport({
+      width: 1280,
+      height: 1400,
+      deviceScaleFactor: 1.5,
+    })
+    const errors = []
+    page.on('pageerror', e => errors.push(e.message))
+    page.on('console', m => {
+      if (m.type() === 'error') errors.push(m.text())
+    })
+    await page.goto(specUrl(shortSpec), {
+      waitUntil: 'networkidle2',
+      timeout: 90_000,
+    })
+    let state
+    for (let i = 0; i < 50; i++) {
+      await sleep(3000)
+      state = await page.evaluate(() => {
+        const s = window.JBrowseSession
+        const lgv = s?.views?.find(v => v.type === 'LinearGenomeView')
+        const pv = s?.views?.find(v => v.type === 'ProteinView')
+        const st = pv?.structures?.[0]
+        return {
+          wired: !!lgv && st?.connectedViewId === lgv?.id,
+          // url derived from uniprotId
+          derivedUrl: st?.url,
+          // feature + sequence resolved from the track, not the spec
+          g2pCount: st?.genomeToTranscriptSeqMapping
+            ? Object.keys(st.genomeToTranscriptSeqMapping.g2p).length
+            : 0,
+          hasAlignment: !!st?.pairwiseAlignment,
+          seqLen: st?.structureSequences?.[0]?.length ?? 0,
+          // protein translated from the track's CDS (stop codon stripped)
+          resolvedProtein: (
+            st?.userProvidedTranscriptSequence ?? ''
+          ).replaceAll('*', ''),
+          canvases: document.querySelectorAll('canvas').length,
+        }
+      })
+      if (state.wired && state.hasAlignment && state.canvases >= 4) break
+    }
+    check(
+      'short: url derived from uniprotId',
+      state.derivedUrl === STRUCTURE_URL,
+      `url=${state.derivedUrl}`,
+    )
+    check('short: structure connectedViewId wired to the LGV', state.wired)
+    check(
+      'short: transcript resolved from track (genome->protein mapping built)',
+      // 1179 (= 393 codons), not the 1182 of the connected case: ncbiRefSeq's
+      // GFF3 annotates CDS without the trailing stop codon, whereas the
+      // hand-built TP53_FEATURE above includes it.
+      state.g2pCount === 1179,
+      `g2p=${state.g2pCount}`,
+    )
+    check(
+      'short: structure aligned to translated transcript',
+      state.hasAlignment && state.seqLen === 393,
+      `seqLen=${state.seqLen}`,
+    )
+    // Proves the resolved transcript is genuinely correct, not just 393 long:
+    // the protein translated from the track's CDS must equal the canonical
+    // P04637 sequence used in the explicit connected case above.
+    check(
+      'short: translated protein matches canonical P04637',
+      state.resolvedProtein === TP53_PROTEIN,
+      `len=${state.resolvedProtein.length}`,
+    )
+    check('short: no console/page errors', errors.length === 0, errors[0])
+
+    await page.screenshot({ path: 'test-screenshots/docs-short.png' })
     await page.close()
   }
 } finally {

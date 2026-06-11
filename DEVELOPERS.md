@@ -9,7 +9,9 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 
 | Parameter                        | Required | Description                                                                     |
 | -------------------------------- | -------- | ------------------------------------------------------------------------------- |
-| `url`                            | Yes      | Structure file URL (PDB, mmCIF, etc.)                                           |
+| `url`                            | Yes\*    | Structure file URL (PDB, mmCIF, etc.)                                           |
+| `uniprotId`                      | Yes\*    | UniProt accession; derives the AlphaFold `url` (short form, see below)          |
+| `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with `uniprotId`)  |
 | `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                  |
 | `feature`                        | No       | Genomic feature for cross-linking                                               |
 | `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                    |
@@ -21,6 +23,8 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 | `showHighlight`                  | No       | Show alignment highlight on structure                                           |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                     |
 
+\* Provide either `url` (explicit structure) **or** `uniprotId` (short form).
+
 ### URL example
 
 Open a structure on its own (no genome connection):
@@ -31,13 +35,68 @@ https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-
 
 ### Connected genome + protein view
 
-Normally the connection is made for you when you launch the viewer from a gene
-(the clicked transcript becomes `feature` and the view you launched from becomes
-`connectedViewId`). To build the same connected session **declaratively** — e.g.
-for a demo link or an embedded app — pass `connectedView` instead of
-`connectedViewId`. The plugin then creates the LinearGenomeView and wires the
-connection itself, so a single spec entry yields a linked genome + structure
-where hovering a variant highlights the residue (and vice versa):
+A **connected** view links the structure to a LinearGenomeView: hovering a
+variant highlights the matching residue on the structure, and clicking a residue
+highlights the codon in the genome. Normally this connection is made for you
+when you launch the viewer from a gene. To build the same connected session
+**declaratively** — for a demo link or an embedded app — there are two ways,
+depending on whether the transcript is already served by a track in the genome
+view.
+
+#### Short form (recommended): `uniprotId` + `transcriptId`
+
+If the connected genome view serves a gene track that contains the transcript,
+this is all you need — the plugin resolves the structure, the feature, and the
+alignment sequence for you:
+
+```js
+const session = `spec-${JSON.stringify({
+  views: [
+    {
+      type: 'ProteinView',
+      uniprotId: 'P04637', // -> AlphaFold AF-P04637-F1-model_v6.cif
+      transcriptId: 'NM_000546.6', // resolved from a track at `loc` below
+      connectedView: {
+        assembly: 'hg38',
+        loc: 'chr17:7,668,421-7,687,550',
+        tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
+      },
+    },
+  ],
+})}`
+const url = `https://your-jbrowse/?config=/config.json&session=${encodeURIComponent(session)}`
+```
+
+A ready-to-open URL (against the public hg38 instance) looks like:
+
+```
+https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","uniprotId":"P04637","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
+```
+
+Given `uniprotId` + `transcriptId`, the plugin:
+
+- derives the AlphaFold structure URL from `uniprotId`
+  (`AF-<uniprotId>-F1-model_v6.cif`),
+- fetches features at `loc` from the `connectedView` `tracks` and picks the
+  transcript whose id/name matches `transcriptId` (trailing version optional, so
+  `NM_000546` matches `NM_000546.6`),
+- translates that transcript's CDS against the connected assembly to build the
+  alignment sequence.
+
+If any step fails (no structure for the UniProt id, transcript not found at that
+locus, transcript has no CDS, or it can't be translated), the launch is
+**aborted with an on-screen error** rather than leaving a half-wired structure —
+so a typo in `transcriptId` is visible, not silent.
+
+> The matched transcript must actually be present in one of the `tracks` at
+> `loc`. If it isn't (e.g. a custom isoform, or a track that isn't loaded), use
+> the explicit form below.
+
+#### Explicit form: `url` + `feature` + `userProvidedTranscriptSequence`
+
+Spell out the three inputs the genome↔protein mapping needs directly. Use this
+for hand-crafted links where the transcript may not live in a loaded track, or
+when you already hold the data (e.g. an embedding app):
 
 ```js
 const session = `spec-${JSON.stringify({
@@ -60,9 +119,10 @@ const session = `spec-${JSON.stringify({
 const url = `https://your-jbrowse/?config=/config.json&session=${encodeURIComponent(session)}`
 ```
 
-`connectedView` accepts the same `init` keys as a `LinearGenomeView` spec
-(`loc`, `assembly`, `tracks`); `tracks` is a list of trackIds (or
-`{ trackId, displaySnapshot }` objects) that must exist in the target config.
+In both forms, `connectedView` accepts the same `init` keys as a
+`LinearGenomeView` spec (`loc`, `assembly`, `tracks`); `tracks` is a list of
+trackIds (or `{ trackId, displaySnapshot }` objects) that must exist in the
+target config.
 
 #### feature shape
 
@@ -119,6 +179,18 @@ pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
   url: 'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif',
   userProvidedTranscriptSequence: 'MEEPQSDPSVEPPLSQETFSDLWKLLPENN...',
   feature: transcriptFeature,
+  connectedView: {
+    assembly: 'hg38',
+    loc: 'chr17:7,668,421-7,687,550',
+    tracks: ['ncbiRefSeqCurated', 'clinvar'],
+  },
+})
+
+// short form: resolve url/feature/sequence from uniprotId + transcriptId
+pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
+  session,
+  uniprotId: 'P04637',
+  transcriptId: 'NM_000546.6',
   connectedView: {
     assembly: 'hg38',
     loc: 'chr17:7,668,421-7,687,550',

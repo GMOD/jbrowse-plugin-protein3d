@@ -131,5 +131,6 @@ cypress/screenshots
 .vscode
 stats.html
 
-# test:docs output artifact (regenerated each run)
+# test:docs output artifacts (regenerated each run)
 test-screenshots/docs-connected.png
+test-screenshots/docs-short.png

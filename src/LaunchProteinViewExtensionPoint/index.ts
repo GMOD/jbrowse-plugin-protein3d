@@ -1,3 +1,5 @@
+import { type ConnectedViewSpec, resolveShortLaunch } from './resolveShortLaunch'
+
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
@@ -14,6 +16,8 @@ export default function LaunchProteinViewExtensionPointF(
     async ({
       session,
       url,
+      uniprotId,
+      transcriptId,
       userProvidedTranscriptSequence,
       feature,
       connectedViewId,
@@ -27,14 +31,12 @@ export default function LaunchProteinViewExtensionPointF(
     }: {
       session: AbstractSessionModel
       url?: string
+      uniprotId?: string
+      transcriptId?: string
       userProvidedTranscriptSequence?: string
       feature?: Record<string, unknown>
       connectedViewId?: string
-      connectedView?: {
-        loc?: string
-        assembly?: string
-        tracks?: (string | Record<string, unknown>)[]
-      }
+      connectedView?: ConnectedViewSpec
       alignmentAlgorithm?: string
       displayName?: string
       height?: number
@@ -42,8 +44,32 @@ export default function LaunchProteinViewExtensionPointF(
       showHighlight?: boolean
       zoomToBaseLevel?: boolean
     }) => {
-      if (!url) {
-        throw new Error('No URL provided when launching protein view')
+      // Short-URL form: `uniprotId` + `transcriptId` + `connectedView` (no
+      // explicit `url`/`feature`/sequence). Derive the structure URL, the
+      // transcript feature, and the translated sequence from the connected
+      // track. Failures surface via notify and abort — we never leave a
+      // half-wired view (see agent-docs/urlparam_plan.md).
+      let resolved
+      if (!url && uniprotId) {
+        try {
+          resolved = await resolveShortLaunch({
+            session,
+            uniprotId,
+            transcriptId,
+            connectedView,
+          })
+        } catch (e) {
+          console.error(e)
+          session.notify(`Could not launch protein view: ${e}`, 'error')
+          return
+        }
+      }
+
+      const finalUrl = url ?? resolved?.url
+      if (!finalUrl) {
+        throw new Error(
+          'No url or uniprotId provided when launching protein view',
+        )
       }
 
       // A session spec launches each view independently with an auto-generated
@@ -70,10 +96,12 @@ export default function LaunchProteinViewExtensionPointF(
         zoomToBaseLevel,
         structures: [
           {
-            url,
+            url: finalUrl,
             userProvidedTranscriptSequence:
-              userProvidedTranscriptSequence ?? '',
-            feature,
+              resolved?.userProvidedTranscriptSequence ??
+              userProvidedTranscriptSequence ??
+              '',
+            feature: resolved?.feature ?? feature,
             connectedViewId: resolvedConnectedViewId,
           },
         ],

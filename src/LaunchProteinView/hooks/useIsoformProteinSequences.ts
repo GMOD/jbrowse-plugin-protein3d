@@ -1,3 +1,4 @@
+import { getSession } from '@jbrowse/core/util'
 import useSWR from 'swr'
 
 import { fetchProteinSeq } from '../utils/calculateProteinSequence'
@@ -22,7 +23,11 @@ export default function useIsoformProteinSequences({
       const results = await Promise.all(
         transcripts.map(async f => {
           try {
-            const seq = await fetchProteinSeq({ view, feature: f })
+            const seq = await fetchProteinSeq({
+              session: getSession(view),
+              assemblyName: view?.assemblyNames?.[0],
+              feature: f,
+            })
             return seq ? ([f.id(), { feature: f, seq }] as const) : undefined
           } catch (e) {
             console.error('[useIsoformProteinSequences] error for', f.id(), e)

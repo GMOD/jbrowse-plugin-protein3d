@@ -2,11 +2,10 @@ import { getConf } from '@jbrowse/core/configuration'
 import {
   defaultCodonTable,
   generateCodonTable,
-  getSession,
   revcom,
 } from '@jbrowse/core/util'
 
-import type { Feature } from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 
 export interface Feat {
   start: number
@@ -86,17 +85,17 @@ export function getProteinSequence({
 
 export async function fetchProteinSeq({
   feature,
-  view,
+  session,
+  assemblyName,
 }: {
   feature: Feature
-  view: { assemblyNames?: string[] } | undefined
+  session: AbstractSessionModel
+  assemblyName: string | undefined
 }) {
   const start = feature.get('start')
   const end = feature.get('end')
   const refName = feature.get('refName')
-  const session = getSession(view)
   const { assemblyManager, rpcManager } = session
-  const assemblyName = view?.assemblyNames?.[0]
   const assembly = assemblyName
     ? await assemblyManager.waitForAssembly(assemblyName)
     : undefined
