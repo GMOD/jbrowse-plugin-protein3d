@@ -130,3 +130,6 @@ cypress/screenshots
 # Ignore code editor
 .vscode
 stats.html
+
+# test:docs output artifact (regenerated each run)
+test-screenshots/docs-connected.png

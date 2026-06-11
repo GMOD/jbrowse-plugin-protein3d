@@ -17,6 +17,7 @@ export default function LaunchProteinViewExtensionPointF(
       userProvidedTranscriptSequence,
       feature,
       connectedViewId,
+      connectedView,
       alignmentAlgorithm,
       displayName,
       height,
@@ -29,6 +30,11 @@ export default function LaunchProteinViewExtensionPointF(
       userProvidedTranscriptSequence?: string
       feature?: Record<string, unknown>
       connectedViewId?: string
+      connectedView?: {
+        loc?: string
+        assembly?: string
+        tracks?: (string | Record<string, unknown>)[]
+      }
       alignmentAlgorithm?: string
       displayName?: string
       height?: number
@@ -39,6 +45,20 @@ export default function LaunchProteinViewExtensionPointF(
       if (!url) {
         throw new Error('No URL provided when launching protein view')
       }
+
+      // A session spec launches each view independently with an auto-generated
+      // id, so it cannot pre-compute a connectedViewId to cross-reference. When
+      // `connectedView` is supplied we create the LinearGenomeView here and wire
+      // its id, letting a single spec entry produce a connected genome+protein
+      // pair (e.g. hover a variant to highlight the residue).
+      const resolvedConnectedViewId =
+        connectedViewId ??
+        (connectedView
+          ? session.addView('LinearGenomeView', {
+              type: 'LinearGenomeView',
+              init: connectedView,
+            }).id
+          : undefined)
 
       session.addView('ProteinView', {
         type: 'ProteinView',
@@ -54,7 +74,7 @@ export default function LaunchProteinViewExtensionPointF(
             userProvidedTranscriptSequence:
               userProvidedTranscriptSequence ?? '',
             feature,
-            connectedViewId,
+            connectedViewId: resolvedConnectedViewId,
           },
         ],
       })
