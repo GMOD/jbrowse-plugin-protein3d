@@ -96,12 +96,16 @@ const Structure = types
 
     /**
      * #volatile
+     * The 'genome' source is set when the hover originated from the
+     * connected LinearGenomeView; hoverGenomeHighlights ignores it to avoid
+     * echoing a codon-width highlight back onto the same genome view.
      */
     hoverPosition: undefined as
       | {
           structureSeqPos?: number
           code?: string
           chain?: string
+          source: 'structure' | 'genome'
         }
       | undefined,
     /**
@@ -209,7 +213,19 @@ const Structure = types
       chain?: string
       code?: string
     }) {
-      self.hoverPosition = arg
+      self.hoverPosition = arg ? { ...arg, source: 'structure' } : undefined
+    },
+    /**
+     * #action
+     * Records a hover that originated from the connected LinearGenomeView.
+     * Drives the 3D structure / feature-track highlight, but is excluded
+     * from hoverGenomeHighlights so it doesn't echo back onto that same view.
+     */
+    setGenomeHoveredPosition(structureSeqPos?: number) {
+      self.hoverPosition =
+        structureSeqPos === undefined
+          ? undefined
+          : { structureSeqPos, source: 'genome' }
     },
     /**
      * #action
@@ -438,9 +454,14 @@ const Structure = types
      * #getter
      * Genome regions to highlight in the LGV based on the current hover.
      * A feature-range hover (hoverStructureRange) takes priority over a
-     * single-residue hover (structureSeqHoverPos).
+     * single-residue hover (structureSeqHoverPos). Excludes hovers that
+     * originated from the genome view itself, so hovering the LGV doesn't
+     * echo a codon-width highlight back onto that same view.
      */
     get hoverGenomeHighlights(): IRegion[] {
+      if (self.hoverPosition?.source === 'genome') {
+        return []
+      }
       const range = this.hoverStructureRange
       if (range) {
         return this.structureRangeToGenomeHighlight(range)
@@ -665,12 +686,13 @@ const Structure = types
             const { hoverPosition } = hovered
             const pos =
               genomeToTranscriptSeqMapping.g2p[hoverPosition.coord - 1]
-            if (pos !== undefined) {
-              const c0 = transcriptSeqToStructureSeqPosition?.[pos]
-              if (c0 !== undefined) {
-                self.setHoveredPosition({ structureSeqPos: c0 })
-              }
-            }
+            const c0 =
+              pos === undefined
+                ? undefined
+                : transcriptSeqToStructureSeqPosition?.[pos]
+            self.setGenomeHoveredPosition(c0)
+          } else if (self.hoverPosition?.source === 'genome') {
+            self.setGenomeHoveredPosition(undefined)
           }
         }),
       )
