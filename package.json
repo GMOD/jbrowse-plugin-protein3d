@@ -34,7 +34,7 @@
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "pnpm build",
     "preversion": "pnpm lint",
-    "version": "node -e \"console.log('export const version = \\'' + require('./package.json').version + '\\'')\" > src/version.ts && git add src/version.ts",
+    "version": "node scripts/sync-version.mjs && git add src/version.ts distconfig.json",
     "postversion": "git push --follow-tags"
   },
   "dependencies": {
@@ -74,6 +74,8 @@
     "jsdom": "^29.1.1",
     "mobx": "^6.15.4",
     "mobx-react": "^9.2.2",
+    "pixelmatch": "^7.2.0",
+    "pngjs": "^7.0.0",
     "prettier": "^3.8.3",
     "pretty-bytes": "^7.1.0",
     "puppeteer": "^25.1.0",
