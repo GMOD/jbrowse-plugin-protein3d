@@ -3,12 +3,7 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import {
-  CHAR_WIDTH,
-  HOVERED_BORDER,
-  SELECTED_BORDER,
-  TRACK_HEIGHT,
-} from '../constants'
+import { CHAR_WIDTH, HOVERED_BORDER, SELECTED_BORDER } from '../constants'
 import { selectResidueRange } from '../highlightResidueRange'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
@@ -145,7 +140,7 @@ const FeatureBar = observer(function FeatureBar({
           left,
           top: 0,
           width,
-          height: TRACK_HEIGHT,
+          height: model.trackHeight,
           backgroundColor: color,
           opacity: isHovered || isSelected ? 0.9 : 0.6,
           cursor: 'pointer',

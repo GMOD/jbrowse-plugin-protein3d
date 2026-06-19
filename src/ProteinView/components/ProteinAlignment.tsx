@@ -4,13 +4,7 @@ import { Tooltip, Typography } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 
-import {
-  CHAR_WIDTH,
-  LABEL_WIDTH,
-  ROW_HEIGHT,
-  TRACK_GAP,
-  TRACK_HEIGHT,
-} from '../constants'
+import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   ProteinFeatureTrackContent,
@@ -23,12 +17,20 @@ import { hydrophobicityColor, plddtColor } from '../residueTracks'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-function GutterLabel({ label, title }: { label: string; title: string }) {
+function GutterLabel({
+  label,
+  title,
+  height,
+}: {
+  label: string
+  title: string
+  height: number
+}) {
   return (
     <Tooltip title={title} placement="left">
       <div
         style={{
-          height: TRACK_HEIGHT + TRACK_GAP,
+          height,
           fontSize: 9,
           fontFamily: 'monospace',
           textAlign: 'right',
@@ -168,12 +170,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
             <GutterLabel
               label="pLDDT"
               title="AlphaFold per-residue confidence (pLDDT)"
+              height={model.trackHeight + model.trackGap}
             />
           ) : null}
           {showProteinTracks && hydrophobicityCells.length > 0 ? (
             <GutterLabel
               label="hydro"
               title="Kyte-Doolittle hydrophobicity (orange hydrophobic, blue hydrophilic)"
+              height={model.trackHeight + model.trackGap}
             />
           ) : null}
         </div>

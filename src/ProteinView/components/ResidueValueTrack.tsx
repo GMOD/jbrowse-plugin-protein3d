@@ -3,7 +3,7 @@ import React from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { CHAR_WIDTH, TRACK_GAP, TRACK_HEIGHT } from '../constants'
+import { CHAR_WIDTH } from '../constants'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -34,9 +34,9 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
     <div
       style={{
         position: 'relative',
-        height: TRACK_HEIGHT,
+        height: model.trackHeight,
         width: sequenceLength * CHAR_WIDTH,
-        marginBottom: TRACK_GAP,
+        marginBottom: model.trackGap,
       }}
       onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
         const rect = e.currentTarget.getBoundingClientRect()
@@ -57,7 +57,7 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
               left: cell.col * CHAR_WIDTH,
               top: 0,
               width: CHAR_WIDTH,
-              height: TRACK_HEIGHT,
+              height: model.trackHeight,
               backgroundColor: colorFor(cell.value),
             }}
           />

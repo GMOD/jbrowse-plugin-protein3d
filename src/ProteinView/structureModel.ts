@@ -12,6 +12,12 @@ import {
   applyLociInteractivitySingle,
 } from './applyLociInteractivity'
 import {
+  COMPACT_TRACK_GAP,
+  COMPACT_TRACK_HEIGHT,
+  NORMAL_TRACK_GAP,
+  NORMAL_TRACK_HEIGHT,
+} from './constants'
+import {
   type CoordinateMapper,
   alignmentCol,
   makeCoordinateMapper,
@@ -50,6 +56,7 @@ export interface ParentProteinView {
   autoScrollAlignment: boolean
   showHighlight: boolean
   showProteinTracks: boolean
+  compactTracks: boolean
   alignmentAlgorithm: string
   molstarPluginContext: PluginContext | undefined
   structures: { url?: string }[]
@@ -559,6 +566,16 @@ const Structure = types
     },
     get showProteinTracks(): boolean {
       return this.parentView.showProteinTracks
+    },
+    get trackHeight(): number {
+      return this.parentView.compactTracks
+        ? COMPACT_TRACK_HEIGHT
+        : NORMAL_TRACK_HEIGHT
+    },
+    get trackGap(): number {
+      return this.parentView.compactTracks
+        ? COMPACT_TRACK_GAP
+        : NORMAL_TRACK_GAP
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
       return coerceAlignmentAlgorithm(this.parentView.alignmentAlgorithm)

@@ -3,7 +3,7 @@ import React from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { HIDE_BUTTON_COLOR, TRACK_GAP, TRACK_HEIGHT } from '../constants'
+import { HIDE_BUTTON_COLOR } from '../constants'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -20,7 +20,7 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
     <Tooltip title={type} placement="left">
       <div
         style={{
-          height: TRACK_HEIGHT + TRACK_GAP,
+          height: model.trackHeight + model.trackGap,
           width: labelWidth - 4,
           fontSize: 9,
           fontFamily: 'monospace',

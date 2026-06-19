@@ -1,10 +1,15 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 import { LoadingEllipses } from '@jbrowse/core/ui'
+import TuneIcon from '@mui/icons-material/Tune'
 import Checkbox from '@mui/material/Checkbox'
-import FormControlLabel from '@mui/material/FormControlLabel'
+import IconButton from '@mui/material/IconButton'
+import ListItemIcon from '@mui/material/ListItemIcon'
+import ListItemText from '@mui/material/ListItemText'
+import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
+import Tooltip from '@mui/material/Tooltip'
 import { observer } from 'mobx-react'
 
 import AddStructureDialog from './AddStructureDialog'
@@ -46,7 +51,7 @@ const ColorSchemeSelect = observer(function ColorSchemeSelect({
   )
 })
 
-function ToggleCheckbox({
+function ToggleMenuItem({
   checked,
   label,
   onToggle,
@@ -56,28 +61,97 @@ function ToggleCheckbox({
   onToggle: () => void
 }) {
   return (
-    <FormControlLabel
-      control={
-        <Checkbox
-          checked={checked}
-          onChange={() => {
-            onToggle()
-          }}
-          size="small"
-        />
-      }
-      label={label}
-    />
+    <MenuItem
+      onClick={() => {
+        onToggle()
+      }}
+      dense
+    >
+      <ListItemIcon>
+        <Checkbox checked={checked} size="small" edge="start" disableRipple />
+      </ListItemIcon>
+      <ListItemText>{label}</ListItemText>
+    </MenuItem>
   )
 }
+
+function getDisplayToggles(model: JBrowsePluginProteinViewModel) {
+  return [
+    {
+      label: 'Show alignment',
+      checked: model.showAlignment,
+      onToggle: () => {
+        model.setShowAlignment(!model.showAlignment)
+      },
+    },
+    {
+      label: 'Show features',
+      checked: model.showProteinTracks,
+      onToggle: () => {
+        model.setShowProteinTracks(!model.showProteinTracks)
+      },
+    },
+    {
+      label: 'Auto-scroll features',
+      checked: model.autoScrollAlignment,
+      onToggle: () => {
+        model.setAutoScrollAlignment(!model.autoScrollAlignment)
+      },
+    },
+    {
+      label: 'Compact tracks',
+      checked: model.compactTracks,
+      onToggle: () => {
+        model.setCompactTracks(!model.compactTracks)
+      },
+    },
+  ]
+}
+
+const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  return (
+    <>
+      <Tooltip title="Display settings">
+        <IconButton
+          size="small"
+          onClick={event => {
+            setAnchorEl(event.currentTarget)
+          }}
+        >
+          <TuneIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => {
+          setAnchorEl(null)
+        }}
+      >
+        {getDisplayToggles(model).map(toggle => (
+          <ToggleMenuItem
+            key={toggle.label}
+            checked={toggle.checked}
+            label={toggle.label}
+            onToggle={toggle.onToggle}
+          />
+        ))}
+      </Menu>
+    </>
+  )
+})
 
 const ProteinViewHeader = observer(function ProteinViewHeader({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { structures, showAlignment, showProteinTracks, autoScrollAlignment } =
-    model
+  const { structures, showAlignment } = model
   return (
     <div>
       <div
@@ -88,29 +162,16 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
         }}
       >
         <HeaderStructureInfo model={model} />
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div
+          style={{
+            display: 'flex',
+            gap: '8px',
+            alignItems: 'center',
+            flexShrink: 0,
+          }}
+        >
           <ColorSchemeSelect model={model} />
-          <ToggleCheckbox
-            checked={showAlignment}
-            label="Show alignment"
-            onToggle={() => {
-              model.setShowAlignment(!showAlignment)
-            }}
-          />
-          <ToggleCheckbox
-            checked={showProteinTracks}
-            label="Show features"
-            onToggle={() => {
-              model.setShowProteinTracks(!showProteinTracks)
-            }}
-          />
-          <ToggleCheckbox
-            checked={autoScrollAlignment}
-            label="Auto-scroll features"
-            onToggle={() => {
-              model.setAutoScrollAlignment(!autoScrollAlignment)
-            }}
-          />
+          <DisplaySettingsMenu model={model} />
         </div>
       </div>
       {showAlignment

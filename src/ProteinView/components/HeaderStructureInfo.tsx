@@ -13,16 +13,27 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
   model: JBrowsePluginProteinViewModel
 }) {
   const { structures } = model
-  return structures.map(
-    (structure: JBrowsePluginProteinStructureModel, idx: number) => {
-      const { hoverString } = structure
-      return (
-        <span key={idx}>
-          {hoverString ? `Hover: ${hoverString}` : ''}
-          &nbsp;
-        </span>
-      )
-    },
+  const hoverText = structures
+    .map(
+      (structure: JBrowsePluginProteinStructureModel) => structure.hoverString,
+    )
+    .filter(Boolean)
+    .join(' ')
+  return (
+    <div
+      style={{
+        flex: 1,
+        minWidth: 0,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        fontSize: 12,
+      }}
+      title={hoverText}
+    >
+      {/* nbsp keeps the line height stable when there is no hover */}
+      {hoverText ? `Hover: ${hoverText}` : ' '}
+    </div>
   )
 })
 

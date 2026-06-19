@@ -26,6 +26,7 @@ const PERSISTED_SETTINGS = [
   'showHighlight',
   'zoomToBaseLevel',
   'autoScrollAlignment',
+  'compactTracks',
 ] as const
 
 import type { Instance } from '@jbrowse/mobx-state-tree'
@@ -125,6 +126,11 @@ function stateModelFactory() {
         showProteinTracks: true,
         /**
          * #property
+         * render the feature/residue tracks at reduced height
+         */
+        compactTracks: true,
+        /**
+         * #property
          */
         alignmentAlgorithm: types.optional(
           types.string,
@@ -213,6 +219,12 @@ function stateModelFactory() {
        */
       setShowProteinTracks(arg: boolean) {
         self.showProteinTracks = arg
+      },
+      /**
+       * #action
+       */
+      setCompactTracks(arg: boolean) {
+        self.compactTracks = arg
       },
       /**
        * #action

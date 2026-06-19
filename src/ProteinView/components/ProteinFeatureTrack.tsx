@@ -2,7 +2,7 @@ import React from 'react'
 
 import { observer } from 'mobx-react'
 
-import { CHAR_WIDTH, TRACK_GAP, TRACK_HEIGHT } from '../constants'
+import { CHAR_WIDTH } from '../constants'
 import FeatureBar from './FeatureBar'
 import FeatureTypeLabel from './FeatureTypeLabel'
 import HoverMarker from './HoverMarker'
@@ -31,9 +31,9 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
     <div
       style={{
         position: 'relative',
-        height: TRACK_HEIGHT,
+        height: model.trackHeight,
         width: sequenceLength * CHAR_WIDTH,
-        marginBottom: TRACK_GAP,
+        marginBottom: model.trackGap,
       }}
     >
       {features.map(feature => (
