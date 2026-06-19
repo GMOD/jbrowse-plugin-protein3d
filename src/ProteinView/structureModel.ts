@@ -543,6 +543,22 @@ const Structure = types
 
     /**
      * #getter
+     * True while a pairwise alignment can still be produced but hasn't been
+     * computed yet (both the transcript and structure sequences are present).
+     * A standalone structure with no connected transcript has no sequence to
+     * align against, so this stays false — the header shows no loader rather
+     * than a perpetual "Loading pairwise alignment".
+     */
+    get alignmentPending() {
+      return (
+        !self.pairwiseAlignment &&
+        !!self.userProvidedTranscriptSequence &&
+        !!self.structureSequences?.[0]
+      )
+    },
+
+    /**
+     * #getter
      */
     get exactMatch() {
       const r1 = stripStopCodon(self.userProvidedTranscriptSequence)

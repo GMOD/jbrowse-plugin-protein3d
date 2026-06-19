@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
+import { isAlive } from '@jbrowse/mobx-state-tree'
+
 import loadMolstar from './loadMolstar'
 
 import type { JBrowsePluginProteinViewModel } from './model'
@@ -13,13 +15,20 @@ export default function useProteinView({
   model?: JBrowsePluginProteinViewModel
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
+  const pluginRef = useRef<PluginContext | null>(null)
   const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
 
+  // Create the Mol* plugin once on mount. showControls is intentionally NOT a
+  // dependency: toggling it is applied at runtime in the effect below via
+  // Layout.Update, rather than tearing down and rebuilding the entire WebGL
+  // plugin (which leaks a GPU context and reloads every structure each toggle).
   useEffect(() => {
-    const state: { cancelled: boolean; plugin?: PluginContext } = {
-      cancelled: false,
-    }
+    const state: {
+      cancelled: boolean
+      plugin?: PluginContext
+      host?: HTMLDivElement
+    } = { cancelled: false }
     void (async () => {
       try {
         if (!parentRef.current) {
@@ -35,11 +44,12 @@ export default function useProteinView({
           renderReact18,
         } = await loadMolstar()
 
-        const d = document.createElement('div')
-        parentRef.current.append(d)
+        const host = document.createElement('div')
+        parentRef.current.append(host)
+        state.host = host
         const defaultSpec = DefaultPluginUISpec()
         const created = await createPluginUI({
-          target: d,
+          target: host,
           render: renderReact18,
           spec: {
             ...DefaultPluginUISpec(),
@@ -61,9 +71,11 @@ export default function useProteinView({
         })
         await created.initialized
         if (state.cancelled) {
-          created.unmount()
+          created.dispose()
+          host.remove()
         } else {
           state.plugin = created
+          pluginRef.current = created
           model?.setMolstarPluginContext(created)
         }
       } catch (e) {
@@ -75,9 +87,38 @@ export default function useProteinView({
     })()
     return () => {
       state.cancelled = true
-      state.plugin?.unmount()
+      pluginRef.current = null
+      // Drop the stale reference before disposing so model autoruns don't act
+      // on a torn-down plugin.
+      if (model && isAlive(model)) {
+        model.setMolstarPluginContext(undefined)
+      }
+      // dispose() (not unmount()) is what frees the WebGL context, canvas3d and
+      // GPU buffers; unmount() is a no-op on the createPluginUI path. Mirrors
+      // Mol*'s own Viewer.dispose().
+      state.plugin?.dispose()
+      state.host?.remove()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Show/hide the Mol* controls panel at runtime without rebuilding the plugin.
+  useEffect(() => {
+    const state = { cancelled: false }
+    void (async () => {
+      const plugin = pluginRef.current
+      if (plugin) {
+        const { PluginCommands } = await loadMolstar()
+        if (!state.cancelled) {
+          await PluginCommands.Layout.Update(plugin, {
+            state: { showControls },
+          })
+        }
+      }
+    })()
+    return () => {
+      state.cancelled = true
+    }
   }, [showControls])
 
   return { parentRef, error, loading }

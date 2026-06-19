@@ -46,10 +46,19 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
   parentRef?: React.RefObject<HTMLDivElement | null>
   loading?: boolean
 }) {
-  const { width, height, error } = model
+  const { width, height, error, structures } = model
+
+  // Capture/automation signal: the structure has finished loading and no
+  // pairwise alignment is still pending, so the view is painted in its settled
+  // state. Lets screenshot/e2e tooling wait deterministically instead of
+  // guessing a fixed settle time.
+  const ready = !loading && structures.every(s => !s.alignmentPending)
 
   return (
-    <div style={{ background: '#ccc' }}>
+    <div
+      style={{ background: '#ccc' }}
+      data-testid={ready ? 'protein-view-ready' : 'protein-view-loading'}
+    >
       {error ? <ErrorMessage error={error} /> : null}
       {loading ? (
         <LoadingEllipses message="Loading protein viewer" />
