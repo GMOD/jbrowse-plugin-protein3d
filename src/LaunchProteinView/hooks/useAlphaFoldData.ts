@@ -14,10 +14,12 @@ export default function useAlphaFoldData({
     ? getAlphaFoldConfidenceUrl(uniprotId)
     : undefined
 
-  const { sequences, isLoading, error } = useStructureFileSequence({ url })
+  const { sequences, isLoading, isValidating, error } =
+    useStructureFileSequence({ url })
 
   return {
     isLoading,
+    isValidating,
     error,
     url,
     confidenceUrl,

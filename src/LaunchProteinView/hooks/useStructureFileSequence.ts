@@ -45,7 +45,7 @@ export default function useStructureFileSequence({
     : url
       ? (['structure-url', url] as const)
       : null
-  const { data, error, isLoading } = useSWR<string[] | undefined>(
+  const { data, error, isLoading, isValidating } = useSWR<string[] | undefined>(
     key,
     async () => {
       const seq = await fetchSequences({ file, url })
@@ -60,5 +60,8 @@ export default function useStructureFileSequence({
     },
   )
 
-  return { error, isLoading, sequences: data }
+  // isValidating distinguishes "fetching for the current key" from the stale
+  // data keepPreviousData keeps around during a key change. Consumers comparing
+  // this sequence against another need it to avoid matching against stale data.
+  return { error, isLoading, isValidating, sequences: data }
 }

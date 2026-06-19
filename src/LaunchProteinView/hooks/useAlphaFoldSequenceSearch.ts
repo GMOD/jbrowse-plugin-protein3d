@@ -41,19 +41,21 @@ export default function useAlphaFoldSequenceSearch({
     return searchType === 'md5' ? md5(cleanSeq) : cleanSeq
   }, [sequence, searchType])
 
-  const { data, error, isLoading } = useSWR<SequenceSummaryResponse>(
-    enabled && searchValue
-      ? `https://alphafold.ebi.ac.uk/api/sequence/summary?id=${encodeURIComponent(searchValue)}&type=${searchType}`
-      : null,
-    jsonfetch,
-    {
-      ...STATIC_SWR_OPTIONS,
-      keepPreviousData: true,
-    },
-  )
+  const { data, error, isLoading, isValidating } =
+    useSWR<SequenceSummaryResponse>(
+      enabled && searchValue
+        ? `https://alphafold.ebi.ac.uk/api/sequence/summary?id=${encodeURIComponent(searchValue)}&type=${searchType}`
+        : null,
+      jsonfetch,
+      {
+        ...STATIC_SWR_OPTIONS,
+        keepPreviousData: true,
+      },
+    )
 
   return {
     isLoading,
+    isValidating,
     result: data,
     uniprotId: data?.uniprotAccession,
     cifUrl: data?.cifUrl,

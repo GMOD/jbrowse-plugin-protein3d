@@ -61,7 +61,13 @@ export interface FoldseekResult {
   results: FoldseekDatabaseResult[]
 }
 
-export async function predict3Di(aaSequence: string) {
+export async function predict3Di({
+  aaSequence,
+  signal,
+}: {
+  aaSequence: string
+  signal?: AbortSignal
+}) {
   // Clean the sequence - remove FASTA header, whitespace, stop codons, and non-AA chars
   const cleanSequence = aaSequence
     .split('\n')
@@ -74,6 +80,7 @@ export async function predict3Di(aaSequence: string) {
 
   const response = await fetch(
     `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`,
+    { signal },
   )
   if (!response.ok) {
     throw new Error(
@@ -89,11 +96,17 @@ export async function predict3Di(aaSequence: string) {
   return { aaSequence: cleanSequence, di3Sequence: cleanDi3 }
 }
 
-export async function submitFoldseekSearch(
-  aaSequence: string,
-  di3Sequence: string,
-  databases: FoldseekDatabaseId[],
-) {
+export async function submitFoldseekSearch({
+  aaSequence,
+  di3Sequence,
+  databases,
+  signal,
+}: {
+  aaSequence: string
+  di3Sequence: string
+  databases: FoldseekDatabaseId[]
+  signal?: AbortSignal
+}) {
   // Submit both AA and 3Di sequences (with trailing newline like working example)
   const fastaContent = `>query\n${aaSequence}\n>3DI\n${di3Sequence}\n`
   const params = new URLSearchParams()
@@ -110,20 +123,27 @@ export async function submitFoldseekSearch(
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params,
+    signal,
   })
 
-  const responseData = await response.json()
-
+  // Read the body as text first so a non-JSON error page (e.g. a gateway/500
+  // HTML response) surfaces the real status instead of an opaque JSON
+  // SyntaxError that hides it.
+  const text = await response.text()
   if (!response.ok) {
-    throw new Error(
-      `Foldseek submission failed: ${response.status} ${JSON.stringify(responseData)}`,
-    )
+    throw new Error(`Foldseek submission failed: ${response.status} ${text}`)
   }
 
-  return responseData as FoldseekTicketResponse
+  return JSON.parse(text) as FoldseekTicketResponse
 }
 
-export async function pollFoldseekStatus(ticketId: string) {
+export async function pollFoldseekStatus({
+  ticketId,
+  signal,
+}: {
+  ticketId: string
+  signal?: AbortSignal
+}) {
   // Use the /tickets endpoint (plural) with POST
   const params = new URLSearchParams()
   params.append('tickets[]', ticketId)
@@ -134,6 +154,7 @@ export async function pollFoldseekStatus(ticketId: string) {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
     body: params,
+    signal,
   })
 
   if (!response.ok) {
@@ -160,23 +181,36 @@ interface FoldseekApiResponse {
   }[]
 }
 
-export async function getFoldseekResults(
-  ticketId: string,
-): Promise<FoldseekApiResponse> {
+export async function getFoldseekResults({
+  ticketId,
+  signal,
+}: {
+  ticketId: string
+  signal?: AbortSignal
+}): Promise<FoldseekApiResponse> {
   return jsonfetch<FoldseekApiResponse>(
     `https://search.foldseek.com/api/result/${ticketId}/0`,
+    { signal },
   )
 }
 
-export async function waitForFoldseekResults(
-  ticketId: string,
-  onStatusChange?: (status: string) => void,
-) {
+export async function waitForFoldseekResults({
+  ticketId,
+  onStatusChange,
+  signal,
+}: {
+  ticketId: string
+  onStatusChange?: (status: string) => void
+  signal?: AbortSignal
+}) {
   const maxAttempts = 180
   let attempts = 0
 
   while (attempts < maxAttempts) {
-    const status = await pollFoldseekStatus(ticketId)
+    if (signal?.aborted) {
+      throw signal.reason
+    }
+    const status = await pollFoldseekStatus({ ticketId, signal })
 
     if (status.status === 'ERROR') {
       console.error('[Foldseek] Search error:', status)
@@ -187,7 +221,7 @@ export async function waitForFoldseekResults(
 
     if (status.status === 'COMPLETE') {
       onStatusChange?.('Fetching results...')
-      const apiResponse = await getFoldseekResults(ticketId)
+      const apiResponse = await getFoldseekResults({ ticketId, signal })
 
       // Transform API response to our format
       const results: FoldseekResult = {
@@ -204,7 +238,7 @@ export async function waitForFoldseekResults(
     onStatusChange?.(
       `Search ${status.status.toLowerCase()}... (${attempts + 1}s)`,
     )
-    await timeout(1000)
+    await timeout(1000, signal)
     attempts++
   }
 

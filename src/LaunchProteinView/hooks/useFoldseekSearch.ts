@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import {
   DEFAULT_DATABASES,
@@ -23,21 +23,43 @@ export default function useFoldseekSearch() {
   const [error, setError] = useState<unknown>()
   const [statusMessage, setStatusMessage] = useState('')
 
+  // Aborts the in-flight request (3Di prediction or the up-to-3-minute Foldseek
+  // poll) when the dialog closes/unmounts, so it stops hitting the external API
+  // and stops updating dead state.
+  const abortRef = useRef<AbortController | null>(null)
+  useEffect(() => {
+    return () => {
+      abortRef.current?.abort()
+    }
+  }, [])
+
+  const startOperation = () => {
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    return controller.signal
+  }
+
   const predictStructure = async (aaSequence: string) => {
+    const signal = startOperation()
     setIsPredicting(true)
     setError(undefined)
     setStatusMessage('Predicting 3Di structure...')
     try {
-      const result = await predict3Di(aaSequence)
+      const result = await predict3Di({ aaSequence, signal })
       setPredictData(result)
       return result
     } catch (e) {
-      console.error(e)
-      setError(e)
+      if (!signal.aborted) {
+        console.error(e)
+        setError(e)
+      }
       return undefined
     } finally {
-      setIsPredicting(false)
-      setStatusMessage('')
+      if (!signal.aborted) {
+        setIsPredicting(false)
+        setStatusMessage('')
+      }
     }
   }
 
@@ -46,25 +68,40 @@ export default function useFoldseekSearch() {
     di3Seq: string,
     databases: FoldseekDatabaseId[] = DEFAULT_DATABASES,
   ) => {
+    const signal = startOperation()
     setIsLoading(true)
     setError(undefined)
     setStatusMessage('Submitting search...')
     try {
-      const ticket = await submitFoldseekSearch(aaSeq, di3Seq, databases)
-      const result = await waitForFoldseekResults(ticket.id, setStatusMessage)
+      const ticket = await submitFoldseekSearch({
+        aaSequence: aaSeq,
+        di3Sequence: di3Seq,
+        databases,
+        signal,
+      })
+      const result = await waitForFoldseekResults({
+        ticketId: ticket.id,
+        onStatusChange: setStatusMessage,
+        signal,
+      })
       setResults(result)
       return result
     } catch (e) {
-      console.error(e)
-      setError(e)
+      if (!signal.aborted) {
+        console.error(e)
+        setError(e)
+      }
       return undefined
     } finally {
-      setIsLoading(false)
-      setStatusMessage('')
+      if (!signal.aborted) {
+        setIsLoading(false)
+        setStatusMessage('')
+      }
     }
   }
 
   const reset = () => {
+    abortRef.current?.abort()
     setResults(undefined)
     setPredictData(undefined)
     setError(undefined)

@@ -18,6 +18,26 @@ export async function jsonfetch<T = unknown>(
   return response.json()
 }
 
-export function timeout(time: number) {
-  return new Promise(res => setTimeout(res, time))
+function abortError(signal: AbortSignal) {
+  return signal.reason instanceof Error
+    ? signal.reason
+    : new Error('Aborted', { cause: signal.reason })
+}
+
+export function timeout(time: number, signal?: AbortSignal) {
+  return new Promise<void>((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(abortError(signal))
+    } else {
+      const id = setTimeout(resolve, time)
+      signal?.addEventListener(
+        'abort',
+        () => {
+          clearTimeout(id)
+          reject(abortError(signal))
+        },
+        { once: true },
+      )
+    }
+  })
 }

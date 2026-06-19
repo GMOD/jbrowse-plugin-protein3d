@@ -5,16 +5,14 @@ import SettingsIcon from '@mui/icons-material/Settings'
 import Visibility from '@mui/icons-material/Visibility'
 import { autorun } from 'mobx'
 
-import { addStructureFromData } from './addStructureFromData'
-import { addStructureFromURL } from './addStructureFromURL'
 import {
   COLOR_SCHEMES,
   COLOR_SCHEME_VALUES,
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
-import { extractPerResidueConfidence } from './extractPerResidueConfidence'
-import { extractStructureSequences } from './extractStructureSequences'
+import { loadStructureData } from './loadStructureData'
+import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { superposeStructures } from './superposeStructures'
 import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
@@ -31,25 +29,6 @@ const PERSISTED_SETTINGS = [
 
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-
-async function loadStructureData({
-  structure,
-  plugin,
-}: {
-  structure: { data?: string; url?: string }
-  plugin: PluginContext
-}) {
-  const { model } = structure.data
-    ? await addStructureFromData({ data: structure.data, plugin })
-    : structure.url
-      ? await addStructureFromURL({ url: structure.url, plugin })
-      : { model: undefined }
-  const sequences = model ? extractStructureSequences(model) : undefined
-  const confidence = model
-    ? extractPerResidueConfidence(model, sequences?.[0]?.length)
-    : undefined
-  return { sequences, confidence }
-}
 
 export interface ProteinViewInitState {
   structures?: {
@@ -420,30 +399,10 @@ function stateModelFactory() {
           }),
         )
 
-        addDisposer(
-          self,
-          autorun(async () => {
-            const { structures, molstarPluginContext } = self
-            if (molstarPluginContext) {
-              for (const structure of structures) {
-                if (!structure.loadedToMolstar) {
-                  try {
-                    structure.setStructureData(
-                      await loadStructureData({
-                        structure,
-                        plugin: molstarPluginContext,
-                      }),
-                    )
-                    structure.setLoadedToMolstar(true)
-                  } catch (e) {
-                    self.setError(e)
-                    console.error(e)
-                  }
-                }
-              }
-            }
-          }),
-        )
+        // Load structures into Molstar as they appear or whenever the plugin
+        // context changes. See makeStructureLoader for why the autorun body is
+        // synchronous and how it guards against duplicate/stale loads.
+        addDisposer(self, autorun(makeStructureLoader(self)))
       },
     }))
     .views(self => ({

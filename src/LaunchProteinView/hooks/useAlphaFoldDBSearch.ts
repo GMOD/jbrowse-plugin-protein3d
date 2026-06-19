@@ -63,6 +63,7 @@ export default function useAlphaFoldDBSearch({
 
   const {
     isLoading: isAlphaFoldLoading,
+    isValidating: isAlphaFoldValidating,
     error: alphaFoldError,
     url: alphaFoldUrl,
     confidenceUrl: alphaFoldConfidenceUrl,
@@ -93,6 +94,7 @@ export default function useAlphaFoldDBSearch({
     plddtDocUrl: seqSearchConfidenceUrl,
     structureSequence: seqSearchStructureSequence,
     isLoading: isSequenceSearchLoading,
+    isValidating: isSequenceSearchValidating,
     error: sequenceSearchError,
   } = useAlphaFoldSequenceSearch({
     sequence: userSelectedProteinSequence?.seq,
@@ -109,6 +111,14 @@ export default function useAlphaFoldDBSearch({
     ? seqSearchStructureSequence
     : alphaFoldStructureSequence
   const finalUniprotId = isSequenceMode ? seqSearchUniprotId : uniprotId
+
+  // While a structure fetch is in flight, finalStructureSequence may still be
+  // the previous selection's sequence (keepPreviousData). Comparing that stale
+  // sequence to the freshly-selected transcript would give a wrong match, so
+  // the match is treated as unknown until the fetch settles.
+  const isStructureValidating = isSequenceMode
+    ? isSequenceSearchValidating
+    : isAlphaFoldValidating
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
@@ -167,7 +177,9 @@ export default function useAlphaFoldDBSearch({
       !!selectedTranscript &&
       (isSequenceMode || !!(finalStructureSequence && finalUniprotId)),
     sequencesMatch:
-      userSelectedProteinSequence?.seq && finalStructureSequence
+      !isStructureValidating &&
+      userSelectedProteinSequence?.seq &&
+      finalStructureSequence
         ? stripStopCodon(userSelectedProteinSequence.seq) ===
           finalStructureSequence
         : undefined,
