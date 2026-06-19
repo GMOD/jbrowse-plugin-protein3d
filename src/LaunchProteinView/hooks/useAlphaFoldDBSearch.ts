@@ -3,16 +3,10 @@ import { useState } from 'react'
 import useAlphaFoldData from './useAlphaFoldData'
 import useAlphaFoldSequenceSearch from './useAlphaFoldSequenceSearch'
 import useDebouncedValue from './useDebouncedValue'
-import useIsoformProteinSequences from './useIsoformProteinSequences'
-import useTranscriptSelection from './useTranscriptSelection'
+import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
 import useUniProtSearch from './useUniProtSearch'
 import getSearchDescription from '../utils/getSearchDescription'
-import {
-  extractFeatureIdentifiers,
-  getId,
-  getTranscriptFeatures,
-  stripStopCodon,
-} from '../utils/util'
+import { extractFeatureIdentifiers, stripStopCodon } from '../utils/util'
 
 import type { SequenceSearchType } from './useAlphaFoldSequenceSearch'
 import type { LookupMode } from '../components/UniProtIdInput'
@@ -34,19 +28,12 @@ export default function useAlphaFoldDBSearch({
     useState<SequenceSearchType>('md5')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
 
-  const transcriptOptions = getTranscriptFeatures(feature)
   const featureUniprotId = geneIds.uniprotId
 
   const effectiveLookupMode =
     lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
   const isSequenceMode = effectiveLookupMode === 'sequence'
   const isAutoMode = effectiveLookupMode === 'auto'
-
-  const {
-    isoformSequences,
-    isLoading: isIsoformLoading,
-    error: isoformError,
-  } = useIsoformProteinSequences({ feature, view })
 
   const {
     entries: uniprotEntries,
@@ -84,19 +71,21 @@ export default function useAlphaFoldDBSearch({
     uniprotId: isSequenceMode ? undefined : uniprotId,
   })
 
-  const { userSelection: effectiveTranscriptId, setUserSelection } =
-    useTranscriptSelection({
-      options: transcriptOptions,
-      isoformSequences,
-      structureSequence: alphaFoldStructureSequence,
-      resetKey: uniprotId,
-    })
-  const selectedTranscript = transcriptOptions.find(
-    f => getId(f) === effectiveTranscriptId,
-  )
-  const userSelectedProteinSequence = effectiveTranscriptId
-    ? isoformSequences?.[effectiveTranscriptId]
-    : undefined
+  const {
+    transcripts: transcriptOptions,
+    isoformSequences,
+    isLoading: isIsoformLoading,
+    error: isoformError,
+    selectedTranscriptId: effectiveTranscriptId,
+    setSelectedTranscriptId: setUserSelection,
+    selectedTranscript,
+    selectedIsoform: userSelectedProteinSequence,
+  } = useTranscriptIsoformSelection({
+    feature,
+    view,
+    structureSequence: alphaFoldStructureSequence,
+    resetKey: uniprotId,
+  })
 
   const {
     uniprotId: seqSearchUniprotId,

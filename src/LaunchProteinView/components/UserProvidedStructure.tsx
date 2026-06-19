@@ -6,21 +6,17 @@ import { Button, DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import MSATable from './MSATable'
+import IsoformSequencesToggle from './IsoformSequencesToggle'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 import ExternalLink from '../../components/ExternalLink'
-import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
-import useLocalStructureFileSequence from '../hooks/useLocalStructureFileSequence'
-import useRemoteStructureFileSequence from '../hooks/useRemoteStructureFileSequence'
-import useTranscriptSelection from '../hooks/useTranscriptSelection'
+import useStructureFileSequence from '../hooks/useStructureFileSequence'
+import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { launch3DProteinView } from '../utils/launchViewUtils'
 import {
   getGeneDisplayName,
-  getId,
   getTranscriptDisplayName,
-  getTranscriptFeatures,
   stripStopCodon,
 } from '../utils/util'
 
@@ -70,41 +66,34 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
 }) {
   const { classes } = useStyles()
   const session = getSession(model)
+  const view = getContainingView(model) as LGV
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')
   const [submitError, setSubmitError] = useState<unknown>()
   const [structureURL, setStructureURL] = useState('')
-  const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
 
   const activeFile = choice === 'file' ? file : undefined
   const activeURL = choice === 'file' ? '' : structureURL
 
-  const options = getTranscriptFeatures(feature)
-  const view = getContainingView(model) as LGV
-  const { isoformSequences, error: isoformError } = useIsoformProteinSequences({
-    feature,
-    view,
-  })
-  const { sequences: localSequences, error: localFileError } =
-    useLocalStructureFileSequence({ file: activeFile })
-  const { sequences: remoteSequences, error: remoteFileError } =
-    useRemoteStructureFileSequence({ url: activeURL })
+  const { sequences: structureSequences, error: fileError } =
+    useStructureFileSequence({ file: activeFile, url: activeURL })
 
   const structureName =
     activeFile?.name ?? activeURL.slice(activeURL.lastIndexOf('/') + 1)
-  const structureSequences = activeFile ? localSequences : remoteSequences
   const structureSequence = structureSequences?.[0]
 
-  const { userSelection, setUserSelection } = useTranscriptSelection({
-    options,
+  const {
+    transcripts: options,
     isoformSequences,
-    structureSequence,
-  })
-  const selectedTranscript = options.find(val => getId(val) === userSelection)
-  const protein = userSelection ? isoformSequences?.[userSelection] : undefined
+    selectedTranscriptId: userSelection,
+    setSelectedTranscriptId: setUserSelection,
+    selectedTranscript,
+    selectedIsoform: protein,
+    error: isoformError,
+  } = useTranscriptIsoformSelection({ feature, view, structureSequence })
 
-  const error = isoformError ?? submitError ?? localFileError ?? remoteFileError
+  const error = isoformError ?? submitError ?? fileError
 
   const canLaunch =
     !!(activeURL || activeFile) && !!protein && !!selectedTranscript
@@ -149,7 +138,6 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
           setChoice={setChoice}
           structureURL={structureURL}
           setStructureURL={setStructureURL}
-          file={file}
           setFile={setFile}
           pdbId={pdbId}
           setPdbId={setPdbId}
@@ -166,27 +154,11 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
                   feature={feature}
                   isoformSequences={isoformSequences}
                 />
-                <div style={{ margin: 10 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => {
-                      setShowAllProteinSequences(!showAllProteinSequences)
-                    }}
-                  >
-                    {showAllProteinSequences
-                      ? 'Hide all isoform protein sequences'
-                      : 'Show all isoform protein sequences'}
-                  </Button>
-
-                  {showAllProteinSequences ? (
-                    <MSATable
-                      structureSequence={structureSequence}
-                      structureName={structureName}
-                      isoformSequences={isoformSequences}
-                    />
-                  ) : null}
-                </div>
+                <IsoformSequencesToggle
+                  structureSequence={structureSequence}
+                  structureName={structureName}
+                  isoformSequences={isoformSequences}
+                />
               </>
             ) : null
           ) : (

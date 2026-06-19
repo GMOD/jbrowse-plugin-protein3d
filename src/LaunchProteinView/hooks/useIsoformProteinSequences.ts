@@ -1,6 +1,7 @@
 import { getSession } from '@jbrowse/core/util'
 import useSWR from 'swr'
 
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { fetchProteinSeq } from '../utils/calculateProteinSequence'
 import { getTranscriptFeatures } from '../utils/util'
 
@@ -50,9 +51,7 @@ export default function useIsoformProteinSequences({
       return Object.fromEntries(entries)
     },
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
+      ...STATIC_SWR_OPTIONS,
       keepPreviousData: true,
     },
   )

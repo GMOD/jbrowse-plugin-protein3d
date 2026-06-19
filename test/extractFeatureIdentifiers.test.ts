@@ -101,10 +101,10 @@ describe('useAlphaFoldDBSearch', () => {
     mockView = { id: 'mock-view-id' } // Mock LinearGenomeViewModel
   })
 
-  it('should initialize selectedQueryId with the first recognized ID if available', () => {
+  it('should initialize selectedQueryId to "auto" even when recognized IDs are available', () => {
     // Mock extractFeatureIdentifiers to return recognized IDs
     ;(mockExtractFeatureIdentifiers as vi.Mock).mockReturnValue({
-      recognizedIds: ['ENSG1', 'HGNC:12345'], // Prioritize ENSG1
+      recognizedIds: ['ENSG1', 'HGNC:12345'],
       geneName: 'SHH',
       geneId: 'SHH',
       uniprotId: undefined,
@@ -114,8 +114,9 @@ describe('useAlphaFoldDBSearch', () => {
       useAlphaFoldDBSearch({ feature: mockFeature, view: mockView }),
     )
 
-    // Check if selectedQueryId was initialized with the first recognized ID
-    expect(result.current.selectedQueryId).toBe('ENSG1')
+    // The default is 'auto' (= query all recognized IDs); individual IDs remain
+    // selectable via the IdentifierSelector but are not the initial default.
+    expect(result.current.selectedQueryId).toBe('auto')
   })
 
   it('should initialize selectedQueryId to "auto" if no recognized IDs are available but geneName is present', () => {

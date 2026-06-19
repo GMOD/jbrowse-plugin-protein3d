@@ -16,10 +16,9 @@ import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
 import FoldseekResultsTable from './FoldseekResultsTable'
 import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
-import useIsoformProteinSequences from '../hooks/useIsoformProteinSequences'
-import useTranscriptSelection from '../hooks/useTranscriptSelection'
+import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { DEFAULT_DATABASES } from '../services/foldseekApi'
-import { getTranscriptFeatures } from '../utils/util'
+import { stripStopCodon } from '../utils/util'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -72,25 +71,20 @@ const FoldseekSearch = observer(function FoldseekSearch({
     reset,
   } = useFoldseekSearch()
 
-  const transcripts = getTranscriptFeatures(feature)
-
   const {
+    transcripts,
     isoformSequences,
     isLoading: isLoadingIsoforms,
     error: isoformError,
-  } = useIsoformProteinSequences({ feature, view })
+    selectedTranscriptId: effectiveSelectedTranscriptId,
+    setSelectedTranscriptId: setUserSelection,
+    selectedTranscript,
+    selectedIsoform: selectedIsoformData,
+  } = useTranscriptIsoformSelection({ feature, view })
 
-  const { userSelection: effectiveSelectedTranscriptId, setUserSelection } =
-    useTranscriptSelection({ options: transcripts, isoformSequences })
-
-  const selectedTranscript = transcripts.find(
-    t => t.id() === effectiveSelectedTranscriptId,
-  )
-  const selectedIsoformData = effectiveSelectedTranscriptId
-    ? isoformSequences?.[effectiveSelectedTranscriptId]
-    : undefined
-
-  const cleanedSequence = selectedIsoformData?.seq.replace(/\*/g, '') ?? ''
+  const cleanedSequence = selectedIsoformData
+    ? stripStopCodon(selectedIsoformData.seq)
+    : ''
   const sequence = userEditedSequence ?? cleanedSequence
 
   const setUserSelectionWithReset = (id: string | undefined) => {

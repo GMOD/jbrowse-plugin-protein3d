@@ -1,4 +1,4 @@
-import useRemoteStructureFileSequence from './useRemoteStructureFileSequence'
+import useStructureFileSequence from './useStructureFileSequence'
 import {
   getAlphaFoldConfidenceUrl,
   getAlphaFoldStructureUrl,
@@ -14,9 +14,7 @@ export default function useAlphaFoldData({
     ? getAlphaFoldConfidenceUrl(uniprotId)
     : undefined
 
-  const { sequences, isLoading, error } = useRemoteStructureFileSequence({
-    url,
-  })
+  const { sequences, isLoading, error } = useStructureFileSequence({ url })
 
   return {
     isLoading,

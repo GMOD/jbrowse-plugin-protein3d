@@ -18,7 +18,6 @@ export default function StructureSourcePicker({
   setChoice,
   structureURL,
   setStructureURL,
-  file: _file,
   setFile,
   pdbId,
   setPdbId,
@@ -27,7 +26,6 @@ export default function StructureSourcePicker({
   setChoice: (c: string) => void
   structureURL: string
   setStructureURL: (url: string) => void
-  file: File | undefined
   setFile: (f: File) => void
   pdbId: string
   setPdbId: (id: string) => void

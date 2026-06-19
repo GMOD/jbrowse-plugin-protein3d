@@ -1,10 +1,10 @@
-import React, { useState } from 'react'
+import React from 'react'
 
-import { Button, Typography } from '@mui/material'
+import { Typography } from '@mui/material'
 
-import MSATable from './MSATable'
+import IsoformSequencesToggle from './IsoformSequencesToggle'
 import ExternalLink from '../../components/ExternalLink'
-import { getDisplayName } from '../utils/util'
+import { getTranscriptDisplayName } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -34,8 +34,6 @@ export default function AlphaFoldDBSearchStatus({
   isoformSequences: Record<string, { feature: Feature; seq: string }>
   url?: string
 }) {
-  const [showAllProteinSequences, setShowAllProteinSequences] = useState(false)
-
   return uniprotId ? (
     <>
       <div>
@@ -52,26 +50,11 @@ export default function AlphaFoldDBSearchStatus({
         </Typography>
       </div>
       {structureSequence ? (
-        <div style={{ margin: 20 }}>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => {
-              setShowAllProteinSequences(!showAllProteinSequences)
-            }}
-          >
-            {showAllProteinSequences
-              ? 'Hide all isoform protein sequences'
-              : 'Show all isoform protein sequences'}
-          </Button>
-          {showAllProteinSequences ? (
-            <MSATable
-              structureSequence={structureSequence}
-              structureName={uniprotId}
-              isoformSequences={isoformSequences}
-            />
-          ) : null}
-        </div>
+        <IsoformSequencesToggle
+          structureSequence={structureSequence}
+          structureName={uniprotId}
+          isoformSequences={isoformSequences}
+        />
       ) : (
         <NotFound uniprotId={uniprotId} />
       )}
@@ -79,7 +62,9 @@ export default function AlphaFoldDBSearchStatus({
   ) : (
     <Typography>
       Searching{' '}
-      {selectedTranscript ? getDisplayName(selectedTranscript) : 'transcript'}{' '}
+      {selectedTranscript
+        ? getTranscriptDisplayName(selectedTranscript)
+        : 'transcript'}{' '}
       for UniProt ID
     </Typography>
   )
