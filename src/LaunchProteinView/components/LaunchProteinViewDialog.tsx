@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import { Dialog } from '@jbrowse/core/ui'
+import { getContainingView, getSession } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
@@ -13,6 +14,7 @@ import { useLocalStorage } from '../hooks/useLocalStorage'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
+import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export default function LaunchProteinViewDialog({
   handleClose,
@@ -29,6 +31,8 @@ export default function LaunchProteinViewDialog({
       'jbrowse-protein3d-alignment-algorithm',
       DEFAULT_ALIGNMENT_ALGORITHM,
     )
+  const session = getSession(model)
+  const view = getContainingView(model) as LinearGenomeViewModel
 
   return (
     <Dialog
@@ -54,7 +58,8 @@ export default function LaunchProteinViewDialog({
       </Tabs>
       <TabPanel value={choice} index={0}>
         <AlphaFoldDBSearch
-          model={model}
+          session={session}
+          view={view}
           feature={feature}
           handleClose={handleClose}
           alignmentAlgorithm={alignmentAlgorithm}
@@ -63,14 +68,16 @@ export default function LaunchProteinViewDialog({
       </TabPanel>
       <TabPanel value={choice} index={1}>
         <FoldseekSearch
-          model={model}
+          session={session}
+          view={view}
           feature={feature}
           handleClose={handleClose}
         />
       </TabPanel>
       <TabPanel value={choice} index={2}>
         <UserProvidedStructure
-          model={model}
+          session={session}
+          view={view}
           feature={feature}
           handleClose={handleClose}
           alignmentAlgorithm={alignmentAlgorithm}

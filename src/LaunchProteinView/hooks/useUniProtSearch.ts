@@ -1,5 +1,6 @@
 import useSWR from 'swr'
 
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { searchUniProtEntries } from '../services/lookupMethods'
 import { isRecognizedDatabaseId } from '../utils/util'
 
@@ -51,9 +52,7 @@ export default function useUniProtSearch({
         geneName: geneNameToSearch,
       }),
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
+      ...STATIC_SWR_OPTIONS,
       keepPreviousData: true,
     },
   )

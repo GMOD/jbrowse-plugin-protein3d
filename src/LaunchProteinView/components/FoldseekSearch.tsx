@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { getContainingView, getSession } from '@jbrowse/core/util'
 import {
   Button,
   DialogActions,
@@ -20,7 +19,7 @@ import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelectio
 import { DEFAULT_DATABASES } from '../services/foldseekApi'
 import { stripStopCodon } from '../utils/util'
 
-import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()({
@@ -42,16 +41,16 @@ const useStyles = makeStyles()({
 
 const FoldseekSearch = observer(function FoldseekSearch({
   feature,
-  model,
+  session,
+  view,
   handleClose,
 }: {
   feature: Feature
-  model: AbstractTrackModel
+  session: AbstractSessionModel
+  view: LinearGenomeViewModel
   handleClose: () => void
 }) {
   const { classes } = useStyles()
-  const session = getSession(model)
-  const view = getContainingView(model) as LinearGenomeViewModel
 
   const [userEditedSequence, setUserEditedSequence] = useState<
     string | undefined

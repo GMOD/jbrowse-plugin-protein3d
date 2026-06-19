@@ -1,7 +1,6 @@
 import React from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { getContainingView, getSession } from '@jbrowse/core/util'
 import { DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
@@ -17,7 +16,7 @@ import ExternalLink from '../../components/ExternalLink'
 import useAlphaFoldDBSearch from '../hooks/useAlphaFoldDBSearch'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
-import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()({
@@ -40,20 +39,20 @@ const useStyles = makeStyles()({
 
 const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   feature,
-  model,
+  session,
+  view,
   handleClose,
   alignmentAlgorithm,
   onAlignmentAlgorithmChange,
 }: {
   feature: Feature
-  model: AbstractTrackModel
+  session: AbstractSessionModel
+  view: LinearGenomeViewModel
   handleClose: () => void
   alignmentAlgorithm: AlignmentAlgorithm
   onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }) {
   const { classes } = useStyles()
-  const session = getSession(model)
-  const view = getContainingView(model) as LinearGenomeViewModel
 
   const state = useAlphaFoldDBSearch({ feature, view })
 

@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { getContainingView, getSession } from '@jbrowse/core/util'
 import { Button, DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
@@ -21,7 +20,7 @@ import {
 } from '../utils/util'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
-import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()(theme => ({
@@ -53,20 +52,20 @@ function HelpText() {
 
 const UserProvidedStructure = observer(function UserProvidedStructure({
   feature,
-  model,
+  session,
+  view,
   handleClose,
   alignmentAlgorithm,
   onAlignmentAlgorithmChange,
 }: {
   feature: Feature
-  model: AbstractTrackModel
+  session: AbstractSessionModel
+  view: LGV
   handleClose: () => void
   alignmentAlgorithm: AlignmentAlgorithm
   onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }) {
   const { classes } = useStyles()
-  const session = getSession(model)
-  const view = getContainingView(model) as LGV
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')

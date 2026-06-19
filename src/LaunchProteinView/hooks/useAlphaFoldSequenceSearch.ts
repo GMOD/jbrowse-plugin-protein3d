@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import useSWR from 'swr'
 
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { jsonfetch } from '../../fetchUtils'
 import { md5 } from '../utils/md5'
 import { stripStopCodon } from '../utils/util'
@@ -46,9 +47,7 @@ export default function useAlphaFoldSequenceSearch({
       : null,
     jsonfetch,
     {
-      revalidateOnFocus: false,
-      revalidateOnReconnect: false,
-      revalidateIfStale: false,
+      ...STATIC_SWR_OPTIONS,
       keepPreviousData: true,
     },
   )
