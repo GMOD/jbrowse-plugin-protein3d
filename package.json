@@ -34,7 +34,7 @@
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "pnpm build",
     "preversion": "pnpm lint",
-    "version": "node scripts/sync-version.mjs && git add src/version.ts distconfig.json",
+    "version": "node scripts/sync-version.mjs && git add src/version.ts",
     "postversion": "git push --follow-tags"
   },
   "dependencies": {
