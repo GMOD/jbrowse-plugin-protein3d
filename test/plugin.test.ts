@@ -6,6 +6,7 @@ import {
   cleanupJBrowse,
   createJBrowsePage,
   launchBrowser,
+  saveScreenshot,
   setupJBrowse,
   startJBrowseServer,
   stopServer,
@@ -72,7 +73,7 @@ describe('Protein3d Plugin E2E', () => {
     expect(root).not.toBeNull()
 
     // Take a screenshot for debugging
-    await page!.screenshot({ path: screenshot('01-jbrowse-loaded') })
+    await saveScreenshot(page!, screenshot('01-jbrowse-loaded'))
   }, 30_000)
 
   it('should load the Protein3d plugin without errors', async () => {
@@ -109,13 +110,13 @@ describe('Protein3d Plugin E2E', () => {
 
     // Wait for the view to be ready - look for SVG elements in tracks
     await new Promise(r => setTimeout(r, 5000))
-    await page!.screenshot({ path: screenshot('02-tracks-rendered') })
+    await saveScreenshot(page!, screenshot('02-tracks-rendered'))
   }, 60_000)
 
   it('should launch protein view from gene context menu', async () => {
     expect(page).toBeDefined()
 
-    await page!.screenshot({ path: screenshot('03-before-click') })
+    await saveScreenshot(page!, screenshot('03-before-click'))
 
     // Find the track content canvas by locating the GENCODE label and reading
     // the canvas that lives in the same track row.
@@ -178,7 +179,7 @@ describe('Protein3d Plugin E2E', () => {
       await new Promise(r => setTimeout(r, 300))
     }
 
-    await page!.screenshot({ path: screenshot('04-context-menu') })
+    await saveScreenshot(page!, screenshot('04-context-menu'))
 
     console.log(`Found ${menuItems.length} menu items`)
 
@@ -210,25 +211,25 @@ describe('Protein3d Plugin E2E', () => {
       console.log('Launch protein view option not found in context menu')
       // Close the menu
       await page!.keyboard.press('Escape')
-      await page!.screenshot({ path: screenshot('05-no-protein-option') })
+      await saveScreenshot(page!, screenshot('05-no-protein-option'))
       return
     }
 
     // Click the launch protein view option
     await launchProteinItem.click()
     await new Promise(r => setTimeout(r, 2000))
-    await page!.screenshot({ path: screenshot('06-after-launch-click') })
+    await saveScreenshot(page!, screenshot('06-after-launch-click'))
 
     // Wait for dialog to appear
     const dialog = await page!.waitForSelector('[role="dialog"]', {
       timeout: 10_000,
     })
     expect(dialog).not.toBeNull()
-    await page!.screenshot({ path: screenshot('07-protein-dialog') })
+    await saveScreenshot(page!, screenshot('07-protein-dialog'))
 
     // Wait for the dialog to finish loading (the Launch button becomes enabled)
     await new Promise(r => setTimeout(r, 15000))
-    await page!.screenshot({ path: screenshot('08-dialog-after-wait') })
+    await saveScreenshot(page!, screenshot('08-dialog-after-wait'))
 
     // Look for Launch button and click it
     const buttons = await page!.$$('button')
@@ -271,14 +272,14 @@ describe('Protein3d Plugin E2E', () => {
         } catch {
           console.log('Protein view did not open within 20s')
         }
-        await page!.screenshot({ path: screenshot('09-protein-view') })
+        await saveScreenshot(page!, screenshot('09-protein-view'))
       } else {
         console.log('Launch button is disabled - data may still be loading')
-        await page!.screenshot({ path: screenshot('10-launch-disabled') })
+        await saveScreenshot(page!, screenshot('10-launch-disabled'))
       }
     } else {
       console.log('Launch button not found in dialog')
-      await page!.screenshot({ path: screenshot('11-no-launch-button') })
+      await saveScreenshot(page!, screenshot('11-no-launch-button'))
     }
   }, 180_000)
 })

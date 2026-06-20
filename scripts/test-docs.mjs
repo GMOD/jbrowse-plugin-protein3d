@@ -18,8 +18,9 @@
 
 import puppeteer from 'puppeteer'
 import { spawn } from 'node:child_process'
-import fs from 'node:fs'
 import net from 'node:net'
+
+import { saveStableScreenshot } from './pngSnapshot.mjs'
 
 const PORT = 9000
 const BASE = `http://localhost:${PORT}`
@@ -245,8 +246,10 @@ try {
     )
     check('connected: no console/page errors', errors.length === 0, errors[0])
 
-    fs.mkdirSync('test-screenshots', { recursive: true })
-    await page.screenshot({ path: 'test-screenshots/docs-connected.png' })
+    saveStableScreenshot(
+      await page.screenshot(),
+      'test-screenshots/docs-connected.png',
+    )
     await page.close()
   }
 
@@ -323,7 +326,10 @@ try {
     )
     check('short: no console/page errors', errors.length === 0, errors[0])
 
-    await page.screenshot({ path: 'test-screenshots/docs-short.png' })
+    saveStableScreenshot(
+      await page.screenshot(),
+      'test-screenshots/docs-short.png',
+    )
     await page.close()
   }
 } finally {

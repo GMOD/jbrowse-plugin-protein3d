@@ -205,3 +205,14 @@ pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
 browser and asserts they render (structure extracted, `connectedView` wires the
 genome view, genome→protein mapping built, tracks rendered, no console errors).
 It auto-starts `pnpm start` if a dev server isn't already running on :9000.
+
+#### Screenshots
+
+The E2E suites write reference PNGs under `test-screenshots/`. puppeteer
+captures aren't pixel-deterministic (antialiasing, WebGL/molstar, font hinting),
+so `scripts/pngSnapshot.mjs` normalizes each capture through `pngquant --nofs`
+and only overwrites a committed PNG when it differs by more than ~1% of pixels —
+otherwise the existing file is left byte-for-byte intact, so unrelated runs
+don't churn git. Tune the threshold with `SCREENSHOT_DIFF_RATIO` (e.g. `0` to
+always rewrite, `0.05` to tolerate larger wobble). `pngquant` is optional: where
+it's absent the raw PNG is used as a fallback.

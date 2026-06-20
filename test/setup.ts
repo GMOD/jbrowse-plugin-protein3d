@@ -5,6 +5,8 @@ import path from 'node:path'
 
 import { launch } from 'puppeteer'
 
+import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
+
 import type { Browser, Page } from 'puppeteer'
 
 export const JBROWSE_PORT = 9876
@@ -299,6 +301,15 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
   await page.goto(jbrowseUrl, { waitUntil: 'networkidle2', timeout: 60_000 })
 
   return page
+}
+
+// Capture `page` and persist it to `filePath`, overwriting the committed PNG
+// only when it differs meaningfully from the existing one (see pngSnapshot.mjs).
+export async function saveScreenshot(
+  page: Page,
+  filePath: string,
+): Promise<void> {
+  saveStableScreenshot(await page.screenshot(), filePath)
 }
 
 export async function waitForJBrowseLoad(page: Page): Promise<void> {
