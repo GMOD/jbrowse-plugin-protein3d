@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
+import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button, Menu, MenuItem } from '@mui/material'
 
+import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
-import { safeLaunch } from '../utils/launchHelpers'
 import {
   getConfidenceUrlFromTarget,
   getUniprotIdFromAlphaFoldTarget,
@@ -41,7 +42,6 @@ export default function FoldseekActionMenu({
   onClose: () => void
 }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
-  const [launchError, setLaunchError] = useState<unknown>()
   const open = Boolean(anchorEl)
 
   const uniprotId = getUniprotIdFromAlphaFoldTarget(hit.target)
@@ -54,12 +54,9 @@ export default function FoldseekActionMenu({
     setAnchorEl(null)
   }
 
-  const baseParams = { session, view, feature, selectedTranscript, uniprotId }
+  const { runLaunch, launchError } = useSafeLaunch(onClose, handleMenuClose)
 
-  const runLaunch = (fn: () => void | Promise<void>) => () => {
-    handleMenuClose()
-    void safeLaunch(fn, onClose, setLaunchError)
-  }
+  const baseParams = { session, view, feature, selectedTranscript, uniprotId }
 
   const handleLaunch3D = runLaunch(() => {
     // Use tCa coordinates to generate PDB data if no URL is available
@@ -75,21 +72,18 @@ export default function FoldseekActionMenu({
     })
   })
 
-  const handleLaunch1D = runLaunch(async () => {
-    await launch1DProteinView({
-      ...baseParams,
-      confidenceUrl: getConfidenceUrlFromTarget(hit.target),
-    })
-  })
-
   const handleLaunchMSA = runLaunch(() => {
     launchMsaView(baseParams)
   })
 
-  const canLoad = hit.structureUrl ?? hasValidCaCoords(hit.tCa, hit.tSeq)
+  const canLoad = !!hit.structureUrl || hasValidCaCoords(hit.tCa, hit.tSeq)
   if (!canLoad) {
     return <span>-</span>
   }
+
+  // 1D launch needs an add-tracks session and a uniprotId; narrowing both here
+  // gates the menu item and types its handler from a single condition.
+  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
 
   return (
     <>
@@ -99,8 +93,19 @@ export default function FoldseekActionMenu({
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
         <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
-        {uniprotId ? (
-          <MenuItem onClick={handleLaunch1D}>
+        {addTracksSession && uniprotId ? (
+          <MenuItem
+            onClick={runLaunch(() =>
+              launch1DProteinView({
+                session: addTracksSession,
+                view,
+                feature,
+                selectedTranscript,
+                uniprotId,
+                confidenceUrl: getConfidenceUrlFromTarget(hit.target),
+              }),
+            )}
+          >
             Launch 1D protein annotation view
           </MenuItem>
         ) : null}

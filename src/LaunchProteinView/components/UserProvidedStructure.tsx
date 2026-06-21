@@ -13,11 +13,7 @@ import ExternalLink from '../../components/ExternalLink'
 import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { launch3DProteinView } from '../utils/launchViewUtils'
-import {
-  getGeneDisplayName,
-  getTranscriptDisplayName,
-  stripStopCodon,
-} from '../utils/util'
+import { stripStopCodon } from '../utils/util'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
@@ -117,7 +113,6 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         data: structureData,
         userProvidedTranscriptSequence: protein.seq,
         alignmentAlgorithm,
-        displayName: `Protein view ${getGeneDisplayName(feature)} - ${getTranscriptDisplayName(selectedTranscript)}`,
       })
       handleClose()
     } catch (e) {

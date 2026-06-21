@@ -1,8 +1,5 @@
 import { type ConnectedViewSpec, resolveShortLaunch } from './resolveShortLaunch'
-import {
-  getLaunchSideBySide,
-  launchViewSideBySide,
-} from '../LaunchProteinView/utils/sideBySide'
+import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
@@ -76,9 +73,11 @@ export default function LaunchProteinViewExtensionPointF(
 
       const finalUrl = url ?? resolved?.url
       if (!finalUrl) {
-        throw new Error(
-          'No url or uniprotId provided when launching protein view',
-        )
+        const message =
+          'No url or uniprotId provided when launching protein view'
+        console.error(message)
+        session.notify(`Could not launch protein view: ${message}`, 'error')
+        return
       }
 
       // A session spec launches each view independently with an auto-generated
@@ -119,8 +118,8 @@ export default function LaunchProteinViewExtensionPointF(
         ],
       })
 
-      if (ownsConnectedView && (sideBySide ?? getLaunchSideBySide())) {
-        launchViewSideBySide(session, proteinView.id)
+      if (ownsConnectedView) {
+        maybeLaunchSideBySide(session, proteinView.id, sideBySide)
       }
     },
   )

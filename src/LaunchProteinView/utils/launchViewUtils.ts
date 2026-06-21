@@ -1,16 +1,18 @@
-import { isSessionWithAddTracks } from '@jbrowse/core/util'
-
 declare global {
   interface Window {
     JBrowsePluginMsaView?: unknown
   }
 }
 
-import { getLaunchSideBySide, launchViewSideBySide } from './sideBySide'
+import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
-import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import type {
+  AbstractSessionModel,
+  Feature,
+  SessionWithAddTracks,
+} from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export const ALPHAFOLD_VERSION = 'v6'
@@ -84,6 +86,14 @@ interface LaunchViewParams {
   uniprotId?: string
 }
 
+interface Launch3DExtraParams {
+  url?: string
+  data?: string
+  userProvidedTranscriptSequence?: string
+  alignmentAlgorithm?: string
+  displayName?: string
+}
+
 export function formatViewName(
   prefix: string,
   feature: Feature,
@@ -115,17 +125,13 @@ export function launch3DProteinView({
   displayName,
   connectedMsaViewId,
   sideBySide,
-}: LaunchViewParams & {
-  url?: string
-  data?: string
-  userProvidedTranscriptSequence?: string
-  alignmentAlgorithm?: string
-  displayName?: string
-  connectedMsaViewId?: string
-  // explicit override; when undefined the launch-dialog localStorage preference
-  // decides (left genome | right protein)
-  sideBySide?: boolean
-}) {
+}: LaunchViewParams &
+  Launch3DExtraParams & {
+    connectedMsaViewId?: string
+    // explicit override; when undefined the launch-dialog localStorage
+    // preference decides (left genome | right protein)
+    sideBySide?: boolean
+  }) {
   const snap = {
     type: 'ProteinView',
     alignmentAlgorithm,
@@ -144,12 +150,14 @@ export function launch3DProteinView({
       formatViewName('Protein view', feature, selectedTranscript, uniprotId),
   }
   const proteinView = session.addView('ProteinView', snap)
-  if (sideBySide ?? getLaunchSideBySide()) {
-    launchViewSideBySide(session, proteinView.id)
-  }
+  maybeLaunchSideBySide(session, proteinView.id, sideBySide)
   return proteinView
 }
 
+// The 1D annotation view adds temporary tracks/assemblies, so it requires a
+// SessionWithAddTracks and a known uniprotId. Demanding both in the signature
+// forces callers to narrow up front — there's no silent no-op when a wide
+// session or missing id slips through.
 export async function launch1DProteinView({
   session,
   view,
@@ -157,12 +165,11 @@ export async function launch1DProteinView({
   selectedTranscript,
   uniprotId,
   confidenceUrl,
-}: LaunchViewParams & {
+}: Omit<LaunchViewParams, 'session' | 'uniprotId'> & {
+  session: SessionWithAddTracks
+  uniprotId: string
   confidenceUrl?: string
 }) {
-  if (!uniprotId || !isSessionWithAddTracks(session)) {
-    return
-  }
   await launchProteinAnnotationView({
     session,
     selectedTranscript,
@@ -209,13 +216,7 @@ export function hasMsaViewPlugin() {
 }
 
 export function launch3DProteinViewWithMsa(
-  params: LaunchViewParams & {
-    url?: string
-    data?: string
-    userProvidedTranscriptSequence?: string
-    alignmentAlgorithm?: string
-    displayName?: string
-  },
+  params: LaunchViewParams & Launch3DExtraParams,
 ) {
   const { uniprotId } = params
   if (!uniprotId) {

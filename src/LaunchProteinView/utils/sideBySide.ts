@@ -53,3 +53,17 @@ export function launchViewSideBySide(
     session.setUseWorkspaces(true)
   }
 }
+
+/**
+ * Apply the side-by-side split honoring an explicit override, falling back to
+ * the launch-dialog localStorage preference when undefined.
+ */
+export function maybeLaunchSideBySide(
+  session: AbstractSessionModel,
+  viewId: string,
+  sideBySide?: boolean,
+) {
+  if (sideBySide ?? getLaunchSideBySide()) {
+    launchViewSideBySide(session, viewId)
+  }
+}

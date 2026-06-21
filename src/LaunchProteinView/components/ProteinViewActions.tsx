@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
+import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material'
@@ -8,7 +9,8 @@ import { Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/mater
 import LaunchOptionsDialog from './LaunchOptionsDialog'
 import LaunchSettingsDialog from './LaunchSettingsDialog'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
-import { getLaunchMissingReasons, safeLaunch } from '../utils/launchHelpers'
+import { useSafeLaunch } from '../hooks/useSafeLaunch'
+import { getLaunchMissingReasons } from '../utils/launchHelpers'
 import {
   hasMsaViewPlugin,
   launch1DProteinView,
@@ -61,7 +63,6 @@ export default function ProteinViewActions({
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  const [launchError, setLaunchError] = useState<unknown>()
   // Disable launch while loading — SWR's keepPreviousData would otherwise let
   // a user click Launch on stale results (wrong UniProt ID) during a refetch.
   const canLaunch =
@@ -82,6 +83,8 @@ export default function ProteinViewActions({
     setDialogOpen(false)
   }
 
+  const { runLaunch, launchError } = useSafeLaunch(handleClose, closeMenu)
+
   const baseParams = {
     session,
     view,
@@ -96,17 +99,8 @@ export default function ProteinViewActions({
     alignmentAlgorithm,
   }
 
-  const runLaunch = (fn: () => void | Promise<void>) => () => {
-    closeMenu()
-    void safeLaunch(fn, handleClose, setLaunchError)
-  }
-
   const handleLaunch3DView = runLaunch(() => {
     launch3DProteinView(launch3DParams)
-  })
-
-  const handleLaunch1DView = runLaunch(async () => {
-    await launch1DProteinView({ ...baseParams, confidenceUrl })
   })
 
   const handleLaunchMsa = runLaunch(() => {
@@ -117,6 +111,13 @@ export default function ProteinViewActions({
     launch3DProteinViewWithMsa(launch3DParams)
   })
 
+  // The 1D annotation view needs an add-tracks session and a known uniprotId.
+  // Narrowing here is the single source of truth: the option only exists when
+  // both hold, and its handler is type-checked against those narrowed values —
+  // so a 1D launch that can't work is unrepresentable rather than a silent
+  // no-op.
+  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
+
   const launchOptions = [
     {
       key: '3d',
@@ -125,12 +126,26 @@ export default function ProteinViewActions({
         'View protein structure with genome-to-structure coordinate mapping',
       onClick: handleLaunch3DView,
     },
-    {
-      key: '1d',
-      title: 'Launch 1D protein annotation view',
-      description: 'View protein features and annotations as a linear track',
-      onClick: handleLaunch1DView,
-    },
+    ...(addTracksSession && uniprotId
+      ? [
+          {
+            key: '1d',
+            title: 'Launch 1D protein annotation view',
+            description:
+              'View protein features and annotations as a linear track',
+            onClick: runLaunch(() =>
+              launch1DProteinView({
+                session: addTracksSession,
+                view,
+                feature,
+                selectedTranscript,
+                uniprotId,
+                confidenceUrl,
+              }),
+            ),
+          },
+        ]
+      : []),
     ...(hasMsaViewPlugin()
       ? [
           {
