@@ -2,9 +2,11 @@ import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import { Button, ButtonGroup, Typography } from '@mui/material'
+import SettingsIcon from '@mui/icons-material/Settings'
+import { Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material'
 
 import LaunchOptionsDialog from './LaunchOptionsDialog'
+import LaunchSettingsDialog from './LaunchSettingsDialog'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import { getLaunchMissingReasons, safeLaunch } from '../utils/launchHelpers'
 import {
@@ -58,6 +60,7 @@ export default function ProteinViewActions({
   error,
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [launchError, setLaunchError] = useState<unknown>()
   // Disable launch while loading — SWR's keepPreviousData would otherwise let
   // a user click Launch on stale results (wrong UniProt ID) during a refetch.
@@ -155,6 +158,17 @@ export default function ProteinViewActions({
           onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
         />
       ) : null}
+      <Tooltip title="Launch settings">
+        <IconButton
+          size="small"
+          aria-label="Launch settings"
+          onClick={() => {
+            setSettingsOpen(true)
+          }}
+        >
+          <SettingsIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
       <Button
         variant="contained"
         color="secondary"
@@ -188,6 +202,12 @@ export default function ProteinViewActions({
         open={dialogOpen}
         onClose={closeMenu}
         options={launchOptions}
+      />
+      <LaunchSettingsDialog
+        open={settingsOpen}
+        onClose={() => {
+          setSettingsOpen(false)
+        }}
       />
     </>
   )

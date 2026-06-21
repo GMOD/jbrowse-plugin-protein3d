@@ -6,6 +6,7 @@ declare global {
   }
 }
 
+import { getLaunchSideBySide, launchViewSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
@@ -113,6 +114,7 @@ export function launch3DProteinView({
   alignmentAlgorithm,
   displayName,
   connectedMsaViewId,
+  sideBySide,
 }: LaunchViewParams & {
   url?: string
   data?: string
@@ -120,6 +122,9 @@ export function launch3DProteinView({
   alignmentAlgorithm?: string
   displayName?: string
   connectedMsaViewId?: string
+  // explicit override; when undefined the launch-dialog localStorage preference
+  // decides (left genome | right protein)
+  sideBySide?: boolean
 }) {
   const snap = {
     type: 'ProteinView',
@@ -138,7 +143,11 @@ export function launch3DProteinView({
       displayName ??
       formatViewName('Protein view', feature, selectedTranscript, uniprotId),
   }
-  return session.addView('ProteinView', snap)
+  const proteinView = session.addView('ProteinView', snap)
+  if (sideBySide ?? getLaunchSideBySide()) {
+    launchViewSideBySide(session, proteinView.id)
+  }
+  return proteinView
 }
 
 export async function launch1DProteinView({
