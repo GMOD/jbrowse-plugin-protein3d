@@ -126,6 +126,10 @@ const FeatureBar = observer(function FeatureBar({
   return (
     <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
       <div
+        data-testid={`protein-feature-${feature.type}`}
+        data-feature-id={feature.uniqueId}
+        data-feature-start={feature.start}
+        data-feature-end={feature.end}
         onClick={() => {
           handleClick()
         }}
