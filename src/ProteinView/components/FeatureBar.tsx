@@ -11,29 +11,25 @@ import { clickProteinToGenome } from '../proteinToGenomeMapping'
 import type { UniProtFeature } from '../hooks/useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-function getFeatureAlignmentRange(
+/**
+ * Maps a feature's structure range onto alignment columns, returning both the
+ * alignment range (for hover) and pixel geometry. Returns undefined when either
+ * endpoint has no alignment column, so unmappable features aren't drawn at a
+ * misleading position.
+ */
+function getFeatureLayout(
   feature: UniProtFeature,
   structurePositionToAlignmentMap: Record<number, number> | undefined,
 ) {
-  const startAlignmentPos = structurePositionToAlignmentMap?.[feature.start - 1]
-  const endAlignmentPos = structurePositionToAlignmentMap?.[feature.end - 1]
-  return startAlignmentPos !== undefined && endAlignmentPos !== undefined
-    ? { start: startAlignmentPos, end: endAlignmentPos }
-    : undefined
-}
-
-function getFeatureGeometry(
-  feature: UniProtFeature,
-  structurePositionToAlignmentMap: Record<number, number> | undefined,
-) {
-  const startAlnPos =
-    structurePositionToAlignmentMap?.[feature.start - 1] ?? feature.start - 1
-  const endAlnPos =
-    structurePositionToAlignmentMap?.[feature.end - 1] ?? feature.end - 1
-  return {
-    left: startAlnPos * CHAR_WIDTH,
-    width: Math.max((endAlnPos - startAlnPos + 1) * CHAR_WIDTH, 3),
-  }
+  const start = structurePositionToAlignmentMap?.[feature.start - 1]
+  const end = structurePositionToAlignmentMap?.[feature.end - 1]
+  return start === undefined || end === undefined
+    ? undefined
+    : {
+        range: { start, end },
+        left: start * CHAR_WIDTH,
+        width: Math.max((end - start + 1) * CHAR_WIDTH, 3),
+      }
 }
 
 function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
@@ -64,15 +60,12 @@ const FeatureBar = observer(function FeatureBar({
     structurePositionToAlignmentMap,
   } = model
   const isSelected = selectedFeatureId === feature.uniqueId
+  const layout = getFeatureLayout(feature, structurePositionToAlignmentMap)
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    const range = getFeatureAlignmentRange(
-      feature,
-      structurePositionToAlignmentMap,
-    )
-    if (range) {
-      model.setAlignmentHoverRange(range)
+    if (layout) {
+      model.setAlignmentHoverRange(layout.range)
     }
   }
 
@@ -117,10 +110,11 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  const { left, width } = getFeatureGeometry(
-    feature,
-    structurePositionToAlignmentMap,
-  )
+  if (!layout) {
+    return null
+  }
+
+  const { left, width } = layout
   const color = getFeatureColor(feature.type)
 
   return (

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
@@ -30,28 +30,45 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
   sequenceLength: number
   model: JBrowsePluginProteinStructureModel
 }) {
+  const [hoveredCol, setHoveredCol] = useState<number | undefined>(undefined)
+  const valueByCol = useMemo(() => {
+    const map = new Map<number, number>()
+    for (const cell of cells) {
+      map.set(cell.col, cell.value)
+    }
+    return map
+  }, [cells])
+  const hoveredValue =
+    hoveredCol === undefined ? undefined : valueByCol.get(hoveredCol)
+
   return (
-    <div
-      style={{
-        position: 'relative',
-        height: model.trackHeight,
-        width: sequenceLength * CHAR_WIDTH,
-        marginBottom: model.trackGap,
-      }}
-      onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
-        const rect = e.currentTarget.getBoundingClientRect()
-        const alignmentPos = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
-        if (alignmentPos >= 0 && alignmentPos < sequenceLength) {
-          model.hoverAlignmentPosition(alignmentPos)
-        }
-      }}
-      onMouseLeave={() => {
-        model.setHoveredPosition(undefined)
-      }}
+    <Tooltip
+      title={hoveredValue === undefined ? '' : formatValue(hoveredValue)}
+      followCursor
     >
-      {cells.map(cell => (
-        <Tooltip key={cell.col} title={formatValue(cell.value)} followCursor>
+      <div
+        style={{
+          position: 'relative',
+          height: model.trackHeight,
+          width: sequenceLength * CHAR_WIDTH,
+          marginBottom: model.trackGap,
+        }}
+        onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
+          const rect = e.currentTarget.getBoundingClientRect()
+          const alignmentPos = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
+          setHoveredCol(alignmentPos)
+          if (alignmentPos >= 0 && alignmentPos < sequenceLength) {
+            model.hoverAlignmentPosition(alignmentPos)
+          }
+        }}
+        onMouseLeave={() => {
+          setHoveredCol(undefined)
+          model.setHoveredPosition(undefined)
+        }}
+      >
+        {cells.map(cell => (
           <div
+            key={cell.col}
             style={{
               position: 'absolute',
               left: cell.col * CHAR_WIDTH,
@@ -61,9 +78,9 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
               backgroundColor: colorFor(cell.value),
             }}
           />
-        </Tooltip>
-      ))}
-    </div>
+        ))}
+      </div>
+    </Tooltip>
   )
 })
 

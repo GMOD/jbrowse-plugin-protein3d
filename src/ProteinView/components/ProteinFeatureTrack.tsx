@@ -11,13 +11,6 @@ import type { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
 import type { UniProtFeature } from '../hooks/useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-function getVisibleTypes(
-  featureTypes: string[],
-  hiddenFeatureTypes: Set<string>,
-) {
-  return featureTypes.filter(type => !hiddenFeatureTypes.has(type))
-}
-
 const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
   features,
   model,
@@ -39,7 +32,6 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
       {features.map(feature => (
         <FeatureBar key={feature.uniqueId} feature={feature} model={model} />
       ))}
-      <HoverMarker model={model} />
     </div>
   )
 })
@@ -54,11 +46,9 @@ export const ProteinFeatureTrackLabels = observer(
     labelWidth: number
     model: JBrowsePluginProteinStructureModel
   }) {
-    const { hiddenFeatureTypes } = model
-    const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
     return (
       <>
-        {visibleTypes.map(type => (
+        {data.visibleTypes.map(type => (
           <FeatureTypeLabel
             key={type}
             type={type}
@@ -79,15 +69,12 @@ export const ProteinFeatureTrackContent = observer(
     data: FeatureTrackData
     model: JBrowsePluginProteinStructureModel
   }) {
-    const { hiddenFeatureTypes } = model
-    const visibleTypes = getVisibleTypes(data.featureTypes, hiddenFeatureTypes)
-
     return (
       <div
+        style={{ position: 'relative' }}
         onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
           const rect = e.currentTarget.getBoundingClientRect()
-          const x = e.clientX - rect.left
-          const alignmentPos = Math.floor(x / CHAR_WIDTH)
+          const alignmentPos = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
           if (alignmentPos >= 0 && alignmentPos < data.sequenceLength) {
             model.hoverAlignmentPosition(alignmentPos)
           }
@@ -96,7 +83,7 @@ export const ProteinFeatureTrackContent = observer(
           model.setHoveredPosition(undefined)
         }}
       >
-        {visibleTypes.map(type => (
+        {data.visibleTypes.map(type => (
           <FeatureTypeTrackContent
             key={type}
             features={data.groupedFeatures[type]!}
@@ -104,6 +91,7 @@ export const ProteinFeatureTrackContent = observer(
             sequenceLength={data.sequenceLength}
           />
         ))}
+        <HoverMarker model={model} />
       </div>
     )
   },

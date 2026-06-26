@@ -7,6 +7,7 @@ type FeaturesByType = Record<string, UniProtFeature[]>
 
 export interface FeatureTrackData {
   featureTypes: string[]
+  visibleTypes: string[]
   groupedFeatures: FeaturesByType
   sequenceLength: number
 }
@@ -29,7 +30,7 @@ export default function useProteinFeatureTrackData(
   error: unknown
 } {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const { pairwiseAlignment } = model
+  const { pairwiseAlignment, hiddenFeatureTypes } = model
 
   if (!uniprotId || isLoading || error || !features || !pairwiseAlignment) {
     return { data: undefined, isLoading, error }
@@ -38,9 +39,12 @@ export default function useProteinFeatureTrackData(
   const sequenceLength = pairwiseAlignment.alns[0].seq.length
   const groupedFeatures = groupFeaturesByType(features)
   const featureTypes = Object.keys(groupedFeatures)
+  const visibleTypes = featureTypes.filter(
+    type => !hiddenFeatureTypes.has(type),
+  )
 
   return {
-    data: { featureTypes, groupedFeatures, sequenceLength },
+    data: { featureTypes, visibleTypes, groupedFeatures, sequenceLength },
     isLoading: false,
     error: undefined,
   }

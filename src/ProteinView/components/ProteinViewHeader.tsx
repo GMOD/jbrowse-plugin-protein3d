@@ -114,6 +114,9 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
   model: JBrowsePluginProteinViewModel
 }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const hasHiddenTracks = model.structures.some(
+    s => s.hiddenFeatureTypes.size > 0,
+  )
   return (
     <>
       <Tooltip title="Display settings">
@@ -141,6 +144,18 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
             onToggle={toggle.onToggle}
           />
         ))}
+        {hasHiddenTracks ? (
+          <MenuItem
+            dense
+            onClick={() => {
+              for (const structure of model.structures) {
+                structure.showAllFeatureTypes()
+              }
+            }}
+          >
+            <ListItemText inset>Restore hidden feature tracks</ListItemText>
+          </MenuItem>
+        ) : null}
       </Menu>
     </>
   )
