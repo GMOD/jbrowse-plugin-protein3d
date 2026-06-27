@@ -62,6 +62,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
     hydrophobicityCells,
   } = model
   const containerRef = useRef<HTMLDivElement>(null)
+  const scrolledToSelectionRef = useRef(false)
   const {
     data: featureData,
     isLoading: featureLoading,
@@ -83,6 +84,24 @@ const ProteinAlignment = observer(function ProteinAlignment({
               model.alignmentHoverPos * CHAR_WIDTH - container.clientWidth / 2,
             behavior: 'smooth',
           })
+        }
+      }),
+    [model],
+  )
+
+  // Scroll the persistent selection into view once it first resolves, so a
+  // declarative `initialSelection` (or any off-screen selection) shows its
+  // highlight band instead of opening scrolled to the N-terminus. Guarded to
+  // fire once, so it doesn't fight the user's own scrolling afterward.
+  useEffect(
+    () =>
+      autorun(() => {
+        const container = containerRef.current
+        const range = model.clickAlignmentRange
+        if (container && range && !scrolledToSelectionRef.current) {
+          scrolledToSelectionRef.current = true
+          const mid = ((range.start + range.end) / 2) * CHAR_WIDTH
+          container.scrollTo({ left: mid - container.clientWidth / 2 })
         }
       }),
     [model],
