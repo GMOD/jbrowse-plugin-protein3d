@@ -88,6 +88,15 @@ const Structure = types
      * #property
      */
     userProvidedTranscriptSequence: types.string,
+    /**
+     * #property
+     * Declarative seed for the persistent domain selection: a 0-based,
+     * half-open structure-residue range `{ start, end }` lit on load exactly as
+     * if the user had clicked that domain — magenta in the 3D structure, a band
+     * on the connected genome view, and the range in the alignment. Lets a
+     * session spec open with a domain pre-highlighted, with no click.
+     */
+    initialSelection: types.frozen<{ start: number; end: number } | undefined>(),
   })
   .volatile(() => ({
     /**
@@ -660,6 +669,17 @@ const Structure = types
   }))
   .actions(self => ({
     afterAttach() {
+      // Seed the persistent selection from a declarative `initialSelection`, so
+      // a session spec can open with a domain pre-lit. clickedStructureRange is
+      // the single source of truth the 3D/genome/alignment highlights derive
+      // from; the genome-band and alignment getters recompute reactively once
+      // the connected view + mapping resolve, and the molstar select autorun
+      // below lights it once the structure loads. A later user click overwrites
+      // it normally.
+      if (self.initialSelection) {
+        self.setClickedStructureRange(self.initialSelection)
+      }
+
       // Re-subscribe to a molstar click/hover behavior whenever the plugin
       // becomes available; the subscription is disposed with the model.
       const addInteractionListener = (
@@ -774,11 +794,19 @@ const Structure = types
         self.setHoveredPosition(info)
       })
 
+      // Drive the molstar 'select' channel (the persistent magenta selection)
+      // reactively from a single source of truth: a clicked/declarative domain
+      // range takes priority, else the whole alignment-covered set when
+      // showHighlight is on, else nothing. Centralizing it here (rather than
+      // only applying the clicked range imperatively from the feature bar) lets
+      // a declarative `initialSelection` seed light the 3D structure the same
+      // way a click does, with no race against this autorun.
       addDisposer(
         self,
         autorun(async () => {
           const {
             showHighlight,
+            clickedStructureRange,
             structureSeqToTranscriptSeqPosition,
             molstarPluginContext,
             molstarStructure,
@@ -792,14 +820,16 @@ const Structure = types
               structure: molstarStructure,
               plugin: molstarPluginContext,
               channel: 'select',
-              spec: showHighlight
-                ? {
-                    kind: 'list',
-                    residues: Object.keys(
-                      structureSeqToTranscriptSeqPosition,
-                    ).map(coord => +coord),
-                  }
-                : undefined,
+              spec: clickedStructureRange
+                ? { kind: 'range', ...clickedStructureRange }
+                : showHighlight
+                  ? {
+                      kind: 'list',
+                      residues: Object.keys(
+                        structureSeqToTranscriptSeqPosition,
+                      ).map(coord => +coord),
+                    }
+                  : undefined,
             })
           }
         }),

@@ -30,6 +30,7 @@ export default function LaunchProteinViewExtensionPointF(
       showHighlight,
       zoomToBaseLevel,
       sideBySide,
+      initialSelection,
     }: {
       session: AbstractSessionModel
       url?: string
@@ -49,6 +50,10 @@ export default function LaunchProteinViewExtensionPointF(
       // protein view side-by-side (left genome | right protein). Explicit
       // override; falls back to the launch-dialog localStorage preference.
       sideBySide?: boolean
+      // 0-based half-open structure-residue range to pre-select on load, lit
+      // across the 3D structure, connected genome view, and alignment exactly
+      // as a domain click would — so a spec can open with a domain highlighted.
+      initialSelection?: { start: number; end: number }
     }) => {
       // Short-URL form: `uniprotId` + `transcriptId` + `connectedView` (no
       // explicit `url`/`feature`/sequence). Derive the structure URL, the
@@ -114,6 +119,7 @@ export default function LaunchProteinViewExtensionPointF(
               '',
             feature: resolved?.feature ?? feature,
             connectedViewId: resolvedConnectedViewId,
+            initialSelection,
           },
         ],
       })

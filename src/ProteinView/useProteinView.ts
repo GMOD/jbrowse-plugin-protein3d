@@ -35,6 +35,7 @@ export default function useProteinView({
           return
         }
         const {
+          Color,
           GeometryExport,
           MAQualityAssessment,
           PluginConfig,
@@ -70,6 +71,14 @@ export default function useProteinView({
           },
         })
         await created.initialized
+        // Make the persistent selection marking clearly visible (a domain
+        // click, or a declarative initialSelection): molstar's default select
+        // color is a subtle teal that blends into a green/pLDDT cartoon, so a
+        // highlighted domain reads as no highlight at all. Magenta contrasts
+        // against every built-in color scheme.
+        created.canvas3d?.setProps({
+          renderer: { selectColor: Color(0xff00ff) },
+        })
         if (state.cancelled) {
           created.dispose()
           host.remove()
