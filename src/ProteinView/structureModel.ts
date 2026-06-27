@@ -796,7 +796,7 @@ const Structure = types
                     kind: 'list',
                     residues: Object.keys(
                       structureSeqToTranscriptSeqPosition,
-                    ).map(coord => +coord + 1),
+                    ).map(coord => +coord),
                   }
                 : undefined,
             })
@@ -824,15 +824,15 @@ const Structure = types
               spec: hoverStructureRange
                 ? {
                     kind: 'range',
-                    startResidue: hoverStructureRange.start + 1,
-                    endResidue: hoverStructureRange.end,
+                    start: hoverStructureRange.start,
+                    end: hoverStructureRange.end,
                   }
                 : structureSeqHoverPos === undefined
                   ? undefined
                   : {
                       kind: 'range',
-                      startResidue: structureSeqHoverPos + 1,
-                      endResidue: structureSeqHoverPos + 1,
+                      start: structureSeqHoverPos,
+                      end: structureSeqHoverPos + 1,
                     },
             })
           }

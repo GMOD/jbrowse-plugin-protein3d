@@ -84,7 +84,7 @@ const FeatureBar = observer(function FeatureBar({
         plugin: molstarPluginContext,
         channel: 'select',
         spec: newSelected
-          ? { kind: 'range', startResidue: feature.start, endResidue: feature.end }
+          ? { kind: 'range', start: feature.start - 1, end: feature.end }
           : undefined,
       }).catch((e: unknown) => {
         console.error(e)
