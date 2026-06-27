@@ -1,133 +1,77 @@
 import loadMolstar from './loadMolstar'
-import { getMolstarStructureSelection } from './util'
 
-import type {
-  Structure,
-  StructureElement,
-} from 'molstar/lib/mol-model/structure'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { MolScriptBuilder } from 'molstar/lib/mol-script/language/builder'
+import type { Expression } from 'molstar/lib/mol-script/language/expression'
 
-type InteractivityMode = 'highlight' | 'select' | 'clear'
+type ResidueTest = (Q: typeof MolScriptBuilder) => Expression
 
-function clearLoci(plugin: PluginContext) {
-  plugin.managers.interactivity.lociHighlights.clearHighlights()
-  plugin.managers.interactivity.lociSelects.deselectAll()
-}
+/**
+ * Which residues a highlight/selection should cover. `range` is an inclusive
+ * label_seq_id span; `list` is an explicit set of label_seq_ids.
+ */
+export type ResidueSpec =
+  | { kind: 'range'; startResidue: number; endResidue: number }
+  | { kind: 'list'; residues: number[] }
 
-function applyLoci(
-  plugin: PluginContext,
-  loci: StructureElement.Loci,
-  mode: 'highlight' | 'select',
-) {
-  if (mode === 'highlight') {
-    plugin.managers.interactivity.lociHighlights.clearHighlights()
-    plugin.managers.interactivity.lociHighlights.highlight({ loci })
+const seqId = (Q: typeof MolScriptBuilder) =>
+  Q.struct.atomProperty.macromolecular.label_seq_id()
+
+const specToTest = (spec: ResidueSpec): ResidueTest =>
+  spec.kind === 'range'
+    ? Q =>
+        Q.core.logic.and([
+          Q.core.rel.gre([seqId(Q), spec.startResidue]),
+          Q.core.rel.lte([seqId(Q), spec.endResidue]),
+        ])
+    : Q =>
+        Q.core.logic.or(
+          spec.residues.map(residue => Q.core.rel.eq([seqId(Q), residue])),
+        )
+
+const isActive = (spec: ResidueSpec | undefined): spec is ResidueSpec =>
+  spec !== undefined && (spec.kind === 'range' || spec.residues.length > 0)
+
+/**
+ * Reconcile one interactivity channel (hover-`highlight` or click-`select`) to
+ * the desired residue spec. Passing `undefined` (or an empty `list`) clears the
+ * channel, so callers describe the target state declaratively rather than
+ * juggling clear/apply calls.
+ */
+export async function setMolstarLoci({
+  structure,
+  plugin,
+  channel,
+  spec,
+}: {
+  structure: Structure
+  plugin: PluginContext
+  channel: 'highlight' | 'select'
+  spec: ResidueSpec | undefined
+}) {
+  const { lociHighlights, lociSelects } = plugin.managers.interactivity
+  if (channel === 'highlight') {
+    lociHighlights.clearHighlights()
   } else {
-    plugin.managers.interactivity.lociSelects.deselectAll()
-    plugin.managers.interactivity.lociSelects.select({ loci })
-  }
-}
-
-export async function applyLociInteractivityMultiple({
-  structure,
-  residues,
-  plugin,
-  mode,
-}: {
-  structure: Structure
-  residues: number[]
-  plugin: PluginContext
-  mode: InteractivityMode
-}) {
-  if (mode === 'clear' || residues.length === 0) {
-    clearLoci(plugin)
-    return
+    lociSelects.deselectAll()
   }
 
-  const { StructureSelection, Script } = await loadMolstar()
-
-  const sel = Script.getStructureSelection(
-    Q =>
-      Q.struct.generator.atomGroups({
-        'residue-test': Q.core.logic.or(
-          residues.map(residue =>
-            Q.core.rel.eq([
-              Q.struct.atomProperty.macromolecular.label_seq_id(),
-              residue,
-            ]),
-          ),
-        ),
-        'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
-      }),
-    structure,
-  )
-
-  const loci = StructureSelection.toLociWithSourceUnits(sel)
-  applyLoci(plugin, loci, mode)
-}
-
-export async function applyLociInteractivity({
-  structure,
-  startResidue,
-  endResidue,
-  plugin,
-  mode,
-}: {
-  structure: Structure
-  startResidue: number
-  endResidue: number
-  plugin: PluginContext
-  mode: InteractivityMode
-}) {
-  if (mode === 'clear') {
-    clearLoci(plugin)
-    return
+  if (isActive(spec)) {
+    const { StructureSelection, Script } = await loadMolstar()
+    const sel = Script.getStructureSelection(
+      Q =>
+        Q.struct.generator.atomGroups({
+          'residue-test': specToTest(spec)(Q),
+          'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
+        }),
+      structure,
+    )
+    const loci = StructureSelection.toLociWithSourceUnits(sel)
+    if (channel === 'highlight') {
+      lociHighlights.highlight({ loci })
+    } else {
+      lociSelects.select({ loci })
+    }
   }
-
-  const { StructureSelection, Script } = await loadMolstar()
-  const sel = Script.getStructureSelection(
-    Q =>
-      Q.struct.generator.atomGroups({
-        'residue-test': Q.core.logic.and([
-          Q.core.rel.gre([
-            Q.struct.atomProperty.macromolecular.label_seq_id(),
-            startResidue,
-          ]),
-          Q.core.rel.lte([
-            Q.struct.atomProperty.macromolecular.label_seq_id(),
-            endResidue,
-          ]),
-        ]),
-        'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
-      }),
-    structure,
-  )
-
-  const loci = StructureSelection.toLociWithSourceUnits(sel)
-  applyLoci(plugin, loci, mode)
-}
-
-export async function applyLociInteractivitySingle({
-  structure,
-  selectedResidue,
-  plugin,
-  mode,
-}: {
-  structure: Structure
-  selectedResidue: number
-  plugin: PluginContext
-  mode: InteractivityMode
-}) {
-  if (mode === 'clear') {
-    clearLoci(plugin)
-    return
-  }
-
-  const { StructureSelection } = await loadMolstar()
-  const sel = await getMolstarStructureSelection({
-    structure,
-    selectedResidue: selectedResidue + 1,
-  })
-  const loci = StructureSelection.toLociWithSourceUnits(sel)
-  applyLoci(plugin, loci, mode)
 }

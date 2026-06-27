@@ -7,10 +7,7 @@ import {
 } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
 
-import {
-  applyLociInteractivityMultiple,
-  applyLociInteractivitySingle,
-} from './applyLociInteractivity'
+import { setMolstarLoci } from './applyLociInteractivity'
 import {
   COMPACT_TRACK_GAP,
   COMPACT_TRACK_HEIGHT,
@@ -24,7 +21,6 @@ import {
   structurePos,
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
-import highlightResidueRange from './highlightResidueRange'
 import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
@@ -791,19 +787,19 @@ const Structure = types
             molstarPluginContext &&
             structureSeqToTranscriptSeqPosition
           ) {
-            if (showHighlight) {
-              const residues = Object.keys(
-                structureSeqToTranscriptSeqPosition,
-              ).map(coord => +coord + 1)
-              await applyLociInteractivityMultiple({
-                structure: molstarStructure,
-                residues,
-                plugin: molstarPluginContext,
-                mode: 'select',
-              })
-            } else {
-              molstarPluginContext.managers.interactivity.lociSelects.deselectAll()
-            }
+            await setMolstarLoci({
+              structure: molstarStructure,
+              plugin: molstarPluginContext,
+              channel: 'select',
+              spec: showHighlight
+                ? {
+                    kind: 'list',
+                    residues: Object.keys(
+                      structureSeqToTranscriptSeqPosition,
+                    ).map(coord => +coord + 1),
+                  }
+                : undefined,
+            })
           }
         }),
       )
@@ -821,23 +817,24 @@ const Structure = types
             structureSeqHoverPos,
           } = self
           if (molstarStructure && molstarPluginContext) {
-            if (hoverStructureRange) {
-              await highlightResidueRange({
-                structure: molstarStructure,
-                plugin: molstarPluginContext,
-                startResidue: hoverStructureRange.start + 1,
-                endResidue: hoverStructureRange.end,
-              })
-            } else if (structureSeqHoverPos !== undefined) {
-              await applyLociInteractivitySingle({
-                structure: molstarStructure,
-                plugin: molstarPluginContext,
-                selectedResidue: structureSeqHoverPos,
-                mode: 'highlight',
-              })
-            } else {
-              molstarPluginContext.managers.interactivity.lociHighlights.clearHighlights()
-            }
+            await setMolstarLoci({
+              structure: molstarStructure,
+              plugin: molstarPluginContext,
+              channel: 'highlight',
+              spec: hoverStructureRange
+                ? {
+                    kind: 'range',
+                    startResidue: hoverStructureRange.start + 1,
+                    endResidue: hoverStructureRange.end,
+                  }
+                : structureSeqHoverPos === undefined
+                  ? undefined
+                  : {
+                      kind: 'range',
+                      startResidue: structureSeqHoverPos + 1,
+                      endResidue: structureSeqHoverPos + 1,
+                    },
+            })
           }
         }),
       )

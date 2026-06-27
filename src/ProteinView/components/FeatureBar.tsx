@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
+import { setMolstarLoci } from '../applyLociInteractivity'
 import { CHAR_WIDTH, HOVERED_BORDER, SELECTED_BORDER } from '../constants'
-import { selectResidueRange } from '../highlightResidueRange'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
@@ -79,19 +79,17 @@ const FeatureBar = observer(function FeatureBar({
     const newSelected = !isSelected
 
     if (structure && molstarPluginContext) {
-      if (newSelected) {
-        selectResidueRange({
-          structure,
-          startResidue: feature.start,
-          endResidue: feature.end,
-          plugin: molstarPluginContext,
-        }).catch((e: unknown) => {
-          console.error(e)
-          model.setError(e)
-        })
-      } else {
-        molstarPluginContext.managers.interactivity.lociSelects.deselectAll()
-      }
+      setMolstarLoci({
+        structure,
+        plugin: molstarPluginContext,
+        channel: 'select',
+        spec: newSelected
+          ? { kind: 'range', startResidue: feature.start, endResidue: feature.end }
+          : undefined,
+      }).catch((e: unknown) => {
+        console.error(e)
+        model.setError(e)
+      })
     }
 
     if (newSelected) {
