@@ -17,7 +17,7 @@ A standalone diagnostic page that loads real PDB / AlphaFold structures through
 the plugin's actual mapping code and surfaces cases it mishandles (multi-chain
 complexes, partial/repeat structures, AlphaFold fragments):
 
-https://gmod.github.io/jbrowse-plugin-protein3d/
+https://gmod.org/jbrowse-plugin-protein3d/
 
 Source and details in [harness/](harness/).
 
