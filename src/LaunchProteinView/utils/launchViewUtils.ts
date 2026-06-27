@@ -181,11 +181,13 @@ export async function launch1DProteinView({
 }
 
 // CROSS-REPO DEPENDENCY: the 'MsaView' view type is registered by
-// jbrowse-plugin-msaview, which wraps the `react-msaview` library. The `init`
-// keys below (msaUrl, colorSchemeName) and the connected* props are a runtime
-// contract with that plugin's model — they are NOT type-checked here because we
-// only depend on it at runtime (gated by hasMsaViewPlugin()). If react-msaview
-// renames these, the launch silently degrades. Keep in step with that repo.
+// jbrowse-plugin-msaview, which wraps the `react-msaview` library. The top-level
+// props here (colorSchemeName, connectedViewId, connectedFeature) are native
+// react-msaview model properties applied directly from the snapshot; only `init`
+// (msaUrl) is a declarative launch contract that the plugin resolves once and
+// clears. These are NOT type-checked here because we only depend on it at runtime
+// (gated by hasMsaViewPlugin()). If react-msaview renames these, the launch
+// silently degrades. Keep in step with that repo.
 export function launchMsaView({
   session,
   view,
@@ -204,9 +206,9 @@ export function launchMsaView({
       formatViewName('MSA view', feature, selectedTranscript, uniprotId),
     connectedViewId: view.id,
     connectedFeature: selectedTranscript?.toJSON(),
+    colorSchemeName: 'percent_identity',
     init: {
       msaUrl: getAlphaFoldMsaUrl(uniprotId),
-      colorSchemeName: 'percent_identity',
     },
   })
 }
