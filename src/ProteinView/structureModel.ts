@@ -29,7 +29,9 @@ import {
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
-import subscribeMolstarInteraction from './subscribeMolstarInteraction'
+import subscribeMolstarInteraction, {
+  type MolstarLocationInfo,
+} from './subscribeMolstarInteraction'
 import { checkHovered } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
@@ -403,6 +405,21 @@ const Structure = types
 
     /**
      * #getter
+     * The current hover as a 0-based half-open structure range. A feature-range
+     * hover (hoverStructureRange) takes priority over a single-residue hover
+     * (structureSeqHoverPos). Drives both the molstar 3D highlight and the
+     * genome highlight.
+     */
+    get hoverHighlightRange() {
+      const pos = this.structureSeqHoverPos
+      return (
+        this.hoverStructureRange ??
+        (pos === undefined ? undefined : { start: pos, end: pos + 1 })
+      )
+    },
+
+    /**
+     * #getter
      * Persistent click selection in alignment coordinates, derived from
      * clickedStructureRange via structurePositionToAlignmentMap.
      */
@@ -455,27 +472,14 @@ const Structure = types
 
     /**
      * #getter
-     * Genome regions to highlight in the LGV based on the current hover.
-     * A feature-range hover (hoverStructureRange) takes priority over a
-     * single-residue hover (structureSeqHoverPos). Excludes hovers that
-     * originated from the genome view itself, so hovering the LGV doesn't
-     * echo a codon-width highlight back onto that same view.
+     * Genome regions to highlight in the LGV from the current hover. Excludes
+     * hovers that originated from the genome view itself, so hovering the LGV
+     * doesn't echo a codon-width highlight back onto that same view.
      */
     get hoverGenomeHighlights(): IRegion[] {
-      if (self.hoverPosition?.source === 'genome') {
-        return []
-      }
-      const range = this.hoverStructureRange
-      if (range) {
-        return this.structureRangeToGenomeHighlight(range)
-      }
-      const structureSeqPos = this.structureSeqHoverPos
-      return structureSeqPos === undefined
+      return self.hoverPosition?.source === 'genome'
         ? []
-        : this.structureRangeToGenomeHighlight({
-            start: structureSeqPos,
-            end: structureSeqPos + 1,
-          })
+        : this.structureRangeToGenomeHighlight(this.hoverHighlightRange)
     },
 
     /**
@@ -656,6 +660,30 @@ const Structure = types
   }))
   .actions(self => ({
     afterAttach() {
+      // Re-subscribe to a molstar click/hover behavior whenever the plugin
+      // becomes available; the subscription is disposed with the model.
+      const addInteractionListener = (
+        kind: 'click' | 'hover',
+        onUpdate: (info: MolstarLocationInfo | undefined) => void,
+      ) => {
+        addDisposer(
+          self,
+          autorun(async () => {
+            const { molstarPluginContext } = self
+            if (molstarPluginContext) {
+              addDisposer(
+                self,
+                await subscribeMolstarInteraction({
+                  plugin: molstarPluginContext,
+                  kind,
+                  onUpdate,
+                }),
+              )
+            }
+          }),
+        )
+      }
+
       addDisposer(
         self,
         autorun(async () => {
@@ -726,52 +754,25 @@ const Structure = types
         }),
       )
 
-      addDisposer(
-        self,
-        autorun(async () => {
-          const { molstarPluginContext } = self
-          if (molstarPluginContext) {
-            const dispose = await subscribeMolstarInteraction({
-              plugin: molstarPluginContext,
-              kind: 'click',
-              onUpdate: info => {
-                // Click only acts on positive matches; ignore clicks that
-                // didn't land on a structure element.
-                if (!info) {
-                  return
-                }
-                self.setHoveredPosition(info)
-                self.setSelectedFeatureId(undefined)
-                clickProteinToGenome({
-                  model: self,
-                  structureSeqPos: info.structureSeqPos,
-                }).catch((e: unknown) => {
-                  console.error(e)
-                  self.parentView.setError(e)
-                })
-              },
-            })
-            addDisposer(self, dispose)
-          }
-        }),
-      )
+      // Click only acts on positive matches; clicks that didn't land on a
+      // structure element are ignored.
+      addInteractionListener('click', info => {
+        if (info) {
+          self.setHoveredPosition(info)
+          self.setSelectedFeatureId(undefined)
+          clickProteinToGenome({
+            model: self,
+            structureSeqPos: info.structureSeqPos,
+          }).catch((e: unknown) => {
+            console.error(e)
+            self.parentView.setError(e)
+          })
+        }
+      })
 
-      addDisposer(
-        self,
-        autorun(async () => {
-          const { molstarPluginContext } = self
-          if (molstarPluginContext) {
-            const dispose = await subscribeMolstarInteraction({
-              plugin: molstarPluginContext,
-              kind: 'hover',
-              onUpdate: info => {
-                self.setHoveredPosition(info)
-              },
-            })
-            addDisposer(self, dispose)
-          }
-        }),
-      )
+      addInteractionListener('hover', info => {
+        self.setHoveredPosition(info)
+      })
 
       addDisposer(
         self,
@@ -804,36 +805,20 @@ const Structure = types
         }),
       )
 
-      // Drive molstar hover-highlight state from the model. A feature-range
-      // hover (hoverStructureRange) takes priority over a single-residue
-      // hover (structureSeqHoverPos); otherwise clear.
+      // Drive molstar hover-highlight from the model's hoverHighlightRange.
       addDisposer(
         self,
         autorun(async () => {
-          const {
-            molstarStructure,
-            molstarPluginContext,
-            hoverStructureRange,
-            structureSeqHoverPos,
-          } = self
+          const { molstarStructure, molstarPluginContext, hoverHighlightRange } =
+            self
           if (molstarStructure && molstarPluginContext) {
             await setMolstarLoci({
               structure: molstarStructure,
               plugin: molstarPluginContext,
               channel: 'highlight',
-              spec: hoverStructureRange
-                ? {
-                    kind: 'range',
-                    start: hoverStructureRange.start,
-                    end: hoverStructureRange.end,
-                  }
-                : structureSeqHoverPos === undefined
-                  ? undefined
-                  : {
-                      kind: 'range',
-                      start: structureSeqHoverPos,
-                      end: structureSeqHoverPos + 1,
-                    },
+              spec: hoverHighlightRange
+                ? { kind: 'range', ...hoverHighlightRange }
+                : undefined,
             })
           }
         }),
