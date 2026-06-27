@@ -3,11 +3,12 @@ import React from 'react'
 import { MenuItem, TextField } from '@mui/material'
 
 import {
+  classifyIsoforms,
   getGeneDisplayName,
   getTranscriptDisplayName,
-  stripStopCodon,
 } from '../utils/util'
 
+import type { IsoformSequences, RankedIsoform } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
 
 export default function TranscriptSelector({
@@ -24,30 +25,21 @@ export default function TranscriptSelector({
   val: string | undefined
   setVal: (str: string) => void
   structureSequence?: string
-  isoformSequences: Record<string, { feature: Feature; seq: string }>
+  isoformSequences: IsoformSequences
   disabled?: boolean
 }) {
   const geneName = getGeneDisplayName(feature)
-  const matches: Feature[] = []
-  const nonMatches: Feature[] = []
-  const noData: Feature[] = []
+  const { matches, nonMatches, noData } = classifyIsoforms({
+    options: isoforms,
+    isoformSequences,
+    structureSequence,
+  })
 
-  for (const f of isoforms) {
-    const entry = isoformSequences[f.id()]
-    if (!entry) {
-      noData.push(f)
-    } else if (
-      structureSequence &&
-      stripStopCodon(entry.seq) === structureSequence
-    ) {
-      matches.push(f)
-    } else {
-      nonMatches.push(f)
-    }
-  }
-
-  const byLengthDesc = (a: Feature, b: Feature) =>
-    isoformSequences[b.id()]!.seq.length - isoformSequences[a.id()]!.seq.length
+  const renderOption = ({ feature: f, length }: RankedIsoform, note = '') => (
+    <MenuItem value={f.id()} key={f.id()}>
+      {geneName} - {getTranscriptDisplayName(f)} ({length}aa){note}
+    </MenuItem>
+  )
 
   return (
     <TextField
@@ -59,18 +51,8 @@ export default function TranscriptSelector({
       select
       disabled={disabled}
     >
-      {matches.toSorted(byLengthDesc).map(f => (
-        <MenuItem value={f.id()} key={f.id()}>
-          {geneName} - {getTranscriptDisplayName(f)} (
-          {isoformSequences[f.id()]!.seq.length}aa) (matches structure residues)
-        </MenuItem>
-      ))}
-      {nonMatches.toSorted(byLengthDesc).map(f => (
-        <MenuItem value={f.id()} key={f.id()}>
-          {geneName} - {getTranscriptDisplayName(f)} (
-          {isoformSequences[f.id()]!.seq.length}aa)
-        </MenuItem>
-      ))}
+      {matches.map(m => renderOption(m, ' (matches structure residues)'))}
+      {nonMatches.map(m => renderOption(m))}
       {noData.map(f => (
         <MenuItem value={f.id()} key={f.id()} disabled>
           {geneName} - {getTranscriptDisplayName(f)} (no data)

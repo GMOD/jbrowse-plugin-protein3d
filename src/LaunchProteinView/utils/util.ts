@@ -47,57 +47,47 @@ export function getUniProtIdFromFeature(f?: Feature): string | undefined {
   return f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid')
 }
 
-// Ensembl ID patterns - covers human (ENS), mouse (ENSMUS), zebrafish (ENSDAR), etc.
-const ensemblGenePattern = /^ENS[A-Z]*G\d+/i
-const ensemblTranscriptPattern = /^ENS[A-Z]*T\d+/i
-const ensemblProteinPattern = /^ENS[A-Z]*P\d+/i
+// Single source of truth for database IDs that UniProt can cross-reference.
+// Each entry carries everything downstream needs: the UniProt xref database
+// keyword, the regex (Ensembl patterns cover human ENS, mouse ENSMUS, zebrafish
+// ENSDAR, etc.), and a human-readable label. Recognition, label rendering, and
+// xref-query building all derive from this list, so a new ID type is one entry.
+type DbType = 'ensembl' | 'refseq' | 'ccds' | 'hgnc'
 
-// NCBI RefSeq ID patterns
-const refSeqTranscriptPattern = /^[NX][MR]_\d+/i
-const refSeqProteinPattern = /^[NX]P_\d+/i
+const DB_ID_PATTERNS: { db: DbType; pattern: RegExp; label: string }[] = [
+  { db: 'ensembl', pattern: /^ENS[A-Z]*G\d+/i, label: 'Ensembl gene' },
+  { db: 'ensembl', pattern: /^ENS[A-Z]*T\d+/i, label: 'Ensembl transcript' },
+  { db: 'ensembl', pattern: /^ENS[A-Z]*P\d+/i, label: 'Ensembl protein' },
+  { db: 'refseq', pattern: /^[NX]M_\d+/i, label: 'RefSeq mRNA' },
+  { db: 'refseq', pattern: /^[NX]R_\d+/i, label: 'RefSeq ncRNA' },
+  { db: 'refseq', pattern: /^[NX]P_\d+/i, label: 'RefSeq protein' },
+  { db: 'ccds', pattern: /^CCDS\d+/i, label: 'CCDS' },
+  { db: 'hgnc', pattern: /^HGNC:\d+/i, label: 'HGNC' },
+]
 
-// CCDS pattern
-const ccdsPattern = /^CCDS\d+/i
-
-// HGNC pattern (HGNC:12345)
-const hgncPattern = /^HGNC:\d+/i
-
-/**
- * Check if an ID is a recognized database identifier that UniProt can map
- */
-export function isRecognizedDatabaseId(id: string) {
-  return (
-    ensemblGenePattern.test(id) ||
-    ensemblTranscriptPattern.test(id) ||
-    ensemblProteinPattern.test(id) ||
-    refSeqTranscriptPattern.test(id) ||
-    refSeqProteinPattern.test(id) ||
-    ccdsPattern.test(id) ||
-    hgncPattern.test(id)
-  )
+function matchDbIdPattern(id: string) {
+  return DB_ID_PATTERNS.find(p => p.pattern.test(id))
 }
 
-/**
- * Get the database type for a recognized ID (used for UniProt xref queries)
- */
-export function getDatabaseTypeForId(id: string): string | undefined {
-  if (
-    ensemblGenePattern.test(id) ||
-    ensemblTranscriptPattern.test(id) ||
-    ensemblProteinPattern.test(id)
-  ) {
-    return 'ensembl'
-  }
-  if (refSeqTranscriptPattern.test(id) || refSeqProteinPattern.test(id)) {
-    return 'refseq'
-  }
-  if (ccdsPattern.test(id)) {
-    return 'ccds'
-  }
-  if (hgncPattern.test(id)) {
-    return 'hgnc'
-  }
-  return undefined
+// Check if an ID is a recognized database identifier that UniProt can map
+export function isRecognizedDatabaseId(id: string) {
+  return matchDbIdPattern(id) !== undefined
+}
+
+// Human-readable label for an ID, e.g. "ENST00000123 (Ensembl transcript)".
+// Unrecognized IDs are returned unadorned.
+export function getDbIdLabel(id: string) {
+  const match = matchDbIdPattern(id)
+  return match ? `${id} (${match.label})` : id
+}
+
+// Build the UniProt xref query fragment for a recognized ID, e.g.
+// "xref:ensembl-ENST00000123". HGNC strips its redundant "HGNC:" prefix.
+export function buildUniProtXrefQuery(id: string) {
+  const match = matchDbIdPattern(id)
+  return match
+    ? `xref:${match.db}-${match.db === 'hgnc' ? id.replace('HGNC:', '') : id}`
+    : undefined
 }
 
 /**
@@ -183,7 +173,7 @@ export function findRecognizedDbIds(f?: Feature): string[] {
     const hgncStr = String(hgnc)
     if (/^\d+$/.test(hgncStr)) {
       recognizedIds.push(`HGNC:${hgncStr}`)
-    } else if (hgncPattern.test(hgncStr)) {
+    } else if (matchDbIdPattern(hgncStr)?.db === 'hgnc') {
       recognizedIds.push(hgncStr)
     }
   }
@@ -255,26 +245,70 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
   }
 }
 
-export function selectBestTranscript({
+export interface IsoformSequence {
+  feature: Feature
+  seq: string
+}
+
+export type IsoformSequences = Record<string, IsoformSequence>
+
+export interface RankedIsoform {
+  feature: Feature
+  length: number
+}
+
+export interface ClassifiedIsoforms {
+  // protein matches the structure residues, longest first
+  matches: RankedIsoform[]
+  // has a protein sequence but doesn't match the structure, longest first
+  nonMatches: RankedIsoform[]
+  // no protein sequence could be computed
+  noData: Feature[]
+}
+
+// The single rule for ranking transcript isoforms against a structure, shared
+// by the picker UI and the auto-selection: partition by whether the translated
+// protein matches the structure residues, with each group ordered longest-first.
+export function classifyIsoforms({
   options,
   isoformSequences,
   structureSequence,
 }: {
   options: Feature[]
-  isoformSequences: Record<string, { feature: Feature; seq: string }>
-  structureSequence: string | undefined
-}) {
-  const exactMatch = options.find(
-    f =>
+  isoformSequences: IsoformSequences
+  structureSequence?: string
+}): ClassifiedIsoforms {
+  const matches: RankedIsoform[] = []
+  const nonMatches: RankedIsoform[] = []
+  const noData: Feature[] = []
+  for (const feature of options) {
+    const entry = isoformSequences[feature.id()]
+    const ranked = { feature, length: entry?.seq.length ?? 0 }
+    if (!entry) {
+      noData.push(feature)
+    } else if (
       structureSequence &&
-      stripStopCodon(isoformSequences[f.id()]?.seq ?? '') === structureSequence,
-  )
-  const longestWithData = options
-    .filter(f => !!isoformSequences[f.id()])
-    .toSorted(
-      (a, b) =>
-        isoformSequences[b.id()]!.seq.length -
-        isoformSequences[a.id()]!.seq.length,
-    )[0]
-  return exactMatch ?? longestWithData
+      stripStopCodon(entry.seq) === structureSequence
+    ) {
+      matches.push(ranked)
+    } else {
+      nonMatches.push(ranked)
+    }
+  }
+  const byLengthDesc = (a: RankedIsoform, b: RankedIsoform) =>
+    b.length - a.length
+  return {
+    matches: matches.toSorted(byLengthDesc),
+    nonMatches: nonMatches.toSorted(byLengthDesc),
+    noData,
+  }
+}
+
+export function selectBestTranscript(args: {
+  options: Feature[]
+  isoformSequences: IsoformSequences
+  structureSequence?: string
+}) {
+  const { matches, nonMatches } = classifyIsoforms(args)
+  return (matches[0] ?? nonMatches[0])?.feature
 }

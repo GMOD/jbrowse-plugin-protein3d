@@ -6,6 +6,7 @@ import IsoformSequencesToggle from './IsoformSequencesToggle'
 import ExternalLink from '../../components/ExternalLink'
 import { getTranscriptDisplayName } from '../utils/util'
 
+import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
 
 function NotFound({ uniprotId }: { uniprotId: string }) {
@@ -31,7 +32,7 @@ export default function AlphaFoldDBSearchStatus({
   uniprotId?: string
   selectedTranscript?: Feature
   structureSequence?: string
-  isoformSequences: Record<string, { feature: Feature; seq: string }>
+  isoformSequences: IsoformSequences
   url?: string
 }) {
   return uniprotId ? (

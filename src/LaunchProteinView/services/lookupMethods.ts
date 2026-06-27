@@ -1,6 +1,6 @@
 import { jsonfetch } from '../../fetchUtils'
 import {
-  getDatabaseTypeForId,
+  buildUniProtXrefQuery,
   isRecognizedDatabaseId,
   stripTrailingVersion,
 } from '../utils/util'
@@ -56,25 +56,6 @@ function mapApiResultToEntry(
   }
 }
 
-/**
- * Build UniProt xref query for a recognized database ID
- */
-function buildXrefQuery(id: string): string | undefined {
-  const dbType = getDatabaseTypeForId(id)
-  switch (dbType) {
-    case 'ensembl':
-      return `xref:ensembl-${id}`
-    case 'refseq':
-      return `xref:refseq-${id}`
-    case 'ccds':
-      return `xref:ccds-${id}`
-    case 'hgnc':
-      return `xref:hgnc-${id.replace('HGNC:', '')}`
-    default:
-      return undefined
-  }
-}
-
 async function searchUniProt(
   query: string,
   size = 10,
@@ -90,7 +71,7 @@ interface SearchByXrefResult {
 }
 
 async function searchByXref(id: string): Promise<SearchByXrefResult> {
-  const query = buildXrefQuery(id)
+  const query = buildUniProtXrefQuery(id)
   if (!query) {
     return { entries: [], error: undefined }
   }

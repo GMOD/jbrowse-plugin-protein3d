@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
 import { selectBestTranscript } from '../utils/util'
 
+import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
 
 export default function useTranscriptSelection({
@@ -11,7 +12,7 @@ export default function useTranscriptSelection({
   resetKey,
 }: {
   options: Feature[]
-  isoformSequences?: Record<string, { feature: Feature; seq: string }>
+  isoformSequences?: IsoformSequences
   structureSequence?: string
   // When this value changes the manual selection is cleared, falling back to
   // the recomputed auto-selection (e.g. after the user picks a different
@@ -25,17 +26,14 @@ export default function useTranscriptSelection({
     setUserSelection(undefined)
   }
 
-  const autoSelection = useMemo(
-    () =>
-      isoformSequences !== undefined
-        ? selectBestTranscript({
-            options,
-            isoformSequences,
-            structureSequence,
-          })?.id()
-        : undefined,
-    [options, structureSequence, isoformSequences],
-  )
+  const autoSelection =
+    isoformSequences !== undefined
+      ? selectBestTranscript({
+          options,
+          isoformSequences,
+          structureSequence,
+        })?.id()
+      : undefined
 
   return { userSelection: userSelection ?? autoSelection, setUserSelection }
 }

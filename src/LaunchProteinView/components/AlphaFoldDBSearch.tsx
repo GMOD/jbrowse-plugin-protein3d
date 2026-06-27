@@ -117,7 +117,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           </Typography>
         )}
 
-        {state.showStructureSelectors && (
+        {state.showStructureSelectors && state.isoformSequences ? (
           <>
             <div className={classes.selectorsRow}>
               <TranscriptSelector
@@ -126,7 +126,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 structureSequence={state.structureSequence}
                 feature={feature}
                 isoforms={state.transcriptOptions}
-                isoformSequences={state.isoformSequences!}
+                isoformSequences={state.isoformSequences}
               />
             </div>
             {state.showSequenceSearchStatus && (
@@ -134,7 +134,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 isLoading={state.isSequenceSearchLoading}
                 uniprotId={state.uniprotId}
                 url={state.url}
-                hasProteinSequence={!!state.userSelectedProteinSequence}
+                hasProteinSequence={!!state.userSelectedProteinSequence?.seq}
                 sequenceSearchType={state.sequenceSearchType}
               />
             )}
@@ -143,12 +143,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 uniprotId={state.uniprotId}
                 selectedTranscript={state.selectedTranscript}
                 structureSequence={state.structureSequence}
-                isoformSequences={state.isoformSequences!}
+                isoformSequences={state.isoformSequences}
                 url={state.url}
               />
             )}
           </>
-        )}
+        ) : null}
       </DialogContent>
       <DialogActions>
         <ProteinViewActions

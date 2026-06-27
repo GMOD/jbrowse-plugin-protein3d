@@ -5,6 +5,7 @@ import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { fetchProteinSeq } from '../utils/calculateProteinSequence'
 import { getTranscriptFeatures } from '../utils/util'
 
+import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
 
 export default function useIsoformProteinSequences({
@@ -14,9 +15,7 @@ export default function useIsoformProteinSequences({
   feature: Feature
   view?: { assemblyNames?: string[] }
 }) {
-  const { data, error, isLoading } = useSWR<
-    Record<string, { feature: Feature; seq: string }>
-  >(
+  const { data, error, isLoading } = useSWR<IsoformSequences>(
     ['isoform-sequences', feature.id(), view?.assemblyNames?.[0]],
     async () => {
       const transcripts = getTranscriptFeatures(feature)

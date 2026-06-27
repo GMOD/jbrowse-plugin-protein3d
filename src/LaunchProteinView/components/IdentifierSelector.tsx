@@ -8,48 +8,13 @@ import {
   Select,
 } from '@mui/material'
 
-import { getDatabaseTypeForId } from '../utils/util'
+import { getDbIdLabel } from '../utils/util'
 
 interface IdentifierSelectorProps {
   recognizedIds: string[]
   geneName?: string
   selectedId: string
   onSelectedIdChange: (id: string) => void
-}
-
-function getIdLabel(id: string): string {
-  const dbType = getDatabaseTypeForId(id)
-  if (dbType === 'refseq') {
-    if (id.startsWith('NM_') || id.startsWith('XM_')) {
-      return `${id} (RefSeq mRNA)`
-    }
-    if (id.startsWith('NR_') || id.startsWith('XR_')) {
-      return `${id} (RefSeq ncRNA)`
-    }
-    if (id.startsWith('NP_') || id.startsWith('XP_')) {
-      return `${id} (RefSeq protein)`
-    }
-    return `${id} (RefSeq)`
-  }
-  if (dbType === 'ensembl') {
-    if (id.includes('G')) {
-      return `${id} (Ensembl gene)`
-    }
-    if (id.includes('T')) {
-      return `${id} (Ensembl transcript)`
-    }
-    if (id.includes('P')) {
-      return `${id} (Ensembl protein)`
-    }
-    return `${id} (Ensembl)`
-  }
-  if (dbType === 'hgnc') {
-    return `${id} (HGNC)`
-  }
-  if (dbType === 'ccds') {
-    return `${id} (CCDS)`
-  }
-  return id
 }
 
 export default function IdentifierSelector({
@@ -63,7 +28,7 @@ export default function IdentifierSelector({
   // Build list of selectable options
   const options: { value: string; label: string }[] = [
     { value: 'auto', label: 'Auto (try all)' },
-    ...recognizedIds.map(id => ({ value: id, label: getIdLabel(id) })),
+    ...recognizedIds.map(id => ({ value: id, label: getDbIdLabel(id) })),
   ]
 
   if (geneName) {

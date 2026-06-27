@@ -7,7 +7,7 @@ import { makeStyles } from 'tss-react/mui'
 import Checkbox2 from './Checkbox2'
 import { getTranscriptDisplayName, stripStopCodon } from '../utils/util'
 
-import type { Feature } from '@jbrowse/core/util'
+import type { IsoformSequences } from '../utils/util'
 
 const useStyles = makeStyles()({
   textAreaFont: {
@@ -23,7 +23,7 @@ export default function MSATable({
 }: {
   structureName: string
   structureSequence: string
-  isoformSequences: Record<string, { feature: Feature; seq: string }>
+  isoformSequences: IsoformSequences
 }) {
   const { classes } = useStyles()
   const [showInFastaFormat, setShowInFastaFormat] = useState(false)

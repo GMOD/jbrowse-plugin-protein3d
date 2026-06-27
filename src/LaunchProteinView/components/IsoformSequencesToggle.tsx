@@ -4,7 +4,7 @@ import { Button } from '@mui/material'
 
 import MSATable from './MSATable'
 
-import type { Feature } from '@jbrowse/core/util'
+import type { IsoformSequences } from '../utils/util'
 
 export default function IsoformSequencesToggle({
   structureSequence,
@@ -13,7 +13,7 @@ export default function IsoformSequencesToggle({
 }: {
   structureSequence: string
   structureName: string
-  isoformSequences: Record<string, { feature: Feature; seq: string }>
+  isoformSequences: IsoformSequences
 }) {
   const [show, setShow] = useState(false)
   return (

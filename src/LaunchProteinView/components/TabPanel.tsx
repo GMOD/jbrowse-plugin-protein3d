@@ -1,6 +1,8 @@
 import React from 'react'
 
-// this is from MUI example
+// Panels stay mounted and are hidden via the `hidden` attribute rather than
+// unmounted, so switching tabs preserves each tab's in-progress work (typed
+// UniProt ID, fetched results, selected transcript) instead of resetting it.
 export default function TabPanel({
   children,
   value,
@@ -13,7 +15,7 @@ export default function TabPanel({
 }) {
   return (
     <div role="tabpanel" hidden={value !== index} {...other}>
-      {value === index && <div>{children}</div>}
+      {children}
     </div>
   )
 }
