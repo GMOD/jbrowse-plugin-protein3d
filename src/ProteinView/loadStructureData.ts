@@ -1,12 +1,13 @@
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
 import { extractPerResidueConfidence } from './extractPerResidueConfidence'
-import { extractStructureSequences } from './extractStructureSequences'
+import { extractEntities } from './extractStructureSequences'
 
+import type { Entity } from './extractStructureSequences'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export interface StructureData {
-  sequences?: string[]
+  entities?: Entity[]
   confidence?: number[]
 }
 
@@ -28,9 +29,9 @@ export async function loadStructureData({
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
       : { model: undefined }
-  const sequences = model ? extractStructureSequences(model) : undefined
+  const entities = model ? extractEntities(model) : undefined
   const confidence = model
-    ? extractPerResidueConfidence(model, sequences?.[0]?.length)
+    ? extractPerResidueConfidence(model, entities?.[0]?.seq.length)
     : undefined
-  return { sequences, confidence }
+  return { entities, confidence }
 }

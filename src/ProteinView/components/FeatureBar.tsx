@@ -83,6 +83,7 @@ const FeatureBar = observer(function FeatureBar({
         structure,
         plugin: molstarPluginContext,
         channel: 'select',
+        entityId: model.mappedEntityId,
         spec: newSelected
           ? { kind: 'range', start: feature.start - 1, end: feature.end }
           : undefined,

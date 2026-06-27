@@ -48,11 +48,15 @@ export async function setMolstarLoci({
   plugin,
   channel,
   spec,
+  entityId,
 }: {
   structure: Structure
   plugin: PluginContext
   channel: 'highlight' | 'select'
   spec: ResidueSpec | undefined
+  /** Confine the loci to this mmCIF entity so a residue number doesn't light up
+   * on unrelated chains (binding partners, the other half of a homodimer). */
+  entityId?: string
 }) {
   const { lociHighlights, lociSelects } = plugin.managers.interactivity
   if (channel === 'highlight') {
@@ -66,6 +70,14 @@ export async function setMolstarLoci({
     const sel = Script.getStructureSelection(
       Q =>
         Q.struct.generator.atomGroups({
+          ...(entityId
+            ? {
+                'chain-test': Q.core.rel.eq([
+                  Q.struct.atomProperty.macromolecular.label_entity_id(),
+                  entityId,
+                ]),
+              }
+            : {}),
           'residue-test': specToTest(spec)(Q),
           'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
         }),

@@ -4,7 +4,10 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { loadStructureData } from './loadStructureData'
 import { makeStructureLoader } from './structureLoader'
 
+import type { Entity } from './extractStructureSequences'
 import type { StructureLoaderHost } from './structureLoader'
+
+const entity = (seq: string): Entity => ({ entityId: '1', seq })
 
 vi.mock('./loadStructureData', () => ({ loadStructureData: vi.fn() }))
 const mockLoad = vi.mocked(loadStructureData)
@@ -15,11 +18,11 @@ const TestStructure = types
   .model('TestStructure', {})
   .volatile(() => ({
     loadedToMolstar: false,
-    sequences: undefined as string[] | undefined,
+    entities: undefined as Entity[] | undefined,
   }))
   .actions(self => ({
-    setStructureData(d: { sequences?: string[] }) {
-      self.sequences = d.sequences
+    setStructureData(d: { entities?: Entity[] }) {
+      self.entities = d.entities
     },
     setLoadedToMolstar(v: boolean) {
       self.loadedToMolstar = v
@@ -55,13 +58,13 @@ beforeEach(() => {
 })
 
 test('loads a pending structure and marks it loaded', async () => {
-  mockLoad.mockResolvedValue({ sequences: ['ABC'] })
+  mockLoad.mockResolvedValue({ entities: [entity('ABC')] })
   const { load, structure } = setup({})
   load()
   expect(mockLoad).toHaveBeenCalledTimes(1)
   await tick()
   expect(structure.loadedToMolstar).toBe(true)
-  expect(structure.sequences).toEqual(['ABC'])
+  expect(structure.entities).toEqual([entity('ABC')])
 })
 
 test('does not start a second load while one is in flight', () => {
@@ -75,18 +78,18 @@ test('does not start a second load while one is in flight', () => {
 test('discards a stale-plugin result and reloads into the current plugin', async () => {
   const pluginA = { id: 'A' }
   const pluginB = { id: 'B' }
-  let resolveFirst: (v: { sequences?: string[] }) => void = () => {}
+  let resolveFirst: (v: { entities?: Entity[] }) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise(res => (resolveFirst = res)))
-    .mockResolvedValueOnce({ sequences: ['B'] })
+    .mockResolvedValueOnce({ entities: [entity('B')] })
 
   const { host, load, structure } = setup(pluginA)
   load() // starts loading into pluginA
   host.setPlugin(pluginB) // plugin swapped while loading
-  resolveFirst({ sequences: ['A'] }) // pluginA result arrives, now stale
+  resolveFirst({ entities: [entity('A')] }) // pluginA result arrives, now stale
   await tick()
 
-  expect(structure.sequences).toEqual(['B'])
+  expect(structure.entities).toEqual([entity('B')])
   expect(structure.loadedToMolstar).toBe(true)
   expect(mockLoad).toHaveBeenCalledTimes(2)
 })

@@ -9,6 +9,10 @@ import { autorun } from 'mobx'
 
 import { setMolstarLoci } from './applyLociInteractivity'
 import {
+  chooseMappedEntity,
+  interactionMatchesMappedEntity,
+} from './chooseMappedEntity'
+import {
   COMPACT_TRACK_GAP,
   COMPACT_TRACK_HEIGHT,
   NORMAL_TRACK_GAP,
@@ -21,7 +25,6 @@ import {
   structurePos,
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
-import { runLocalAlignment } from './pairwiseAlignment'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
@@ -32,12 +35,13 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction, {
   type MolstarLocationInfo,
 } from './subscribeMolstarInteraction'
+import { coerceAlignmentAlgorithm } from './types'
 import { checkHovered } from './util'
 import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
-import { coerceAlignmentAlgorithm } from './types'
 
+import type { Entity } from './extractStructureSequences'
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
@@ -125,7 +129,15 @@ const Structure = types
     /**
      * #volatile
      */
-    structureSequences: undefined as string[] | undefined,
+    entities: undefined as Entity[] | undefined,
+    /**
+     * #volatile
+     * Index into entities of the one that matches the transcript. Resolved by
+     * alignment (see chooseMappedEntity) instead of assuming the protein of
+     * interest is entity [0], which mis-maps heteromers / protein-DNA complexes /
+     * processed peptides.
+     */
+    mappedEntityIndex: 0,
     /**
      * #volatile
      * Per-residue B-factor / pLDDT for the first chain, indexed by 0-based
@@ -160,8 +172,8 @@ const Structure = types
     hiddenFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
-    setStructureData(data: { sequences?: string[]; confidence?: number[] }) {
-      self.structureSequences = data.sequences
+    setStructureData(data: { entities?: Entity[]; confidence?: number[] }) {
+      self.entities = data.entities
       self.structureConfidence = data.confidence
     },
     /**
@@ -250,11 +262,47 @@ const Structure = types
     /**
      * #action
      */
+    setMappedEntityIndex(n: number) {
+      self.mappedEntityIndex = n
+    },
+    /**
+     * #action
+     */
     setIsMouseInAlignment(val: boolean) {
       self.isMouseInAlignment = val
     },
   }))
   .views(self => ({
+    /**
+     * #getter
+     * Sequence strings of every polymer entity (back-compat for the alignment
+     * autorun and presence checks).
+     */
+    get structureSequences() {
+      return self.entities?.map(e => e.seq)
+    },
+    /**
+     * #getter
+     * The entity that maps to the transcript (chosen by chooseMappedEntity), not
+     * blindly entity [0].
+     */
+    get mappedEntity() {
+      return self.entities?.[self.mappedEntityIndex]
+    },
+    /**
+     * #getter
+     */
+    get mappedStructureSeq() {
+      return this.mappedEntity?.seq
+    },
+    /**
+     * #getter
+     * mmCIF entity id of the mapped entity. Used to reject hovers/clicks on
+     * other chains and to confine highlights to the gene's protein.
+     */
+    get mappedEntityId() {
+      return this.mappedEntity?.entityId
+    },
     /**
      * #getter
      * Extracts UniProt ID from AlphaFold URL if available
@@ -306,6 +354,9 @@ const Structure = types
      * #getter
      * Per-residue pLDDT values mapped to alignment columns, shown only when the
      * structure's B-factor column actually looks like AlphaFold confidence.
+     * pLDDT is an AlphaFold concept — those models are single-entity, so the
+     * mapped entity is always [0] and structureConfidence (extracted from [0])
+     * stays coherent.
      */
     get confidenceCells() {
       const c = self.structureConfidence
@@ -318,7 +369,7 @@ const Structure = types
      * Per-residue Kyte-Doolittle hydrophobicity mapped to alignment columns.
      */
     get hydrophobicityCells() {
-      const seq = self.structureSequences?.[0]
+      const seq = this.mappedStructureSeq
       return seq
         ? mapResidueValuesToColumns(
             kyteDoolittleScores(stripStopCodon(seq)),
@@ -510,8 +561,9 @@ const Structure = types
         return proteinAbbreviationMapping[code]?.singleLetterCode
       }
       const structurePos = this.structureSeqHoverPos
-      if (structurePos !== undefined && self.structureSequences?.[0]) {
-        return self.structureSequences[0][structurePos]
+      const seq = this.mappedStructureSeq
+      if (structurePos !== undefined && seq) {
+        return seq[structurePos]
       }
       return undefined
     },
@@ -562,7 +614,7 @@ const Structure = types
       return (
         !self.pairwiseAlignment &&
         !!self.userProvidedTranscriptSequence &&
-        !!self.structureSequences?.[0]
+        !!this.structureSequences?.length
       )
     },
 
@@ -571,8 +623,8 @@ const Structure = types
      */
     get exactMatch() {
       const r1 = stripStopCodon(self.userProvidedTranscriptSequence)
-      const r2 = self.structureSequences?.[0]
-        ? stripStopCodon(self.structureSequences[0])
+      const r2 = this.mappedStructureSeq
+        ? stripStopCodon(this.mappedStructureSeq)
         : undefined
       return r1 === r2
     },
@@ -711,32 +763,29 @@ const Structure = types
             const {
               userProvidedTranscriptSequence,
               structureSequences,
-              exactMatch,
               alignmentAlgorithm,
             } = self
-            const seq1 = userProvidedTranscriptSequence
-            const seq2 = structureSequences?.[0]
 
-            if (self.pairwiseAlignment || !seq1 || !seq2) {
+            if (
+              self.pairwiseAlignment ||
+              !userProvidedTranscriptSequence ||
+              !structureSequences?.length
+            ) {
               return
             }
-            const r1 = stripStopCodon(seq1)
-            const r2 = stripStopCodon(seq2)
-            if (exactMatch) {
-              self.setAlignment({
-                consensus: '|'.repeat(r1.length),
-                alns: [
-                  { id: 'seq1', seq: r1 },
-                  { id: 'seq2', seq: r2 },
-                ],
-              })
-            } else {
-              const pairwiseAlignment = runLocalAlignment(
-                r1,
-                r2,
-                alignmentAlgorithm,
-              )
-              self.setAlignment(pairwiseAlignment)
+            // Resolve which entity the transcript belongs to (not always [0])
+            // and align against it in one pass.
+            const selection = chooseMappedEntity(
+              userProvidedTranscriptSequence,
+              structureSequences,
+              alignmentAlgorithm,
+            )
+            if (!selection) {
+              return
+            }
+            self.setMappedEntityIndex(selection.index)
+            self.setAlignment(selection.alignment)
+            if (selection.matches < selection.alignment.alns[0].seq.length) {
               self.parentView.setShowAlignment(true)
             }
           } catch (e) {
@@ -774,15 +823,29 @@ const Structure = types
         }),
       )
 
-      // Click only acts on positive matches; clicks that didn't land on a
-      // structure element are ignored.
+      // Only the transcript's mapped entity drives genome navigation; a hover or
+      // click on any other chain is dropped (see interactionMatchesMappedEntity).
+      // Pass the mapped entity only once a mapping exists, so a standalone
+      // structure with no transcript stays fully interactive.
+      const forMappedEntity = (info?: MolstarLocationInfo) =>
+        info &&
+        interactionMatchesMappedEntity(
+          info.entityId,
+          self.coordinateMapper ? self.mappedEntityId : undefined,
+        )
+          ? info
+          : undefined
+
+      // Click only acts on positive matches; clicks that didn't land on the
+      // mapped entity are ignored.
       addInteractionListener('click', info => {
-        if (info) {
-          self.setHoveredPosition(info)
+        const hit = forMappedEntity(info)
+        if (hit) {
+          self.setHoveredPosition(hit)
           self.setSelectedFeatureId(undefined)
           clickProteinToGenome({
             model: self,
-            structureSeqPos: info.structureSeqPos,
+            structureSeqPos: hit.structureSeqPos,
           }).catch((e: unknown) => {
             console.error(e)
             self.parentView.setError(e)
@@ -791,7 +854,7 @@ const Structure = types
       })
 
       addInteractionListener('hover', info => {
-        self.setHoveredPosition(info)
+        self.setHoveredPosition(forMappedEntity(info))
       })
 
       // Drive the molstar 'select' channel (the persistent magenta selection)
@@ -820,6 +883,7 @@ const Structure = types
               structure: molstarStructure,
               plugin: molstarPluginContext,
               channel: 'select',
+              entityId: self.mappedEntityId,
               spec: clickedStructureRange
                 ? { kind: 'range', ...clickedStructureRange }
                 : showHighlight
@@ -846,6 +910,7 @@ const Structure = types
               structure: molstarStructure,
               plugin: molstarPluginContext,
               channel: 'highlight',
+              entityId: self.mappedEntityId,
               spec: hoverHighlightRange
                 ? { kind: 'range', ...hoverHighlightRange }
                 : undefined,

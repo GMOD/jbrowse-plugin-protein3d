@@ -14,6 +14,9 @@ export interface MolstarLocationInfo {
   structureSeqPos: number
   code: string
   chain: string
+  /** mmCIF label_entity_id of the hovered residue. Lets the model reject
+   * interactions on chains that aren't the transcript's mapped entity. */
+  entityId: string
 }
 
 function extractLocationInfo(
@@ -28,6 +31,7 @@ function extractLocationInfo(
       molstar.StructureProperties.residue.label_seq_id(location) - 1,
     code: molstar.StructureProperties.atom.label_comp_id(location),
     chain: molstar.StructureProperties.chain.auth_asym_id(location),
+    entityId: molstar.StructureProperties.entity.id(location),
   }
 }
 
