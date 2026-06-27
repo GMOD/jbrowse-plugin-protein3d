@@ -18,6 +18,9 @@ export interface Example {
   expect: string
   expectSeverity: Severity
   note: string
+  /** human gene symbol, for launching the real plugin in JBrowse (omit if the
+   * protein has no human gene, e.g. a viral chain) */
+  gene?: string
 }
 
 export const EXAMPLES: Example[] = [
@@ -26,6 +29,7 @@ export const EXAMPLES: Example[] = [
     source: 'alphafold',
     structureId: 'P04637',
     uniprot: 'P04637',
+    gene: 'TP53',
     expect: 'CLEAN',
     expectSeverity: 'ok',
     note: 'Single chain, fully modeled — the AlphaFold happy path.',
@@ -35,6 +39,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '4HHB',
     uniprot: 'P68871',
+    gene: 'HBB',
     expect: 'WRONG_CHAIN',
     expectSeverity: 'error',
     note: 'α/β tetramer. Plugin maps entity[0]=α; the β transcript belongs to entity[1].',
@@ -44,6 +49,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '1FIN',
     uniprot: 'P20248',
+    gene: 'CCNA2',
     expect: 'WRONG_CHAIN',
     expectSeverity: 'error',
     note: 'CDK2–cyclin A complex. entity[0]=CDK2, so a cyclin transcript mis-maps.',
@@ -55,13 +61,14 @@ export const EXAMPLES: Example[] = [
     uniprot: 'P0DTC2',
     expect: 'WRONG_CHAIN',
     expectSeverity: 'error',
-    note: 'entity[0]=human ACE2; the spike RBD is entity[1].',
+    note: 'entity[0]=human ACE2; the spike RBD is entity[1]. (viral chain — no human gene to launch from)',
   },
   {
     label: '1TUP → p53 (protein/DNA)',
     source: 'pdb',
     structureId: '1TUP',
     uniprot: 'P04637',
+    gene: 'TP53',
     expect: 'WRONG_CHAIN',
     expectSeverity: 'error',
     note: 'entity[0] and [1] are DNA strands; p53 is entity[2]. Plugin tries to map protein onto a DNA chain.',
@@ -71,6 +78,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '6M0J',
     uniprot: 'Q9BYF1',
+    gene: 'ACE2',
     expect: 'MULTI_ENTITY',
     expectSeverity: 'warn',
     note: 'Here ACE2 IS entity[0] so it maps correctly — but it is still a complex, and crystal disorder may drift the confidence track.',
@@ -80,6 +88,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '1TIT',
     uniprot: 'Q8WZ42',
+    gene: 'TTN',
     expect: 'PARTIAL_OR_REPEAT',
     expectSeverity: 'warn',
     note: 'One 98aa Ig domain out of a 34,350aa protein with hundreds of near-identical Ig repeats — local alignment can anchor to the wrong copy.',
@@ -89,6 +98,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '1N11',
     uniprot: 'P16157',
+    gene: 'ANK1',
     expect: 'PARTIAL_OR_REPEAT',
     expectSeverity: 'warn',
     note: 'D34 fragment (437aa) of an 1,881aa ankyrin-repeat protein.',
@@ -98,6 +108,7 @@ export const EXAMPLES: Example[] = [
     source: 'pdb',
     structureId: '4INS',
     uniprot: 'P01315',
+    gene: 'INS',
     expect: 'PARTIAL_OR_REPEAT',
     expectSeverity: 'warn',
     note: 'Proprotein cleaved into A+B chains (separate entities); each covers only a fraction of the UniProt proprotein.',
@@ -107,6 +118,7 @@ export const EXAMPLES: Example[] = [
     source: 'alphafold',
     structureId: 'P51587',
     uniprot: 'P51587',
+    gene: 'BRCA2',
     expect: 'AF_FRAGMENT',
     expectSeverity: 'warn',
     note: 'BRCA2 is 3,418aa; AlphaFold serves it in fragments but the plugin only ever loads F1 (~1,400aa). (large — alignment takes a moment)',

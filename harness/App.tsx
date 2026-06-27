@@ -15,6 +15,21 @@ const pdbUrl = (id: string) => `https://files.rcsb.org/download/${id}.cif`
 const alphaFoldUrl = (acc: string) =>
   `https://alphafold.ebi.ac.uk/files/AF-${acc}-F1-model_v6.cif`
 
+// Deep-link into the real plugin running in the hosted webgl-poc JBrowse build,
+// using the config.json published alongside this page.
+const CODE_APP = 'https://jbrowse.org/code/jb2/webgl-poc/'
+const GENCODE_TRACK = 'gencode.v44.annotation.sorted.gff3'
+function jbrowseUrl(gene: string) {
+  const config = new URL('config.json', window.location.href).href
+  const params = new URLSearchParams({
+    config,
+    assembly: 'hg38',
+    loc: gene,
+    tracks: GENCODE_TRACK,
+  })
+  return `${CODE_APP}?${params.toString()}`
+}
+
 type Source = 'pdb' | 'alphafold' | 'url'
 
 interface RunInput {
@@ -130,9 +145,10 @@ export default function App() {
           PDB ↔ transcript mapping harness
         </div>
         <div style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>
-          Loads a structure through the plugin's real mapping code and flags what
-          its entity-[0]-only, label_seq_id mapping does to multi-chain / partial
-          structures.
+          Surfaces how the plugin's entity-[0]-only, label_seq_id mapping breaks
+          on multi-chain / partial structures. Run the plugin's mapping code here
+          for a fast verdict, or open any example gene in the real plugin via its{' '}
+          <strong>↗ JBrowse</strong> link.
         </div>
 
         <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
@@ -176,44 +192,75 @@ export default function App() {
         {status ? <div style={{ color: '#b00020', fontSize: 12 }}>{status}</div> : null}
 
         <div style={{ fontWeight: 'bold', fontSize: 11, margin: '8px 0 2px' }}>
-          Examples (click to load)
+          Examples
+        </div>
+        <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
+          <strong>name</strong> = fast verdict here · <strong>↗ JBrowse</strong>{' '}
+          = open the gene in the real plugin (webgl-poc), then right-click →
+          Launch protein view → enter the PDB ID.
         </div>
         {EXAMPLES.map(ex => (
-          <button
-            key={ex.label}
-            onClick={() => applyExample(ex)}
-            disabled={busy}
-            title={ex.note}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              width: '100%',
-              textAlign: 'left',
-              border: '1px solid #ddd',
-              background: '#fff',
-              padding: '3px 6px',
-              marginBottom: 2,
-              cursor: busy ? 'default' : 'pointer',
-              fontSize: 12,
-            }}
-          >
-            <span
+          <div key={ex.label} style={{ display: 'flex', alignItems: 'stretch', gap: 2, marginBottom: 2 }}>
+            <button
+              onClick={() => applyExample(ex)}
+              disabled={busy}
+              title={ex.note}
               style={{
-                fontSize: 9,
-                color: '#fff',
-                background: sevColor[ex.expectSeverity],
-                borderRadius: 3,
-                padding: '1px 4px',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                flex: 1,
+                minWidth: 0,
+                textAlign: 'left',
+                border: '1px solid #ddd',
+                background: '#fff',
+                padding: '3px 6px',
+                cursor: busy ? 'default' : 'pointer',
+                fontSize: 12,
               }}
             >
-              {ex.expect}
-            </span>
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {ex.label}
-            </span>
-          </button>
+              <span
+                style={{
+                  fontSize: 9,
+                  color: '#fff',
+                  background: sevColor[ex.expectSeverity],
+                  borderRadius: 3,
+                  padding: '1px 4px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {ex.expect}
+              </span>
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {ex.label}
+              </span>
+            </button>
+            {ex.gene ? (
+              <a
+                href={jbrowseUrl(ex.gene)}
+                target="_blank"
+                rel="noreferrer"
+                title={
+                  ex.source === 'pdb'
+                    ? `Open ${ex.gene} in JBrowse → right-click → Launch protein view → PDB ID ${ex.structureId}`
+                    : `Open ${ex.gene} in JBrowse → right-click → Launch protein view (AlphaFold)`
+                }
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  border: '1px solid #ddd',
+                  padding: '0 6px',
+                  fontSize: 11,
+                  textDecoration: 'none',
+                  whiteSpace: 'nowrap',
+                  color: '#0645ad',
+                  background: '#f6f8fa',
+                }}
+              >
+                ↗ JBrowse
+              </a>
+            ) : null}
+          </div>
         ))}
 
         {diag && loaded ? <Report diag={diag} loaded={loaded} transcript={transcript} /> : null}

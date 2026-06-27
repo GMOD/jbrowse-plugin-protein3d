@@ -6,6 +6,17 @@ plugin's **actual** molstar path (`addStructureFromURL` → `createModel` →
 (`runLocalAlignment`, `structureSeqVsTranscriptSeqMap`), then surfaces the
 biological cases the plugin mishandles.
 
+## Two ways to exercise the plugin
+
+- **Fast verdict (this page):** click an example to run the plugin's mapping
+  code in isolation and get the entity table + verdicts immediately.
+- **Real plugin end-to-end:** each example's **↗ JBrowse** link opens its gene
+  in the live `webgl-poc` JBrowse build
+  (`jbrowse.org/code/jb2/webgl-poc`) using the `config.json` served next to this
+  page (`public/config.json`). Right-click the gene → *Launch protein view* →
+  enter the PDB ID to watch the linked genome↔structure mouseover (and the
+  mis-mapping) in the actual plugin.
+
 ## Run
 
 ```
