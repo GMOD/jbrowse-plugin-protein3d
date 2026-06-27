@@ -3,6 +3,14 @@ import loadMolstar from './loadMolstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export interface MolstarLocationInfo {
+  /**
+   * 0-based label position (label_seq_id - 1). This is the plugin's canonical
+   * structure coordinate: structureSequences, the coordinate maps, and the
+   * outbound highlight in setMolstarLoci are all label-based, so the inbound
+   * read must be too. For AlphaFold structures label_seq_id == auth_seq_id, but
+   * for PDB structures whose author numbering is offset or gapped they diverge,
+   * and reading auth_seq_id here would mis-map every hover/click.
+   */
   structureSeqPos: number
   code: string
   chain: string
@@ -17,7 +25,7 @@ function extractLocationInfo(
 ): MolstarLocationInfo {
   return {
     structureSeqPos:
-      molstar.StructureProperties.residue.auth_seq_id(location) - 1,
+      molstar.StructureProperties.residue.label_seq_id(location) - 1,
     code: molstar.StructureProperties.atom.label_comp_id(location),
     chain: molstar.StructureProperties.chain.auth_asym_id(location),
   }
