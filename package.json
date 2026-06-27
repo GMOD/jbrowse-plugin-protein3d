@@ -24,6 +24,7 @@
     "test:version": "node scripts/test-versions.mjs run",
     "test:docs": "node scripts/test-docs.mjs",
     "clean": "rimraf dist",
+    "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
     "fetch-molstar-css": "node scripts/fetch-molstar-css.mjs",
     "format": "pnpm prettier --write .",
     "prebuild": "pnpm clean",

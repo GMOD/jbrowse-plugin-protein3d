@@ -34,4 +34,21 @@ For a chosen structure + transcript (paste a sequence or fetch by UniProt acc):
 - **Coordinate-map sample** — the real `structureSeqToTranscriptSeqPosition`
   map the plugin would build for entity `[0]`.
 
-Try the built-in examples (6M0J, 4HHB, 1IGT, AF BRCA1) to see each verdict fire.
+## Examples
+
+Built-in examples live in `examples.ts`, each grounded against the RCSB data API
+and tagged with the verdict it should produce:
+
+| example | what it shows |
+| --- | --- |
+| AF p53 | `CLEAN` — single chain, full length |
+| 4HHB → β / 1FIN → cyclin A / 6M0J → spike | `WRONG_CHAIN` — protein of interest isn't entity [0] |
+| 1TUP → p53 | `WRONG_CHAIN` — entity [0] is a DNA strand |
+| 6M0J → ACE2 | `MULTI_ENTITY` contrast — [0] is right, but still a complex |
+| 1TIT / 1N11 / 4INS | `PARTIAL_OR_REPEAT` — domain/fragment & repeat anchoring |
+| AF BRCA2 | `AF_FRAGMENT` — >2700 aa, only F1 loaded |
+
+To add one: find a PDB's entities at
+`https://data.rcsb.org/rest/v1/core/polymer_entity/<PDBID>/<n>`, note which is
+entity [0] and which UniProt you care about, and append a row to `EXAMPLES`.
+

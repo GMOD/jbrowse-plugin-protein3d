@@ -11,6 +11,16 @@ It has features to automatically look up a protein structure of interest using
 the UniProt ID mapping API to connect to AlphaFoldDB, and can also use Foldseek
 to look up related structures also
 
+## Coordinate-mapping harness
+
+A standalone diagnostic page that loads real PDB / AlphaFold structures through
+the plugin's actual mapping code and surfaces cases it mishandles (multi-chain
+complexes, partial/repeat structures, AlphaFold fragments):
+
+https://gmod.github.io/jbrowse-plugin-protein3d/
+
+Source and details in [harness/](harness/).
+
 ## Screenshot
 
 ![](img/1.png)

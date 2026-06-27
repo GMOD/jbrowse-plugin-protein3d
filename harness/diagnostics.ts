@@ -35,11 +35,20 @@ export interface Diagnosis {
   verdicts: Verdict[]
 }
 
+// Smith-Waterman/Needleman-Wunsch are O(transcript × structure); cap the
+// product so a huge pasted sequence can't freeze the tab.
+const MAX_ALIGN_CELLS = 25_000_000
+
 function analyzeEntity(
   transcript: string,
   entity: EntityInfo,
   algorithm: AlignmentAlgorithm,
 ): EntityAlignment {
+  if (transcript.length * entity.seqLength > MAX_ALIGN_CELLS) {
+    throw new Error(
+      `alignment too large (${transcript.length}×${entity.seqLength}); paste a shorter sequence`,
+    )
+  }
   const pa = runLocalAlignment(transcript, entity.seq, algorithm)
   const a = pa.alns[0].seq
   const b = pa.alns[1].seq
@@ -127,11 +136,14 @@ export function diagnose({
     })
   }
 
-  if (isAlphaFold) {
+  // AlphaFold URLs are hardcoded to F1. That only loses data when the protein
+  // is long enough to be fragmented (>2700 aa) — i.e. the transcript runs well
+  // past what the loaded F1 structure covers.
+  if (isAlphaFold && used && transcript.length > used.entity.seqLength + 50) {
     verdicts.push({
       severity: 'warn',
       code: 'AF_FRAGMENT',
-      message: `AlphaFold URLs are hardcoded to fragment F1. Proteins >2700 aa are split into F1..Fn with offset numbering, so only the first ~1400 residues are ever loaded.`,
+      message: `Transcript is ${transcript.length} aa but the loaded AlphaFold structure only has ${used.entity.seqLength}. AlphaFold splits proteins >2700 aa into F1..Fn and the plugin hardcodes F1, so everything past ~residue ${used.entity.seqLength} is silently missing.`,
     })
   }
 

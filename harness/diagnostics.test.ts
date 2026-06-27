@@ -47,11 +47,21 @@ test('clean single fully-modeled entity reports CLEAN', () => {
   expect(d.verdicts.map(v => v.code)).toEqual(['CLEAN'])
 })
 
-test('AF_FRAGMENT fires for alphafold source', () => {
+test('AF_FRAGMENT fires when an AlphaFold structure is shorter than the transcript', () => {
+  const loaded: LoadedStructure = {
+    entities: [entity({ index: 0, seq: ACE2 })], // 59aa "F1"
+    ligands: [],
+  }
+  const longTranscript = ACE2.repeat(3) // transcript far longer than loaded structure
+  const d = diagnose({ loaded, transcript: longTranscript, algorithm: 'smith_waterman', isAlphaFold: true })
+  expect(d.verdicts.map(v => v.code)).toContain('AF_FRAGMENT')
+})
+
+test('full-length AlphaFold (structure == transcript) does NOT report AF_FRAGMENT', () => {
   const loaded: LoadedStructure = {
     entities: [entity({ index: 0, seq: ACE2 })],
     ligands: [],
   }
   const d = diagnose({ loaded, transcript: ACE2, algorithm: 'smith_waterman', isAlphaFold: true })
-  expect(d.verdicts.map(v => v.code)).toContain('AF_FRAGMENT')
+  expect(d.verdicts.map(v => v.code)).not.toContain('AF_FRAGMENT')
 })

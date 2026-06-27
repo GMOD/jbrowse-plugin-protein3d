@@ -1,9 +1,11 @@
 import React, { useRef, useState } from 'react'
 
 import { diagnose, sampleCoordinateMap } from './diagnostics'
+import { EXAMPLES } from './examples'
 import { createPlugin, loadAndIntrospect } from './molstar'
 
-import type { Diagnosis } from './diagnostics'
+import type { Diagnosis, Severity } from './diagnostics'
+import type { Example } from './examples'
 import type { LoadedStructure } from './molstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
@@ -25,46 +27,7 @@ async function fetchUniProtSeq(acc: string) {
     .join('')
 }
 
-interface Example {
-  label: string
-  note: string
-  source: 'pdb' | 'alphafold'
-  structureId: string
-  uniprot: string
-}
-
-const EXAMPLES: Example[] = [
-  {
-    label: '6M0J — SARS-CoV-2 RBD + human ACE2',
-    note: 'Heterodimer. Pick the ACE2 transcript and see which entity the plugin actually maps.',
-    source: 'pdb',
-    structureId: '6M0J',
-    uniprot: 'Q9BYF1',
-  },
-  {
-    label: '4HHB — hemoglobin (α/β tetramer)',
-    note: 'Two distinct polymer entities. Pick HBB and watch entity [0] (α) win.',
-    source: 'pdb',
-    structureId: '4HHB',
-    uniprot: 'P68871',
-  },
-  {
-    label: '1IGT — intact IgG antibody',
-    note: 'Light + heavy chains, multiple entities, lots of unmodeled residues.',
-    source: 'pdb',
-    structureId: '1IGT',
-    uniprot: 'P01857',
-  },
-  {
-    label: 'AF P38398 — BRCA1 (full length)',
-    note: 'AlphaFold happy path: single chain, fully modeled.',
-    source: 'alphafold',
-    structureId: 'P38398',
-    uniprot: 'P38398',
-  },
-]
-
-const sevColor: Record<string, string> = {
+const sevColor: Record<Severity, string> = {
   error: '#b00020',
   warn: '#9a6700',
   ok: '#1a7f37',
@@ -156,7 +119,18 @@ export default function App() {
             <div key={ex.label} style={{ margin: '6px 0' }}>
               <button onClick={() => applyExample(ex)} disabled={busy}>
                 {ex.label}
-              </button>
+              </button>{' '}
+              <span
+                style={{
+                  fontSize: 10,
+                  color: '#fff',
+                  background: sevColor[ex.expectSeverity],
+                  borderRadius: 3,
+                  padding: '1px 4px',
+                }}
+              >
+                {ex.expect}
+              </span>
               <div style={{ fontSize: 11, color: '#666' }}>{ex.note}</div>
             </div>
           ))}
