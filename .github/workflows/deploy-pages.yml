@@ -6,6 +6,8 @@ on:
     paths:
       - 'harness/**'
       - 'src/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
