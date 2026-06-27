@@ -4,6 +4,7 @@ import { getSession } from '@jbrowse/core/util'
 import { autorun, untracked } from 'mobx'
 import { observer } from 'mobx-react'
 
+import { findConnectedMsaView } from './findConnectedMsaView'
 import { findStructureRowName } from './msaRowMatch'
 import { getProteinView } from './util'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
@@ -31,6 +32,7 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 interface MsaView {
   id: string
   type: string
+  connectedViewId?: string
   mouseCol?: number
   setMousePos?: (col?: number, row?: number) => void
   rowMap?: Map<string, string>
@@ -51,10 +53,13 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
 
   const proteinView = getProteinView(session)
 
-  const connectedMsaViewId = proteinView?.connectedMsaViewId
-  const msaView = connectedMsaViewId
-    ? (views.find(f => f.id === connectedMsaViewId) as MsaView | undefined)
-    : undefined
+  // pair with the MSA either by an explicit connectedMsaViewId or, in the
+  // genome-centric flow, by the genome view this structure and the MSA both
+  // connect to (see findConnectedMsaView)
+  const msaView = findConnectedMsaView(views as unknown as MsaView[], {
+    connectedMsaViewId: proteinView?.connectedMsaViewId,
+    structureViewId: proteinView?.primaryStructure?.connectedViewId,
+  })
 
   useEffect(() => {
     if (!proteinView || !msaView) {
