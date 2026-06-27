@@ -15,6 +15,16 @@ const pdbUrl = (id: string) => `https://files.rcsb.org/download/${id}.cif`
 const alphaFoldUrl = (acc: string) =>
   `https://alphafold.ebi.ac.uk/files/AF-${acc}-F1-model_v6.cif`
 
+type Source = 'pdb' | 'alphafold' | 'url'
+
+interface RunInput {
+  source: Source
+  structureId: string
+  customUrl: string
+  uniprot: string
+  transcript: string
+}
+
 async function fetchUniProtSeq(acc: string) {
   const res = await fetch(`https://rest.uniprot.org/uniprotkb/${acc}.fasta`)
   if (!res.ok) {
@@ -36,7 +46,7 @@ const sevColor: Record<Severity, string> = {
 export default function App() {
   const viewerRef = useRef<HTMLDivElement>(null)
   const pluginRef = useRef<PluginContext | null>(null)
-  const [source, setSource] = useState<'pdb' | 'alphafold' | 'url'>('pdb')
+  const [source, setSource] = useState<Source>('pdb')
   const [structureId, setStructureId] = useState('6M0J')
   const [customUrl, setCustomUrl] = useState('')
   const [uniprot, setUniprot] = useState('Q9BYF1')
@@ -46,17 +56,18 @@ export default function App() {
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
 
-  const structureUrl =
-    source === 'url'
-      ? customUrl
-      : source === 'alphafold'
-        ? alphaFoldUrl(structureId)
-        : pdbUrl(structureId)
-
-  async function run() {
+  // Takes explicit input so an example click can run immediately without
+  // waiting for setState to flush.
+  async function run(input: RunInput) {
     setBusy(true)
     setDiag(undefined)
     setLoaded(undefined)
+    const url =
+      input.source === 'url'
+        ? input.customUrl
+        : input.source === 'alphafold'
+          ? alphaFoldUrl(input.structureId)
+          : pdbUrl(input.structureId)
     try {
       if (!pluginRef.current && viewerRef.current) {
         setStatus('Initializing molstar…')
@@ -64,27 +75,25 @@ export default function App() {
       }
       const plugin = pluginRef.current!
 
-      let seq = transcript.trim().replaceAll(/\s+/g, '')
-      if (!seq && uniprot.trim()) {
-        setStatus(`Fetching UniProt ${uniprot}…`)
-        seq = await fetchUniProtSeq(uniprot.trim())
+      let seq = input.transcript.trim().replaceAll(/\s+/g, '')
+      if (!seq && input.uniprot.trim()) {
+        setStatus(`Fetching UniProt ${input.uniprot}…`)
+        seq = await fetchUniProtSeq(input.uniprot.trim())
         setTranscript(seq)
       }
       if (!seq) {
-        throw new Error('Provide a transcript/protein sequence or UniProt acc')
+        throw new Error('Provide a sequence or UniProt accession')
       }
 
-      setStatus(`Loading ${structureUrl}…`)
-      const result = await loadAndIntrospect({ url: structureUrl, plugin })
+      setStatus(`Loading ${url}…`)
+      const result = await loadAndIntrospect({ url, plugin })
       setLoaded(result)
-
-      setStatus('Diagnosing…')
       setDiag(
         diagnose({
           loaded: result,
           transcript: seq,
           algorithm: 'smith_waterman',
-          isAlphaFold: source === 'alphafold',
+          isAlphaFold: input.source === 'alphafold',
         }),
       )
       setStatus('')
@@ -96,90 +105,116 @@ export default function App() {
     }
   }
 
+  function runCurrent() {
+    void run({ source, structureId, customUrl, uniprot, transcript })
+  }
+
   function applyExample(ex: Example) {
     setSource(ex.source)
     setStructureId(ex.structureId)
     setUniprot(ex.uniprot)
     setTranscript('')
+    void run({
+      source: ex.source,
+      structureId: ex.structureId,
+      customUrl: '',
+      uniprot: ex.uniprot,
+      transcript: '',
+    })
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif' }}>
-      <div style={{ width: 520, overflow: 'auto', padding: 16, borderRight: '1px solid #ddd' }}>
-        <h2 style={{ marginTop: 0 }}>PDB ↔ transcript mapping harness</h2>
-        <p style={{ color: '#555', fontSize: 13 }}>
-          Loads a structure through the plugin's real molstar path and shows what
+    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif', fontSize: 13 }}>
+      <div style={{ width: 460, overflow: 'auto', padding: 10, borderRight: '1px solid #ddd' }}>
+        <div style={{ fontWeight: 'bold', marginBottom: 2 }}>
+          PDB ↔ transcript mapping harness
+        </div>
+        <div style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>
+          Loads a structure through the plugin's real mapping code and flags what
           its entity-[0]-only, label_seq_id mapping does to multi-chain / partial
           structures.
-        </p>
-
-        <div style={{ marginBottom: 12 }}>
-          <strong>Examples</strong>
-          {EXAMPLES.map(ex => (
-            <div key={ex.label} style={{ margin: '6px 0' }}>
-              <button onClick={() => applyExample(ex)} disabled={busy}>
-                {ex.label}
-              </button>{' '}
-              <span
-                style={{
-                  fontSize: 10,
-                  color: '#fff',
-                  background: sevColor[ex.expectSeverity],
-                  borderRadius: 3,
-                  padding: '1px 4px',
-                }}
-              >
-                {ex.expect}
-              </span>
-              <div style={{ fontSize: 11, color: '#666' }}>{ex.note}</div>
-            </div>
-          ))}
         </div>
 
-        <fieldset style={{ marginBottom: 12 }}>
-          <legend>Structure</legend>
-          {(['pdb', 'alphafold', 'url'] as const).map(s => (
-            <label key={s} style={{ marginRight: 8 }}>
-              <input type="radio" checked={source === s} onChange={() => setSource(s)} />{' '}
-              {s === 'pdb' ? 'PDB ID' : s === 'alphafold' ? 'AlphaFold UniProt' : 'URL'}
-            </label>
-          ))}
-          <div style={{ marginTop: 6 }}>
-            {source === 'url' ? (
-              <input
-                style={{ width: '100%' }}
-                placeholder="https://…/structure.cif"
-                value={customUrl}
-                onChange={e => setCustomUrl(e.target.value)}
-              />
-            ) : (
-              <input
-                value={structureId}
-                onChange={e => setStructureId(e.target.value)}
-                placeholder={source === 'pdb' ? 'e.g. 6M0J' : 'e.g. P38398'}
-              />
-            )}
-          </div>
-        </fieldset>
-
-        <fieldset style={{ marginBottom: 12 }}>
-          <legend>Transcript / protein sequence</legend>
-          <div>
-            UniProt acc:{' '}
-            <input value={uniprot} onChange={e => setUniprot(e.target.value)} placeholder="auto-fetch if box below empty" />
-          </div>
-          <textarea
-            style={{ width: '100%', height: 70, marginTop: 6, fontFamily: 'monospace', fontSize: 11 }}
-            placeholder="…or paste a protein sequence (overrides UniProt)"
-            value={transcript}
-            onChange={e => setTranscript(e.target.value)}
+        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
+          <select value={source} onChange={e => setSource(e.target.value as Source)}>
+            <option value="pdb">PDB ID</option>
+            <option value="alphafold">AlphaFold</option>
+            <option value="url">URL</option>
+          </select>
+          {source === 'url' ? (
+            <input
+              style={{ flex: 1, minWidth: 140 }}
+              placeholder="https://…/structure.cif"
+              value={customUrl}
+              onChange={e => setCustomUrl(e.target.value)}
+            />
+          ) : (
+            <input
+              style={{ width: 90 }}
+              value={structureId}
+              onChange={e => setStructureId(e.target.value)}
+              placeholder={source === 'pdb' ? '6M0J' : 'P38398'}
+            />
+          )}
+          <input
+            style={{ width: 90 }}
+            value={uniprot}
+            onChange={e => setUniprot(e.target.value)}
+            placeholder="UniProt"
+            title="UniProt accession — auto-fetched if the sequence box is empty"
           />
-        </fieldset>
+          <button onClick={() => runCurrent()} disabled={busy} style={{ fontWeight: 'bold' }}>
+            {busy ? 'Working…' : 'Load'}
+          </button>
+        </div>
+        <textarea
+          style={{ width: '100%', height: 36, fontFamily: 'monospace', fontSize: 10, boxSizing: 'border-box' }}
+          placeholder="optional: paste a protein sequence (overrides UniProt)"
+          value={transcript}
+          onChange={e => setTranscript(e.target.value)}
+        />
+        {status ? <div style={{ color: '#b00020', fontSize: 12 }}>{status}</div> : null}
 
-        <button onClick={() => void run()} disabled={busy} style={{ fontSize: 16, padding: '6px 16px' }}>
-          {busy ? 'Working…' : 'Load & diagnose'}
-        </button>
-        {status ? <div style={{ marginTop: 8, color: '#b00020' }}>{status}</div> : null}
+        <div style={{ fontWeight: 'bold', fontSize: 11, margin: '8px 0 2px' }}>
+          Examples (click to load)
+        </div>
+        {EXAMPLES.map(ex => (
+          <button
+            key={ex.label}
+            onClick={() => applyExample(ex)}
+            disabled={busy}
+            title={ex.note}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              width: '100%',
+              textAlign: 'left',
+              border: '1px solid #ddd',
+              background: '#fff',
+              padding: '3px 6px',
+              marginBottom: 2,
+              cursor: busy ? 'default' : 'pointer',
+              fontSize: 12,
+            }}
+          >
+            <span
+              style={{
+                fontSize: 9,
+                color: '#fff',
+                background: sevColor[ex.expectSeverity],
+                borderRadius: 3,
+                padding: '1px 4px',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {ex.expect}
+            </span>
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {ex.label}
+            </span>
+          </button>
+        ))}
 
         {diag && loaded ? <Report diag={diag} loaded={loaded} transcript={transcript} /> : null}
       </div>
@@ -187,6 +222,12 @@ export default function App() {
       <div ref={viewerRef} style={{ flex: 1, position: 'relative' }} />
     </div>
   )
+}
+
+const sectionHead: React.CSSProperties = {
+  fontWeight: 'bold',
+  fontSize: 12,
+  margin: '10px 0 3px',
 }
 
 function Report({
@@ -204,17 +245,17 @@ function Report({
   const sample = mapKeys.slice(0, 8)
 
   return (
-    <div style={{ marginTop: 16 }}>
-      <h3>Verdicts</h3>
+    <div>
+      <div style={sectionHead}>Verdicts</div>
       {diag.verdicts.map(v => (
         <div
           key={v.code}
           style={{
             borderLeft: `4px solid ${sevColor[v.severity]}`,
-            padding: '4px 8px',
-            margin: '6px 0',
+            padding: '3px 6px',
+            margin: '3px 0',
             background: '#fafafa',
-            fontSize: 13,
+            fontSize: 12,
           }}
         >
           <strong style={{ color: sevColor[v.severity] }}>{v.code}</strong>
@@ -222,12 +263,12 @@ function Report({
         </div>
       ))}
 
-      <h3>Polymer entities ({loaded.entities.length})</h3>
-      <table style={{ borderCollapse: 'collapse', fontSize: 12, width: '100%' }}>
+      <div style={sectionHead}>Polymer entities ({loaded.entities.length})</div>
+      <table style={{ borderCollapse: 'collapse', fontSize: 11, width: '100%' }}>
         <thead>
           <tr>
             {['#', 'entity', 'chains', 'len', 'modeled', 'id%', 'tx-cov%', 'role'].map(h => (
-              <th key={h} style={{ border: '1px solid #ccc', padding: '2px 4px', textAlign: 'left' }}>{h}</th>
+              <th key={h} style={{ ...cell, textAlign: 'left' }}>{h}</th>
             ))}
           </tr>
         </thead>
@@ -244,27 +285,27 @@ function Report({
                 <td style={cell}>{a.entity.observedCount}</td>
                 <td style={cell}>{(a.identity * 100).toFixed(0)}</td>
                 <td style={cell}>{(a.transcriptCoverage * 100).toFixed(0)}</td>
-                <td style={cell}>{used ? 'USED[0]' : best ? 'best-match' : ''}</td>
+                <td style={cell}>{used ? 'USED[0]' : best ? 'best' : ''}</td>
               </tr>
             )
           })}
         </tbody>
       </table>
       {loaded.ligands.length ? (
-        <div style={{ fontSize: 11, color: '#666', marginTop: 4 }}>
+        <div style={{ fontSize: 10, color: '#666', marginTop: 3 }}>
           + non-polymer: {loaded.ligands.join(', ')}
         </div>
       ) : null}
 
-      <h3>Coordinate map sample (entity [0])</h3>
-      <div style={{ fontSize: 11, color: '#666' }}>
-        structureSeqPos → transcriptPos, first {sample.length} of {mapKeys.length} mapped:
+      <div style={sectionHead}>Coordinate map sample (entity [0])</div>
+      <div style={{ fontSize: 10, color: '#666' }}>
+        structureSeqPos → transcriptPos, first {sample.length} of {mapKeys.length}:
       </div>
-      <code style={{ fontSize: 11 }}>
+      <code style={{ fontSize: 10 }}>
         {sample.map(k => `${k}→${map[k]}`).join('  ') || '(none — entity [0] does not map to this transcript)'}
       </code>
     </div>
   )
 }
 
-const cell: React.CSSProperties = { border: '1px solid #ccc', padding: '2px 4px' }
+const cell: React.CSSProperties = { border: '1px solid #ccc', padding: '1px 4px' }
