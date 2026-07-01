@@ -1,5 +1,5 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import { getCodonRange } from 'g2p_mapper'
+import { getCodonRanges } from 'g2p_mapper'
 import { action, computed, makeObservable, observable } from 'mobx'
 
 import { genomeToTranscriptSeqMapping } from '../mappings'
@@ -14,7 +14,7 @@ export interface Protein1DViewInfo {
 }
 
 interface GenomeToTranscriptMapping {
-  p2g: Record<number, number>
+  p2gCodon: Record<number, number[]>
   g2p: Record<number, number>
   strand: number
   refName: string
@@ -91,13 +91,16 @@ class Protein1DViewRegistry {
       return undefined
     }
 
-    const { p2g, strand, refName } = mapping
-    const result = getCodonRange(p2g, proteinPos, strand)
-    if (!result) {
+    const { p2gCodon, refName } = mapping
+    // getCodonRanges handles codons spanning an exon boundary correctly; the
+    // highlight span encloses all genomic pieces of the codon.
+    const ranges = getCodonRanges(p2gCodon, proteinPos)
+    if (!ranges || ranges.length === 0) {
       return undefined
     }
 
-    const [start, end] = result
+    const start = Math.min(...ranges.map(r => r[0]))
+    const end = Math.max(...ranges.map(r => r[1]))
     return { refName, start, end }
   }
 }

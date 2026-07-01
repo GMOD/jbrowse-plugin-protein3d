@@ -1,12 +1,12 @@
 import { getSession } from '@jbrowse/core/util'
-import { getCodonRange } from 'g2p_mapper'
+import { getCodonRanges } from 'g2p_mapper'
 
 import type { PairwiseAlignment } from '../mappings'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 interface GenomeToTranscriptSeqMapping {
-  p2g: Record<number, number>
+  p2gCodon: Record<number, number[]>
   strand: number
   refName: string
 }
@@ -51,14 +51,23 @@ export function proteinToGenomeMapping({
     return undefined
   }
 
-  const { p2g, strand } = genomeToTranscriptSeqMapping
+  const { p2gCodon } = genomeToTranscriptSeqMapping
   const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
 
   if (transcriptPos === undefined) {
     return undefined
   }
 
-  return getCodonRange(p2g, transcriptPos, strand)
+  // getCodonRanges (vs getCodonRange) returns the correct genomic pieces for a
+  // codon that straddles an exon/intron boundary; collapse to the enclosing
+  // [start, end) span for navigation.
+  const ranges = getCodonRanges(p2gCodon, transcriptPos)
+  if (!ranges || ranges.length === 0) {
+    return undefined
+  }
+  const start = Math.min(...ranges.map(r => r[0]))
+  const end = Math.max(...ranges.map(r => r[1]))
+  return [start, end] as const
 }
 
 /**
