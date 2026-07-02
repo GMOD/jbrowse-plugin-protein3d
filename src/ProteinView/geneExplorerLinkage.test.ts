@@ -1,11 +1,11 @@
 import { types } from '@jbrowse/mobx-state-tree'
 import { expect, test, vi } from 'vitest'
 
-import Structure from './structureModel'
 import {
   navigateToProteinPosition,
   proteinToGenomeMapping,
 } from './proteinToGenomeMapping'
+import Structure from './structureModel'
 
 import type { AlignmentAlgorithm } from './types'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
@@ -179,6 +179,23 @@ test('zoomToBaseLevel navigation emits a 1-based locString for the codon', async
   // getCodonRanges yields 0-based half-open [start, end); the locString start
   // must be 1-based (parseLocString subtracts 1), so it reads start+1..end.
   expect(locString).toBe(`chr17:${start + 1}-${end}[rev]`)
+})
+
+test('genome<->protein hover directions are mutual inverses', () => {
+  const model = makeModel()
+  const m = model.genomeToTranscriptSeqMapping!
+  // for every CDS base, the residue it maps to (genome->protein direction) must
+  // report a codon span (protein->genome direction) that contains that base.
+  // Guards against either direction drifting by a base independently.
+  for (const genomePos of Object.keys(m.g2p).map(Number)) {
+    const proteinPos = m.g2p[genomePos]!
+    const [start, end] = proteinToGenomeMapping({
+      model: mappingModel(model),
+      structureSeqPos: proteinPos,
+    })!
+    expect(genomePos).toBeGreaterThanOrEqual(start)
+    expect(genomePos).toBeLessThan(end)
+  }
 })
 
 test('every structure residue round-trips to a unique in-CDS codon', () => {
