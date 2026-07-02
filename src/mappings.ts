@@ -1,4 +1,4 @@
-import { genomeToTranscriptSeqMapping as g2p } from 'g2p_mapper'
+import { genomeToTranscriptSeqMapping as g2p, getCodonRanges } from 'g2p_mapper'
 
 import type { Feature } from '@jbrowse/core/util'
 export interface AlignmentRow {
@@ -72,4 +72,21 @@ export function transcriptPositionToAlignmentMap(
 // see similar function in msaview plugin
 export function genomeToTranscriptSeqMapping(feature: Feature) {
   return g2p(feature.toJSON())
+}
+
+// Enclosing 0-based half-open [start, end) genome span for a codon. getCodonRanges
+// returns the codon's separate genomic pieces (multiple when it straddles an
+// exon/intron boundary); this collapses them to the outer span for navigation
+// and highlighting. undefined when the protein position isn't mapped.
+export function codonGenomeSpan(
+  p2gCodon: Record<number, number[]>,
+  proteinPos: number,
+): readonly [number, number] | undefined {
+  const ranges = getCodonRanges(p2gCodon, proteinPos)
+  return ranges && ranges.length > 0
+    ? [
+        Math.min(...ranges.map(r => r[0])),
+        Math.max(...ranges.map(r => r[1])),
+      ]
+    : undefined
 }

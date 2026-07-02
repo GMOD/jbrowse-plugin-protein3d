@@ -1,5 +1,6 @@
 import { getSession } from '@jbrowse/core/util'
-import { getCodonRanges } from 'g2p_mapper'
+
+import { codonGenomeSpan } from '../mappings'
 
 import type { PairwiseAlignment } from '../mappings'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
@@ -54,20 +55,9 @@ export function proteinToGenomeMapping({
   const { p2gCodon } = genomeToTranscriptSeqMapping
   const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
 
-  if (transcriptPos === undefined) {
-    return undefined
-  }
-
-  // getCodonRanges (vs getCodonRange) returns the correct genomic pieces for a
-  // codon that straddles an exon/intron boundary; collapse to the enclosing
-  // [start, end) span for navigation.
-  const ranges = getCodonRanges(p2gCodon, transcriptPos)
-  if (!ranges || ranges.length === 0) {
-    return undefined
-  }
-  const start = Math.min(...ranges.map(r => r[0]))
-  const end = Math.max(...ranges.map(r => r[1]))
-  return [start, end] as const
+  return transcriptPos === undefined
+    ? undefined
+    : codonGenomeSpan(p2gCodon, transcriptPos)
 }
 
 /**
@@ -140,8 +130,12 @@ export async function navigateToProteinPosition({
   const [start, end] = result
 
   if (zoomToBaseLevel) {
+    // start/end are 0-based half-open (from getCodonRanges). navToLocString
+    // parses a 1-based locString (parseLocString does start -= 1), so the start
+    // must be shifted to 1-based; the half-open end already equals the 1-based
+    // inclusive end. Passing the raw 0-based start landed the view 1bp 5'.
     await connectedView.navToLocString(
-      `${refName}:${start}-${end}${strand === -1 ? '[rev]' : ''}`,
+      `${refName}:${start + 1}-${end}${strand === -1 ? '[rev]' : ''}`,
       undefined,
       0.2,
     )

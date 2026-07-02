@@ -2,7 +2,10 @@ import { types } from '@jbrowse/mobx-state-tree'
 import { expect, test, vi } from 'vitest'
 
 import Structure from './structureModel'
-import { proteinToGenomeMapping } from './proteinToGenomeMapping'
+import {
+  navigateToProteinPosition,
+  proteinToGenomeMapping,
+} from './proteinToGenomeMapping'
 
 import type { AlignmentAlgorithm } from './types'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
@@ -146,6 +149,36 @@ test('the start codon maps to the top of the CDS (minus strand)', () => {
   const first = proteinToGenomeMapping({ model: mappingModel(model), structureSeqPos: 0 })!
   // residue 0 (Met) is the 3'-most genome position for a minus-strand gene
   expect(first[1]).toBe(CDS_MAX)
+})
+
+test('zoomToBaseLevel navigation emits a 1-based locString for the codon', async () => {
+  const model = makeModel()
+  const mid = Math.floor(PROTEIN_LEN / 2)
+  const [start, end] = proteinToGenomeMapping({
+    model: mappingModel(model),
+    structureSeqPos: mid,
+  })!
+
+  let locString: string | undefined
+  const connectedView = {
+    assemblyNames: ['hg38'],
+    async navToLocString(input: string) {
+      locString = input
+    },
+  }
+
+  await navigateToProteinPosition({
+    model: {
+      ...mappingModel(model),
+      connectedView,
+    } as unknown as Parameters<typeof navigateToProteinPosition>[0]['model'],
+    structureSeqPos: mid,
+    zoomToBaseLevel: true,
+  })
+
+  // getCodonRanges yields 0-based half-open [start, end); the locString start
+  // must be 1-based (parseLocString subtracts 1), so it reads start+1..end.
+  expect(locString).toBe(`chr17:${start + 1}-${end}[rev]`)
 })
 
 test('every structure residue round-trips to a unique in-CDS codon', () => {
