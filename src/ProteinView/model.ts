@@ -494,7 +494,7 @@ function stateModelFactory() {
                 },
               },
               {
-                label: 'Auto-scroll protein feature view on hover',
+                label: 'Auto-scroll alignment to hovered position',
                 type: 'checkbox',
                 checked: self.autoScrollAlignment,
                 onClick: () => {

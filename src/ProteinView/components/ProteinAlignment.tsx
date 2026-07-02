@@ -69,6 +69,11 @@ const ProteinAlignment = observer(function ProteinAlignment({
     error: featureError,
   } = useProteinFeatureTrackData(model, uniprotId)
 
+  // Follow the hovered column, but only when it has scrolled off-screen, and
+  // then only far enough to bring it back to the nearest edge. Re-centering on
+  // every hover (the old behavior) made the panel drift continuously as the
+  // cursor moved; scroll-into-view keeps it still whenever the column is
+  // already visible.
   useEffect(
     () =>
       autorun(() => {
@@ -79,11 +84,18 @@ const ProteinAlignment = observer(function ProteinAlignment({
           model.alignmentHoverPos !== undefined &&
           container
         ) {
-          container.scrollTo({
-            left:
-              model.alignmentHoverPos * CHAR_WIDTH - container.clientWidth / 2,
-            behavior: 'smooth',
-          })
+          const x = model.alignmentHoverPos * CHAR_WIDTH
+          const margin = CHAR_WIDTH * 4
+          const viewStart = container.scrollLeft
+          const viewEnd = viewStart + container.clientWidth
+          if (x < viewStart + margin) {
+            container.scrollTo({ left: x - margin, behavior: 'smooth' })
+          } else if (x > viewEnd - margin) {
+            container.scrollTo({
+              left: x - container.clientWidth + margin,
+              behavior: 'smooth',
+            })
+          }
         }
       }),
     [model],

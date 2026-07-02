@@ -92,7 +92,7 @@ function getDisplayToggles(model: JBrowsePluginProteinViewModel) {
       },
     },
     {
-      label: 'Auto-scroll features',
+      label: 'Auto-scroll alignment',
       checked: model.autoScrollAlignment,
       onToggle: () => {
         model.setAutoScrollAlignment(!model.autoScrollAlignment)
