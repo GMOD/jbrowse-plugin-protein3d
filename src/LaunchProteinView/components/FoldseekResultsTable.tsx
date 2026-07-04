@@ -20,7 +20,7 @@ import type { FoldseekResult } from '../services/foldseekApi'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
-const useStyles = makeStyles()({
+const useStyles = makeStyles()(theme => ({
   root: {
     display: 'flex',
     flexDirection: 'column',
@@ -31,13 +31,16 @@ const useStyles = makeStyles()({
   },
   headerCell: {
     fontWeight: 'bold',
-    backgroundColor: '#f5f5f5',
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? theme.palette.grey[900]
+        : theme.palette.grey[100],
   },
   noResults: {
     padding: 16,
     textAlign: 'center',
   },
-})
+}))
 
 const MAX_HITS = 100
 

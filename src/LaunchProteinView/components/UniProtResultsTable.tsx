@@ -18,36 +18,39 @@ import ExternalLink from '../../components/ExternalLink'
 
 import type { UniProtEntry } from '../services/lookupMethods'
 
-const useStyles = makeStyles()({
+const useStyles = makeStyles()(theme => ({
   tableContainer: {
     maxHeight: 200,
   },
   headerCell: {
     fontWeight: 'bold',
-    backgroundColor: '#f5f5f5',
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? theme.palette.grey[900]
+        : theme.palette.grey[100],
   },
   selectedRow: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: theme.palette.action.selected,
   },
   clickableRow: {
     cursor: 'pointer',
     '&:hover': {
-      backgroundColor: '#f5f5f5',
+      backgroundColor: theme.palette.action.hover,
     },
   },
   reviewedChip: {
-    backgroundColor: '#4caf50',
-    color: 'white',
+    backgroundColor: theme.palette.success.main,
+    color: theme.palette.success.contrastText,
     fontSize: '0.7rem',
     height: 20,
   },
   unreviewedChip: {
-    backgroundColor: '#ff9800',
-    color: 'white',
+    backgroundColor: theme.palette.warning.main,
+    color: theme.palette.warning.contrastText,
     fontSize: '0.7rem',
     height: 20,
   },
-})
+}))
 
 interface UniProtResultsTableProps {
   entries: UniProtEntry[]
