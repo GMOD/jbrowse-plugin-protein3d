@@ -4,7 +4,7 @@
  * fall silently into the React error boundary.
  */
 export async function safeLaunch(
-  fn: () => void | Promise<void>,
+  fn: () => unknown,
   onSuccess?: () => void,
   onError?: (e: unknown) => void,
 ) {

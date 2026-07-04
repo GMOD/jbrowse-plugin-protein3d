@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
-import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import SettingsIcon from '@mui/icons-material/Settings'
 import { Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material'
@@ -12,11 +11,9 @@ import SequenceMismatchNotice from './SequenceMismatchNotice'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { getLaunchMissingReasons } from '../utils/launchHelpers'
 import {
-  hasMsaViewPlugin,
-  launch1DProteinView,
+  getConditionalProteinLaunches,
   launch3DProteinView,
   launch3DProteinViewWithMsa,
-  launchMsaView,
 } from '../utils/launchViewUtils'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
@@ -82,15 +79,12 @@ export default function ProteinViewActions({
 
   const { runLaunch, launchError } = useSafeLaunch(handleClose, closeMenu)
 
-  const baseParams = {
+  const launch3DParams = {
     session,
     view,
     feature,
     selectedTranscript,
     uniprotId,
-  }
-  const launch3DParams = {
-    ...baseParams,
     url,
     userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
     alignmentAlgorithm,
@@ -100,20 +94,14 @@ export default function ProteinViewActions({
     launch3DProteinView(launch3DParams)
   })
 
-  const handleLaunchMsa = runLaunch(() => {
-    launchMsaView(baseParams)
+  const { launch1D, launchMsa } = getConditionalProteinLaunches({
+    session,
+    view,
+    feature,
+    selectedTranscript,
+    uniprotId,
+    confidenceUrl,
   })
-
-  const handleLaunch3DWithMsa = runLaunch(() => {
-    launch3DProteinViewWithMsa(launch3DParams)
-  })
-
-  // The 1D annotation view needs an add-tracks session and a known uniprotId.
-  // Narrowing here is the single source of truth: the option only exists when
-  // both hold, and its handler is type-checked against those narrowed values —
-  // so a 1D launch that can't work is unrepresentable rather than a silent
-  // no-op.
-  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
 
   const launchOptions = [
     {
@@ -123,39 +111,30 @@ export default function ProteinViewActions({
         'View protein structure with genome-to-structure coordinate mapping',
       onClick: handleLaunch3DView,
     },
-    ...(addTracksSession && uniprotId
+    ...(launch1D
       ? [
           {
             key: '1d',
             title: 'Launch 1D protein annotation view',
             description:
               'View protein features and annotations as a linear track',
-            onClick: runLaunch(() =>
-              launch1DProteinView({
-                session: addTracksSession,
-                view,
-                feature,
-                selectedTranscript,
-                uniprotId,
-                confidenceUrl,
-              }),
-            ),
+            onClick: runLaunch(launch1D),
           },
         ]
       : []),
-    ...(hasMsaViewPlugin()
+    ...(launchMsa
       ? [
           {
             key: 'msa',
             title: 'Launch MSA view',
             description: 'View AlphaFold a3m multiple sequence alignment',
-            onClick: handleLaunchMsa,
+            onClick: runLaunch(launchMsa),
           },
           {
             key: '3d-msa',
             title: 'Launch 3D structure + MSA view',
             description: 'Launch both views with AlphaFold a3m MSA',
-            onClick: handleLaunch3DWithMsa,
+            onClick: runLaunch(() => launch3DProteinViewWithMsa(launch3DParams)),
           },
         ]
       : []),

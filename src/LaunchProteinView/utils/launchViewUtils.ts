@@ -1,3 +1,5 @@
+import { isSessionWithAddTracks } from '@jbrowse/core/util'
+
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
@@ -215,6 +217,48 @@ export function launchMsaView({
 
 export function hasMsaViewPlugin() {
   return window.JBrowsePluginMsaView !== undefined
+}
+
+// The 1D-annotation and MSA launches share identical availability rules across
+// the AlphaFold and Foldseek launch menus: the 1D view needs an add-tracks
+// session and a uniprotId, the MSA view needs the msaview plugin and a
+// uniprotId. Returning each as a ready-to-run thunk (or undefined when
+// unavailable) is the single source of truth — an unavailable action is
+// unrepresentable rather than a menu item that silently no-ops.
+export function getConditionalProteinLaunches({
+  session,
+  view,
+  feature,
+  selectedTranscript,
+  uniprotId,
+  confidenceUrl,
+}: LaunchViewParams & { confidenceUrl?: string }) {
+  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
+  return {
+    launch1D:
+      addTracksSession && uniprotId
+        ? () =>
+            launch1DProteinView({
+              session: addTracksSession,
+              view,
+              feature,
+              selectedTranscript,
+              uniprotId,
+              confidenceUrl,
+            })
+        : undefined,
+    launchMsa:
+      uniprotId && hasMsaViewPlugin()
+        ? () =>
+            launchMsaView({
+              session,
+              view,
+              feature,
+              selectedTranscript,
+              uniprotId,
+            })
+        : undefined,
+  }
 }
 
 export function launch3DProteinViewWithMsa(

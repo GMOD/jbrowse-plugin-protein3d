@@ -9,7 +9,7 @@ import { safeLaunch } from '../utils/launchHelpers'
  */
 export function useSafeLaunch(onSuccess: () => void, onBeforeLaunch?: () => void) {
   const [launchError, setLaunchError] = useState<unknown>()
-  const runLaunch = (fn: () => void | Promise<void>) => () => {
+  const runLaunch = (fn: () => unknown) => () => {
     onBeforeLaunch?.()
     void safeLaunch(fn, onSuccess, setLaunchError)
   }

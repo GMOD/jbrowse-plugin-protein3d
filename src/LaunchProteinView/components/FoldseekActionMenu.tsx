@@ -1,18 +1,15 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
-import { isSessionWithAddTracks } from '@jbrowse/core/util'
 import { Button, Menu, MenuItem } from '@mui/material'
 
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
 import {
+  getConditionalProteinLaunches,
   getConfidenceUrlFromTarget,
   getUniprotIdFromAlphaFoldTarget,
-  hasMsaViewPlugin,
-  launch1DProteinView,
   launch3DProteinView,
-  launchMsaView,
 } from '../utils/launchViewUtils'
 
 import type { FoldseekAlignment } from '../services/foldseekApi'
@@ -72,18 +69,15 @@ export default function FoldseekActionMenu({
     })
   })
 
-  const handleLaunchMSA = runLaunch(() => {
-    launchMsaView(baseParams)
+  const { launch1D, launchMsa } = getConditionalProteinLaunches({
+    ...baseParams,
+    confidenceUrl: getConfidenceUrlFromTarget(hit.target),
   })
 
   const canLoad = !!hit.structureUrl || hasValidCaCoords(hit.tCa, hit.tSeq)
   if (!canLoad) {
     return <span>-</span>
   }
-
-  // 1D launch needs an add-tracks session and a uniprotId; narrowing both here
-  // gates the menu item and types its handler from a single condition.
-  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
 
   return (
     <>
@@ -93,24 +87,13 @@ export default function FoldseekActionMenu({
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
         <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
-        {addTracksSession && uniprotId ? (
-          <MenuItem
-            onClick={runLaunch(() =>
-              launch1DProteinView({
-                session: addTracksSession,
-                view,
-                feature,
-                selectedTranscript,
-                uniprotId,
-                confidenceUrl: getConfidenceUrlFromTarget(hit.target),
-              }),
-            )}
-          >
+        {launch1D ? (
+          <MenuItem onClick={runLaunch(launch1D)}>
             Launch 1D protein annotation view
           </MenuItem>
         ) : null}
-        {uniprotId && hasMsaViewPlugin() ? (
-          <MenuItem onClick={handleLaunchMSA}>
+        {launchMsa ? (
+          <MenuItem onClick={runLaunch(launchMsa)}>
             Launch MSA view (AlphaFoldDB a3m)
           </MenuItem>
         ) : null}
