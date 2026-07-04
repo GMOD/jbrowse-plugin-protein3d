@@ -18,8 +18,9 @@ export default function useAlignmentColumnHover(
     onMouseMove: (e: React.MouseEvent<HTMLDivElement>) => {
       const rect = e.currentTarget.getBoundingClientRect()
       const col = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
-      onCol?.(col)
-      if (col >= 0 && col < sequenceLength) {
+      const inRange = col >= 0 && col < sequenceLength
+      onCol?.(inRange ? col : undefined)
+      if (inRange) {
         model.hoverAlignmentPosition(col)
       }
     },
