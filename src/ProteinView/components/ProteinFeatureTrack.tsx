@@ -6,31 +6,43 @@ import { CHAR_WIDTH } from '../constants'
 import FeatureBar from './FeatureBar'
 import FeatureTypeLabel from './FeatureTypeLabel'
 import HoverMarker from './HoverMarker'
+import useAlignmentColumnHover from '../hooks/useAlignmentColumnHover'
 
-import type { FeatureTrackData } from '../hooks/useProteinFeatureTrackData'
-import type { UniProtFeature } from '../hooks/useUniProtFeatures'
+import type {
+  FeatureGroup,
+  FeatureTrackData,
+} from '../hooks/useProteinFeatureTrackData'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
-  features,
+  group,
   model,
   sequenceLength,
+  expanded,
 }: {
-  features: UniProtFeature[]
+  group: FeatureGroup
   model: JBrowsePluginProteinStructureModel
   sequenceLength: number
+  expanded: boolean
 }) {
+  const lanes = expanded ? group.laneCount : 1
+  const laneUnit = model.trackHeight + model.trackGap
   return (
     <div
       style={{
         position: 'relative',
-        height: model.trackHeight,
+        height: lanes * model.trackHeight + (lanes - 1) * model.trackGap,
         width: sequenceLength * CHAR_WIDTH,
         marginBottom: model.trackGap,
       }}
     >
-      {features.map(feature => (
-        <FeatureBar key={feature.uniqueId} feature={feature} model={model} />
+      {group.layouts.map(layout => (
+        <FeatureBar
+          key={layout.feature.uniqueId}
+          layout={layout}
+          top={(expanded ? layout.lane : 0) * laneUnit}
+          model={model}
+        />
       ))}
     </div>
   )
@@ -48,10 +60,12 @@ export const ProteinFeatureTrackLabels = observer(
   }) {
     return (
       <>
-        {data.visibleTypes.map(type => (
+        {data.visibleGroups.map(group => (
           <FeatureTypeLabel
-            key={type}
-            type={type}
+            key={group.type}
+            type={group.type}
+            laneCount={group.laneCount}
+            expanded={model.expandedFeatureTypes.has(group.type)}
             labelWidth={labelWidth}
             model={model}
           />
@@ -69,26 +83,16 @@ export const ProteinFeatureTrackContent = observer(
     data: FeatureTrackData
     model: JBrowsePluginProteinStructureModel
   }) {
+    const hoverHandlers = useAlignmentColumnHover(model, data.sequenceLength)
     return (
-      <div
-        style={{ position: 'relative' }}
-        onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          const alignmentPos = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
-          if (alignmentPos >= 0 && alignmentPos < data.sequenceLength) {
-            model.hoverAlignmentPosition(alignmentPos)
-          }
-        }}
-        onMouseLeave={() => {
-          model.setHoveredPosition(undefined)
-        }}
-      >
-        {data.visibleTypes.map(type => (
+      <div style={{ position: 'relative' }} {...hoverHandlers}>
+        {data.visibleGroups.map(group => (
           <FeatureTypeTrackContent
-            key={type}
-            features={data.groupedFeatures[type]!}
+            key={group.type}
+            group={group}
             model={model}
             sequenceLength={data.sequenceLength}
+            expanded={model.expandedFeatureTypes.has(group.type)}
           />
         ))}
         <HoverMarker model={model} />

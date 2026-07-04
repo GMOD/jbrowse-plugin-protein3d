@@ -68,8 +68,8 @@ async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
       continue
     }
     const type = parts[2]
-    const start = Number.parseInt(parts[3] ?? '0', 10)
-    const end = Number.parseInt(parts[4] ?? '0', 10)
+    const start = Number.parseInt(parts[3] ?? '', 10)
+    const end = Number.parseInt(parts[4] ?? '', 10)
     const attributes = parts[8] ?? ''
 
     let description = ''
@@ -83,7 +83,7 @@ async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
       }
     }
 
-    if (type) {
+    if (type && start >= 1 && end >= start) {
       const uniqueId = `${type}-${start}-${end}-${features.length}`
       features.push({
         type,

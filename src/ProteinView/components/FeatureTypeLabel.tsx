@@ -1,6 +1,8 @@
 import React from 'react'
 
 import CloseIcon from '@mui/icons-material/Close'
+import UnfoldLessIcon from '@mui/icons-material/UnfoldLess'
+import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
 import { IconButton, Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
@@ -10,18 +12,24 @@ import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const FeatureTypeLabel = observer(function FeatureTypeLabel({
   type,
+  laneCount,
+  expanded,
   labelWidth,
   model,
 }: {
   type: string
+  laneCount: number
+  expanded: boolean
   labelWidth: number
   model: JBrowsePluginProteinStructureModel
 }) {
+  const lanes = expanded ? laneCount : 1
+  const canExpand = laneCount > 1
   return (
     <Tooltip title={type} placement="left">
       <div
         style={{
-          height: model.trackHeight + model.trackGap,
+          height: lanes * (model.trackHeight + model.trackGap),
           width: labelWidth - 4,
           fontSize: 9,
           fontFamily: 'monospace',
@@ -31,7 +39,7 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           display: 'flex',
-          alignItems: 'center',
+          alignItems: expanded ? 'flex-start' : 'center',
           justifyContent: 'flex-end',
           gap: 2,
         }}
@@ -46,6 +54,26 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
         >
           <CloseIcon sx={{ fontSize: model.trackHeight }} />
         </IconButton>
+        {canExpand ? (
+          <IconButton
+            onClick={e => {
+              e.stopPropagation()
+              model.toggleFeatureTypeExpanded(type)
+            }}
+            title={
+              expanded
+                ? `Collapse ${type} track`
+                : `Expand ${type} track (${laneCount} overlapping rows)`
+            }
+            sx={{ p: 0, color: HIDE_BUTTON_COLOR }}
+          >
+            {expanded ? (
+              <UnfoldLessIcon sx={{ fontSize: model.trackHeight }} />
+            ) : (
+              <UnfoldMoreIcon sx={{ fontSize: model.trackHeight }} />
+            )}
+          </IconButton>
+        ) : null}
         <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
           {type}
         </span>

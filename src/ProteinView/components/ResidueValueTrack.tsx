@@ -4,6 +4,7 @@ import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import { CHAR_WIDTH } from '../constants'
+import useAlignmentColumnHover from '../hooks/useAlignmentColumnHover'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -40,6 +41,11 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
   }, [cells])
   const hoveredValue =
     hoveredCol === undefined ? undefined : valueByCol.get(hoveredCol)
+  const hoverHandlers = useAlignmentColumnHover(
+    model,
+    sequenceLength,
+    setHoveredCol,
+  )
 
   return (
     <Tooltip
@@ -53,18 +59,7 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
           width: sequenceLength * CHAR_WIDTH,
           marginBottom: model.trackGap,
         }}
-        onMouseMove={(e: React.MouseEvent<HTMLDivElement>) => {
-          const rect = e.currentTarget.getBoundingClientRect()
-          const alignmentPos = Math.floor((e.clientX - rect.left) / CHAR_WIDTH)
-          setHoveredCol(alignmentPos)
-          if (alignmentPos >= 0 && alignmentPos < sequenceLength) {
-            model.hoverAlignmentPosition(alignmentPos)
-          }
-        }}
-        onMouseLeave={() => {
-          setHoveredCol(undefined)
-          model.setHoveredPosition(undefined)
-        }}
+        {...hoverHandlers}
       >
         {cells.map(cell => (
           <div

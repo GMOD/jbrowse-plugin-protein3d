@@ -170,6 +170,12 @@ const Structure = types
      * Set of feature track types that are hidden
      */
     hiddenFeatureTypes: new Set<string>(),
+    /**
+     * #volatile
+     * Set of feature track types expanded to show every overlapping feature on
+     * its own lane (collapsed types draw all features on a single row)
+     */
+    expandedFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
     setStructureData(data: { entities?: Entity[]; confidence?: number[] }) {
@@ -195,6 +201,18 @@ const Structure = types
      */
     showAllFeatureTypes() {
       self.hiddenFeatureTypes = new Set()
+    },
+    /**
+     * #action
+     */
+    toggleFeatureTypeExpanded(type: string) {
+      const next = new Set(self.expandedFeatureTypes)
+      if (next.has(type)) {
+        next.delete(type)
+      } else {
+        next.add(type)
+      }
+      self.expandedFeatureTypes = next
     },
     /**
      * #action

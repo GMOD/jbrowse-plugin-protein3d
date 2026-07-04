@@ -4,35 +4,19 @@ import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import { setMolstarLoci } from '../applyLociInteractivity'
-import { CHAR_WIDTH, HOVERED_BORDER, SELECTED_BORDER } from '../constants'
+import { HOVERED_BORDER, SELECTED_BORDER } from '../constants'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
-import type { UniProtFeature } from '../hooks/useUniProtFeatures'
+import type { FeatureLayout } from '../hooks/useProteinFeatureTrackData'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-/**
- * Maps a feature's structure range onto alignment columns, returning both the
- * alignment range (for hover) and pixel geometry. Returns undefined when either
- * endpoint has no alignment column, so unmappable features aren't drawn at a
- * misleading position.
- */
-function getFeatureLayout(
-  feature: UniProtFeature,
-  structurePositionToAlignmentMap: Record<number, number> | undefined,
-) {
-  const start = structurePositionToAlignmentMap?.[feature.start - 1]
-  const end = structurePositionToAlignmentMap?.[feature.end - 1]
-  return start === undefined || end === undefined
-    ? undefined
-    : {
-        range: { start, end },
-        left: start * CHAR_WIDTH,
-        width: Math.max((end - start + 1) * CHAR_WIDTH, 3),
-      }
-}
-
-function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
+function FeatureTooltipContent({
+  layout,
+}: {
+  layout: FeatureLayout
+}) {
+  const { feature } = layout
   return (
     <div>
       <div>
@@ -47,26 +31,25 @@ function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
 }
 
 const FeatureBar = observer(function FeatureBar({
-  feature,
+  layout,
+  top,
   model,
 }: {
-  feature: UniProtFeature
+  layout: FeatureLayout
+  top: number
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const {
-    molstarPluginContext,
-    selectedFeatureId,
-    structurePositionToAlignmentMap,
-  } = model
+  const { molstarPluginContext, selectedFeatureId } = model
+  const { feature, left, width } = layout
   const isSelected = selectedFeatureId === feature.uniqueId
-  const layout = getFeatureLayout(feature, structurePositionToAlignmentMap)
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    if (layout) {
-      model.setAlignmentHoverRange(layout.range)
-    }
+    model.setAlignmentHoverRange({
+      start: layout.alignmentStart,
+      end: layout.alignmentEnd,
+    })
   }
 
   const handleMouseLeave = () => {
@@ -109,15 +92,10 @@ const FeatureBar = observer(function FeatureBar({
     }
   }
 
-  if (!layout) {
-    return null
-  }
-
-  const { left, width } = layout
   const color = getFeatureColor(feature.type)
 
   return (
-    <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
+    <Tooltip title={<FeatureTooltipContent layout={layout} />} followCursor>
       <div
         data-testid={`protein-feature-${feature.type}`}
         data-feature-id={feature.uniqueId}
@@ -135,7 +113,7 @@ const FeatureBar = observer(function FeatureBar({
         style={{
           position: 'absolute',
           left,
-          top: 0,
+          top,
           width,
           height: model.trackHeight,
           backgroundColor: color,
