@@ -9,14 +9,10 @@ import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
 import type { FeatureLayout } from '../hooks/useProteinFeatureTrackData'
+import type { UniProtFeature } from '../hooks/useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-function FeatureTooltipContent({
-  layout,
-}: {
-  layout: FeatureLayout
-}) {
-  const { feature } = layout
+function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
   return (
     <div>
       <div>
@@ -95,7 +91,7 @@ const FeatureBar = observer(function FeatureBar({
   const color = getFeatureColor(feature.type)
 
   return (
-    <Tooltip title={<FeatureTooltipContent layout={layout} />} followCursor>
+    <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
       <div
         data-testid={`protein-feature-${feature.type}`}
         data-feature-id={feature.uniqueId}
