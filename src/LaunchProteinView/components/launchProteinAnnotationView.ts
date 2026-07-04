@@ -32,7 +32,7 @@ export async function launchProteinAnnotationView({
   const view = session.addView('LinearGenomeView', {
     type: 'LinearGenomeView',
     displayName: formatViewName(
-      'Protein view',
+      'Protein annotations',
       feature,
       selectedTranscript,
       uniprotId,

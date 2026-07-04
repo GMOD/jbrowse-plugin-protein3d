@@ -63,21 +63,18 @@ export default function ProteinViewActions({
 }: ProteinViewActionsProps) {
   const [dialogOpen, setDialogOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
-  // Disable launch while loading — SWR's keepPreviousData would otherwise let
-  // a user click Launch on stale results (wrong UniProt ID) during a refetch.
-  const canLaunch =
-    !isLoading &&
-    !!uniprotId &&
-    !!userSelectedProteinSequence &&
-    !!selectedTranscript
 
   const missingReasons = getLaunchMissingReasons({
     uniprotId,
     userSelectedProteinSequence,
     selectedTranscript,
-    isLoading,
-    error,
   })
+  // Disable launch while loading — SWR's keepPreviousData would otherwise let
+  // a user click Launch on stale results (wrong UniProt ID) during a refetch.
+  const canLaunch = !isLoading && missingReasons.length === 0
+  // Suppress the derived reasons while loading or while a real upstream error
+  // is displayed above via <ErrorMessage> — a duplicate hint would mislead.
+  const showMissingReasons = !isLoading && !error && missingReasons.length > 0
 
   const closeMenu = () => {
     setDialogOpen(false)
@@ -194,7 +191,7 @@ export default function ProteinViewActions({
       >
         Cancel
       </Button>
-      {!canLaunch && missingReasons.length > 0 ? (
+      {showMissingReasons ? (
         <Typography variant="body2" color="error" sx={{ mr: 2 }}>
           {missingReasons.join('. ')}
         </Typography>

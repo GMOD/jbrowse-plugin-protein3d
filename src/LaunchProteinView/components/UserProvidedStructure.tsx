@@ -10,6 +10,7 @@ import SequenceMismatchNotice from './SequenceMismatchNotice'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 import ExternalLink from '../../components/ExternalLink'
+import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { launch3DProteinView } from '../utils/launchViewUtils'
@@ -65,8 +66,8 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')
-  const [submitError, setSubmitError] = useState<unknown>()
   const [structureURL, setStructureURL] = useState('')
+  const { runLaunch, launchError } = useSafeLaunch(handleClose)
 
   const activeFile = choice === 'file' ? file : undefined
   const activeURL = choice === 'file' ? '' : structureURL
@@ -88,7 +89,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     error: isoformError,
   } = useTranscriptIsoformSelection({ feature, view, structureSequence })
 
-  const error = isoformError ?? submitError ?? fileError
+  const error = isoformError ?? launchError ?? fileError
 
   const canLaunch =
     !!(activeURL || activeFile) && !!protein && !!selectedTranscript
@@ -97,29 +98,21 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     !!structureSequence &&
     stripStopCodon(protein.seq) !== structureSequence
 
-  const handleLaunch = async () => {
-    if (!protein || !selectedTranscript) {
-      return
-    }
-    try {
+  const handleLaunch = runLaunch(async () => {
+    if (protein && selectedTranscript) {
       const structureData = activeFile ? await activeFile.text() : undefined
-      const url = activeURL ? activeURL : undefined
       launch3DProteinView({
         session,
         view,
         feature,
         selectedTranscript,
-        url,
+        url: activeURL ? activeURL : undefined,
         data: structureData,
         userProvidedTranscriptSequence: protein.seq,
         alignmentAlgorithm,
       })
-      handleClose()
-    } catch (e) {
-      console.error(e)
-      setSubmitError(e)
     }
-  }
+  })
 
   return (
     <>
@@ -181,7 +174,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
           color="primary"
           disabled={!canLaunch}
           onClick={() => {
-            void handleLaunch()
+            handleLaunch()
           }}
         >
           Launch 3-D protein structure view

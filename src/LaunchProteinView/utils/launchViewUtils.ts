@@ -1,9 +1,3 @@
-declare global {
-  interface Window {
-    JBrowsePluginMsaView?: unknown
-  }
-}
-
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
@@ -14,6 +8,12 @@ import type {
   SessionWithAddTracks,
 } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+
+declare global {
+  interface Window {
+    JBrowsePluginMsaView?: unknown
+  }
+}
 
 export const ALPHAFOLD_VERSION = 'v6'
 
