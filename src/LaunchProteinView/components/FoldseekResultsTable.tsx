@@ -39,6 +39,8 @@ const useStyles = makeStyles()({
   },
 })
 
+const MAX_HITS = 100
+
 function flattenResults(results: FoldseekResult): FlattenedHit[] {
   const hits = results.results.flatMap(dbResult =>
     (dbResult.alignments ?? []).flat().map(alignment => ({
@@ -48,7 +50,7 @@ function flattenResults(results: FoldseekResult): FlattenedHit[] {
     })),
   )
   hits.sort((a, b) => (a.eval ?? Infinity) - (b.eval ?? Infinity))
-  return hits.slice(0, 100)
+  return hits
 }
 
 export default function FoldseekResultsTable({
@@ -69,7 +71,8 @@ export default function FoldseekResultsTable({
   onClose: () => void
 }) {
   const { classes } = useStyles()
-  const flatHits = flattenResults(results)
+  const allHits = flattenResults(results)
+  const flatHits = allHits.slice(0, MAX_HITS)
 
   if (flatHits.length === 0) {
     return (
@@ -82,7 +85,10 @@ export default function FoldseekResultsTable({
   return (
     <div className={classes.root}>
       <Typography variant="subtitle2">
-        Found {flatHits.length} similar structures
+        Found {allHits.length} similar structures
+        {allHits.length > flatHits.length
+          ? ` (showing top ${flatHits.length})`
+          : ''}
       </Typography>
       <TableContainer component={Paper} className={classes.tableContainer}>
         <Table size="small" stickyHeader>
