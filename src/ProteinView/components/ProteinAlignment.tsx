@@ -4,6 +4,7 @@ import { Tooltip, Typography } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 
+import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
@@ -62,7 +63,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
     hydrophobicityCells,
   } = model
   const containerRef = useRef<HTMLDivElement>(null)
-  const scrolledToSelectionRef = useRef(false)
+  const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
   const {
     data: featureData,
     isLoading: featureLoading,
@@ -83,34 +84,47 @@ const ProteinAlignment = observer(function ProteinAlignment({
           model.alignmentHoverPos !== undefined &&
           container
         ) {
-          const x = model.alignmentHoverPos * CHAR_WIDTH
-          const viewStart = container.scrollLeft
-          const viewEnd = viewStart + container.clientWidth
-          const gap = Math.max(viewStart - x, x - viewEnd)
-          if (gap > container.clientWidth) {
-            container.scrollTo({
-              left: x - container.clientWidth / 2,
-              behavior: 'smooth',
-            })
+          const target = largeJumpScrollTarget({
+            x: model.alignmentHoverPos * CHAR_WIDTH,
+            scrollLeft: container.scrollLeft,
+            clientWidth: container.clientWidth,
+          })
+          if (target !== undefined) {
+            container.scrollTo({ left: target, behavior: 'smooth' })
           }
         }
       }),
     [model],
   )
 
-  // Scroll the persistent selection into view once it first resolves, so a
-  // declarative `initialSelection` (or any off-screen selection) shows its
-  // highlight band instead of opening scrolled to the N-terminus. Guarded to
-  // fire once, so it doesn't fight the user's own scrolling afterward.
+  // Scroll a selection into view when it changes to an off-screen range — both
+  // the declarative `initialSelection` on open and a later click on a distant
+  // feature bar, which would otherwise select something the user can't see.
+  // Keyed on the range so it fires once per distinct selection and doesn't fight
+  // the user's own scrolling afterward.
   useEffect(
     () =>
       autorun(() => {
         const container = containerRef.current
         const range = model.clickAlignmentRange
-        if (container && range && !scrolledToSelectionRef.current) {
-          scrolledToSelectionRef.current = true
-          const mid = ((range.start + range.end) / 2) * CHAR_WIDTH
-          container.scrollTo({ left: mid - container.clientWidth / 2 })
+        if (container) {
+          if (range) {
+            const key = `${range.start}-${range.end}`
+            if (key !== lastScrolledSelectionRef.current) {
+              lastScrolledSelectionRef.current = key
+              const target = offScreenCenterTarget({
+                start: range.start * CHAR_WIDTH,
+                end: (range.end + 1) * CHAR_WIDTH,
+                scrollLeft: container.scrollLeft,
+                clientWidth: container.clientWidth,
+              })
+              if (target !== undefined) {
+                container.scrollTo({ left: target, behavior: 'smooth' })
+              }
+            }
+          } else {
+            lastScrolledSelectionRef.current = undefined
+          }
         }
       }),
     [model],
