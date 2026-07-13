@@ -21,10 +21,12 @@ const GenomeMouseoverHighlight = observer(function GenomeMouseoverHighlight({
     return (
       <Highlight
         model={model}
-        start={coord - 1}
-        end={coord}
-        refName={refName}
-        assemblyName={assemblyNames[0]!}
+        region={{
+          start: coord - 1,
+          end: coord,
+          refName,
+          assemblyName: assemblyNames[0]!,
+        }}
       />
     )
   }

@@ -35,11 +35,13 @@ const ProteinToGenomeHighlightInner = observer(
             structure[field].map((r: Region, idx2: number) => (
               <Highlight
                 key={`${r.refName}-${r.start}-${r.end}-${idx}-${idx2}`}
-                start={r.start}
-                end={r.end}
-                refName={r.refName}
-                assemblyName={assemblyName}
                 model={model}
+                region={{
+                  start: r.start,
+                  end: r.end,
+                  refName: r.refName,
+                  assemblyName,
+                }}
               />
             )),
         )}

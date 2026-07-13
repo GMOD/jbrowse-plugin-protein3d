@@ -49,10 +49,12 @@ const Protein1DToGenomeHoverHighlight = observer(
     return (
       <Highlight
         model={model}
-        start={genomeHighlight.start}
-        end={genomeHighlight.end}
-        refName={genomeHighlight.refName}
-        assemblyName={assemblyName}
+        region={{
+          start: genomeHighlight.start,
+          end: genomeHighlight.end,
+          refName: genomeHighlight.refName,
+          assemblyName,
+        }}
       />
     )
   },

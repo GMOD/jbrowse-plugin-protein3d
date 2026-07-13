@@ -47,10 +47,12 @@ const GenomeTo1DProteinHoverHighlight = observer(
     return (
       <Highlight
         model={model}
-        start={proteinPos}
-        end={proteinPos + 1}
-        refName={protein1DInfo.uniprotId}
-        assemblyName={protein1DInfo.uniprotId}
+        region={{
+          start: proteinPos,
+          end: proteinPos + 1,
+          refName: protein1DInfo.uniprotId,
+          assemblyName: protein1DInfo.uniprotId,
+        }}
       />
     )
   },
