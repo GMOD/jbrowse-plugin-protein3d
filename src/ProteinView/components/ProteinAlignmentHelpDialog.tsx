@@ -33,10 +33,12 @@ export default function ProteinAlignmentHelpDialog({
           the sequence from the gene on the genome browser
         </Typography2>
         <Typography2>
-          In order to resolve this, we align the two sequences together (using
-          EMBOSS needle) to get pairwise alignment of the genome&apos;s
-          representation of the protein and the structure file&apos;s
-          representation of the protein.
+          In order to resolve this, we align the two sequences in the browser
+          (Smith-Waterman by default, or Needleman-Wunsch, both with BLOSUM62
+          and EMBOSS-style gap penalties) to get a pairwise alignment of the
+          genome&apos;s representation of the protein and the structure
+          file&apos;s representation of the protein. Positions that fall in a
+          gap are unmapped and will not highlight.
         </Typography2>
         <Typography2>
           If you need a 100% fidelity protein, you can do a folding with e.g.
