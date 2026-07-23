@@ -47,6 +47,12 @@ const rebuildLogPlugin = {
 // molstar chunk via URL relative to the plugin script. The source
 // loadMolstar.ts uses a standard import('./molstarExports') which works
 // natively for npm/bundler consumers.
+// Assigned from the molstar build's metafile below, before the main build runs.
+// The name carries a content hash so a redeployed plugin can never pair with a
+// browser-cached copy of the previous chunk: JBrowse's cache buster only
+// decorates the plugin url, and the query is dropped when deriving this one.
+let molstarChunkName = 'molstar-chunk.js'
+
 const umdLoadMolstarPlugin = {
   name: 'umd-load-molstar',
   setup(build) {
@@ -59,7 +65,7 @@ const umdLoadMolstarPlugin = {
         var cached;
         export default function loadMolstar() {
           if (!cached) {
-            cached = import(base + 'molstar-chunk.js').catch(function(e) {
+            cached = import(base + ${JSON.stringify(molstarChunkName)}).catch(function(e) {
               cached = undefined;
               throw e;
             });
@@ -76,9 +82,13 @@ const globals = JBrowseReExports
 const externalsPlugin = globalExternals(createGlobalMap(globals))
 
 const molstarConfig = {
-  entryPoints: ['src/ProteinView/molstarExports.ts'],
+  entryPoints: [
+    { in: 'src/ProteinView/molstarExports.ts', out: 'molstar-chunk' },
+  ],
   bundle: true,
-  outfile: 'dist/molstar-chunk.js',
+  outdir: 'dist',
+  // esbuild appends the content hash and keeps the sourcemap link consistent
+  entryNames: '[name]-[hash]',
   format: 'esm',
   metafile: true,
   sourcemap: true,
@@ -102,7 +112,16 @@ const mainConfig = {
 }
 
 console.log('Building molstar chunk...')
-await esbuild.build(molstarConfig)
+const molstarResult = await esbuild.build(molstarConfig)
+
+// umdLoadMolstarPlugin reads this when the main build loads loadMolstar.ts,
+// which happens after this point
+molstarChunkName = Object.keys(molstarResult.metafile.outputs)
+  .map(f => f.replace(/^dist\//, ''))
+  .find(f => f.endsWith('.js'))
+if (!molstarChunkName) {
+  throw new Error('molstar chunk build produced no .js output')
+}
 
 if (isWatch) {
   const ctx = await esbuild.context(mainConfig)
