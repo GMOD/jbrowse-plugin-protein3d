@@ -12,13 +12,6 @@ export interface Protein1DViewInfo {
   uniprotId: string
 }
 
-interface GenomeToTranscriptMapping {
-  p2gCodon: Record<number, number[]>
-  g2p: Record<number, number>
-  strand: number
-  refName: string
-}
-
 interface SessionWithViews {
   views: { id: string }[]
 }
@@ -30,7 +23,6 @@ class Protein1DViewRegistry {
     makeObservable(this, {
       register: action,
       unregister: action,
-      cleanupStaleViews: action,
       entries: computed,
     })
   }
@@ -43,25 +35,25 @@ class Protein1DViewRegistry {
     this.views.delete(viewId)
   }
 
-  cleanupStaleViews(session: SessionWithViews) {
-    const activeViewIds = new Set(session.views.map(v => v.id))
-    for (const viewId of this.views.keys()) {
-      if (!activeViewIds.has(viewId)) {
-        this.views.delete(viewId)
-      }
-    }
-  }
-
   get(viewId: string) {
     return this.views.get(viewId)
   }
 
+  /**
+   * Pure lookup. When a session is supplied, entries whose view has since been
+   * closed are skipped rather than deleted, so this stays side-effect-free and
+   * safe to call from an observer's render (mutating the observable map there
+   * would be a MobX anti-pattern).
+   */
   getByUniprotId(uniprotId: string, session?: SessionWithViews) {
-    if (session) {
-      this.cleanupStaleViews(session)
-    }
+    const liveViewIds = session
+      ? new Set(session.views.map(v => v.id))
+      : undefined
     for (const info of this.views.values()) {
-      if (info.uniprotId === uniprotId) {
+      if (
+        info.uniprotId === uniprotId &&
+        (!liveViewIds || liveViewIds.has(info.viewId))
+      ) {
         return info
       }
     }
@@ -78,21 +70,14 @@ class Protein1DViewRegistry {
     session?: SessionWithViews,
   ): { refName: string; start: number; end: number } | undefined {
     const info = this.getByUniprotId(uniprotId, session)
-    if (!info) {
-      return undefined
+    if (info) {
+      const { p2gCodon, refName } = genomeToTranscriptSeqMapping(
+        new SimpleFeature(info.feature),
+      )
+      const span = codonGenomeSpan(p2gCodon, proteinPos)
+      return span ? { refName, start: span[0], end: span[1] } : undefined
     }
-
-    const feature = new SimpleFeature(info.feature)
-    const mapping = genomeToTranscriptSeqMapping(feature) as
-      | GenomeToTranscriptMapping
-      | undefined
-    if (!mapping) {
-      return undefined
-    }
-
-    const { p2gCodon, refName } = mapping
-    const span = codonGenomeSpan(p2gCodon, proteinPos)
-    return span ? { refName, start: span[0], end: span[1] } : undefined
+    return undefined
   }
 }
 

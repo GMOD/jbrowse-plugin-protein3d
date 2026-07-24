@@ -120,7 +120,7 @@ export async function searchUniProtEntries({
   let geneNameError: unknown
   if (!entries.some(e => e.isReviewed) && geneName) {
     try {
-      const query = `gene:${geneName}+AND+organism_id:${organismId}+AND+reviewed:true`
+      const query = `gene:${geneName} AND organism_id:${organismId} AND reviewed:true`
       const geneNameResults = await searchUniProt(query, 5)
       entries = deduplicateEntries([...entries, ...geneNameResults])
     } catch (e) {

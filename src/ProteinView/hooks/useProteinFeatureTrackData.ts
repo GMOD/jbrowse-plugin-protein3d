@@ -27,6 +27,18 @@ export interface FeatureTrackData {
 }
 
 /**
+ * UniProt feature coords are 1-based inclusive; the structure/click/highlight
+ * pipeline works in 0-based half-open ranges. Doing the conversion in one named
+ * place keeps the off-by-one out of every call site.
+ */
+export function oneBasedUniProtFeatureToStructureRange(feature: {
+  start: number
+  end: number
+}) {
+  return { start: feature.start - 1, end: feature.end }
+}
+
+/**
  * Maps a feature's structure range onto alignment columns and pixel geometry.
  * Returns undefined when either endpoint has no alignment column, so unmappable
  * features aren't drawn at a misleading position.

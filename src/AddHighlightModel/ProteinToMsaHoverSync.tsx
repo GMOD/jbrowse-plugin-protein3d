@@ -96,6 +96,9 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
                 ? msaView.seqPosToVisibleCol(structureRowName, seqPos)
                 : seqPos
             setMousePos(col)
+          } else {
+            // structure went away (e.g. removed); clear the stale MSA hover
+            setMousePos(undefined)
           }
         }),
       )

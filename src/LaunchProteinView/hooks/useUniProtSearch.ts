@@ -43,6 +43,7 @@ export default function useUniProtSearch({
           selectedQueryId,
           idsToSearch.join(','),
           geneNameToSearch,
+          geneId,
         ]
       : null,
     async () =>

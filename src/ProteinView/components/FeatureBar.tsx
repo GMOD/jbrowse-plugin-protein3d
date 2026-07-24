@@ -3,8 +3,8 @@ import React, { useState } from 'react'
 import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { setMolstarLoci } from '../applyLociInteractivity'
 import { HOVERED_BORDER, SELECTED_BORDER } from '../constants'
+import { oneBasedUniProtFeatureToStructureRange } from '../hooks/useProteinFeatureTrackData'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
@@ -36,7 +36,7 @@ const FeatureBar = observer(function FeatureBar({
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const { molstarPluginContext, selectedFeatureId } = model
+  const { selectedFeatureId } = model
   const { feature, left, width } = layout
   const isSelected = selectedFeatureId === feature.uniqueId
 
@@ -53,38 +53,26 @@ const FeatureBar = observer(function FeatureBar({
     model.setAlignmentHoverRange(undefined)
   }
 
+  // The model's `select` autorun owns the magenta molstar selection, deriving
+  // it from clickedStructureRange. Setting/clearing that range here (rather than
+  // also driving molstar imperatively) keeps a single source of truth: on
+  // deselect the autorun correctly falls back to the whole-alignment highlight
+  // when showHighlight is on, instead of blanking the selection.
   const handleClick = () => {
-    const structure = model.molstarStructure
-    const newSelected = !isSelected
-
-    if (structure && molstarPluginContext) {
-      setMolstarLoci({
-        structure,
-        plugin: molstarPluginContext,
-        channel: 'select',
-        entityId: model.mappedEntityId,
-        spec: newSelected
-          ? { kind: 'range', start: feature.start - 1, end: feature.end }
-          : undefined,
-      }).catch((e: unknown) => {
-        console.error(e)
-        model.setError(e)
-      })
-    }
-
-    if (newSelected) {
+    if (isSelected) {
+      model.setSelectedFeatureId(undefined)
+      model.setClickedStructureRange(undefined)
+    } else {
+      const { start, end } = oneBasedUniProtFeatureToStructureRange(feature)
       model.setSelectedFeatureId(feature.uniqueId)
       clickProteinToGenome({
         model,
-        structureSeqPos: feature.start - 1,
-        structureSeqEndPos: feature.end,
+        structureSeqPos: start,
+        structureSeqEndPos: end,
       }).catch((e: unknown) => {
         console.error(e)
         model.setError(e)
       })
-    } else {
-      model.setSelectedFeatureId(undefined)
-      model.setClickedStructureRange(undefined)
     }
   }
 

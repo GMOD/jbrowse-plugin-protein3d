@@ -4,7 +4,7 @@ import { expect, test } from 'vitest'
 // Mirrors the guard pattern in ProteinToMsaHoverSync.tsx so regressions to the
 // logic (removing untracked, removing a guard) will break these tests.
 function setupSyncAutorun(
-  msaView: { mouseoveredColumn: number | undefined },
+  msaView: { mouseCol: number | undefined },
   structure: {
     alignmentHoverRange: { start: number; end: number } | undefined
   },
@@ -12,7 +12,7 @@ function setupSyncAutorun(
   onClear: () => void,
 ) {
   return autorun(() => {
-    const col = msaView.mouseoveredColumn
+    const col = msaView.mouseCol
     if (!untracked(() => structure.alignmentHoverRange)) {
       if (col === undefined) {
         onClear()
@@ -25,7 +25,7 @@ function setupSyncAutorun(
 
 test('calls highlight when col is set and no feature is hovered', () => {
   const msaView = observable({
-    mouseoveredColumn: undefined as number | undefined,
+    mouseCol: undefined as number | undefined,
   })
   const structure = observable({
     alignmentHoverRange: undefined as
@@ -40,14 +40,14 @@ test('calls highlight when col is set and no feature is hovered', () => {
     col => highlights.push(col),
     () => {},
   )
-  msaView.mouseoveredColumn = 5
+  msaView.mouseCol = 5
   expect(highlights).toEqual([5])
   dispose()
 })
 
 test('suppresses highlight when feature range is active', () => {
   const msaView = observable({
-    mouseoveredColumn: undefined as number | undefined,
+    mouseCol: undefined as number | undefined,
   })
   const structure = observable({
     alignmentHoverRange: undefined as
@@ -63,14 +63,14 @@ test('suppresses highlight when feature range is active', () => {
     () => {},
   )
   structure.alignmentHoverRange = { start: 5, end: 15 }
-  msaView.mouseoveredColumn = 7
+  msaView.mouseCol = 7
   expect(highlights).toEqual([])
   dispose()
 })
 
 test('resumes highlight after feature range is cleared', () => {
   const msaView = observable({
-    mouseoveredColumn: undefined as number | undefined,
+    mouseCol: undefined as number | undefined,
   })
   const structure = observable({
     alignmentHoverRange: { start: 5, end: 15 },
@@ -83,17 +83,17 @@ test('resumes highlight after feature range is cleared', () => {
     col => highlights.push(col),
     () => {},
   )
-  msaView.mouseoveredColumn = 7
+  msaView.mouseCol = 7
   expect(highlights).toEqual([]) // suppressed
 
   structure.alignmentHoverRange = undefined
-  msaView.mouseoveredColumn = 8
+  msaView.mouseCol = 8
   expect(highlights).toEqual([8])
   dispose()
 })
 
 test('calls clear when col becomes undefined and no feature is hovered', () => {
-  const msaView = observable({ mouseoveredColumn: 5 })
+  const msaView = observable({ mouseCol: 5 })
   const structure = observable({
     alignmentHoverRange: undefined as
       | { start: number; end: number }
@@ -107,13 +107,13 @@ test('calls clear when col becomes undefined and no feature is hovered', () => {
     () => {},
     () => clears.push(1),
   )
-  msaView.mouseoveredColumn = undefined
+  msaView.mouseCol = undefined
   expect(clears.length).toBe(1)
   dispose()
 })
 
 test('suppresses clear when col is undefined but feature range is active', () => {
-  const msaView = observable({ mouseoveredColumn: 5 })
+  const msaView = observable({ mouseCol: 5 })
   const structure = observable({
     alignmentHoverRange: { start: 5, end: 15 },
   })
@@ -125,7 +125,7 @@ test('suppresses clear when col is undefined but feature range is active', () =>
     () => {},
     () => clears.push(1),
   )
-  msaView.mouseoveredColumn = undefined
+  msaView.mouseCol = undefined
   expect(clears).toEqual([])
   dispose()
 })
@@ -134,7 +134,7 @@ test('alignmentHoverRange changes do not retrigger the autorun', () => {
   // Verifies that untracked() works: alignmentHoverRange must not be a
   // tracked dependency, otherwise feature mouseenter/mouseleave would
   // spuriously re-fire the autorun and potentially clear the range highlight.
-  const msaView = observable({ mouseoveredColumn: 5 })
+  const msaView = observable({ mouseCol: 5 })
   const structure = observable({
     alignmentHoverRange: undefined as
       | { start: number; end: number }

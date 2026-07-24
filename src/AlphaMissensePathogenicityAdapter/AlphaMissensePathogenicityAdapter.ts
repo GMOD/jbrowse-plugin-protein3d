@@ -1,17 +1,15 @@
-import { BaseFeatureDataAdapter } from '@jbrowse/core/data_adapters/BaseAdapter'
-import { SimpleFeature, doesIntersect2, max, min } from '@jbrowse/core/util'
+import { max, min } from '@jbrowse/core/util'
 import { openLocation } from '@jbrowse/core/util/io'
-import { ObservableCreate } from '@jbrowse/core/util/rxjs'
+
+import {
+  BaseProteinAnnotationAdapter,
+  type ProteinAnnotationRow,
+} from '../BaseProteinAnnotationAdapter'
 
 import type { BaseOptions } from '@jbrowse/core/data_adapters/BaseAdapter'
-import type { Feature, Region } from '@jbrowse/core/util'
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Observable } from 'rxjs'
+import type { Region } from '@jbrowse/core/util'
 
-export interface AlphaMissenseRow {
-  uniqueId: string
-  start: number
-  end: number
+export interface AlphaMissenseRow extends ProteinAnnotationRow {
   score: number
   ref: string
   variant: string
@@ -21,9 +19,13 @@ export interface AlphaMissenseRow {
 /**
  * Parses AlphaMissense CSV text (protein_variant,score,am_class). The
  * protein_variant column looks like "V123L": a ref AA, a 1-based residue
- * coordinate, and a variant AA. Rows that don't parse to a numeric coordinate
- * are skipped rather than emitted as bogus position-0 features.
+ * coordinate, and a variant AA, converted here to a 0-based half-open interval
+ * to match the interbase protein reference sequence. Rows that don't match the
+ * ref/coord/variant shape are skipped rather than emitted as bogus features (a
+ * short string like "VL" would otherwise parse to a position-0 feature).
  */
+const VARIANT_RE = /^([A-Za-z])(\d+)([A-Za-z])$/
+
 export function parseAlphaMissense(text: string): AlphaMissenseRow[] {
   return text
     .split('\n')
@@ -32,21 +34,15 @@ export function parseAlphaMissense(text: string): AlphaMissenseRow[] {
     .filter(f => !!f)
     .flatMap((row, idx) => {
       const [protein_variant = '', score, am_class] = row.split(',')
-      const ref = protein_variant[0]
-      const variant = protein_variant.at(-1)
-      const coord = +protein_variant.slice(1, -1)
-      return ref !== undefined &&
-        variant !== undefined &&
-        !Number.isNaN(coord) &&
-        score !== undefined &&
-        am_class !== undefined
+      const match = VARIANT_RE.exec(protein_variant)
+      return match && score !== undefined && am_class !== undefined
         ? [
             {
               uniqueId: `feat-${idx}`,
-              ref,
-              variant,
-              start: coord,
-              end: coord + 1,
+              ref: match[1]!,
+              variant: match[3]!,
+              start: +match[2]! - 1,
+              end: +match[2]!,
               score: +score,
               am_class,
             },
@@ -55,28 +51,19 @@ export function parseAlphaMissense(text: string): AlphaMissenseRow[] {
     })
 }
 
-export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAdapter {
-  public static capabilities = ['getFeatures', 'getRefNames']
-
-  public feats: Promise<AlphaMissenseRow[]> | undefined
-
-  private async loadDataP() {
-    const scores = await openLocation(this.getConf('location')).readFile('utf8')
-    return parseAlphaMissense(scores)
+export default class AlphaMissensePathogenicityAdapter extends BaseProteinAnnotationAdapter<AlphaMissenseRow> {
+  protected async loadFeatures() {
+    return parseAlphaMissense(
+      await openLocation(this.getConf('location')).readFile('utf8'),
+    )
   }
 
-  private async loadData(_opts: BaseOptions = {}) {
-    this.feats ??= this.loadDataP().catch((e: unknown) => {
-      this.feats = undefined
-      throw e
-    })
-
-    return this.feats
+  protected featureData(row: AlphaMissenseRow, refName: string) {
+    return { ...row, refName, source: row.variant }
   }
 
   public async getGlobalStats(_opts?: BaseOptions) {
-    const data = await this.loadData()
-    const scores = data.map(s => s.score)
+    const scores = (await this.loadData()).map(s => s.score)
     return { scoreMin: min(scores), scoreMax: max(scores) }
   }
 
@@ -84,40 +71,9 @@ export default class AlphaMissensePathogenicityAdapter extends BaseFeatureDataAd
   async getMultiRegionFeatureDensityStats(_regions: Region[]) {
     return { featureDensity: 0 }
   }
-  public async getRefNames(_opts: BaseOptions = {}) {
-    return []
-  }
-
-  public getFeatures(query: Region, _opts: BaseOptions = {}) {
-    return ObservableCreate<Feature>(async observer => {
-      const { start, end, refName } = query
-      const data = await this.loadData()
-      for (const f of data) {
-        if (doesIntersect2(f.start, f.end, start, end)) {
-          observer.next(
-            new SimpleFeature({
-              ...f,
-              refName,
-              source: f.variant,
-            }),
-          )
-        }
-      }
-      observer.complete()
-    })
-  }
 
   public async getSources() {
-    const sources = new Set<string>()
-    const data = await this.loadData()
-    for (const f of data) {
-      sources.add(f.variant)
-    }
-    return [...sources].map(s => ({
-      name: s,
-      __name: s,
-    }))
+    const sources = new Set((await this.loadData()).map(f => f.variant))
+    return [...sources].map(s => ({ name: s, __name: s }))
   }
-
-  public freeResources(): void {}
 }

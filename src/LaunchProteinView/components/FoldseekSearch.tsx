@@ -86,9 +86,20 @@ const FoldseekSearch = observer(function FoldseekSearch({
     : ''
   const sequence = userEditedSequence ?? cleanedSequence
 
+  // Any change to the input sequence makes an existing 3Di prediction (and any
+  // results derived from it) stale. Clearing it returns the UI to the Predict
+  // step so a search can't silently run against the previously-predicted
+  // sequence after the user switches transcript or edits the residues.
+  const invalidatePrediction = () => {
+    if (di3Sequence !== undefined || results !== undefined) {
+      reset()
+    }
+  }
+
   const setUserSelectionWithReset = (id: string | undefined) => {
     setUserSelection(id)
     setUserEditedSequence(undefined)
+    invalidatePrediction()
   }
 
   const canPredict = sequence.trim().length > 0 && !isPredicting && !isLoading
@@ -132,6 +143,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
               value={sequence}
               onChange={e => {
                 setUserEditedSequence(e.target.value)
+                invalidatePrediction()
               }}
               placeholder={`MKTVRQERLKSIVRILERSKEPVSGAQLAEEL...`}
               disabled={isBusy}

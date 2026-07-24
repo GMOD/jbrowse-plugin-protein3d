@@ -34,12 +34,16 @@ const GenomeTo1DProteinHoverHighlight = observer(
       return null
     }
 
-    const { coord } = hovered.hoverPosition
+    const { coord, refName } = hovered.hoverPosition
 
     const feature = new SimpleFeature(protein1DInfo.feature)
     const mapping = genomeToTranscriptSeqMapping(feature)
     const { g2p } = mapping
-    const proteinPos = g2p[coord - 1]
+    // g2p is keyed by genomic position on the transcript's own refName; without
+    // this gate the same numeric coord on an unrelated chromosome would match a
+    // key and light a protein residue for a different locus.
+    const proteinPos =
+      refName === mapping.refName ? g2p[coord - 1] : undefined
     if (proteinPos === undefined) {
       return null
     }

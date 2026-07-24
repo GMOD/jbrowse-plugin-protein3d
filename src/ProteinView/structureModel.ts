@@ -3,6 +3,7 @@ import {
   type Instance,
   addDisposer,
   getParent,
+  isAlive,
   types,
 } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
@@ -751,24 +752,38 @@ const Structure = types
       }
 
       // Re-subscribe to a molstar click/hover behavior whenever the plugin
-      // becomes available; the subscription is disposed with the model.
+      // changes (view remount installs a fresh PluginContext). The previous
+      // subscription is torn down first so they don't accumulate across
+      // remounts, and a subscription that resolves after the context has already
+      // moved on is disposed immediately rather than left dangling.
       const addInteractionListener = (
         kind: 'click' | 'hover',
         onUpdate: (info: MolstarLocationInfo | undefined) => void,
       ) => {
+        let unsubscribe: (() => void) | undefined
+        addDisposer(self, () => {
+          unsubscribe?.()
+        })
         addDisposer(
           self,
           autorun(async () => {
             const { molstarPluginContext } = self
+            unsubscribe?.()
+            unsubscribe = undefined
             if (molstarPluginContext) {
-              addDisposer(
-                self,
-                await subscribeMolstarInteraction({
-                  plugin: molstarPluginContext,
-                  kind,
-                  onUpdate,
-                }),
-              )
+              const dispose = await subscribeMolstarInteraction({
+                plugin: molstarPluginContext,
+                kind,
+                onUpdate,
+              })
+              if (
+                isAlive(self) &&
+                self.molstarPluginContext === molstarPluginContext
+              ) {
+                unsubscribe = dispose
+              } else {
+                dispose()
+              }
             }
           }),
         )
@@ -892,11 +907,10 @@ const Structure = types
             molstarPluginContext,
             molstarStructure,
           } = self
-          if (
-            molstarStructure &&
-            molstarPluginContext &&
-            structureSeqToTranscriptSeqPosition
-          ) {
+          // Only the showHighlight "whole alignment" branch needs the
+          // transcript map; a clicked/declarative range (incl. a standalone
+          // structure with no transcript) must still light up without it.
+          if (molstarStructure && molstarPluginContext) {
             await setMolstarLoci({
               structure: molstarStructure,
               plugin: molstarPluginContext,
@@ -904,7 +918,7 @@ const Structure = types
               entityId: self.mappedEntityId,
               spec: clickedStructureRange
                 ? { kind: 'range', ...clickedStructureRange }
-                : showHighlight
+                : showHighlight && structureSeqToTranscriptSeqPosition
                   ? {
                       kind: 'list',
                       residues: Object.keys(
