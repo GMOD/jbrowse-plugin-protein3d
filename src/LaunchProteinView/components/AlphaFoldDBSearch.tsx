@@ -1,7 +1,12 @@
 import React from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  DialogActions,
+  DialogContent,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -33,6 +38,12 @@ const useStyles = makeStyles()({
     display: 'flex',
     flexDirection: 'row',
     gap: 20,
+    alignItems: 'flex-start',
+  },
+  endRow: {
+    display: 'flex',
+    flexDirection: 'row',
+    gap: 12,
     alignItems: 'flex-start',
   },
 })
@@ -72,12 +83,24 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           onSequenceSearchTypeChange={state.setSequenceSearchType}
           endContent={
             state.showIdentifierSelector ? (
-              <IdentifierSelector
-                recognizedIds={state.recognizedIds}
-                geneName={state.geneName}
-                selectedId={state.selectedQueryId}
-                onSelectedIdChange={state.setSelectedQueryId}
-              />
+              <div className={classes.endRow}>
+                <IdentifierSelector
+                  recognizedIds={state.recognizedIds}
+                  geneName={state.geneName}
+                  selectedId={state.selectedQueryId}
+                  onSelectedIdChange={state.setSelectedQueryId}
+                />
+                <TextField
+                  size="small"
+                  label="Organism (NCBI taxon)"
+                  helperText="Scopes the gene-name search"
+                  value={state.taxonId}
+                  onChange={event => { state.setTaxonId(event.target.value) }}
+                  placeholder={String(state.effectiveTaxonId)}
+                  slotProps={{ inputLabel: { shrink: true } }}
+                  sx={{ width: 180 }}
+                />
+              </div>
             ) : null
           }
         />

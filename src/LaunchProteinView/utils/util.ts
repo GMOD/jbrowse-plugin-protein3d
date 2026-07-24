@@ -4,6 +4,26 @@ export function stripStopCodon(seq: string) {
   return seq.replaceAll('*', '')
 }
 
+/**
+ * Pull an NCBI taxon id out of reference-sequence-track metadata. jb2hubs
+ * assemblies expose it differently by source: UCSC golden-path spreads it flat
+ * (`metadata.taxId`), GenArk nests the raw hub stanza (`metadata.ucsc.taxId`).
+ * `taxonId` is accepted too. Returns a positive integer, or undefined when
+ * absent/unparseable so callers can fall back to a default organism.
+ */
+export function extractTaxonId(metadata: unknown): number | undefined {
+  if (metadata === null || typeof metadata !== 'object') {
+    return undefined
+  }
+  const m = metadata as Record<string, unknown>
+  const ucsc =
+    m.ucsc !== null && typeof m.ucsc === 'object'
+      ? (m.ucsc as Record<string, unknown>)
+      : undefined
+  const n = Number(m.taxId ?? m.taxonId ?? ucsc?.taxId)
+  return Number.isFinite(n) && n > 0 ? n : undefined
+}
+
 export function getTranscriptFeatures(feature: Feature) {
   // check if we are looking at a 'two-level' or 'three-level' feature by
   // finding exon/CDS subfeatures. we want to select from transcript names

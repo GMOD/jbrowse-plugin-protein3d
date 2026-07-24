@@ -10,12 +10,16 @@ export default function useUniProtSearch({
   recognizedIds = [],
   geneId,
   geneName,
+  organismId,
   selectedQueryId = 'auto',
   enabled = true,
 }: {
   recognizedIds?: string[]
   geneId?: string
   geneName?: string
+  // NCBI taxon id scoping the gene-name fallback; undefined defers to the
+  // searchUniProtEntries default (human, 9606)
+  organismId?: number
   selectedQueryId?: string
   enabled?: boolean
 }) {
@@ -44,6 +48,7 @@ export default function useUniProtSearch({
           idsToSearch.join(','),
           geneNameToSearch,
           geneId,
+          organismId,
         ]
       : null,
     async () =>
@@ -51,6 +56,7 @@ export default function useUniProtSearch({
         recognizedIds: idsToSearch,
         geneId,
         geneName: geneNameToSearch,
+        organismId,
       }),
     {
       ...STATIC_SWR_OPTIONS,

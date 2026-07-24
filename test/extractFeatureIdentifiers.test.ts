@@ -98,7 +98,8 @@ describe('useAlphaFoldDBSearch', () => {
       end: 100,
       refName: 'chr1',
     })
-    mockView = { id: 'mock-view-id' } // Mock LinearGenomeViewModel
+    // assemblyNames empty so the taxon lookup short-circuits without a session
+    mockView = { id: 'mock-view-id', assemblyNames: [] } // Mock LinearGenomeViewModel
   })
 
   it('should initialize selectedQueryId to "auto" even when recognized IDs are available', () => {

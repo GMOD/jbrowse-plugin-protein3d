@@ -1,12 +1,19 @@
 import { useState } from 'react'
 
+import { getConf } from '@jbrowse/core/configuration'
+import { getSession } from '@jbrowse/core/util'
+
 import useAlphaFoldData from './useAlphaFoldData'
 import useAlphaFoldSequenceSearch from './useAlphaFoldSequenceSearch'
 import useDebouncedValue from './useDebouncedValue'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
 import useUniProtSearch from './useUniProtSearch'
 import getSearchDescription from '../utils/getSearchDescription'
-import { extractFeatureIdentifiers, stripStopCodon } from '../utils/util'
+import {
+  extractFeatureIdentifiers,
+  extractTaxonId,
+  stripStopCodon,
+} from '../utils/util'
 
 import type { SequenceSearchType } from './useAlphaFoldSequenceSearch'
 import type { LookupMode } from '../components/UniProtIdInput'
@@ -22,7 +29,27 @@ export default function useAlphaFoldDBSearch({
 }) {
   const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
   const [manualUniprotId, setManualUniprotId] = useState('')
+  const [taxonIdInput, setTaxonIdInput] = useState('')
   const geneIds = extractFeatureIdentifiers(feature)
+
+  // The gene-name UniProt search is ambiguous across species, so scope it to
+  // the assembly's organism. jb2hubs assemblies carry the NCBI taxon in the
+  // reference-sequence track metadata (UCSC: metadata.taxId, GenArk:
+  // metadata.ucsc.taxId). Falls back to human via searchUniProtEntries when
+  // absent; a user override (taxonIdInput) always wins.
+  const assemblyName = view.assemblyNames[0]
+  const assembly = assemblyName
+    ? getSession(view).assemblyManager.get(assemblyName)
+    : undefined
+  const assemblyTaxonId = assembly
+    ? extractTaxonId(getConf(assembly, ['sequence', 'metadata']))
+    : undefined
+
+  const overrideTaxon = Number(taxonIdInput.trim())
+  const effectiveTaxonId =
+    taxonIdInput.trim() !== '' && Number.isFinite(overrideTaxon) && overrideTaxon > 0
+      ? overrideTaxon
+      : assemblyTaxonId
   const [selectedQueryId, setSelectedQueryId] = useState('auto')
   const [sequenceSearchType, setSequenceSearchType] =
     useState<SequenceSearchType>('md5')
@@ -43,6 +70,7 @@ export default function useAlphaFoldDBSearch({
     recognizedIds: geneIds.recognizedIds,
     geneId: geneIds.geneId,
     geneName: geneIds.geneName,
+    organismId: effectiveTaxonId,
     selectedQueryId,
     enabled: isAutoMode,
   })
@@ -142,6 +170,10 @@ export default function useAlphaFoldDBSearch({
     setLookupMode,
     manualUniprotId,
     setManualUniprotId,
+    taxonId: taxonIdInput,
+    setTaxonId: setTaxonIdInput,
+    // shown as the field placeholder so the user sees the organism in effect
+    effectiveTaxonId: effectiveTaxonId ?? 9606,
     selectedQueryId,
     setSelectedQueryId,
     sequenceSearchType,
