@@ -3,7 +3,7 @@ import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, types } from '@jbrowse/mobx-state-tree'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Visibility from '@mui/icons-material/Visibility'
-import { autorun } from 'mobx'
+import { autorun, reaction } from 'mobx'
 
 import {
   COLOR_SCHEMES,
@@ -11,9 +11,9 @@ import {
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
-import { loadStructureData } from './loadStructureData'
 import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
+import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
 import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
 
@@ -27,17 +27,21 @@ const PERSISTED_SETTINGS = [
   'compactTracks',
 ] as const
 
+// Must mirror the property defaults below; the Record type enforces the key set
+// so a persisted setting can't be added without giving its default. Used to tell
+// "left at default" from "explicitly declared" when restoring preferences.
+const SETTING_DEFAULTS: Record<(typeof PERSISTED_SETTINGS)[number], boolean> = {
+  showAlignment: true,
+  showProteinTracks: true,
+  showHighlight: false,
+  zoomToBaseLevel: true,
+  autoScrollAlignment: false,
+  compactTracks: true,
+}
+
+import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-
-export interface ProteinViewInitState {
-  structures?: {
-    url?: string
-    data?: string
-  }[]
-  showControls?: boolean
-  showAlignment?: boolean
-}
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -121,21 +125,6 @@ function stateModelFactory() {
          * ID of connected MSA view for hover synchronization
          */
         connectedMsaViewId: types.maybe(types.string),
-
-        /**
-         * #property
-         * used for loading the protein view via session snapshots, e.g.
-         * {
-         *   "type": "ProteinView",
-         *   "init": {
-         *     "structures": [
-         *       { "url": "https://files.rcsb.org/download/1A2B.pdb" }
-         *     ],
-         *     "showControls": true
-         *   }
-         * }
-         */
-        init: types.frozen<ProteinViewInitState | undefined>(),
       }),
     )
     .volatile(() => ({
@@ -257,75 +246,34 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setInit(arg?: ProteinViewInitState) {
-        self.init = arg
-      },
-      /**
-       * #action
-       */
       setConnectedMsaViewId(id?: string) {
         self.connectedMsaViewId = id
       },
       /**
        * #action
+       * Adds a structure at runtime (e.g. the Add-structure dialog). Takes the
+       * full declarative spec so a dialog-added structure is a first-class
+       * citizen, identical to one hydrated from a launch snapshot.
        */
-      addStructure(structure: { url?: string; data?: string }) {
-        self.structures.push(
-          Structure.create({
-            url: structure.url,
-            data: structure.data,
-            userProvidedTranscriptSequence: '',
-          }),
-        )
-      },
-    }))
-    .actions(self => ({
-      /**
-       * #action
-       */
-      async addStructureAndSuperpose(structure: {
-        url?: string
-        data?: string
-      }) {
-        const { molstarPluginContext } = self
-        if (!molstarPluginContext) {
-          return
-        }
-
-        const newStructure = Structure.create({
-          url: structure.url,
-          data: structure.data,
-          userProvidedTranscriptSequence: '',
-        })
-        // Set loadedToMolstar BEFORE pushing to avoid race condition with autorun
-        newStructure.setLoadedToMolstar(true)
-        self.structures.push(newStructure)
-
-        try {
-          newStructure.setStructureData(
-            await loadStructureData({
-              structure,
-              plugin: molstarPluginContext,
-            }),
-          )
-          if (self.structures.length > 1) {
-            await superposeStructures(molstarPluginContext)
-          }
-        } catch (e) {
-          self.setError(e)
-          console.error(e)
-        }
+      addStructure(structure: ProteinStructureSpec) {
+        self.structures.push(Structure.create(structure))
       },
     }))
     .actions(self => ({
       afterAttach() {
-        // restore settings from localStorage
+        // Restore persisted UI preferences, but only for settings the launch
+        // snapshot left at their default. An explicitly declared value (e.g. a
+        // gene-explorer spec's zoomToBaseLevel:false) must win over a sticky
+        // preference, so declarative setup is honored.
         try {
           const stored = localStorage.getItem(SETTINGS_KEY)
           if (stored) {
             const settings = JSON.parse(stored) as Record<string, boolean>
             for (const key of PERSISTED_SETTINGS) {
-              if (settings[key] !== undefined) {
+              if (
+                settings[key] !== undefined &&
+                self[key] === SETTING_DEFAULTS[key]
+              ) {
                 self[key] = settings[key]
               }
             }
@@ -334,47 +282,25 @@ function stateModelFactory() {
           console.error('Failed to restore protein view settings', e)
         }
 
-        // save settings to localStorage when they change
+        // Persist on user change only. reaction (unlike autorun) skips the
+        // initial value, so launching a declaratively-configured view never
+        // overwrites the stored preference — only a menu toggle does.
         addDisposer(
           self,
-          autorun(() => {
-            try {
-              const settings: Record<string, boolean> = {}
-              for (const key of PERSISTED_SETTINGS) {
-                settings[key] = self[key]
-              }
-              localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-            } catch (e) {
-              console.error('Failed to save protein view settings', e)
-            }
-          }),
-        )
-
-        // process init parameter for loading structures from session snapshots
-        addDisposer(
-          self,
-          autorun(() => {
-            const { init } = self
-            if (init) {
-              const { structures, showControls, showAlignment } = init
-
-              if (structures) {
-                for (const structure of structures) {
-                  self.addStructure(structure)
+          reaction(
+            () => PERSISTED_SETTINGS.map(key => self[key]),
+            () => {
+              try {
+                const settings: Record<string, boolean> = {}
+                for (const key of PERSISTED_SETTINGS) {
+                  settings[key] = self[key]
                 }
+                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
+              } catch (e) {
+                console.error('Failed to save protein view settings', e)
               }
-
-              if (showControls !== undefined) {
-                self.setShowControls(showControls)
-              }
-
-              if (showAlignment !== undefined) {
-                self.setShowAlignment(showAlignment)
-              }
-
-              self.setInit(undefined)
-            }
-          }),
+            },
+          ),
         )
 
         // Apply the chosen color theme whenever it changes or once a structure
@@ -403,6 +329,11 @@ function stateModelFactory() {
         // context changes. See makeStructureLoader for why the autorun body is
         // synchronous and how it guards against duplicate/stale loads.
         addDisposer(self, autorun(makeStructureLoader(self)))
+
+        // Superpose (TM-align) whenever the set of loaded structures grows past
+        // one. Keeping this reactive means adding a structure only pushes it and
+        // lets the loader load it; see makeStructureSuperposer.
+        addDisposer(self, autorun(makeStructureSuperposer(self)))
       },
     }))
     .views(self => ({

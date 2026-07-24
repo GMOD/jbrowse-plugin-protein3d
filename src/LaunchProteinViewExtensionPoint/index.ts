@@ -1,8 +1,12 @@
 import { type ConnectedViewSpec, resolveShortLaunch } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
+import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
-import type { AbstractSessionModel } from '@jbrowse/core/util'
+import type {
+  AbstractSessionModel,
+  SimpleFeatureSerialized,
+} from '@jbrowse/core/util'
 
 export default function LaunchProteinViewExtensionPointF(
   pluginManager: PluginManager,
@@ -37,7 +41,7 @@ export default function LaunchProteinViewExtensionPointF(
       uniprotId?: string
       transcriptId?: string
       userProvidedTranscriptSequence?: string
-      feature?: Record<string, unknown>
+      feature?: SimpleFeatureSerialized
       connectedViewId?: string
       connectedView?: ConnectedViewSpec
       alignmentAlgorithm?: string
@@ -102,27 +106,28 @@ export default function LaunchProteinViewExtensionPointF(
             }).id
           : undefined)
 
-      const proteinView = session.addView('ProteinView', {
-        type: 'ProteinView',
-        alignmentAlgorithm,
-        displayName,
-        height,
-        showControls,
-        showHighlight,
-        zoomToBaseLevel,
-        structures: [
-          {
-            url: finalUrl,
-            userProvidedTranscriptSequence:
-              resolved?.userProvidedTranscriptSequence ??
-              userProvidedTranscriptSequence ??
-              '',
-            feature: resolved?.feature ?? feature,
-            connectedViewId: resolvedConnectedViewId,
-            initialSelection,
-          },
-        ],
-      })
+      const proteinView = session.addView(
+        'ProteinView',
+        proteinViewSnapshot({
+          alignmentAlgorithm,
+          displayName,
+          height,
+          showControls,
+          showHighlight,
+          zoomToBaseLevel,
+          structures: [
+            {
+              url: finalUrl,
+              userProvidedTranscriptSequence:
+                resolved?.userProvidedTranscriptSequence ??
+                userProvidedTranscriptSequence,
+              feature: resolved?.feature ?? feature,
+              connectedViewId: resolvedConnectedViewId,
+              initialSelection,
+            },
+          ],
+        }),
+      )
 
       if (ownsConnectedView) {
         maybeLaunchSideBySide(session, proteinView.id, sideBySide)

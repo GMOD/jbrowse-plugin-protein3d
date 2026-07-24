@@ -61,7 +61,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
       }
 
       if (url !== undefined || data !== undefined) {
-        await model.addStructureAndSuperpose({ url, data })
+        model.addStructure({ url, data })
         handleClose()
       }
     } catch (e) {

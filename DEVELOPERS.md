@@ -1,3 +1,53 @@
+## Declarative view setup
+
+There are two declarative ways to open a ProteinView, and they differ in how
+much the plugin resolves for you:
+
+- **`LaunchView-ProteinView` extension point** (`session=spec-{…}` URL params) —
+  a _resolving_ contract: short-form props like `uniprotId`/`transcriptId` are
+  turned into a structure URL, a transcript feature, and an alignment sequence
+  before the view is created. Documented below.
+- **Full session snapshot** (`buildSessionUrl`-style deflated `session=`, or a
+  `defaultSession`) — the view hydrates _directly_ from its own model
+  properties, all set at the **top level** of the view object. This is what the
+  gene-explorer (`react-msaview/website`) and `jb2hubs` apps emit.
+
+### Top-level snapshot shape (no `init`)
+
+Unlike `LinearGenomeView`, **ProteinView has no `init` property**. `init` exists
+only for keys that need on-attach resolution (LGV's `loc` can't become
+`displayedRegions` until its assembly loads); ProteinView has none — structures
+load into Mol\* reactively and the alignment/mapping derive themselves — so every
+field is a plain top-level property that MST restores natively:
+
+```jsonc
+{
+  "type": "ProteinView",
+  "height": 500,
+  "zoomToBaseLevel": false,
+  "connectedMsaViewId": "msa-1", // optional MSA hover-sync link
+  "structures": [
+    {
+      "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
+      "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
+      "feature": { /* serialized transcript, see "feature shape" */ },
+      "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
+      "initialSelection": { "start": 338, "end": 350 } // optional pre-lit domain
+    }
+  ]
+}
+```
+
+Cross-view wiring is by declared id (`connectedViewId`, `connectedMsaViewId`) and
+a shared `feature`, so no imperative wiring code is needed. The typed spec and
+its snapshot builder live in `src/ProteinView/proteinViewSpec.ts`
+(`ProteinViewSpec` / `proteinViewSnapshot`) — every launch path funnels through
+that one builder so they can't drift into different property subsets.
+
+Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
+localStorage) only fill settings the snapshot left at their default, so an
+explicitly declared value always wins over a sticky preference.
+
 ## LaunchView-ProteinView extension point
 
 This plugin registers a `LaunchView-ProteinView` extension point that allows

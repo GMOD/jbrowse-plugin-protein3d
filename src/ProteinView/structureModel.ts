@@ -91,8 +91,10 @@ const Structure = types
     feature: types.frozen<SimpleFeatureSerialized | undefined>(),
     /**
      * #property
+     * Optional so a hand-authored `structures: [{ url }]` snapshot hydrates
+     * without this field; empty means "use the structure's own sequence".
      */
-    userProvidedTranscriptSequence: types.string,
+    userProvidedTranscriptSequence: types.optional(types.string, ''),
     /**
      * #property
      * Declarative seed for the persistent domain selection: a 0-based,

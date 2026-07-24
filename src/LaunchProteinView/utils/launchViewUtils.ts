@@ -2,6 +2,7 @@ import { isSessionWithAddTracks } from '@jbrowse/core/util'
 
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
+import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
 import type {
@@ -134,23 +135,22 @@ export function launch3DProteinView({
     // preference decides (left genome | right protein)
     sideBySide?: boolean
   }) {
-  const snap = {
-    type: 'ProteinView',
+  const snap = proteinViewSnapshot({
     alignmentAlgorithm,
     connectedMsaViewId,
+    displayName:
+      displayName ??
+      formatViewName('Protein view', feature, selectedTranscript, uniprotId),
     structures: [
       {
         url,
         data,
-        userProvidedTranscriptSequence: userProvidedTranscriptSequence ?? '',
+        userProvidedTranscriptSequence,
         feature: selectedTranscript?.toJSON(),
         connectedViewId: view.id,
       },
     ],
-    displayName:
-      displayName ??
-      formatViewName('Protein view', feature, selectedTranscript, uniprotId),
-  }
+  })
   const proteinView = session.addView('ProteinView', snap)
   maybeLaunchSideBySide(session, proteinView.id, sideBySide)
   return proteinView
