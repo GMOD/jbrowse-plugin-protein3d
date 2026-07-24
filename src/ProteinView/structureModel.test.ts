@@ -55,6 +55,54 @@ function makeModel() {
   return parent.structures[0]!
 }
 
+test('hydrates from a minimal { url } snapshot (userProvidedTranscriptSequence optional)', () => {
+  const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
+  const s = parent.structures[0]!
+  expect(s.url).toBe('x.cif')
+  expect(s.userProvidedTranscriptSequence).toBe('')
+})
+
+test('hydrates every declarative per-structure field from a snapshot', () => {
+  const feature = { uniqueId: 'tx1', refName: 'chr1', start: 0, end: 9 }
+  const parent = TestParent.create({
+    structures: [
+      {
+        url: 'x.cif',
+        connectedViewId: 'lgv-1',
+        feature,
+        userProvidedTranscriptSequence: 'MKAA',
+        initialSelection: { start: 3, end: 7 },
+      },
+    ],
+  })
+  const s = parent.structures[0]!
+  expect(s.connectedViewId).toBe('lgv-1')
+  expect(s.feature).toEqual(feature)
+  expect(s.userProvidedTranscriptSequence).toBe('MKAA')
+  expect(s.initialSelection).toEqual({ start: 3, end: 7 })
+})
+
+test('resolves a uniprotId shorthand to an AlphaFold url at hydration', () => {
+  const parent = TestParent.create({ structures: [{ uniprotId: 'P04637' }] })
+  expect(parent.structures[0]!.url).toBe(
+    'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif',
+  )
+})
+
+test('resolves a pdbId shorthand to an RCSB url at hydration', () => {
+  const parent = TestParent.create({ structures: [{ pdbId: '1CRN' }] })
+  expect(parent.structures[0]!.url).toBe(
+    'https://files.rcsb.org/download/1CRN.cif',
+  )
+})
+
+test('an explicit url wins over a uniprotId shorthand', () => {
+  const parent = TestParent.create({
+    structures: [{ url: 'https://example.com/x.cif', uniprotId: 'P04637' }],
+  })
+  expect(parent.structures[0]!.url).toBe('https://example.com/x.cif')
+})
+
 test('hoverAlignmentPosition updates hoverPosition when no feature is hovered', () => {
   const model = makeModel()
   expect(model.hoverPosition).toBeUndefined()

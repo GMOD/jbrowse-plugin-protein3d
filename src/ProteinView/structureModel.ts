@@ -38,11 +38,16 @@ import subscribeMolstarInteraction, {
 } from './subscribeMolstarInteraction'
 import { coerceAlignmentAlgorithm } from './types'
 import { checkHovered } from './util'
-import { getUniprotIdFromAlphaFoldTarget } from '../LaunchProteinView/utils/launchViewUtils'
+import {
+  getAlphaFoldStructureUrl,
+  getPdbStructureUrl,
+  getUniprotIdFromAlphaFoldTarget,
+} from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { Entity } from './extractStructureSequences'
+import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
@@ -104,6 +109,24 @@ const Structure = types
      * session spec open with a domain pre-highlighted, with no click.
      */
     initialSelection: types.frozen<{ start: number; end: number } | undefined>(),
+  })
+  // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
+  // concrete `url` at hydration and strip the shorthand keys (they are not
+  // stored — uniprotId stays derivable from the url via the getter below), so a
+  // hand-authored snapshot loads without the caller knowing the AlphaFold/RCSB
+  // URL format. An explicit url/data always wins; the shorthand resolves the
+  // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
+  // shorthand keys and an already-set url, so it passes through unchanged.
+  .preProcessSnapshot(({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => {
+    const hasSource = rest.url !== undefined || rest.data !== undefined
+    const url = hasSource
+      ? rest.url
+      : uniprotId !== undefined
+        ? getAlphaFoldStructureUrl(uniprotId)
+        : pdbId !== undefined
+          ? getPdbStructureUrl(pdbId)
+          : rest.url
+    return { ...rest, url }
   })
   .volatile(() => ({
     /**

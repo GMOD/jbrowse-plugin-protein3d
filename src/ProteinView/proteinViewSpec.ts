@@ -10,6 +10,10 @@ import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 export interface ProteinStructureSpec {
   url?: string
   data?: string
+  // shorthands resolved to `url` at hydration when neither url nor data is set:
+  // uniprotId -> AlphaFold model, pdbId -> RCSB mmCIF
+  uniprotId?: string
+  pdbId?: string
   // id of the LinearGenomeView this structure maps residues<->codons against
   connectedViewId?: string
   // transcript feature driving the genome<->protein mapping

@@ -44,6 +44,24 @@ its snapshot builder live in `src/ProteinView/proteinViewSpec.ts`
 (`ProteinViewSpec` / `proteinViewSnapshot`) — every launch path funnels through
 that one builder so they can't drift into different property subsets.
 
+#### Structure shorthand: `uniprotId` / `pdbId`
+
+Instead of a full `url`, a structure may give a `uniprotId` (→ AlphaFold model)
+or `pdbId` (→ RCSB mmCIF); it's resolved to `url` at hydration when no `url`/`data`
+is set, so you don't have to know the file-URL format:
+
+```jsonc
+{ "type": "ProteinView", "structures": [{ "uniprotId": "P04637" }] }
+```
+
+The shorthand keys are input-only (not stored — `uniprotId` stays derivable from
+the resolved url) and resolve the **canonical isoform only** (`AF-<id>-F1`).
+Per-isoform structures (UniProt/AlphaFold DB now publish these) are not yet
+addressable via this shorthand — pass an explicit `url` for a specific isoform.
+This snapshot shorthand only sets the structure; it does **not** build the
+genome↔protein connection (feature/sequence) — for that use the extension
+point's `uniprotId` + `transcriptId` short form below.
+
 Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
 localStorage) only fill settings the snapshot left at their default, so an
 explicitly declared value always wins over a sticky preference.
