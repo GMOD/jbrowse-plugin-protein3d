@@ -5,7 +5,7 @@ import useSWR from 'swr'
 import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { jsonfetch } from '../../fetchUtils'
 import { md5 } from '../utils/md5'
-import { stripStopCodon } from '../utils/util'
+import { stripAllStopCodons } from '../utils/util'
 
 export type SequenceSearchType = 'md5' | 'sequence'
 
@@ -37,7 +37,7 @@ export default function useAlphaFoldSequenceSearch({
     if (!sequence) {
       return undefined
     }
-    const cleanSeq = stripStopCodon(sequence.toUpperCase())
+    const cleanSeq = stripAllStopCodons(sequence.toUpperCase())
     return searchType === 'md5' ? md5(cleanSeq) : cleanSeq
   }, [sequence, searchType])
 

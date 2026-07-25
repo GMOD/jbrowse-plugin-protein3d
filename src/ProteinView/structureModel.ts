@@ -46,12 +46,14 @@ import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { Entity } from './extractStructureSequences'
+import type { StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import type { Structure as MolstarStructure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 type LGV = LinearGenomeViewModel
@@ -66,7 +68,6 @@ export interface ParentProteinView {
   compactTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
-  structures: { url?: string }[]
   setShowAlignment: (f: boolean) => void
   setError: (e: unknown) => void
 }
@@ -181,6 +182,15 @@ const Structure = types
     loadedToMolstar: false,
     /**
      * #volatile
+     * The molstar Structure this model's load produced, captured from the
+     * loader rather than looked up by position in
+     * `hierarchy.current.structures` — that array is ordered by load
+     * completion, so with two structures in flight index N can be another
+     * model's geometry.
+     */
+    molstarStructure: undefined as MolstarStructure | undefined,
+    /**
+     * #volatile
      * Range of alignment positions to highlight (e.g., when hovering a protein feature)
      */
     alignmentHoverRange: undefined as
@@ -203,9 +213,10 @@ const Structure = types
     expandedFeatureTypes: new Set<string>(),
   }))
   .actions(self => ({
-    setStructureData(data: { entities?: Entity[]; confidence?: number[] }) {
+    setStructureData(data: StructureData) {
       self.entities = data.entities
       self.structureConfidence = data.confidence
+      self.molstarStructure = data.molstarStructure
     },
     /**
      * #action
@@ -244,6 +255,10 @@ const Structure = types
      */
     setLoadedToMolstar(val: boolean) {
       self.loadedToMolstar = val
+      if (!val) {
+        // the handle belongs to the plugin we were unloaded from
+        self.molstarStructure = undefined
+      }
     },
   }))
   .views(self => ({
@@ -702,26 +717,6 @@ const Structure = types
     },
     get molstarPluginContext(): PluginContext | undefined {
       return this.parentView.molstarPluginContext
-    },
-    /**
-     * #getter
-     * Returns this structure's index in the parent's structures array
-     */
-    get structureIndex() {
-      return this.parentView.structures.indexOf(self)
-    },
-    /**
-     * #getter
-     * Returns the Molstar structure object for the current structure.
-     * Note: We access loadedToMolstar to ensure MobX recomputes this getter
-     * when the structure finishes loading (Molstar's internal state isn't observable).
-     */
-    get molstarStructure() {
-      const idx = this.structureIndex
-      return self.loadedToMolstar && idx >= 0
-        ? this.molstarPluginContext?.managers.structure.hierarchy.current
-            .structures[idx]?.cell.obj?.data
-        : undefined
     },
   }))
   .actions(self => ({

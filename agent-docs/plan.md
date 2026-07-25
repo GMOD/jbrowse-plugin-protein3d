@@ -44,28 +44,35 @@ characterization tests that pin current behavior, then refactor against them.
 
 ---
 
-## Known bugs (found, not yet fixed)
+## Recently fixed bugs
 
-- **`molstarStructure` is looked up by array position.** `structureModel.ts`'s
-  `structureIndex` indexes `hierarchy.current.structures[]`, but molstar builds
-  that array by state-tree insertion order and `makeStructureLoader` dispatches
-  all pending structures concurrently — so it is _load-completion_ order. A
-  snapshot with two structures can bind structure 0's highlights to structure
-  1's geometry. Fix: have `loadStructureData` return the created structure ref
-  and store it as a volatile, instead of deriving an index (this also removes
-  `loadedToMolstar`'s role as a recompute trigger). Folds naturally into
-  Refactor #3.
-- **The pairwise DP is unbounded and on the main thread.** Measured: 300 aa 17
-  ms / 19 MB, 1500 aa 273 ms / 125 MB, 2500 aa 586 ms / 194 MB — three
-  `number[][]` of (m+1)×(n+1) — and `chooseMappedEntity` runs one per polymer
-  entity inside an autorun. Long sequences or many-chain complexes freeze or OOM
-  the tab. Cheap: `Float32Array` rows + a `Uint8Array` traceback, and an array
-  push instead of the prepend-string traceback. Real fix: run it in a worker.
-- **Interior stop codons shift the mapping.** `stripStopCodon` removes _all_
-  `*`, so the alignment's transcript row is in stripped coordinates while
-  `g2p`/`userProvidedTranscriptSequence` are unstripped. A trailing stop is
-  harmless; an interior one (mis-annotated CDS, selenoprotein read-through)
-  offsets every later genome↔structure hover.
+All three are covered by tests; none verified in-browser.
+
+- **`molstarStructure` was looked up by array position.** `structureIndex`
+  indexed `hierarchy.current.structures[]`, which molstar builds in state-tree
+  insertion order while `makeStructureLoader` dispatches all pending structures
+  concurrently — i.e. _load-completion_ order, so two structures could bind
+  structure 0's highlights to structure 1's geometry. `applyStructurePreset` now
+  returns the `Structure` the preset created, `loadStructureData` passes it
+  through as `StructureData.molstarStructure`, and the model holds it as a
+  volatile (cleared by `setLoadedToMolstar(false)`). `structureIndex` and the
+  derived getter are gone, as is `loadedToMolstar`'s role as a recompute
+  trigger. Tests: `structureLoader.test.ts`.
+- **The pairwise DP was unbounded and quadratic in memory.** Now one
+  `Uint8Array` of packed traceback pointers (2 bits per matrix per cell) plus
+  two `Float32Array` score rows, a flat `Int8Array` BLOSUM lookup keyed by char
+  code, and array-push traceback instead of string prepending. Measured 2500 aa:
+  768 ms / 120 MB → 308 ms / ~6 MB. `MAX_ALIGNMENT_CELLS` (40M) caps the table;
+  `chooseMappedEntity` dedupes identical entity sequences and skips oversized
+  ones instead of throwing. Verified output-identical to the old implementation
+  over 600 randomized sequence pairs plus degenerate cases. **Still on the main
+  thread** — a worker is the remaining fix, and the only way to lift the cap.
+- **Interior stop codons shifted the mapping.** `stripStopCodon` removed _all_
+  `*`, so the alignment's transcript row was in stripped coordinates while
+  `g2p`/`userProvidedTranscriptSequence` were unstripped. It now strips only
+  trailing `*`. The two call sites that feed an external similarity search
+  (Foldseek, AlphaFold), where `*` is not a valid query character and no
+  coordinate depends on the result, use the new `stripAllStopCodons`.
 
 ---
 
@@ -104,6 +111,7 @@ declarative state with imperative, order-sensitive, async 3D side effects —
 there is already a documented load race in `model.ts addStructureAndSuperpose`.
 
 **Proposal.** One `MolstarController` per structure owns the plugin handle and
+the `molstarStructure` volatile (already threaded through from the loader) and
 _all_ imperative calls behind a typed API: `highlight(range)`, `select(range)`,
 `clear()`, `setColorScheme(scheme)`, `onPick(cb)`, `addStructure()`,
 `superpose()`. The MST model holds only declarative state; a **single

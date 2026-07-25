@@ -1,4 +1,4 @@
-import { runLocalAlignment } from './pairwiseAlignment'
+import { alignmentTooLarge, runLocalAlignment } from './pairwiseAlignment'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 
 import type { PairwiseAlignment } from '../mappings'
@@ -81,16 +81,28 @@ export function chooseMappedEntity(
     }
   }
 
+  // Each alignment is an O(len(t) * len(s)) main-thread DP, so a complex with
+  // many chains pays it once per chain. Homomers and repeated chains share a
+  // sequence, so align each distinct one once and reuse the result; oversized
+  // chains (long nucleic-acid strands, say) are skipped rather than allowed to
+  // lock up the tab.
+  const bySeq = new Map<
+    string,
+    { alignment: PairwiseAlignment; matches: number }
+  >()
   let best: EntitySelection | undefined
   for (let index = 0; index < stripped.length; index++) {
     const s = stripped[index]!
-    if (s.length === 0) {
-      continue
-    }
-    const alignment = runLocalAlignment(t, s, algorithm)
-    const matches = countMatches(alignment)
-    if (!best || matches > best.matches) {
-      best = { index, alignment, matches }
+    if (s.length > 0 && !alignmentTooLarge(t.length, s.length)) {
+      let scored = bySeq.get(s)
+      if (!scored) {
+        const alignment = runLocalAlignment(t, s, algorithm)
+        scored = { alignment, matches: countMatches(alignment) }
+        bySeq.set(s, scored)
+      }
+      if (!best || scored.matches > best.matches) {
+        best = { index, ...scored }
+      }
     }
   }
   return best

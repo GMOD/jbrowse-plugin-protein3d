@@ -4,11 +4,16 @@ import { extractPerResidueConfidence } from './extractPerResidueConfidence'
 import { extractEntities } from './extractStructureSequences'
 
 import type { Entity } from './extractStructureSequences'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export interface StructureData {
   entities?: Entity[]
   confidence?: number[]
+  /** The molstar Structure this load created. Held by identity so highlights
+   * bind to the right geometry — concurrent loads finish in arbitrary order, so
+   * a position in `hierarchy.current.structures` identifies nothing stable. */
+  molstarStructure?: Structure
 }
 
 /**
@@ -24,14 +29,14 @@ export async function loadStructureData({
   structure: { data?: string; url?: string }
   plugin: PluginContext
 }): Promise<StructureData> {
-  const { model } = structure.data
+  const { model, structure: molstarStructure } = structure.data
     ? await addStructureFromData({ data: structure.data, plugin })
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
-      : { model: undefined }
+      : { model: undefined, structure: undefined }
   const entities = model ? extractEntities(model) : undefined
   const confidence = model
     ? extractPerResidueConfidence(model, entities?.[0]?.seq.length)
     : undefined
-  return { entities, confidence }
+  return { entities, confidence, molstarStructure }
 }

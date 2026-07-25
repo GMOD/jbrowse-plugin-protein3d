@@ -13,6 +13,8 @@ import {
   chooseMappedEntity,
   interactionMatchesMappedEntity,
 } from './chooseMappedEntity'
+import { MAX_ALIGNMENT_CELLS } from './pairwiseAlignment'
+import { structureSeqVsTranscriptSeqMap } from '../mappings'
 
 const HEMOGLOBIN = [HBA_ALPHA_4HHB_ENTITY0, HBB_BETA_4HHB_ENTITY1]
 
@@ -69,6 +71,58 @@ test('returns undefined when there is nothing to map', () => {
   expect(
     chooseMappedEntity(HBB_TRANSCRIPT_P68871, [], 'smith_waterman'),
   ).toBeUndefined()
+})
+
+// One O(len^2) main-thread DP per chain: a big complex used to pay it once per
+// copy of the same chain, and an oversized chain could hang the tab outright.
+test('aligns each distinct entity sequence once, however many copies there are', () => {
+  // 4HHB is α,β,α,β — two distinct sequences across four chains
+  const tetramer = [
+    HBA_ALPHA_4HHB_ENTITY0,
+    HBB_BETA_4HHB_ENTITY1,
+    HBA_ALPHA_4HHB_ENTITY0,
+    HBB_BETA_4HHB_ENTITY1,
+  ]
+  const sel = chooseMappedEntity(
+    HBB_TRANSCRIPT_P68871,
+    tetramer,
+    'smith_waterman',
+  )
+  // first copy of the winning sequence wins; the duplicate scores identically
+  expect(sel?.index).toBe(1)
+  expect(sel?.matches).toBe(
+    chooseMappedEntity(
+      HBB_TRANSCRIPT_P68871,
+      [HBB_BETA_4HHB_ENTITY1],
+      'smith_waterman',
+    )?.matches,
+  )
+})
+
+test('skips entities too large to align instead of hanging on them', () => {
+  const huge = 'A'.repeat(MAX_ALIGNMENT_CELLS)
+  const sel = chooseMappedEntity(
+    HBB_TRANSCRIPT_P68871,
+    [huge, HBB_BETA_4HHB_ENTITY1],
+    'smith_waterman',
+  )
+  expect(sel?.index).toBe(1)
+})
+
+// The alignment's transcript row has to stay in the same coordinate space as
+// g2p, whose protein positions are codon indices — so an interior stop stays in
+// place and only the terminal one is dropped. Stripping all of them used to
+// shift every residue after the interior stop by one codon.
+test('an interior stop codon keeps transcript coordinates aligned with g2p', () => {
+  const sel = chooseMappedEntity('MKAA*WYVL*', ['MKAAWYVL'], 'needleman_wunsch')
+  expect(sel?.alignment.alns[0].seq).toBe('MKAA*WYVL')
+  expect(sel?.alignment.alns[1].seq).toBe('MKAA-WYVL')
+
+  const { structureSeqToTranscriptSeqPosition } =
+    structureSeqVsTranscriptSeqMap(sel!.alignment)
+  // structure residue 4 is 'W', which is codon 5 of the transcript, not codon 4
+  expect(structureSeqToTranscriptSeqPosition[4]).toBe(5)
+  expect(structureSeqToTranscriptSeqPosition[7]).toBe(8)
 })
 
 test('interactionMatchesMappedEntity: only the mapped entity drives navigation', () => {

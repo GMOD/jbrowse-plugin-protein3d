@@ -5,9 +5,13 @@ import { loadStructureData } from './loadStructureData'
 import { makeStructureLoader } from './structureLoader'
 
 import type { Entity } from './extractStructureSequences'
+import type { StructureData } from './loadStructureData'
 import type { StructureLoaderHost } from './structureLoader'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 
 const entity = (seq: string): Entity => ({ entityId: '1', seq })
+// stand-in for a molstar Structure — the loader only passes the handle through
+const molstarStructure = (id: string) => ({ id }) as unknown as Structure
 
 vi.mock('./loadStructureData', () => ({ loadStructureData: vi.fn() }))
 const mockLoad = vi.mocked(loadStructureData)
@@ -19,13 +23,18 @@ const TestStructure = types
   .volatile(() => ({
     loadedToMolstar: false,
     entities: undefined as Entity[] | undefined,
+    molstarStructure: undefined as Structure | undefined,
   }))
   .actions(self => ({
-    setStructureData(d: { entities?: Entity[] }) {
+    setStructureData(d: StructureData) {
       self.entities = d.entities
+      self.molstarStructure = d.molstarStructure
     },
     setLoadedToMolstar(v: boolean) {
       self.loadedToMolstar = v
+      if (!v) {
+        self.molstarStructure = undefined
+      }
     },
   }))
 
@@ -44,8 +53,10 @@ const TestHost = types
     },
   }))
 
-function setup(plugin: object) {
-  const host = TestHost.create({ structures: [{}] })
+function setup(plugin: object, count = 1) {
+  const host = TestHost.create({
+    structures: Array.from({ length: count }, () => ({})),
+  })
   host.setPlugin(plugin)
   const load = makeStructureLoader(host as unknown as StructureLoaderHost)
   return { host, load, structure: host.structures[0]! }
@@ -92,6 +103,45 @@ test('discards a stale-plugin result and reloads into the current plugin', async
   expect(structure.entities).toEqual([entity('B')])
   expect(structure.loadedToMolstar).toBe(true)
   expect(mockLoad).toHaveBeenCalledTimes(2)
+})
+
+// Regression: molstarStructure used to be hierarchy.current.structures[myIndex],
+// but molstar orders that array by load completion while the index came from the
+// model's own array — so with two structures in flight the slower-loading model
+// bound to the other one's geometry, and its highlights landed on the wrong
+// structure. The handle now comes back from the load that created it.
+test('each structure keeps the handle its own load returned, whatever the order', async () => {
+  const first = molstarStructure('first')
+  const second = molstarStructure('second')
+  let resolveFirst: (v: StructureData) => void = () => {}
+  mockLoad
+    .mockImplementationOnce(() => new Promise(res => (resolveFirst = res)))
+    .mockResolvedValueOnce({ molstarStructure: second })
+
+  const { host, load } = setup({}, 2)
+  load()
+  expect(mockLoad).toHaveBeenCalledTimes(2)
+
+  // structures[1] finishes first — the array position no longer matches
+  await tick()
+  expect(host.structures[1]!.molstarStructure).toBe(second)
+  expect(host.structures[0]!.molstarStructure).toBeUndefined()
+
+  resolveFirst({ molstarStructure: first })
+  await tick()
+  expect(host.structures[0]!.molstarStructure).toBe(first)
+  expect(host.structures[1]!.molstarStructure).toBe(second)
+})
+
+test('unloading drops the handle so highlights never target a dead plugin', async () => {
+  mockLoad.mockResolvedValue({ molstarStructure: molstarStructure('a') })
+  const { load, structure } = setup({})
+  load()
+  await tick()
+  expect(structure.molstarStructure).toBeDefined()
+
+  structure.setLoadedToMolstar(false)
+  expect(structure.molstarStructure).toBeUndefined()
 })
 
 test('reports load errors and leaves the structure unloaded', async () => {

@@ -17,7 +17,7 @@ import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { DEFAULT_DATABASES } from '../services/foldseekApi'
-import { stripStopCodon } from '../utils/util'
+import { stripAllStopCodons } from '../utils/util'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -82,7 +82,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
   } = useTranscriptIsoformSelection({ feature, view })
 
   const cleanedSequence = selectedIsoformData
-    ? stripStopCodon(selectedIsoformData.seq)
+    ? stripAllStopCodons(selectedIsoformData.seq)
     : ''
   const sequence = userEditedSequence ?? cleanedSequence
 

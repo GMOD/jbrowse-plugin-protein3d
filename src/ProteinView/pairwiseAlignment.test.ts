@@ -1,6 +1,8 @@
 import { expect, test } from 'vitest'
 
 import {
+  MAX_ALIGNMENT_CELLS,
+  alignmentTooLarge,
   needlemanWunsch,
   runLocalAlignment,
   smithWaterman,
@@ -61,6 +63,32 @@ test('runLocalAlignment - consensus marks gaps correctly', () => {
   )
   expect(result.consensus).not.toContain('|||||||||')
   expect(result.consensus).toContain(' ')
+})
+
+test('lowercase residues score the same as uppercase', () => {
+  expect(needlemanWunsch('mkaa', 'MKAA').score).toBe(
+    needlemanWunsch('MKAA', 'MKAA').score,
+  )
+})
+
+test('residues outside the BLOSUM alphabet fall back to the unknown-pair score', () => {
+  // '?' isn't in the matrix; both directions must agree and stay finite
+  const a = needlemanWunsch('M?AA', 'MKAA')
+  expect(a.alignedSeq1.length).toBe(a.alignedSeq2.length)
+  expect(Number.isFinite(a.score)).toBe(true)
+  expect(needlemanWunsch('MKAA', 'M?AA').score).toBe(a.score)
+})
+
+// The DP is O(m*n) time and holds a byte of traceback per cell, on the main
+// thread. Without a ceiling a titin-sized sequence hangs or OOMs the tab.
+test('refuses an alignment whose DP table would exceed the cell limit', () => {
+  const side = Math.ceil(Math.sqrt(MAX_ALIGNMENT_CELLS)) + 1
+  expect(alignmentTooLarge(side, side)).toBe(true)
+  expect(alignmentTooLarge(2500, 2500)).toBe(false)
+  // constructing the strings is cheap next to the table they'd imply
+  const long = 'A'.repeat(side)
+  expect(() => needlemanWunsch(long, long)).toThrow(/too long to align/)
+  expect(() => smithWaterman(long, long)).toThrow(/too long to align/)
 })
 
 test('runLocalAlignment - handles real protein sequences', () => {
