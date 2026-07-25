@@ -139,20 +139,45 @@ export default function App() {
   }
 
   return (
-    <div style={{ display: 'flex', height: '100vh', fontFamily: 'sans-serif', fontSize: 13 }}>
-      <div style={{ width: 460, overflow: 'auto', padding: 10, borderRight: '1px solid #ddd' }}>
+    <div
+      style={{
+        display: 'flex',
+        height: '100vh',
+        fontFamily: 'sans-serif',
+        fontSize: 13,
+      }}
+    >
+      <div
+        style={{
+          width: 460,
+          overflow: 'auto',
+          padding: 10,
+          borderRight: '1px solid #ddd',
+        }}
+      >
         <div style={{ fontWeight: 'bold', marginBottom: 2 }}>
           PDB ↔ transcript mapping harness
         </div>
         <div style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>
           Surfaces how the plugin's entity-[0]-only, label_seq_id mapping breaks
-          on multi-chain / partial structures. Run the plugin's mapping code here
-          for a fast verdict, or open any example gene in the real plugin via its{' '}
-          <strong>↗ JBrowse</strong> link.
+          on multi-chain / partial structures. Run the plugin's mapping code
+          here for a fast verdict, or open any example gene in the real plugin
+          via its <strong>↗ JBrowse</strong> link.
         </div>
 
-        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap', alignItems: 'center', marginBottom: 4 }}>
-          <select value={source} onChange={e => setSource(e.target.value as Source)}>
+        <div
+          style={{
+            display: 'flex',
+            gap: 4,
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            marginBottom: 4,
+          }}
+        >
+          <select
+            value={source}
+            onChange={e => setSource(e.target.value as Source)}
+          >
             <option value="pdb">PDB ID</option>
             <option value="alphafold">AlphaFold</option>
             <option value="url">URL</option>
@@ -179,17 +204,29 @@ export default function App() {
             placeholder="UniProt"
             title="UniProt accession — auto-fetched if the sequence box is empty"
           />
-          <button onClick={() => runCurrent()} disabled={busy} style={{ fontWeight: 'bold' }}>
+          <button
+            onClick={() => runCurrent()}
+            disabled={busy}
+            style={{ fontWeight: 'bold' }}
+          >
             {busy ? 'Working…' : 'Load'}
           </button>
         </div>
         <textarea
-          style={{ width: '100%', height: 36, fontFamily: 'monospace', fontSize: 10, boxSizing: 'border-box' }}
+          style={{
+            width: '100%',
+            height: 36,
+            fontFamily: 'monospace',
+            fontSize: 10,
+            boxSizing: 'border-box',
+          }}
           placeholder="optional: paste a protein sequence (overrides UniProt)"
           value={transcript}
           onChange={e => setTranscript(e.target.value)}
         />
-        {status ? <div style={{ color: '#b00020', fontSize: 12 }}>{status}</div> : null}
+        {status ? (
+          <div style={{ color: '#b00020', fontSize: 12 }}>{status}</div>
+        ) : null}
 
         <div style={{ fontWeight: 'bold', fontSize: 11, margin: '8px 0 2px' }}>
           Examples
@@ -200,7 +237,15 @@ export default function App() {
           Launch protein view → enter the PDB ID.
         </div>
         {EXAMPLES.map(ex => (
-          <div key={ex.label} style={{ display: 'flex', alignItems: 'stretch', gap: 2, marginBottom: 2 }}>
+          <div
+            key={ex.label}
+            style={{
+              display: 'flex',
+              alignItems: 'stretch',
+              gap: 2,
+              marginBottom: 2,
+            }}
+          >
             <button
               onClick={() => applyExample(ex)}
               disabled={busy}
@@ -231,7 +276,13 @@ export default function App() {
               >
                 {ex.expect}
               </span>
-              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              <span
+                style={{
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
                 {ex.label}
               </span>
             </button>
@@ -263,7 +314,9 @@ export default function App() {
           </div>
         ))}
 
-        {diag && loaded ? <Report diag={diag} loaded={loaded} transcript={transcript} /> : null}
+        {diag && loaded ? (
+          <Report diag={diag} loaded={loaded} transcript={transcript} />
+        ) : null}
       </div>
 
       <div ref={viewerRef} style={{ flex: 1, position: 'relative' }} />
@@ -288,7 +341,9 @@ function Report({
 }) {
   const usedSeq = loaded.entities[diag.usedIndex]?.seq ?? ''
   const map = sampleCoordinateMap(transcript, usedSeq)
-  const mapKeys = Object.keys(map).map(Number).sort((a, b) => a - b)
+  const mapKeys = Object.keys(map)
+    .map(Number)
+    .sort((a, b) => a - b)
   const sample = mapKeys.slice(0, 8)
 
   return (
@@ -311,11 +366,24 @@ function Report({
       ))}
 
       <div style={sectionHead}>Polymer entities ({loaded.entities.length})</div>
-      <table style={{ borderCollapse: 'collapse', fontSize: 11, width: '100%' }}>
+      <table
+        style={{ borderCollapse: 'collapse', fontSize: 11, width: '100%' }}
+      >
         <thead>
           <tr>
-            {['#', 'entity', 'chains', 'len', 'modeled', 'id%', 'tx-cov%', 'role'].map(h => (
-              <th key={h} style={{ ...cell, textAlign: 'left' }}>{h}</th>
+            {[
+              '#',
+              'entity',
+              'chains',
+              'len',
+              'modeled',
+              'id%',
+              'tx-cov%',
+              'role',
+            ].map(h => (
+              <th key={h} style={{ ...cell, textAlign: 'left' }}>
+                {h}
+              </th>
             ))}
           </tr>
         </thead>
@@ -324,9 +392,16 @@ function Report({
             const used = a.entity.index === diag.usedIndex
             const best = a.entity.index === diag.bestIndex
             return (
-              <tr key={a.entity.index} style={{ background: used ? '#fff3cd' : best ? '#d1f0d9' : undefined }}>
+              <tr
+                key={a.entity.index}
+                style={{
+                  background: used ? '#fff3cd' : best ? '#d1f0d9' : undefined,
+                }}
+              >
                 <td style={cell}>{a.entity.index}</td>
-                <td style={cell} title={a.entity.entityId}>{a.entity.description}</td>
+                <td style={cell} title={a.entity.entityId}>
+                  {a.entity.description}
+                </td>
                 <td style={cell}>{a.entity.chains.join(',')}</td>
                 <td style={cell}>{a.entity.seqLength}</td>
                 <td style={cell}>{a.entity.observedCount}</td>
@@ -346,13 +421,18 @@ function Report({
 
       <div style={sectionHead}>Coordinate map sample (entity [0])</div>
       <div style={{ fontSize: 10, color: '#666' }}>
-        structureSeqPos → transcriptPos, first {sample.length} of {mapKeys.length}:
+        structureSeqPos → transcriptPos, first {sample.length} of{' '}
+        {mapKeys.length}:
       </div>
       <code style={{ fontSize: 10 }}>
-        {sample.map(k => `${k}→${map[k]}`).join('  ') || '(none — entity [0] does not map to this transcript)'}
+        {sample.map(k => `${k}→${map[k]}`).join('  ') ||
+          '(none — entity [0] does not map to this transcript)'}
       </code>
     </div>
   )
 }
 
-const cell: React.CSSProperties = { border: '1px solid #ccc', padding: '1px 4px' }
+const cell: React.CSSProperties = {
+  border: '1px solid #ccc',
+  padding: '1px 4px',
+}

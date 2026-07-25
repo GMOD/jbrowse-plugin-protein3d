@@ -71,7 +71,9 @@ function analyzeEntity(
     matches,
     mismatches,
     alignedPairs,
-    transcriptCoverage: transcript.length ? alignedPairs / transcript.length : 0,
+    transcriptCoverage: transcript.length
+      ? alignedPairs / transcript.length
+      : 0,
     entityCoverage: entity.seqLength ? alignedPairs / entity.seqLength : 0,
     identity: alignedPairs ? matches / alignedPairs : 0,
   }

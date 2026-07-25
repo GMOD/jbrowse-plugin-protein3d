@@ -54,7 +54,10 @@ export abstract class BaseProteinAnnotationAdapter<
     return []
   }
 
-  public getFeatures(query: Region, _opts: BaseOptions = {}): Observable<Feature> {
+  public getFeatures(
+    query: Region,
+    _opts: BaseOptions = {},
+  ): Observable<Feature> {
     return ObservableCreate<Feature>(async observer => {
       const { start, end, refName } = query
       for (const f of await this.loadData()) {

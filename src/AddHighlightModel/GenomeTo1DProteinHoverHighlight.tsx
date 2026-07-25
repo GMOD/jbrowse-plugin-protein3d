@@ -42,8 +42,7 @@ const GenomeTo1DProteinHoverHighlight = observer(
     // g2p is keyed by genomic position on the transcript's own refName; without
     // this gate the same numeric coord on an unrelated chromosome would match a
     // key and light a protein residue for a different locus.
-    const proteinPos =
-      refName === mapping.refName ? g2p[coord - 1] : undefined
+    const proteinPos = refName === mapping.refName ? g2p[coord - 1] : undefined
     if (proteinPos === undefined) {
       return null
     }

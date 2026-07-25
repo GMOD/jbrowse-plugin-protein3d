@@ -7,7 +7,10 @@ import { safeLaunch } from '../utils/launchHelpers'
  * error state and returns a `runLaunch` factory that closes any open menu,
  * runs the launch via safeLaunch, and surfaces failures inline.
  */
-export function useSafeLaunch(onSuccess: () => void, onBeforeLaunch?: () => void) {
+export function useSafeLaunch(
+  onSuccess: () => void,
+  onBeforeLaunch?: () => void,
+) {
   const [launchError, setLaunchError] = useState<unknown>()
   const runLaunch = (fn: () => unknown) => () => {
     onBeforeLaunch?.()

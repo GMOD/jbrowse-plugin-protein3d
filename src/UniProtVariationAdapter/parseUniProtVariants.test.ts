@@ -34,9 +34,6 @@ test('score follows the configured scoreField', () => {
 })
 
 test('deletion (no mutatedType) is named ->del', () => {
-  const [row] = parseUniProtVariants(
-    [{ ...variant, mutatedType: '' }],
-    'none',
-  )
+  const [row] = parseUniProtVariants([{ ...variant, mutatedType: '' }], 'none')
   expect(row.name).toEqual(['V->del'])
 })

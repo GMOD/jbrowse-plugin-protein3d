@@ -40,7 +40,9 @@ function setup(plugin: object, loadedCount: number) {
   for (let i = 0; i < loadedCount; i++) {
     host.structures[i]!.setLoadedToMolstar(true)
   }
-  const run = makeStructureSuperposer(host as unknown as StructureSuperposerHost)
+  const run = makeStructureSuperposer(
+    host as unknown as StructureSuperposerHost,
+  )
   return { host, run }
 }
 

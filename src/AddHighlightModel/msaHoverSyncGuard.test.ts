@@ -29,8 +29,7 @@ test('calls highlight when col is set and no feature is hovered', () => {
   })
   const structure = observable({
     alignmentHoverRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
   })
   const highlights: number[] = []
 
@@ -51,8 +50,7 @@ test('suppresses highlight when feature range is active', () => {
   })
   const structure = observable({
     alignmentHoverRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
   })
   const highlights: number[] = []
 
@@ -96,8 +94,7 @@ test('calls clear when col becomes undefined and no feature is hovered', () => {
   const msaView = observable({ mouseCol: 5 })
   const structure = observable({
     alignmentHoverRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
   })
   const clears: number[] = []
 
@@ -137,8 +134,7 @@ test('alignmentHoverRange changes do not retrigger the autorun', () => {
   const msaView = observable({ mouseCol: 5 })
   const structure = observable({
     alignmentHoverRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
   })
   const highlights: number[] = []
 

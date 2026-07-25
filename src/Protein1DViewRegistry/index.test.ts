@@ -16,7 +16,14 @@ const splitCodonFeature: SimpleFeatureSerialized = {
   strand: 1,
   type: 'mRNA',
   subfeatures: [
-    { uniqueId: 'c1', refName: 'chr1', start: 0, end: 4, type: 'CDS', phase: 0 },
+    {
+      uniqueId: 'c1',
+      refName: 'chr1',
+      start: 0,
+      end: 4,
+      type: 'CDS',
+      phase: 0,
+    },
     {
       uniqueId: 'c2',
       refName: 'chr1',

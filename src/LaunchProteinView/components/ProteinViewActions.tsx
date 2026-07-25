@@ -3,7 +3,13 @@ import React, { useState } from 'react'
 import { ErrorMessage } from '@jbrowse/core/ui'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import SettingsIcon from '@mui/icons-material/Settings'
-import { Button, ButtonGroup, IconButton, Tooltip, Typography } from '@mui/material'
+import {
+  Button,
+  ButtonGroup,
+  IconButton,
+  Tooltip,
+  Typography,
+} from '@mui/material'
 
 import LaunchOptionsDialog from './LaunchOptionsDialog'
 import LaunchSettingsDialog from './LaunchSettingsDialog'
@@ -134,7 +140,9 @@ export default function ProteinViewActions({
             key: '3d-msa',
             title: 'Launch 3D structure + MSA view',
             description: 'Launch both views with AlphaFold a3m MSA',
-            onClick: runLaunch(() => launch3DProteinViewWithMsa(launch3DParams)),
+            onClick: runLaunch(() =>
+              launch3DProteinViewWithMsa(launch3DParams),
+            ),
           },
         ]
       : []),

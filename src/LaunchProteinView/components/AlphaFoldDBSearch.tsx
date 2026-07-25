@@ -95,7 +95,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                   label="Organism (NCBI taxon)"
                   helperText="Scopes the gene-name search"
                   value={state.taxonId}
-                  onChange={event => { state.setTaxonId(event.target.value) }}
+                  onChange={event => {
+                    state.setTaxonId(event.target.value)
+                  }}
                   placeholder={String(state.effectiveTaxonId)}
                   slotProps={{ inputLabel: { shrink: true } }}
                   sx={{ width: 180 }}

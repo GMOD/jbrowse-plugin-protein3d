@@ -84,9 +84,6 @@ export function codonGenomeSpan(
 ): readonly [number, number] | undefined {
   const ranges = getCodonRanges(p2gCodon, proteinPos)
   return ranges && ranges.length > 0
-    ? [
-        Math.min(...ranges.map(r => r[0])),
-        Math.max(...ranges.map(r => r[1])),
-      ]
+    ? [Math.min(...ranges.map(r => r[0])), Math.max(...ranges.map(r => r[1]))]
     : undefined
 }

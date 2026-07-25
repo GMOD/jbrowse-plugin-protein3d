@@ -47,7 +47,9 @@ export default function useAlphaFoldDBSearch({
 
   const overrideTaxon = Number(taxonIdInput.trim())
   const effectiveTaxonId =
-    taxonIdInput.trim() !== '' && Number.isFinite(overrideTaxon) && overrideTaxon > 0
+    taxonIdInput.trim() !== '' &&
+    Number.isFinite(overrideTaxon) &&
+    overrideTaxon > 0
       ? overrideTaxon
       : assemblyTaxonId
   const [selectedQueryId, setSelectedQueryId] = useState('auto')

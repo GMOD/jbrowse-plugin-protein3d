@@ -20,20 +20,32 @@ const HEMOGLOBIN = [HBA_ALPHA_4HHB_ENTITY0, HBB_BETA_4HHB_ENTITY1]
 // chooseMappedEntity fixes it.
 
 test('4HHB: a β (HBB) transcript maps to entity[1], not the hardcoded [0]=α', () => {
-  const sel = chooseMappedEntity(HBB_TRANSCRIPT_P68871, HEMOGLOBIN, 'smith_waterman')
+  const sel = chooseMappedEntity(
+    HBB_TRANSCRIPT_P68871,
+    HEMOGLOBIN,
+    'smith_waterman',
+  )
   expect(sel?.index).toBe(1)
   // entity[0] (the old behavior) would have been the wrong chain
   expect(sel?.index).not.toBe(0)
 })
 
 test('4HHB: an α (HBA) transcript still maps to entity[0]=α (not always [1])', () => {
-  const sel = chooseMappedEntity(HBA_TRANSCRIPT_P69905, HEMOGLOBIN, 'smith_waterman')
+  const sel = chooseMappedEntity(
+    HBA_TRANSCRIPT_P69905,
+    HEMOGLOBIN,
+    'smith_waterman',
+  )
   expect(sel?.index).toBe(0)
 })
 
 test('1TUP: p53 maps to the protein entity[2], not the DNA strands at [0]/[1]', () => {
   const entities = [DNA_1TUP_ENTITY0, DNA_1TUP_ENTITY0, P53_1TUP_ENTITY2]
-  const sel = chooseMappedEntity(P53_TRANSCRIPT_P04637, entities, 'smith_waterman')
+  const sel = chooseMappedEntity(
+    P53_TRANSCRIPT_P04637,
+    entities,
+    'smith_waterman',
+  )
   expect(sel?.index).toBe(2)
 })
 
@@ -47,12 +59,16 @@ test('exact match (initiator-Met-stripped) is selected and reported as full iden
   expect(sel?.index).toBe(0)
   expect(sel?.matches).toBe(HBA_ALPHA_4HHB_ENTITY0.length)
   // identity alignment: consensus all '|'
-  expect(sel?.alignment.consensus).toBe('|'.repeat(HBA_ALPHA_4HHB_ENTITY0.length))
+  expect(sel?.alignment.consensus).toBe(
+    '|'.repeat(HBA_ALPHA_4HHB_ENTITY0.length),
+  )
 })
 
 test('returns undefined when there is nothing to map', () => {
   expect(chooseMappedEntity('', HEMOGLOBIN, 'smith_waterman')).toBeUndefined()
-  expect(chooseMappedEntity(HBB_TRANSCRIPT_P68871, [], 'smith_waterman')).toBeUndefined()
+  expect(
+    chooseMappedEntity(HBB_TRANSCRIPT_P68871, [], 'smith_waterman'),
+  ).toBeUndefined()
 })
 
 test('interactionMatchesMappedEntity: only the mapped entity drives navigation', () => {

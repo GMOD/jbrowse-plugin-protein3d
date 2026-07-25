@@ -81,7 +81,9 @@ export async function resolveShortLaunch({
     throw new Error(`assembly "${assemblyName}" not found`)
   }
 
-  const parsed = parseLocString(loc, refName => assembly.isValidRefName(refName))
+  const parsed = parseLocString(loc, refName =>
+    assembly.isValidRefName(refName),
+  )
   if (parsed.start === undefined || parsed.end === undefined) {
     throw new Error(`could not parse a start-end region from loc "${loc}"`)
   }

@@ -126,7 +126,10 @@ test('TP53 CDS builds a genome<->transcript mapping spanning the whole protein',
 test('structure residue maps to an in-CDS genome codon', () => {
   const model = makeModel()
   const mid = Math.floor(PROTEIN_LEN / 2)
-  const r = proteinToGenomeMapping({ model: mappingModel(model), structureSeqPos: mid })
+  const r = proteinToGenomeMapping({
+    model: mappingModel(model),
+    structureSeqPos: mid,
+  })
   expect(r).toBeDefined()
   const [start, end] = r!
   expect(end - start).toBe(3) // one codon
@@ -146,7 +149,10 @@ test('adjacent residues are exactly one codon apart, in minus-strand order', () 
 
 test('the start codon maps to the top of the CDS (minus strand)', () => {
   const model = makeModel()
-  const first = proteinToGenomeMapping({ model: mappingModel(model), structureSeqPos: 0 })!
+  const first = proteinToGenomeMapping({
+    model: mappingModel(model),
+    structureSeqPos: 0,
+  })!
   // residue 0 (Met) is the 3'-most genome position for a minus-strand gene
   expect(first[1]).toBe(CDS_MAX)
 })

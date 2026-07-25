@@ -40,7 +40,9 @@ export interface LoadedStructure {
   ligands: string[]
 }
 
-export async function createPlugin(target: HTMLElement): Promise<PluginContext> {
+export async function createPlugin(
+  target: HTMLElement,
+): Promise<PluginContext> {
   const spec = DefaultPluginUISpec()
   const plugin = await createPluginUI({
     target,

@@ -21,6 +21,8 @@ jobs:
         run: pnpm build
       - name: Lint
         run: pnpm lint
+      - name: Format check
+        run: pnpm prettier --check .
       - name: Unit tests
         run: pnpm vitest run --exclude 'test/**'
 
