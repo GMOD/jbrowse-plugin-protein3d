@@ -21,8 +21,7 @@ export default function SequenceMismatchNotice({
       sx={{ mr: 2, display: 'flex', alignItems: 'center' }}
     >
       Transcript and structure sequences differ, will run{' '}
-      {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm] ?? alignmentAlgorithm}{' '}
-      alignment
+      {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm]} alignment
       <AlignmentSettingsButton
         value={alignmentAlgorithm}
         onChange={onAlignmentAlgorithmChange}

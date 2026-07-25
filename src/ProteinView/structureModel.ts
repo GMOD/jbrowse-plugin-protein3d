@@ -36,7 +36,6 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction, {
   type MolstarLocationInfo,
 } from './subscribeMolstarInteraction'
-import { coerceAlignmentAlgorithm } from './types'
 import { checkHovered } from './util'
 import {
   getAlphaFoldStructureUrl,
@@ -65,7 +64,7 @@ export interface ParentProteinView {
   showHighlight: boolean
   showProteinTracks: boolean
   compactTracks: boolean
-  alignmentAlgorithm: string
+  alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
   structures: { url?: string }[]
   setShowAlignment: (f: boolean) => void
@@ -108,7 +107,9 @@ const Structure = types
      * on the connected genome view, and the range in the alignment. Lets a
      * session spec open with a domain pre-highlighted, with no click.
      */
-    initialSelection: types.frozen<{ start: number; end: number } | undefined>(),
+    initialSelection: types.frozen<
+      { start: number; end: number } | undefined
+    >(),
   })
   // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
   // concrete `url` at hydration and strip the shorthand keys (they are not
@@ -135,8 +136,7 @@ const Structure = types
      * derived clickGenomeHighlights getter.
      */
     clickedStructureRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
 
     /**
      * #volatile
@@ -184,8 +184,7 @@ const Structure = types
      * Range of alignment positions to highlight (e.g., when hovering a protein feature)
      */
     alignmentHoverRange: undefined as
-      | { start: number; end: number }
-      | undefined,
+      { start: number; end: number } | undefined,
     /**
      * #volatile
      * The uniqueId of the currently selected protein feature (for persistent highlight)
@@ -699,7 +698,7 @@ const Structure = types
         : NORMAL_TRACK_GAP
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
-      return coerceAlignmentAlgorithm(this.parentView.alignmentAlgorithm)
+      return this.parentView.alignmentAlgorithm
     },
     get molstarPluginContext(): PluginContext | undefined {
       return this.parentView.molstarPluginContext
@@ -960,8 +959,11 @@ const Structure = types
       addDisposer(
         self,
         autorun(async () => {
-          const { molstarStructure, molstarPluginContext, hoverHighlightRange } =
-            self
+          const {
+            molstarStructure,
+            molstarPluginContext,
+            hoverHighlightRange,
+          } = self
           if (molstarStructure && molstarPluginContext) {
             await setMolstarLoci({
               structure: molstarStructure,

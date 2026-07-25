@@ -1,6 +1,10 @@
-import { type ConnectedViewSpec, resolveShortLaunch } from './resolveShortLaunch'
+import {
+  type ConnectedViewSpec,
+  resolveShortLaunch,
+} from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
+import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type {
@@ -109,7 +113,11 @@ export default function LaunchProteinViewExtensionPointF(
       const proteinView = session.addView(
         'ProteinView',
         proteinViewSnapshot({
-          alignmentAlgorithm,
+          // a URL param is untrusted text; the model property is an enumeration
+          alignmentAlgorithm:
+            alignmentAlgorithm === undefined
+              ? undefined
+              : coerceAlignmentAlgorithm(alignmentAlgorithm),
           displayName,
           height,
           showControls,

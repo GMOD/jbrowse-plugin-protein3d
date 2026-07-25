@@ -26,6 +26,46 @@ characterization tests that pin current behavior, then refactor against them.
   #1 below — done, verified.)
 - **AlphaMissense parser hardened** (`parseAlphaMissense`): skips malformed
   rows.
+- **UniProt feature tracks work on PDB structures** (`pdbUniProtMapping.ts`,
+  `hooks/useStructureUniProt.ts`): the accession and the UniProt→structure
+  residue offset come from SIFTS (PDBe `mappings/uniprot/{pdbId}`) for the
+  entity `chooseMappedEntity` picked. Previously `uniprotId` was regexed out of
+  an AlphaFold filename, so PDB / Foldseek-pdb100 / user structures fetched no
+  features at all. The UniProt→structure conversion now happens once, in
+  `layoutFeature`; consumers read `structureStart`/`structureEnd` off the
+  layout. Verified against live 1TUP data (UniProt 94 → structure 0). Not
+  verified in-browser.
+- **Genome highlights pair by `connectedViewId`**
+  (`AddHighlightModel/proteinViewLookup.ts`): the 3D→genome bridge took the
+  first ProteinView and painted every structure's regions into every
+  LinearGenomeView. Now every ProteinView is considered and only structures
+  declaring _this_ genome view are drawn. (The MSA hover sync still assumes one
+  ProteinView — see the note on `getProteinView`.)
+
+---
+
+## Known bugs (found, not yet fixed)
+
+- **`molstarStructure` is looked up by array position.** `structureModel.ts`'s
+  `structureIndex` indexes `hierarchy.current.structures[]`, but molstar builds
+  that array by state-tree insertion order and `makeStructureLoader` dispatches
+  all pending structures concurrently — so it is _load-completion_ order. A
+  snapshot with two structures can bind structure 0's highlights to structure
+  1's geometry. Fix: have `loadStructureData` return the created structure ref
+  and store it as a volatile, instead of deriving an index (this also removes
+  `loadedToMolstar`'s role as a recompute trigger). Folds naturally into
+  Refactor #3.
+- **The pairwise DP is unbounded and on the main thread.** Measured: 300 aa 17
+  ms / 19 MB, 1500 aa 273 ms / 125 MB, 2500 aa 586 ms / 194 MB — three
+  `number[][]` of (m+1)×(n+1) — and `chooseMappedEntity` runs one per polymer
+  entity inside an autorun. Long sequences or many-chain complexes freeze or OOM
+  the tab. Cheap: `Float32Array` rows + a `Uint8Array` traceback, and an array
+  push instead of the prepend-string traceback. Real fix: run it in a worker.
+- **Interior stop codons shift the mapping.** `stripStopCodon` removes _all_
+  `*`, so the alignment's transcript row is in stripped coordinates while
+  `g2p`/`userProvidedTranscriptSequence` are unstripped. A trailing stop is
+  harmless; an interior one (mis-annotated CDS, selenoprotein read-through)
+  offsets every later genome↔structure hover.
 
 ---
 

@@ -4,7 +4,6 @@ import { Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import { HOVERED_BORDER, SELECTED_BORDER } from '../constants'
-import { oneBasedUniProtFeatureToStructureRange } from '../hooks/useProteinFeatureTrackData'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
 import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
@@ -63,12 +62,11 @@ const FeatureBar = observer(function FeatureBar({
       model.setSelectedFeatureId(undefined)
       model.setClickedStructureRange(undefined)
     } else {
-      const { start, end } = oneBasedUniProtFeatureToStructureRange(feature)
       model.setSelectedFeatureId(feature.uniqueId)
       clickProteinToGenome({
         model,
-        structureSeqPos: start,
-        structureSeqEndPos: end,
+        structureSeqPos: layout.structureStart,
+        structureSeqEndPos: layout.structureEnd,
       }).catch((e: unknown) => {
         console.error(e)
         model.setError(e)

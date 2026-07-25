@@ -27,6 +27,7 @@ export {
   getUniprotIdFromAlphaFoldTarget,
 }
 
+import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type {
   AbstractSessionModel,
   Feature,
@@ -52,7 +53,7 @@ interface Launch3DExtraParams {
   url?: string
   data?: string
   userProvidedTranscriptSequence?: string
-  alignmentAlgorithm?: string
+  alignmentAlgorithm?: AlignmentAlgorithm
   displayName?: string
 }
 

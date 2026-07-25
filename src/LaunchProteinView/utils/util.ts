@@ -60,13 +60,6 @@ export function getGeneDisplayName(val?: Feature): string {
     : (val.get('gene_name') ?? val.get('name') ?? val.get('id') ?? '')
 }
 
-export function getUniProtIdFromFeature(f?: Feature): string | undefined {
-  if (!f) {
-    return undefined
-  }
-  return f.get('uniprot') ?? f.get('uniprotId') ?? f.get('uniprotid')
-}
-
 // Single source of truth for database IDs that UniProt can cross-reference.
 // Each entry carries everything downstream needs: the UniProt xref database
 // keyword, the regex (Ensembl patterns cover human ENS, mouse ENSMUS, zebrafish

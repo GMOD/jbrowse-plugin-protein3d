@@ -15,7 +15,11 @@ import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
-import { type AlignmentAlgorithm, DEFAULT_ALIGNMENT_ALGORITHM } from './types'
+import {
+  ALIGNMENT_ALGORITHM_VALUES,
+  type AlignmentAlgorithm,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from './types'
 
 const SETTINGS_KEY = 'proteinView-settings'
 const PERSISTED_SETTINGS = [
@@ -116,7 +120,10 @@ function stateModelFactory() {
          * #property
          */
         alignmentAlgorithm: types.optional(
-          types.string,
+          types.enumeration<AlignmentAlgorithm>(
+            'AlignmentAlgorithm',
+            ALIGNMENT_ALGORITHM_VALUES,
+          ),
           DEFAULT_ALIGNMENT_ALGORITHM,
         ),
 

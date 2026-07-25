@@ -29,6 +29,35 @@ export function getPdbStructureUrl(pdbId: string) {
   return `https://files.rcsb.org/download/${pdbId}.cif`
 }
 
+// Hosts that serve the PDB archive, so a 4-character filename there really is
+// that PDB entry. Restricted deliberately: a user-uploaded model happening to be
+// named 1abc.cif must not pick up 1ABC's UniProt annotations.
+const PDB_ARCHIVE_HOSTS = ['files.rcsb.org', 'www.ebi.ac.uk', 'ftp.ebi.ac.uk']
+
+/**
+ * The PDB id of a structure URL from the PDB archive, lowercased, or undefined
+ * for any other URL. Accepts the filename forms those hosts serve, e.g.
+ * `1TUP.cif`, `pdb1tup.ent.gz`, `1tup_updated.cif`.
+ */
+export function getPdbIdFromUrl(url: string) {
+  const { host, file } = (() => {
+    try {
+      const parsed = new URL(url)
+      return { host: parsed.hostname, file: parsed.pathname.split('/').pop() }
+    } catch {
+      return { host: undefined, file: undefined }
+    }
+  })()
+  if (host === undefined || !PDB_ARCHIVE_HOSTS.includes(host)) {
+    return undefined
+  }
+  const match =
+    /^(?:pdb)?([1-9][a-z0-9]{3})(?:_updated)?\.(?:cif|bcif|pdb|ent)(?:\.gz)?$/i.exec(
+      file ?? '',
+    )
+  return match?.[1]?.toLowerCase()
+}
+
 // Foldseek targets may contain a description after the ID separated by a
 // space, e.g. "AF-P16442-F1-model_v6 Histo-blood group ABO transferase".
 function extractTargetId(target: string) {

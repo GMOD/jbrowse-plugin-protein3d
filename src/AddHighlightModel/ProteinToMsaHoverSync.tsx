@@ -6,7 +6,7 @@ import { observer } from 'mobx-react'
 
 import { findConnectedMsaView } from './findConnectedMsaView'
 import { findStructureRowName } from './msaRowMatch'
-import { getProteinView } from './util'
+import { getProteinView } from './proteinViewLookup'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

@@ -1,4 +1,5 @@
 import type { ProteinColorScheme } from './applyColorTheme'
+import type { AlignmentAlgorithm } from './types'
 import type { PairwiseAlignment } from '../mappings'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 
@@ -42,7 +43,7 @@ export interface ProteinViewSpec {
   zoomToBaseLevel?: boolean
   autoScrollAlignment?: boolean
   colorScheme?: ProteinColorScheme
-  alignmentAlgorithm?: string
+  alignmentAlgorithm?: AlignmentAlgorithm
   connectedMsaViewId?: string
 }
 

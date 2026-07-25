@@ -5,9 +5,13 @@ import useUniProtFeatures from './useUniProtFeatures'
 
 import type { UniProtFeature } from './useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
+import type { MapUniProtPosition } from '../pdbUniProtMapping'
 
 export interface FeatureLayout {
   feature: UniProtFeature
+  /** 0-based half-open structure-residue range the feature covers */
+  structureStart: number
+  structureEnd: number
   alignmentStart: number
   alignmentEnd: number
   left: number
@@ -27,32 +31,34 @@ export interface FeatureTrackData {
 }
 
 /**
- * UniProt feature coords are 1-based inclusive; the structure/click/highlight
- * pipeline works in 0-based half-open ranges. Doing the conversion in one named
- * place keeps the off-by-one out of every call site.
+ * Places a UniProt feature: its 1-based inclusive UniProt range becomes a
+ * 0-based half-open structure range (identity for AlphaFold, SIFTS-offset for
+ * PDB — see useStructureUniProt), then alignment columns and pixel geometry.
+ * This is the only UniProt->structure coordinate conversion in the tracks; every
+ * consumer reads `structureStart`/`structureEnd` off the layout.
+ *
+ * Returns undefined when either endpoint falls outside the structure or has no
+ * alignment column, so an unmappable feature is dropped rather than drawn at a
+ * misleading position.
  */
-export function oneBasedUniProtFeatureToStructureRange(feature: {
-  start: number
-  end: number
-}) {
-  return { start: feature.start - 1, end: feature.end }
-}
-
-/**
- * Maps a feature's structure range onto alignment columns and pixel geometry.
- * Returns undefined when either endpoint has no alignment column, so unmappable
- * features aren't drawn at a misleading position.
- */
-function layoutFeature(
+export function layoutFeature(
   feature: UniProtFeature,
   structurePositionToAlignmentMap: Record<number, number>,
+  mapUniProtPosition: MapUniProtPosition,
 ): FeatureLayout | undefined {
-  const alignmentStart = structurePositionToAlignmentMap[feature.start - 1]
-  const alignmentEnd = structurePositionToAlignmentMap[feature.end - 1]
+  const structureStart = mapUniProtPosition(feature.start)
+  const structureLast = mapUniProtPosition(feature.end)
+  if (structureStart === undefined || structureLast === undefined) {
+    return undefined
+  }
+  const alignmentStart = structurePositionToAlignmentMap[structureStart]
+  const alignmentEnd = structurePositionToAlignmentMap[structureLast]
   return alignmentStart === undefined || alignmentEnd === undefined
     ? undefined
     : {
         feature,
+        structureStart,
+        structureEnd: structureLast + 1,
         alignmentStart,
         alignmentEnd,
         left: alignmentStart * CHAR_WIDTH,
@@ -88,14 +94,18 @@ export function packLanes(layouts: FeatureLayout[]): number {
 export default function useProteinFeatureTrackData(
   model: JBrowsePluginProteinStructureModel,
   uniprotId: string | undefined,
+  mapUniProtPosition: MapUniProtPosition,
 ): {
   data: FeatureTrackData | undefined
   isLoading: boolean
   error: unknown
 } {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const { pairwiseAlignment, hiddenFeatureTypes, structurePositionToAlignmentMap } =
-    model
+  const {
+    pairwiseAlignment,
+    hiddenFeatureTypes,
+    structurePositionToAlignmentMap,
+  } = model
 
   const data = useMemo(() => {
     if (!features || !pairwiseAlignment || !structurePositionToAlignmentMap) {
@@ -104,7 +114,11 @@ export default function useProteinFeatureTrackData(
     const groups = new Map<string, FeatureLayout[]>()
     for (const feature of features) {
       if (!hiddenFeatureTypes.has(feature.type)) {
-        const layout = layoutFeature(feature, structurePositionToAlignmentMap)
+        const layout = layoutFeature(
+          feature,
+          structurePositionToAlignmentMap,
+          mapUniProtPosition,
+        )
         if (layout) {
           const list = groups.get(feature.type)
           if (list) {
@@ -129,6 +143,7 @@ export default function useProteinFeatureTrackData(
     pairwiseAlignment,
     hiddenFeatureTypes,
     structurePositionToAlignmentMap,
+    mapUniProtPosition,
   ])
 
   return { data, isLoading, error }

@@ -1,5 +1,7 @@
 import useSWR from 'swr'
 
+import { myfetch } from '../../fetchUtils'
+
 export interface UniProtFeature {
   type: string
   start: number
@@ -52,11 +54,7 @@ export function getFeatureColor(type: string) {
 }
 
 async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching ${url}`)
-  }
-  const text = await res.text()
+  const text = await (await myfetch(url)).text()
 
   const features: UniProtFeature[] = []
   for (const line of text.split('\n')) {

@@ -14,6 +14,7 @@ import {
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
+import useStructureUniProt from '../hooks/useStructureUniProt'
 import { hydrophobicityColor, plddtColor } from '../residueTracks'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
@@ -58,17 +59,28 @@ const ProteinAlignment = observer(function ProteinAlignment({
     pairwiseAlignment,
     showHighlight,
     showProteinTracks,
-    uniprotId,
+    url,
+    mappedEntityId,
     confidenceCells,
     hydrophobicityCells,
   } = model
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
+  // AlphaFold models carry their accession in the URL; PDB entries need a SIFTS
+  // lookup, which also supplies the UniProt->structure residue offset.
+  const {
+    uniprotId,
+    mapUniProtPosition,
+    isLoading: uniprotLoading,
+    error: uniprotError,
+  } = useStructureUniProt({ url, mappedEntityId })
   const {
     data: featureData,
-    isLoading: featureLoading,
-    error: featureError,
-  } = useProteinFeatureTrackData(model, uniprotId)
+    isLoading: trackLoading,
+    error: trackError,
+  } = useProteinFeatureTrackData(model, uniprotId, mapUniProtPosition)
+  const featureLoading = uniprotLoading || trackLoading
+  const featureError = uniprotError ?? trackError
 
   // Recenter only on a large jump — when the hovered column lands well outside
   // the viewport (e.g. hovering a distant residue in the 3D structure). A column

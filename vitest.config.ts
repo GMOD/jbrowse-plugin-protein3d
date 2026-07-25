@@ -5,7 +5,12 @@ export default defineConfig({
     testTimeout: 120_000,
     hookTimeout: 60_000,
     globals: true,
-    include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      'test/**/*.test.ts',
+      // the harness's offline diagnostics tests were never picked up
+      'harness/**/*.test.ts',
+    ],
     exclude: [
       '**/node_modules/**',
       '**/dist/**',

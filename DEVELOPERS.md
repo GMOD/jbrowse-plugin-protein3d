@@ -17,8 +17,8 @@ much the plugin resolves for you:
 Unlike `LinearGenomeView`, **ProteinView has no `init` property**. `init` exists
 only for keys that need on-attach resolution (LGV's `loc` can't become
 `displayedRegions` until its assembly loads); ProteinView has none — structures
-load into Mol\* reactively and the alignment/mapping derive themselves — so every
-field is a plain top-level property that MST restores natively:
+load into Mol\* reactively and the alignment/mapping derive themselves — so
+every field is a plain top-level property that MST restores natively:
 
 ```jsonc
 {
@@ -30,25 +30,25 @@ field is a plain top-level property that MST restores natively:
     {
       "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
       "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
-      "feature": { /* serialized transcript, see "feature shape" */ },
+      "feature": {/* serialized transcript, see "feature shape" */},
       "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
-      "initialSelection": { "start": 338, "end": 350 } // optional pre-lit domain
-    }
-  ]
+      "initialSelection": { "start": 338, "end": 350 }, // optional pre-lit domain
+    },
+  ],
 }
 ```
 
-Cross-view wiring is by declared id (`connectedViewId`, `connectedMsaViewId`) and
-a shared `feature`, so no imperative wiring code is needed. The typed spec and
-its snapshot builder live in `src/ProteinView/proteinViewSpec.ts`
+Cross-view wiring is by declared id (`connectedViewId`, `connectedMsaViewId`)
+and a shared `feature`, so no imperative wiring code is needed. The typed spec
+and its snapshot builder live in `src/ProteinView/proteinViewSpec.ts`
 (`ProteinViewSpec` / `proteinViewSnapshot`) — every launch path funnels through
 that one builder so they can't drift into different property subsets.
 
 #### Structure shorthand: `uniprotId` / `pdbId`
 
 Instead of a full `url`, a structure may give a `uniprotId` (→ AlphaFold model)
-or `pdbId` (→ RCSB mmCIF); it's resolved to `url` at hydration when no `url`/`data`
-is set, so you don't have to know the file-URL format:
+or `pdbId` (→ RCSB mmCIF); it's resolved to `url` at hydration when no
+`url`/`data` is set, so you don't have to know the file-URL format:
 
 ```jsonc
 { "type": "ProteinView", "structures": [{ "uniprotId": "P04637" }] }
@@ -65,6 +65,32 @@ point's `uniprotId` + `transcriptId` short form below.
 Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
 localStorage) only fill settings the snapshot left at their default, so an
 explicitly declared value always wins over a sticky preference.
+
+#### UniProt feature tracks on PDB structures
+
+The protein feature tracks (domains, sites, variants — `useUniProtFeatures`)
+need two things: the UniProt accession, and how UniProt positions line up with
+the structure's own residue numbering.
+
+- **AlphaFold models** answer both from the filename: the accession is in the
+  URL, and the model _is_ the UniProt sequence, so UniProt position `p` is
+  structure position `p - 1`.
+- **PDB entries** answer neither. The accession isn't in the URL, and the
+  deposited construct is usually a fragment, often tagged or engineered, so the
+  numbering is offset — 1TUP's p53 chain starts at UniProt 94, 6VXX's spike has
+  SEQRES 33 = UniProt 14. These are resolved from
+  [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
+  `mappings/uniprot/{pdbId}` API (`pdbUniProtMapping.ts`,
+  `hooks/useStructureUniProt.ts`), which gives a per-segment correspondence.
+  Only the segments for the entity the plugin mapped to the transcript are used
+  — a heteromer maps each chain to a different accession, so the wrong one would
+  annotate the wrong protein. `residue_number` in that API is the 1-based
+  SEQRES/`label_seq_id` index, i.e. this plugin's structure position + 1.
+
+A feature outside the modeled region maps to nothing and is dropped rather than
+drawn at a misleading residue. A PDB id is only inferred from URLs on the PDB
+archive hosts, so a user-supplied model named `1abc.cif` can't inherit that
+entry's annotations.
 
 ## LaunchView-ProteinView extension point
 
