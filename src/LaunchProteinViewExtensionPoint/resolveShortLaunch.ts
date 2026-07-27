@@ -8,6 +8,7 @@ import {
   stripTrailingVersion,
 } from '../LaunchProteinView/utils/util'
 
+import type { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import type {
   AbstractSessionModel,
   Feature,
@@ -32,6 +33,29 @@ function getTrackId(track: string | Record<string, unknown>) {
   }
   const { trackId } = track
   return typeof trackId === 'string' ? trackId : undefined
+}
+
+/**
+ * Track config for a trackId, reading whichever lookup this host has. Hosts are
+ * not all current: a hub config lives at one permanent url that desktop installs
+ * and published links keep naming, so this runs on builds years apart.
+ * `getTrackById` landed 2026-07 and `getTracksById` 2026-01, while a session's
+ * own `tracks` array has been there throughout — measured floor for the whole
+ * short-form launch was v4.2.0 when this only called `getTracksById()`, purely
+ * because of that one call. Probe it with
+ * `pnpm host-compat -- --floor <version>`.
+ */
+function findTrackConf(session: AbstractSessionModel, trackId: string) {
+  const host: {
+    getTrackById?: (id: string) => AnyConfigurationModel | undefined
+    getTracksById?: () => Record<string, AnyConfigurationModel>
+    tracks?: AnyConfigurationModel[]
+  } = session
+  return (
+    host.getTrackById?.(trackId) ??
+    host.getTracksById?.()[trackId] ??
+    host.tracks?.find(t => readConfObject(t, 'trackId') === trackId)
+  )
 }
 
 function transcriptMatches(transcript: Feature, transcriptId: string) {
@@ -95,11 +119,10 @@ export async function resolveShortLaunch({
   }
 
   const trackIds = trackSpecs.map(getTrackId).filter(t => t !== undefined)
-  const tracksById = session.getTracksById()
   const sessionId = 'getFeatures'
   const transcripts: Feature[] = []
   for (const trackId of trackIds) {
-    const trackConf = tracksById[trackId]
+    const trackConf = findTrackConf(session, trackId)
     if (!trackConf) {
       continue
     }

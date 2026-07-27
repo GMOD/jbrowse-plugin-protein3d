@@ -23,6 +23,7 @@
     "test:versions": "node scripts/test-versions.mjs run",
     "test:version": "node scripts/test-versions.mjs run",
     "test:docs": "node scripts/test-docs.mjs",
+    "host-compat": "node scripts/host-compat-probe.mjs",
     "clean": "rimraf dist",
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
     "fetch-molstar-css": "node scripts/fetch-molstar-css.mjs",

@@ -293,6 +293,43 @@ pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
 })
 ```
 
+### Host version compatibility
+
+This plugin is named by hub configs at permanent urls
+(`jbrowse.org/ucsc/hg38/config.json`), which desktop installs and published
+links keep opening on whatever JBrowse they have. So the published bundle has to
+work on hosts much older than the one we develop against, and there are two
+separate floors:
+
+- **Loading.** The bundle externalizes every module in the `@jbrowse/core`
+  ReExports list it was built against. A host missing one of them leaves
+  `JBrowseExports["mod"]` undefined, the UMD global is never defined, and
+  `PluginLoader`'s `Promise.all` fails the **entire session** — not just this
+  view. Loading currently works back to `v2.15.0`.
+- **Working.** A host API the plugin calls but an older host lacks throws at use
+  time. This is the floor that actually moves, and it moves silently: a single
+  `session.getTracksById()` call (added to core 2026-01) held the declarative
+  launch at `v4.2.0` while the bundle loaded fine seven releases earlier.
+  Reading whichever lookup the host has (`findTrackConf` in
+  `resolveShortLaunch.ts`) is the pattern — feature-detect rather than assume,
+  so the floor stays where the rest of the plugin already works.
+
+`pnpm host-compat` probes the published bundle against every hosted release
+(`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), booting
+each one with a declarative connected launch and waiting on
+`[data-testid="protein-view-ready"]` — a real settled-state signal, not a fixed
+delay. It reports per version whether the session survived, the global appeared,
+and the view settled, with the console error when it did not.
+
+```bash
+pnpm host-compat                              # report the matrix
+pnpm host-compat -- --floor v4.2.0            # exit non-zero if that host or newer fails
+pnpm host-compat -- --versions v3.7.0,latest  # narrow it
+```
+
+Pass `--floor` in CI so a release that raises the floor fails the build instead
+of turning into a bug report from someone on last year's Desktop.
+
 ### Testing these examples
 
 `pnpm test:docs` opens the standalone and connected specs above in a headless
