@@ -1,61 +1,83 @@
-import fs from 'node:fs'
 import path from 'node:path'
-import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  captureScreenshot,
   cleanupJBrowse,
+  clickLaunch,
+  clickMenuItem,
   createJBrowsePage,
+  flushScreenshots,
+  getProteinViewState,
   launchBrowser,
-  saveScreenshot,
+  openFeatureContextMenu,
+  PAINTED_FEATURES,
+  pageErrors,
   setupJBrowse,
   startJBrowseServer,
   stopServer,
   waitForJBrowseLoad,
+  waitForLaunchEnabled,
+  waitForStructureRendered,
   waitForTrackLoad,
 } from './setup'
 
 import type { ChildProcess } from 'node:child_process'
 import type { Browser, Page } from 'puppeteer'
 
-// Get JBrowse version for screenshot directory
 const JBROWSE_VERSION = process.env.TEST_JBROWSE_VERSION || 'nightly'
 const SCREENSHOT_DIR = path.join('test-screenshots', JBROWSE_VERSION)
-
-// Ensure screenshot directory exists
-fs.mkdirSync(SCREENSHOT_DIR, { recursive: true })
+// A failing run's captures show a broken app, so they go here instead of over
+// the committed references. Gitignored; CI uploads the whole tree as artifacts.
+const FAILED_SCREENSHOT_DIR = path.join(
+  'test-screenshots',
+  'failed',
+  JBROWSE_VERSION,
+)
 
 function screenshot(name: string) {
   return path.join(SCREENSHOT_DIR, `${name}.png`)
 }
 
+// The locus lands on NRAS, whose AlphaFold structure (P01111) is 189 residues.
+// How much transcript arrives with the clicked feature is host dependent: v3
+// hands the menu the gene and the plugin picks the transcript itself, keeping
+// all four CDS records, while v4 hands over a transcript that has been reduced
+// to one CDS. So the transcript length is asserted for consistency with the
+// mapping rather than pinned to a number.
+const STRUCTURE_RESIDUES = 189
+
 describe('Protein3d Plugin E2E', () => {
   let server: ChildProcess | undefined
   let browser: Browser | undefined
-  let page: Page | undefined
-  const pluginErrors: string[] = []
+  let page: Page
+  let failed = false
 
   beforeAll(async () => {
     setupJBrowse()
     server = await startJBrowseServer()
     browser = await launchBrowser()
     page = await createJBrowsePage(browser)
-
-    // Listen for console errors related to plugin loading
-    page.on('console', msg => {
-      const text = msg.text()
-      if (
-        msg.type() === 'error' &&
-        (text.includes('plugin') || text.includes('Plugin'))
-      ) {
-        pluginErrors.push(text)
-      }
-    })
-
-    await waitForJBrowseLoad(page)
-    await waitForTrackLoad(page)
+    try {
+      await waitForJBrowseLoad(page)
+      await waitForTrackLoad(page)
+    } catch (error) {
+      // A bundle that throws while loading error-pages the app, and every test
+      // below is skipped — leave a picture of what the page looked like.
+      failed = true
+      await captureScreenshot(page, screenshot('00-load-failure'))
+      throw error
+    }
   }, 180_000)
 
+  afterEach(ctx => {
+    if (ctx.task.result?.state === 'fail') {
+      failed = true
+    }
+  })
+
   afterAll(async () => {
+    flushScreenshots(failed ? FAILED_SCREENSHOT_DIR : undefined)
     if (browser) {
       await browser.close()
     }
@@ -65,221 +87,51 @@ describe('Protein3d Plugin E2E', () => {
     await cleanupJBrowse()
   })
 
-  it('should load JBrowse without errors', async () => {
-    expect(page).toBeDefined()
-
-    // Verify JBrowse loaded - check for root content
-    const root = await page!.$('#root')
-    expect(root).not.toBeNull()
-
-    // Take a screenshot for debugging
-    await saveScreenshot(page!, screenshot('01-jbrowse-loaded'))
+  it('evaluates the plugin bundle without error-paging the app', async () => {
+    // The umd bundle only defines its global if it finished evaluating; a throw
+    // during load or configure() takes the whole app to its error page.
+    expect(
+      await page.evaluate(() => typeof window.JBrowsePluginProtein3d),
+    ).toBe('object')
+    expect(pageErrors).toEqual([])
+    await captureScreenshot(page, screenshot('01-jbrowse-loaded'))
   }, 30_000)
 
-  it('should load the Protein3d plugin without errors', async () => {
-    expect(page).toBeDefined()
-
-    // Check that no plugin-related errors occurred
-    if (pluginErrors.length > 0) {
-      console.log('Plugin errors:', pluginErrors)
-    }
-    expect(pluginErrors).toHaveLength(0)
-
-    // Check that the plugin is registered by looking for it in the session
-    const pluginLoaded = await page!.evaluate(() => {
-      // @ts-expect-error JBrowse global
-      const session = window.__jbrowse_session
-      if (session) {
-        const plugins = session.jbrowse?.plugins || []
-        return plugins.some(
-          (p: { name: string }) =>
-            p.name === 'Protein3d' || p.name === 'jbrowse-plugin-protein3d',
-        )
-      }
-      // Fallback: check if the plugin script was loaded
-      const scripts = Array.from(document.querySelectorAll('script'))
-      return scripts.some(s => s.src?.includes('protein3d'))
-    })
-
-    console.log(`Plugin loaded: ${pluginLoaded}`)
-    expect(pluginLoaded).toBe(true)
-  }, 30_000)
-
-  it('should render tracks without crashing', async () => {
-    expect(page).toBeDefined()
-
-    // Wait for the view to be ready - look for SVG elements in tracks
-    await new Promise(r => setTimeout(r, 5000))
-    await saveScreenshot(page!, screenshot('02-tracks-rendered'))
+  it('renders gene features on the track', async () => {
+    const painted = await page.$$(PAINTED_FEATURES)
+    expect(painted.length).toBeGreaterThan(0)
+    await captureScreenshot(page, screenshot('02-tracks-rendered'))
   }, 60_000)
 
-  it('should launch protein view from gene context menu', async () => {
-    expect(page).toBeDefined()
+  it('contributes Launch protein view to the feature context menu', async () => {
+    const items = await openFeatureContextMenu(page)
+    console.log(`context menu: ${items.join(' | ')}`)
+    expect(items).toContain('Launch protein view')
+    await captureScreenshot(page, screenshot('03-context-menu'))
+  }, 60_000)
 
-    await saveScreenshot(page!, screenshot('03-before-click'))
+  it('launches a protein view with the structure aligned and rendered', async () => {
+    await clickMenuItem(page, 'Launch protein view')
+    await page.waitForSelector('[role="dialog"]', { timeout: 30_000 })
+    await captureScreenshot(page, screenshot('04-protein-dialog'))
 
-    // Find the track content canvas by locating the GENCODE label and reading
-    // the canvas that lives in the same track row.
-    const trackInfo = await page!.evaluate(() => {
-      // Find the element that contains only "GENCODE" text (the track label)
-      const gencodeLabelEl = [...document.querySelectorAll('*')].find(
-        el =>
-          el.children.length === 0 &&
-          el.textContent?.trim() === 'GENCODE v44' &&
-          (el as HTMLElement).offsetHeight > 0,
-      ) as HTMLElement | undefined
+    await waitForLaunchEnabled(page)
+    await captureScreenshot(page, screenshot('05-dialog-ready'))
+    await clickLaunch(page)
 
-      if (!gencodeLabelEl) {
-        return null
-      }
+    const ink = await waitForStructureRendered(page)
+    console.log(`molstar canvas ink: ${(ink * 100).toFixed(1)}%`)
+    await captureScreenshot(page, screenshot('06-protein-view'))
 
-      // Walk up the DOM to find the track row, then find its canvas
-      let row: HTMLElement | null = gencodeLabelEl
-      while (row && !row.querySelector('canvas')) {
-        row = row.parentElement
-      }
-      const canvas = row?.querySelector('canvas') as HTMLCanvasElement | null
-      if (!canvas) {
-        return null
-      }
-
-      const rect = canvas.getBoundingClientRect()
-      // Skip off-screen canvases (e.g. minimap/overview ruler)
-      if (rect.left < 0) {
-        return null
-      }
-      return { x: rect.left + rect.width / 2, y: rect.top + 10 }
-    })
-
-    console.log(`Track canvas center: ${JSON.stringify(trackInfo)}`)
-
-    // Try several x positions across the track to land on a feature
-    const viewport = await page!.viewport()
-    const clickY = trackInfo?.y ?? 170
-    const xPositions = trackInfo
-      ? [
-          trackInfo.x,
-          viewport!.width * 0.3,
-          viewport!.width * 0.5,
-          viewport!.width * 0.7,
-        ]
-      : [viewport!.width * 0.35, viewport!.width * 0.5, viewport!.width * 0.65]
-
-    let menuItems: Awaited<ReturnType<typeof page.$$>> = []
-    for (const clickX of xPositions) {
-      console.log(`Right-clicking at (${clickX}, ${clickY})`)
-      await page!.mouse.click(clickX, clickY, { button: 'right' })
-      await new Promise(r => setTimeout(r, 1000))
-      menuItems = await page!.$$('[role="menuitem"]')
-      if (menuItems.length > 0) {
-        break
-      }
-      // Dismiss any empty menu before trying next position
-      await page!.keyboard.press('Escape')
-      await new Promise(r => setTimeout(r, 300))
-    }
-
-    await saveScreenshot(page!, screenshot('04-context-menu'))
-
-    console.log(`Found ${menuItems.length} menu items`)
-
-    if (menuItems.length === 0) {
-      console.log('No menu items found - may not have clicked on a feature')
-      // Click elsewhere to close any potential menu
-      await page!.mouse.click(10, 10)
-      return
-    }
-
-    // Find and click "Launch protein view" option
-    let launchProteinItem = null
-    for (const item of menuItems) {
-      const text = await page!.evaluate(
-        el => (el as HTMLElement).textContent,
-        item,
-      )
-      console.log(`Menu item: ${text}`)
-      if (
-        text?.toLowerCase().includes('protein') ||
-        text?.toLowerCase().includes('launch protein')
-      ) {
-        launchProteinItem = item
-        break
-      }
-    }
-
-    if (!launchProteinItem) {
-      console.log('Launch protein view option not found in context menu')
-      // Close the menu
-      await page!.keyboard.press('Escape')
-      await saveScreenshot(page!, screenshot('05-no-protein-option'))
-      return
-    }
-
-    // Click the launch protein view option
-    await launchProteinItem.click()
-    await new Promise(r => setTimeout(r, 2000))
-    await saveScreenshot(page!, screenshot('06-after-launch-click'))
-
-    // Wait for dialog to appear
-    const dialog = await page!.waitForSelector('[role="dialog"]', {
-      timeout: 10_000,
-    })
-    expect(dialog).not.toBeNull()
-    await saveScreenshot(page!, screenshot('07-protein-dialog'))
-
-    // Wait for the dialog to finish loading (the Launch button becomes enabled)
-    await new Promise(r => setTimeout(r, 15000))
-    await saveScreenshot(page!, screenshot('08-dialog-after-wait'))
-
-    // Look for Launch button and click it
-    const buttons = await page!.$$('button')
-    let launchButton = null
-    for (const button of buttons) {
-      const text = await page!.evaluate(
-        el => (el as HTMLElement).textContent,
-        button,
-      )
-      console.log(`Button: ${text}`)
-      if (text?.toLowerCase().includes('launch')) {
-        launchButton = button
-        break
-      }
-    }
-
-    if (launchButton) {
-      // Check if button is disabled
-      const isDisabled = await page!.evaluate(
-        el => (el as HTMLButtonElement).disabled,
-        launchButton,
-      )
-      console.log(`Launch button disabled: ${isDisabled}`)
-
-      if (!isDisabled) {
-        await launchButton.click()
-        console.log('Clicked Launch button')
-
-        // Wait for the protein view to mount (molstar plugin container)
-        try {
-          await page!.waitForFunction(
-            () =>
-              !!(
-                document.querySelector('[class*="msp-plugin"]') ||
-                document.querySelector('[class*="molstar"]')
-              ),
-            { timeout: 20_000 },
-          )
-          console.log('Protein view opened')
-        } catch {
-          console.log('Protein view did not open within 20s')
-        }
-        await saveScreenshot(page!, screenshot('09-protein-view'))
-      } else {
-        console.log('Launch button is disabled - data may still be loading')
-        await saveScreenshot(page!, screenshot('10-launch-disabled'))
-      }
-    } else {
-      console.log('Launch button not found in dialog')
-      await saveScreenshot(page!, screenshot('11-no-launch-button'))
-    }
-  }, 180_000)
+    const state = await getProteinViewState(page)
+    console.log(`protein view state: ${JSON.stringify(state)}`)
+    expect(state.structureCount).toBe(1)
+    expect(state.structureSeqLength).toBe(STRUCTURE_RESIDUES)
+    expect(state.transcriptName).toMatch(/^ENST\d+/)
+    expect(state.hasAlignment).toBe(true)
+    // every codon of the translated transcript maps onto the genome
+    expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
+    expect(state.transcriptLength).toBeGreaterThan(0)
+    expect(pageErrors).toEqual([])
+  }, 240_000)
 })

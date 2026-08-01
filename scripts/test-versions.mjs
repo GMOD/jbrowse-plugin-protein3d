@@ -3,7 +3,8 @@ import { execSync, spawnSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const JBROWSE_VERSIONS = ['v3.7.0', 'v4.0.4']
+// Keep in sync with the e2e-tests matrix in .github/workflows/push.yml
+const JBROWSE_VERSIONS = ['v3.7.0', 'nightly']
 
 function getTestDir(version) {
   return path.join(process.cwd(), `.test-jbrowse-${version}`)
@@ -18,13 +19,11 @@ function setupVersion(version) {
     return true
   }
   console.log(`Creating JBrowse ${version} at ${testDir}...`)
+  const source = version === 'nightly' ? '--nightly' : `--tag ${version}`
   try {
-    execSync(
-      `npx @jbrowse/cli create ${testDir} --tag @jbrowse/web@${version}`,
-      {
-        stdio: 'inherit',
-      },
-    )
+    execSync(`npx @jbrowse/cli create ${testDir} ${source}`, {
+      stdio: 'inherit',
+    })
     return true
   } catch (error) {
     console.error(`Failed to create JBrowse ${version}:`, error.message)
@@ -37,13 +36,17 @@ function runTestsForVersion(version) {
   console.log(`Running tests against JBrowse ${version}`)
   console.log(`${'='.repeat(60)}\n`)
 
-  const result = spawnSync('npm', ['exec', 'vitest', 'run'], {
-    stdio: 'inherit',
-    env: {
-      ...process.env,
-      TEST_JBROWSE_VERSION: version,
+  const result = spawnSync(
+    'npm',
+    ['exec', 'vitest', 'run', 'test/plugin.test.ts'],
+    {
+      stdio: 'inherit',
+      env: {
+        ...process.env,
+        TEST_JBROWSE_VERSION: version,
+      },
     },
-  })
+  )
 
   return result.status === 0
 }

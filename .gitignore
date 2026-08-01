@@ -134,3 +134,6 @@ stats.html
 # test:docs output artifacts (regenerated each run)
 test-screenshots/docs-connected.png
 test-screenshots/docs-short.png
+
+# captures from a failing E2E run, kept out of the committed references
+test-screenshots/failed/

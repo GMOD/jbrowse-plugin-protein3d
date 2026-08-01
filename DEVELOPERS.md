@@ -335,14 +335,45 @@ of turning into a bug report from someone on last year's Desktop.
 `pnpm test:docs` opens the standalone and connected specs above in a headless
 browser and asserts they render (structure extracted, `connectedView` wires the
 genome view, genome→protein mapping built, tracks rendered, no console errors).
-It auto-starts `pnpm start` if a dev server isn't already running on :9000.
+It auto-starts `pnpm start` if a dev server isn't already running on :9000. The
+`Daily` workflow runs it, so a dead AlphaFold URL or a broken launch path shows
+up as a failed nightly rather than as a bug report.
+
+### The E2E suite
+
+`test/plugin.test.ts` drives a real `jbrowse create` instance with the built umd
+bundle (`TEST_JBROWSE_VERSION=<version> pnpm vitest run test/plugin.test.ts`;
+`SKIP_BUILD=1` reuses `dist/`). It clicks all the way through: right-click a
+gene → `Launch protein view` → wait for the dialog to finish resolving → Launch
+→ molstar draws the structure.
+
+Every step asserts. There is no logged-and-continue path, because a suite that
+returns early on "no menu items" passes green against a bundle that error-pages
+the whole app — which is exactly what it did before. In particular:
+
+- the umd global has to exist (a bundle that throws never defines it),
+- the context menu has to contain the plugin's item,
+- `Launch` has to become enabled, and the molstar canvas has to end up with
+  actual pixels drawn — the container mounts ~5s before the structure appears,
+  so waiting on the container alone screenshots an empty viewer,
+- the session's structure has to be aligned, with its genome→protein mapping
+  covering the whole translated transcript.
+
+Hosts differ in what they hand the context menu: v3 passes the gene and the
+plugin resolves the transcript itself (all four NRAS CDS records), while v4
+passes a transcript reduced to a single CDS, so the same click yields a 40aa
+transcript there and a 190aa one on v3. The suite asserts the mapping is
+consistent with whatever transcript arrived rather than pinning a length.
 
 #### Screenshots
 
-The E2E suites write reference PNGs under `test-screenshots/`. puppeteer
-captures aren't pixel-deterministic (antialiasing, WebGL/molstar, font hinting),
-so `scripts/pngSnapshot.mjs` normalizes each capture through `pngquant --nofs`
-and only overwrites a committed PNG when it differs by more than ~1% of pixels —
+The E2E suites write reference PNGs under `test-screenshots/`. A failing run's
+captures go to `test-screenshots/failed/<version>/` (gitignored) instead of over
+the committed references — otherwise a broken run quietly promotes pictures of
+the broken app to the new baseline. puppeteer captures aren't
+pixel-deterministic (antialiasing, WebGL/molstar, font hinting), so
+`scripts/pngSnapshot.mjs` normalizes each capture through `pngquant --nofs` and
+only overwrites a committed PNG when it differs by more than ~1% of pixels —
 otherwise the existing file is left byte-for-byte intact, so unrelated runs
 don't churn git. Tune the threshold with `SCREENSHOT_DIFF_RATIO` (e.g. `0` to
 always rewrite, `0.05` to tolerate larger wobble). `pngquant` is optional: where

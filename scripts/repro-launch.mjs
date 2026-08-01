@@ -3,8 +3,9 @@ import { spawn } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
 
-const ROOT = '/home/cdiesh/src/jb2plugins/jbrowse-plugin-protein3d'
-const JBROWSE_DIR = path.join(ROOT, '.test-jbrowse-v4.3.0')
+const ROOT = path.resolve(import.meta.dirname, '..')
+const JBROWSE_VERSION = process.env.TEST_JBROWSE_VERSION ?? 'nightly'
+const JBROWSE_DIR = path.join(ROOT, `.test-jbrowse-${JBROWSE_VERSION}`)
 const PLUGIN_DIST = path.join(ROOT, 'dist')
 const PORT = 9876
 

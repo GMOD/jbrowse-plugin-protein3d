@@ -15,7 +15,7 @@
     "src"
   ],
   "scripts": {
-    "test": "vitest",
+    "test": "vitest run",
     "test:watch": "vitest",
     "test:all": "node scripts/test-versions.mjs setup && node scripts/test-versions.mjs run",
     "test:setup": "node scripts/test-versions.mjs setup",
@@ -24,6 +24,7 @@
     "test:version": "node scripts/test-versions.mjs run",
     "test:docs": "node scripts/test-docs.mjs",
     "host-compat": "node scripts/host-compat-probe.mjs",
+    "host-compat:candidate": "node scripts/host-compat-probe.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js --versions v4.0.0,v4.3.0,latest,main --floor v4.0.0 --json host-compat.json",
     "clean": "rimraf dist",
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
     "fetch-molstar-css": "node scripts/fetch-molstar-css.mjs",
@@ -35,7 +36,7 @@
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "pnpm build",
-    "preversion": "pnpm lint",
+    "preversion": "pnpm lint && pnpm build && pnpm host-compat:candidate",
     "version": "node scripts/sync-version.mjs && git add src/version.ts",
     "postversion": "git push --follow-tags"
   },
