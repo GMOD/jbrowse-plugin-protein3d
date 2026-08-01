@@ -137,3 +137,6 @@ test-screenshots/docs-short.png
 
 # captures from a failing E2E run, kept out of the committed references
 test-screenshots/failed/
+
+# host-compat probe report (regenerated each run)
+host-compat.json

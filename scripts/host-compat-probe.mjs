@@ -1,16 +1,29 @@
 #!/usr/bin/env node
 //
-// Probes one published plugin bundle against many hosted JBrowse builds and
-// reports, per host version, whether the session boots, the UMD global is
-// defined, the view type registered, and a declarative ProteinView launch
-// reaches its settled state.
+// Probes one plugin bundle against many hosted JBrowse builds and reports, per
+// host version, whether the session boots, the UMD global is defined, the view
+// type registered, and a declarative ProteinView launch reaches its settled
+// state.
 //
 // jbrowse.org/code/jb2/<vX.Y.Z>/ hosts every release, so the matrix needs no
 // `jbrowse create` per version.
 //
-// Usage: node scripts/host-compat-probe.mjs [--versions v3.7.0,v4.3.0] [--json out.json]
+// With --bundle it serves a LOCAL build in place of the published one by request
+// interception, which turns this from a report on production into a pre-publish
+// gate. That distinction is the whole point: the store uploads `latest/` with
+// no-cache, so a publish is a live change to configs shipped months ago, and
+// "does this build error-page the app" has to be answerable before the tag, not
+// after. The failure mode is a runtime throw while the UMD evaluates -- an
+// import the host does not re-export, or a barrel export that disappeared -- and
+// no amount of type checking or linting in this repo can rule that out.
+//
+// Usage:
+//   node scripts/host-compat-probe.mjs                       # published bundle
+//   node scripts/host-compat-probe.mjs --bundle dist/x.js     # candidate build
+//   node scripts/host-compat-probe.mjs --versions v4.0.0,main --floor v4.0.0
 //
 import fs from 'node:fs'
+import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import puppeteer from 'puppeteer'
@@ -58,10 +71,20 @@ const { values } = parseArgs({
     floor: { type: 'string' },
     json: { type: 'string' },
     timeout: { type: 'string', default: '90000' },
+    // Path to a local umd build to serve in place of the published one.
+    bundle: { type: 'string' },
+    // Re-probes a host that did not settle. The launch fetches real structures
+    // from the network, so a single miss is more often a blip than a break, and
+    // a release gate that fails on blips gets bypassed. A genuine
+    // incompatibility fails every attempt.
+    retries: { type: 'string', default: '1' },
   },
 })
 const versions = values.versions?.split(',') ?? DEFAULT_VERSIONS
 const timeout = Number(values.timeout)
+const candidateBundle = values.bundle
+  ? fs.readFileSync(values.bundle, 'utf8')
+  : undefined
 
 function url(version, withSpec) {
   const spec = withSpec
@@ -77,8 +100,56 @@ function readSession() {
   return w.JBrowseSession ?? w.__jbrowse_session ?? w.JBrowseRootModel?.session
 }
 
+// The config names the plugin at its version-agnostic store path, so serving a
+// candidate build means answering requests under that path from the local dist
+// instead.
+//
+// Resolving by BASENAME rather than matching the package name is load-bearing:
+// this build code-splits Mol* into a content-hashed molstar-chunk-*.js that the
+// main bundle fetches as a sibling. A matcher that answered every
+// `jbrowse-plugin-protein3d/**.js` with the main bundle handed that chunk
+// request the umd, and the run failed with "DefaultPluginUISpec is not a
+// function" on every host -- a probe artifact indistinguishable from a real
+// incompatibility. A gate that cries wolf gets ignored, so it has to serve the
+// whole directory, not one file.
+async function serveCandidateBundle(page) {
+  const dir = path.dirname(values.bundle)
+  const mainName = path.basename(values.bundle)
+  await page.setRequestInterception(true)
+  page.on('request', req => {
+    const u = req.url()
+    const name = path.basename(new URL(u).pathname)
+    const local = path.join(dir, name)
+    const isPluginAsset =
+      u.includes('/jbrowse-plugin-protein3d/') && name.endsWith('.js')
+    // the published umd name and the local one can differ, so the config's
+    // bundle request maps to --bundle by position; siblings map by name
+    const body =
+      isPluginAsset && name !== mainName && fs.existsSync(local)
+        ? fs.readFileSync(local, 'utf8')
+        : isPluginAsset
+          ? candidateBundle
+          : undefined
+    if (body === undefined) {
+      req.continue().catch(() => {})
+    } else {
+      req
+        .respond({
+          status: 200,
+          contentType: 'application/javascript',
+          headers: { 'Access-Control-Allow-Origin': '*' },
+          body,
+        })
+        .catch(() => {})
+    }
+  })
+}
+
 async function probeOne(browser, version) {
   const page = await browser.newPage()
+  if (candidateBundle) {
+    await serveCandidateBundle(page)
+  }
   const consoleErrors = []
   page.on('console', m => {
     if (m.type() === 'error') {
@@ -161,28 +232,67 @@ if (values.floor && floorIndex === -1) {
   throw new Error(`floor ${values.floor} is not in the probed versions`)
 }
 
+console.log(
+  candidateBundle
+    ? `serving candidate build ${values.bundle} in place of the published bundle`
+    : 'probing the published bundle',
+)
+
+const retries = Number(values.retries)
+
+// A host that ignored the session spec produced no view, so "did it settle" says
+// nothing about the plugin. jbrowse-web on `main` boots the config, defines the
+// global, logs nothing, and lands on "Select a view to launch" with
+// session.views empty -- gating on viewReady there fails a bundle that is fine.
+function specApplied(r) {
+  return (r.sessionViews?.length ?? 0) > 0
+}
+
+// What must hold for a build to be safe to publish, in blast-radius order. The
+// first two are the ones that have actually bitten: a throw while the UMD
+// evaluates leaves the global undefined and error-pages every config naming it.
+// The third is a real functional assertion but only meaningful where the host
+// applied the spec.
+function failure(r) {
+  return r.appError
+    ? `SESSION FAILED: ${r.appError}`
+    : r.globalDefined
+      ? specApplied(r) && !r.viewReady
+        ? 'view did NOT settle'
+        : undefined
+      : 'plugin global missing'
+}
+
+async function probeWithRetry(version) {
+  let r = await probeOne(browser, version)
+  for (let attempt = 0; attempt < retries && failure(r); attempt++) {
+    console.log(`${version.padEnd(10)} ${failure(r)}, retrying`)
+    r = await probeOne(browser, version)
+  }
+  return r
+}
+
 const results = []
 let gatedFailure = false
 for (const [i, version] of versions.entries()) {
-  const r = await probeOne(browser, version)
+  const r = await probeWithRetry(version)
   results.push(r)
-  const verdict = r.appError
-    ? `SESSION FAILED: ${r.appError}`
+  const bad = failure(r)
+  const verdict = bad
+    ? bad
     : r.viewReady
       ? 'ok (view reached settled state)'
-      : r.globalDefined
-        ? 'plugin loaded, view did NOT settle'
-        : 'plugin global missing'
+      : 'ok (booted; host did not apply the session spec, view not asserted)'
   const gated = floorIndex !== -1 && i >= floorIndex
   console.log(
-    `${version.padEnd(10)} ${verdict}${!r.viewReady && !gated ? ' (below floor, not gated)' : ''}`,
+    `${version.padEnd(10)} ${verdict}${bad && !gated ? ' (below floor, not gated)' : ''}`,
   )
-  if (!r.viewReady && r.consoleErrors.length > 0) {
+  if (bad && r.consoleErrors.length > 0) {
     for (const e of [...new Set(r.consoleErrors)].slice(0, 4)) {
       console.log(`           · ${e}`)
     }
   }
-  if (!r.viewReady && gated) {
+  if (bad && gated) {
     gatedFailure = true
   }
 }
@@ -192,7 +302,7 @@ if (values.json) {
   fs.writeFileSync(values.json, JSON.stringify(results, null, 2))
 }
 
-const firstWorking = results.find(r => r.viewReady)?.version
+const firstWorking = results.find(r => !failure(r))?.version
 console.log(`\nOldest probed host that works: ${firstWorking ?? 'none'}`)
 if (gatedFailure) {
   console.error(`A host at or above the ${values.floor} floor failed.`)
