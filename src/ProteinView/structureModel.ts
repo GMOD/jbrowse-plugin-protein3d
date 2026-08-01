@@ -423,9 +423,7 @@ const Structure = types
      */
     get confidenceCells() {
       const c = self.structureConfidence
-      return c &&
-        c.entityId === this.mappedEntityId &&
-        looksLikePlddt(c.values)
+      return c && c.entityId === this.mappedEntityId && looksLikePlddt(c.values)
         ? mapResidueValuesToColumns(
             c.values,
             this.structurePositionToAlignmentMap,

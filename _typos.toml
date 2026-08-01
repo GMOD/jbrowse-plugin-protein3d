@@ -1,3 +1,13 @@
 [default.extend-words]
+# amino acid three-letter codes
 THR = "THR"
-SER="SER"
+SER = "SER"
+# BLOSUM62 substitution matrix; PN = a Mol* plugin spec field; Superposer is
+# Mol*'s own term for structure superposition; "mis" appears in mismatch-related
+# identifiers; unparseable is the spelling used throughout this repo
+BLOSUM = "BLOSUM"
+PN = "PN"
+Superposer = "Superposer"
+mis = "mis"
+unparseable = "unparseable"
+Unparseable = "Unparseable"
