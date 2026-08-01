@@ -330,10 +330,19 @@ export async function waitForJBrowseLoad(page: Page): Promise<void> {
   await page.waitForSelector(TRACK_CONTAINER, { timeout: 60_000 })
 }
 
-// Painted features, in either shape the hosts under test render them: v4 paints
-// to a canvas and suffixes its testid with `_done`, v3 emits svg boxes.
-export const PAINTED_FEATURES =
-  'canvas[data-testid$="_done"], [data-testid^="box-"]'
+// Painted features, in every shape the hosts under test render them. v3 emits
+// svg boxes; v4 server-side renders each block to its own canvas and suffixes
+// that canvas's testid with `_done`. Current main deleted the block-based
+// display (jbrowse-components 8b1dacf9ff): the display is one GPU canvas with
+// no testid at all, and the signal moved to the wrapper — `-done` for first
+// paint, `data-display-phase` for the state the paint is in. Both are required:
+// `-done` flips on an empty canvas while the fetch is still in flight, and
+// `ready` is reachable before anything has been drawn.
+export const PAINTED_FEATURES = [
+  'canvas[data-testid$="_done"]',
+  '[data-testid^="box-"]',
+  '[data-testid$="-done"] [data-display-phase="ready"]',
+].join(', ')
 
 export async function waitForTrackLoad(page: Page): Promise<void> {
   await page.waitForSelector(PAINTED_FEATURES, { timeout: 60_000 })
