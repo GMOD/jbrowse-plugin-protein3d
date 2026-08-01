@@ -3,9 +3,9 @@ import React, { useEffect, useRef } from 'react'
 import { Tooltip, Typography } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
+import { makeStyles } from 'tss-react/mui'
 
-import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
-import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
+import HoverMarker from './HoverMarker'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   ProteinFeatureTrackContent,
@@ -13,11 +13,57 @@ import {
 } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
+import ExternalLink from '../../components/ExternalLink'
+import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
+import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
 import { hydrophobicityColor, plddtColor } from '../residueTracks'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
+
+// The alignment is drawn on its own panel rather than the page background, so
+// it needs the theme's paper color explicitly — hardcoding white left the
+// residue letters (theme text color) invisible under the dark theme.
+const useStyles = makeStyles()(theme => ({
+  scroll: {
+    overflow: 'auto',
+    whiteSpace: 'nowrap',
+    flex: 1,
+    paddingBottom: 10,
+    backgroundColor: theme.palette.background.paper,
+  },
+  gutterStatus: {
+    height: ROW_HEIGHT,
+    fontSize: 8,
+    color: theme.palette.text.secondary,
+  },
+  gutterError: {
+    height: ROW_HEIGHT,
+    fontSize: 8,
+    color: theme.palette.error.main,
+  },
+}))
+
+// Which UniProt entry the feature tracks came from. For an AlphaFold model that
+// is in the filename, but for a PDB entry it is resolved via SIFTS and is
+// otherwise invisible — leaving no way to tell which protein got annotated.
+function UniProtProvenance({
+  uniprotId,
+  uniprotName,
+}: {
+  uniprotId: string | undefined
+  uniprotName: string | undefined
+}) {
+  return uniprotId ? (
+    <Typography variant="caption" color="textSecondary" component="div">
+      Feature tracks from UniProt{' '}
+      <ExternalLink href={`https://www.uniprot.org/uniprotkb/${uniprotId}`}>
+        {uniprotName ? `${uniprotId} (${uniprotName})` : uniprotId}
+      </ExternalLink>
+    </Typography>
+  ) : null
+}
 
 function GutterLabel({
   label,
@@ -64,12 +110,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
     confidenceCells,
     hydrophobicityCells,
   } = model
+  const { classes } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
   // AlphaFold models carry their accession in the URL; PDB entries need a SIFTS
   // lookup, which also supplies the UniProt->structure residue offset.
   const {
     uniprotId,
+    uniprotName,
     mapUniProtPosition,
     isLoading: uniprotLoading,
     error: uniprotError,
@@ -159,6 +207,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
         selected transcript&apos;s sequence.{' '}
         {showHighlight ? 'Green is the aligned portion' : null}
       </Typography>
+      {showProteinTracks ? (
+        <UniProtProvenance uniprotId={uniprotId} uniprotName={uniprotName} />
+      ) : null}
       <div
         style={{
           display: 'flex',
@@ -197,9 +248,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           </div>
           {showProteinTracks ? (
             featureLoading ? (
-              <div style={{ height: ROW_HEIGHT, fontSize: 8, color: '#666' }}>
-                Loading...
-              </div>
+              <div className={classes.gutterStatus}>Loading...</div>
             ) : featureError ? (
               <Tooltip
                 title={
@@ -208,9 +257,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
                     : 'Error loading features'
                 }
               >
-                <div style={{ height: ROW_HEIGHT, fontSize: 8, color: 'red' }}>
-                  Error
-                </div>
+                <div className={classes.gutterError}>Error</div>
               </Tooltip>
             ) : featureData ? (
               <ProteinFeatureTrackLabels
@@ -235,16 +282,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
             />
           ) : null}
         </div>
-        <div
-          ref={containerRef}
-          style={{
-            overflow: 'auto',
-            whiteSpace: 'nowrap',
-            flex: 1,
-            paddingBottom: 10,
-            backgroundColor: 'white',
-          }}
-        >
+        <div ref={containerRef} className={classes.scroll}>
           <div style={{ position: 'relative' }}>
             <AlignmentHighlights
               model={model}
@@ -261,26 +299,35 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <SplitString model={model} str={a1} />
             </div>
           </div>
-          {showProteinTracks && featureData ? (
-            <ProteinFeatureTrackContent data={featureData} model={model} />
-          ) : null}
-          {showProteinTracks && confidenceCells.length > 0 ? (
-            <ResidueValueTrack
-              cells={confidenceCells}
-              colorFor={plddtColor}
-              formatValue={v => `pLDDT ${v.toFixed(0)}`}
-              sequenceLength={a0.length}
-              model={model}
-            />
-          ) : null}
-          {showProteinTracks && hydrophobicityCells.length > 0 ? (
-            <ResidueValueTrack
-              cells={hydrophobicityCells}
-              colorFor={hydrophobicityColor}
-              formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
-              sequenceLength={a0.length}
-              model={model}
-            />
+          {/* One relative parent for every track, so the hover marker spans all
+              of them — nested inside the feature tracks it stopped short of the
+              pLDDT/hydrophobicity rows, and vanished entirely when a structure
+              had no UniProt features. */}
+          {showProteinTracks ? (
+            <div style={{ position: 'relative' }}>
+              {featureData ? (
+                <ProteinFeatureTrackContent data={featureData} model={model} />
+              ) : null}
+              {confidenceCells.length > 0 ? (
+                <ResidueValueTrack
+                  cells={confidenceCells}
+                  colorFor={plddtColor}
+                  formatValue={v => `pLDDT ${v.toFixed(0)}`}
+                  sequenceLength={a0.length}
+                  model={model}
+                />
+              ) : null}
+              {hydrophobicityCells.length > 0 ? (
+                <ResidueValueTrack
+                  cells={hydrophobicityCells}
+                  colorFor={hydrophobicityColor}
+                  formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
+                  sequenceLength={a0.length}
+                  model={model}
+                />
+              ) : null}
+              <HoverMarker model={model} />
+            </div>
           ) : null}
         </div>
       </div>

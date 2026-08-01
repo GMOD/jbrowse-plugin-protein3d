@@ -2,7 +2,7 @@ import useStructureFileSequence from './useStructureFileSequence'
 import {
   getAlphaFoldConfidenceUrl,
   getAlphaFoldStructureUrl,
-} from '../utils/launchViewUtils'
+} from '../utils/structureUrls'
 
 export default function useAlphaFoldData({
   uniprotId,
@@ -23,6 +23,6 @@ export default function useAlphaFoldData({
     error,
     url,
     confidenceUrl,
-    structureSequence: sequences?.[0],
+    structureSequences: sequences,
   }
 }

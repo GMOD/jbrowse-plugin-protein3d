@@ -56,7 +56,7 @@ describe('useAlphaFoldDBSearch', () => {
       setSelectedEntryIndex: vi.fn(),
       url: null,
       confidenceUrl: null,
-      structureSequence: null,
+      structureSequences: undefined,
     })
     mockUseAlphaFoldSequenceSearch.mockReturnValue({
       uniprotId: null,
@@ -187,7 +187,9 @@ describe('useAlphaFoldDBSearch', () => {
       error: null,
     })
     mockUseAlphaFoldData.mockReturnValue({
-      structureSequence: mockStructureSequence, // This will be passed to selectBestTranscript
+      // every chain of the structure; pickStructureSequence narrows it to the
+      // one an isoform translates to before selectBestTranscript sees it
+      structureSequences: [mockStructureSequence],
       // ... other properties
     })
 

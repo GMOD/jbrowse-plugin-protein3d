@@ -25,6 +25,25 @@ const CharacterSpans = observer(function CharacterSpans({
   ))
 })
 
+/**
+ * Collapse a set of matching columns into contiguous [start, end) runs. A
+ * well-matched alignment is nearly all one run, so this turns one DOM node per
+ * residue into a handful for the whole overlay.
+ */
+export function matchRuns(columns: Iterable<number>) {
+  const sorted = [...columns].sort((a, b) => a - b)
+  const runs: { start: number; end: number }[] = []
+  for (const col of sorted) {
+    const last = runs.at(-1)
+    if (last?.end === col) {
+      last.end = col + 1
+    } else {
+      runs.push({ start: col, end: col + 1 })
+    }
+  }
+  return runs
+}
+
 const MatchOverlays = observer(function MatchOverlays({
   model,
   height,
@@ -35,14 +54,14 @@ const MatchOverlays = observer(function MatchOverlays({
   const { showHighlight, alignmentMatchSet } = model
   return !showHighlight || !alignmentMatchSet
     ? null
-    : [...alignmentMatchSet].map(i => (
+    : matchRuns(alignmentMatchSet).map(run => (
         <span
-          key={i}
+          key={run.start}
           style={{
             position: 'absolute',
-            left: i * CHAR_WIDTH,
+            left: run.start * CHAR_WIDTH,
             top: 0,
-            width: CHAR_WIDTH,
+            width: (run.end - run.start) * CHAR_WIDTH,
             height,
             background: '#33ff19a0',
             pointerEvents: 'none',

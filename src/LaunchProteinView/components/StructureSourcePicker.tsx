@@ -11,7 +11,7 @@ import {
 } from '@mui/material'
 
 import HelpButton from './HelpButton'
-import { getPdbStructureUrl } from '../utils/launchViewUtils'
+import { getPdbStructureUrl } from '../utils/structureUrls'
 
 export default function StructureSourcePicker({
   choice,

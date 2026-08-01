@@ -1,31 +1,10 @@
 import { isSessionWithAddTracks } from '@jbrowse/core/util'
 
 import { maybeLaunchSideBySide } from './sideBySide'
-import {
-  ALPHAFOLD_VERSION,
-  getAlphaFoldConfidenceUrl,
-  getAlphaFoldMsaUrl,
-  getAlphaFoldStructureUrl,
-  getConfidenceUrlFromTarget,
-  getPdbStructureUrl,
-  getStructureUrlFromTarget,
-  getUniprotIdFromAlphaFoldTarget,
-} from './structureUrls'
+import { getAlphaFoldMsaUrl } from './structureUrls'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
-
-// Re-exported so existing importers keep their `launchViewUtils` import path.
-export {
-  ALPHAFOLD_VERSION,
-  getAlphaFoldConfidenceUrl,
-  getAlphaFoldMsaUrl,
-  getAlphaFoldStructureUrl,
-  getConfidenceUrlFromTarget,
-  getPdbStructureUrl,
-  getStructureUrlFromTarget,
-  getUniprotIdFromAlphaFoldTarget,
-}
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type {

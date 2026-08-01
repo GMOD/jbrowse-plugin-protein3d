@@ -1,21 +1,28 @@
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useTranscriptSelection from './useTranscriptSelection'
-import { getId, getTranscriptFeatures } from '../utils/util'
+import {
+  getId,
+  getTranscriptFeatures,
+  pickStructureSequence,
+} from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
 // Bundles the transcript-isoform wiring shared by all three launch tabs:
-// list transcripts, fetch their protein sequences, auto/manually select one,
-// and resolve the selection back to its feature + sequence.
+// list transcripts, fetch their protein sequences, pick which chain of the
+// structure to compare against, auto/manually select a transcript, and resolve
+// the selection back to its feature + sequence.
 export default function useTranscriptIsoformSelection({
   feature,
   view,
-  structureSequence,
+  structureSequences,
   resetKey,
 }: {
   feature: Feature
   view?: { assemblyNames?: string[] }
-  structureSequence?: string
+  // every polymer chain of the structure, not just the first — see
+  // pickStructureSequence
+  structureSequences?: string[]
   resetKey?: string
 }) {
   const transcripts = getTranscriptFeatures(feature)
@@ -23,6 +30,10 @@ export default function useTranscriptIsoformSelection({
     feature,
     view,
   })
+  const structureSequence = pickStructureSequence(
+    structureSequences,
+    isoformSequences,
+  )
   const { userSelection, setUserSelection } = useTranscriptSelection({
     options: transcripts,
     isoformSequences,
@@ -37,6 +48,7 @@ export default function useTranscriptIsoformSelection({
   return {
     transcripts,
     isoformSequences,
+    structureSequence,
     isLoading,
     error,
     selectedTranscriptId: userSelection,

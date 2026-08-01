@@ -16,12 +16,8 @@ import {
 } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import {
-  getAlphaFoldStructureUrl,
-  getPdbStructureUrl,
-} from '../../LaunchProteinView/utils/launchViewUtils'
-
 import type { JBrowsePluginProteinViewModel } from '../model'
+import type { ProteinStructureSpec } from '../proteinViewSpec'
 
 const AddStructureDialog = observer(function AddStructureDialog({
   model,
@@ -45,23 +41,24 @@ const AddStructureDialog = observer(function AddStructureDialog({
     model.setShowAddStructureDialog(false)
   }
 
+  // The Structure model resolves the `pdbId`/`uniprotId` shorthands into a url
+  // at hydration, so the dialog states the source rather than rebuilding the
+  // AlphaFold/RCSB url formats a second time.
   const handleAdd = async () => {
     try {
-      let url: string | undefined
-      let data: string | undefined
+      const spec: ProteinStructureSpec | undefined =
+        choice === 'pdb' && pdbId
+          ? { pdbId }
+          : choice === 'uniprot' && uniprotId
+            ? { uniprotId }
+            : choice === 'url' && structureURL
+              ? { url: structureURL }
+              : choice === 'file' && file
+                ? { data: await file.text() }
+                : undefined
 
-      if (choice === 'pdb' && pdbId) {
-        url = getPdbStructureUrl(pdbId)
-      } else if (choice === 'uniprot' && uniprotId) {
-        url = getAlphaFoldStructureUrl(uniprotId.toUpperCase())
-      } else if (choice === 'url' && structureURL) {
-        url = structureURL
-      } else if (choice === 'file' && file) {
-        data = await file.text()
-      }
-
-      if (url !== undefined || data !== undefined) {
-        model.addStructure({ url, data })
+      if (spec) {
+        model.addStructure(spec)
         handleClose()
       }
     } catch (e) {
@@ -177,7 +174,13 @@ const AddStructureDialog = observer(function AddStructureDialog({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button
+          onClick={() => {
+            handleClose()
+          }}
+        >
+          Cancel
+        </Button>
         <Button
           onClick={() => {
             void handleAdd()

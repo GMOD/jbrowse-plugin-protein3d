@@ -13,7 +13,7 @@ import {
 import { makeStyles } from 'tss-react/mui'
 
 import FoldseekActionMenu from './FoldseekActionMenu'
-import { getStructureUrlFromTarget } from '../utils/launchViewUtils'
+import { getStructureUrlFromTarget } from '../utils/structureUrls'
 
 import type { FlattenedHit } from './FoldseekActionMenu'
 import type { FoldseekResult } from '../services/foldseekApi'

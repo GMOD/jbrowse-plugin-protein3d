@@ -2,7 +2,7 @@ import { readConfObject } from '@jbrowse/core/configuration'
 import { parseLocString } from '@jbrowse/core/util'
 
 import { fetchProteinSeq } from '../LaunchProteinView/utils/calculateProteinSequence'
-import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/launchViewUtils'
+import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 import {
   getTranscriptFeatures,
   stripTrailingVersion,

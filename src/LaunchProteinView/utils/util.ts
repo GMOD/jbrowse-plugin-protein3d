@@ -334,6 +334,26 @@ export function classifyIsoforms({
   }
 }
 
+/**
+ * Which of a structure's polymer chains the launch dialog should compare
+ * transcripts against. A multi-chain deposit (heteromer, protein-DNA complex,
+ * processed peptide) has no reason to put the gene's protein first, so prefer
+ * whichever chain some isoform translates to exactly; the first chain stays the
+ * fallback. This is the dialog-side counterpart of chooseMappedEntity, which
+ * the view uses to pick the mapped entity once loaded — without it the picker
+ * reported "no isoform matches" for structures the view then mapped fine.
+ */
+export function pickStructureSequence(
+  structureSequences: string[] | undefined,
+  isoformSequences: IsoformSequences | undefined,
+): string | undefined {
+  const translated = new Set(
+    Object.values(isoformSequences ?? {}).map(v => stripStopCodon(v.seq)),
+  )
+  const exact = structureSequences?.find(s => translated.has(stripStopCodon(s)))
+  return exact ?? structureSequences?.[0]
+}
+
 export function selectBestTranscript(args: {
   options: Feature[]
   isoformSequences: IsoformSequences

@@ -7,10 +7,12 @@ import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
 import {
   getConditionalProteinLaunches,
-  getConfidenceUrlFromTarget,
-  getUniprotIdFromAlphaFoldTarget,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
+import {
+  getConfidenceUrlFromTarget,
+  getUniprotIdFromAlphaFoldTarget,
+} from '../utils/structureUrls'
 
 import type { FoldseekAlignment } from '../services/foldseekApi'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'

@@ -2,10 +2,9 @@ import React from 'react'
 
 import { observer } from 'mobx-react'
 
-import { CHAR_WIDTH } from '../constants'
 import FeatureBar from './FeatureBar'
 import FeatureTypeLabel from './FeatureTypeLabel'
-import HoverMarker from './HoverMarker'
+import { CHAR_WIDTH } from '../constants'
 import useAlignmentColumnHover from '../hooks/useAlignmentColumnHover'
 
 import type {
@@ -85,7 +84,7 @@ export const ProteinFeatureTrackContent = observer(
   }) {
     const hoverHandlers = useAlignmentColumnHover(model, data.sequenceLength)
     return (
-      <div style={{ position: 'relative' }} {...hoverHandlers}>
+      <div {...hoverHandlers}>
         {data.visibleGroups.map(group => (
           <FeatureTypeTrackContent
             key={group.type}
@@ -95,7 +94,6 @@ export const ProteinFeatureTrackContent = observer(
             expanded={model.expandedFeatureTypes.has(group.type)}
           />
         ))}
-        <HoverMarker model={model} />
       </div>
     )
   },

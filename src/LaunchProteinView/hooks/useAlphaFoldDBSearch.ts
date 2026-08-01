@@ -97,7 +97,7 @@ export default function useAlphaFoldDBSearch({
     error: alphaFoldError,
     url: alphaFoldUrl,
     confidenceUrl: alphaFoldConfidenceUrl,
-    structureSequence: alphaFoldStructureSequence,
+    structureSequences: alphaFoldStructureSequences,
   } = useAlphaFoldData({
     uniprotId: isSequenceMode ? undefined : uniprotId,
   })
@@ -105,6 +105,7 @@ export default function useAlphaFoldDBSearch({
   const {
     transcripts: transcriptOptions,
     isoformSequences,
+    structureSequence: alphaFoldStructureSequence,
     isLoading: isIsoformLoading,
     error: isoformError,
     selectedTranscriptId: effectiveTranscriptId,
@@ -114,7 +115,7 @@ export default function useAlphaFoldDBSearch({
   } = useTranscriptIsoformSelection({
     feature,
     view,
-    structureSequence: alphaFoldStructureSequence,
+    structureSequences: alphaFoldStructureSequences,
     resetKey: uniprotId,
   })
 

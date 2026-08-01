@@ -46,7 +46,7 @@ import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { Entity } from './extractStructureSequences'
-import type { StructureData } from './loadStructureData'
+import type { EntityConfidence, StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
@@ -168,9 +168,10 @@ const Structure = types
     /**
      * #volatile
      * Per-residue B-factor / pLDDT for the first chain, indexed by 0-based
-     * structure sequence position. Drives the confidence feature track.
+     * structure sequence position, tagged with the entity it came from. Drives
+     * the confidence feature track.
      */
-    structureConfidence: undefined as number[] | undefined,
+    structureConfidence: undefined as EntityConfidence | undefined,
     /**
      * #volatile
      */
@@ -412,14 +413,23 @@ const Structure = types
      * #getter
      * Per-residue pLDDT values mapped to alignment columns, shown only when the
      * structure's B-factor column actually looks like AlphaFold confidence.
-     * pLDDT is an AlphaFold concept — those models are single-entity, so the
-     * mapped entity is always [0] and structureConfidence (extracted from [0])
-     * stays coherent.
+     *
+     * The values are read from the structure's first entity, but the alignment
+     * map belongs to the *mapped* entity, so they are only comparable when
+     * those are the same chain. An AlphaFold monomer always satisfies that; an
+     * AlphaFold-multimer prediction whose transcript maps to a later chain does
+     * not, and would otherwise plot chain A's confidence against chain C's
+     * residues. Mismatched entities drop the track rather than mis-draw it.
      */
     get confidenceCells() {
       const c = self.structureConfidence
-      return looksLikePlddt(c)
-        ? mapResidueValuesToColumns(c, this.structurePositionToAlignmentMap)
+      return c &&
+        c.entityId === this.mappedEntityId &&
+        looksLikePlddt(c.values)
+        ? mapResidueValuesToColumns(
+            c.values,
+            this.structurePositionToAlignmentMap,
+          )
         : []
     },
     /**

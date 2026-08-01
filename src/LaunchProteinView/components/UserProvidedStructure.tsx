@@ -77,17 +77,19 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
 
   const structureName =
     activeFile?.name ?? activeURL.slice(activeURL.lastIndexOf('/') + 1)
-  const structureSequence = structureSequences?.[0]
 
   const {
     transcripts: options,
     isoformSequences,
+    // the chain the isoforms are compared against — not blindly chain 0, which
+    // mismatched every heteromer the view itself went on to map correctly
+    structureSequence,
     selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
     selectedIsoform: protein,
     error: isoformError,
-  } = useTranscriptIsoformSelection({ feature, view, structureSequence })
+  } = useTranscriptIsoformSelection({ feature, view, structureSequences })
 
   const error = isoformError ?? launchError ?? fileError
 
