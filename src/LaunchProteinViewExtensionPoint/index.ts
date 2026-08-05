@@ -17,29 +17,22 @@ export default function LaunchProteinViewExtensionPointF(
 ) {
   pluginManager.addToExtensionPoint(
     'LaunchView-ProteinView',
-    // LaunchView extension points are typed as transformers `(extendee, props)
-    // => extendee`, but in practice JBrowse invokes them as side-effect
-    // handlers and ignores the return value. Casting away the signature
-    // mismatch rather than fabricating a fake return.
+    // A LaunchView point is a transformer — the chain hands what each callback
+    // returns to the next — and JBrowse now warns when one returns undefined
+    // ("...returned undefined instead of the value it was passed, so its result
+    // was ignored"), on every launch. This used to return nothing on the
+    // assumption that the result was ignored; it is not. The handler returns
+    // its extendee at each exit now, like jbrowse-components' own
+    // LaunchDotplotView does.
+    //
+    // The suppression stays, and is NOT about the return value: this builds
+    // against @jbrowse/core 4.3.0, whose signature is `(extendee: T, props) => T`
+    // with no `| Promise<T>` and no ExtensionPointRegistry, so an async handler
+    // cannot be typed against it at all. jbrowse-components has since widened
+    // that signature; drop the suppression when the core dependency is bumped
+    // past it, not before.
     // @ts-expect-error
-    async ({
-      session,
-      url,
-      uniprotId,
-      transcriptId,
-      userProvidedTranscriptSequence,
-      feature,
-      connectedViewId,
-      connectedView,
-      alignmentAlgorithm,
-      displayName,
-      height,
-      showControls,
-      showHighlight,
-      zoomToBaseLevel,
-      sideBySide,
-      initialSelection,
-    }: {
+    async (args: {
       session: AbstractSessionModel
       url?: string
       uniprotId?: string
@@ -63,6 +56,24 @@ export default function LaunchProteinViewExtensionPointF(
       // as a domain click would — so a spec can open with a domain highlighted.
       initialSelection?: { start: number; end: number }
     }) => {
+      const {
+        session,
+        url,
+        uniprotId,
+        transcriptId,
+        userProvidedTranscriptSequence,
+        feature,
+        connectedViewId,
+        connectedView,
+        alignmentAlgorithm,
+        displayName,
+        height,
+        showControls,
+        showHighlight,
+        zoomToBaseLevel,
+        sideBySide,
+        initialSelection,
+      } = args
       // Short-URL form: `uniprotId` + `transcriptId` + `connectedView` (no
       // explicit `url`/`feature`/sequence). Derive the structure URL, the
       // transcript feature, and the translated sequence from the connected
@@ -80,7 +91,7 @@ export default function LaunchProteinViewExtensionPointF(
         } catch (e) {
           console.error(e)
           session.notify(`Could not launch protein view: ${e}`, 'error')
-          return
+          return args
         }
       }
 
@@ -90,7 +101,7 @@ export default function LaunchProteinViewExtensionPointF(
           'No url or uniprotId provided when launching protein view'
         console.error(message)
         session.notify(`Could not launch protein view: ${message}`, 'error')
-        return
+        return args
       }
 
       // A session spec launches each view independently with an auto-generated
@@ -140,6 +151,7 @@ export default function LaunchProteinViewExtensionPointF(
       if (ownsConnectedView) {
         maybeLaunchSideBySide(session, proteinView.id, sideBySide)
       }
+      return args
     },
   )
 }
