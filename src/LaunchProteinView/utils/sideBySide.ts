@@ -26,15 +26,40 @@ interface SessionWithWorkspaces {
   setPendingMove: (move: { type: 'splitRight'; viewId: string }) => void
 }
 
+const hasAction = (session: AbstractSessionModel, name: string) =>
+  name in session &&
+  typeof (session as unknown as Record<string, unknown>)[name] === 'function'
+
+// Warned at most once: this is a property of the host, so it is the same answer
+// every launch, and a dialog the user reopens should not stack up console noise.
+let warnedPartial = false
+
 function isSessionWithWorkspaces(
   session: AbstractSessionModel,
 ): session is AbstractSessionModel & SessionWithWorkspaces {
-  return (
-    'setUseWorkspaces' in session &&
-    typeof session.setUseWorkspaces === 'function' &&
-    'setPendingMove' in session &&
-    typeof session.setPendingMove === 'function'
-  )
+  const canEnable = hasAction(session, 'setUseWorkspaces')
+  const canPlace = hasAction(session, 'setPendingMove')
+
+  // Missing BOTH is an embedded session: it has no workspaces, there is nothing
+  // to ask for, and silence is the right answer.
+  //
+  // Missing ONE is a host that has workspaces but has changed how a view is
+  // placed in them — and silence there is how this broke before. jbrowse-web
+  // folded `setPendingMove` into its layout `init`, this guard went false, and
+  // the plugin simply stopped asking for the split: no error, no missing
+  // feature, just two views quietly stacking instead of sitting side by side.
+  // Nobody noticed for weeks. Feature detection cannot ask the host to announce
+  // a change, but it can tell "not supported here" from "supported, and gone".
+  if (canEnable !== canPlace && !warnedPartial) {
+    warnedPartial = true
+    console.warn(
+      `jbrowse-plugin-protein3d: this session supports workspaces but not ` +
+        `${canPlace ? 'setUseWorkspaces' : 'setPendingMove'}, so the ` +
+        `side-by-side launch was skipped and the views will stack. The host's ` +
+        `session API changed; the plugin needs updating to match.`,
+    )
+  }
+  return canEnable && canPlace
 }
 
 /**
