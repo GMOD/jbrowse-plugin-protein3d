@@ -101,22 +101,22 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 
 ### Parameters
 
-| Parameter                        | Required | Description                                                                     |
-| -------------------------------- | -------- | ------------------------------------------------------------------------------- |
-| `url`                            | Yes\*    | Structure file URL (PDB, mmCIF, etc.)                                           |
-| `uniprotId`                      | Yes\*    | UniProt accession; derives the AlphaFold `url` (short form, see below)          |
-| `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url` (short form, see below)                  |
+| Parameter                        | Required | Description                                                                       |
+| -------------------------------- | -------- | --------------------------------------------------------------------------------- |
+| `url`                            | Yes\*    | Structure file URL (PDB, mmCIF, etc.)                                             |
+| `uniprotId`                      | Yes\*    | UniProt accession; derives the AlphaFold `url` (short form, see below)            |
+| `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url` (short form, see below)                    |
 | `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form) |
-| `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                  |
-| `feature`                        | No       | Genomic feature for cross-linking                                               |
-| `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                    |
-| `connectedView`                  | No       | LGV init (`loc`/`assembly`/`tracks`) to create + connect a new LinearGenomeView |
-| `alignmentAlgorithm`             | No       | 'emboss_matcher', 'emboss_needle', or 'emboss_water'                            |
-| `displayName`                    | No       | Custom view display name                                                        |
-| `height`                         | No       | View height in pixels (default: 650)                                            |
-| `showControls`                   | No       | Show Mol\* controls panel                                                       |
-| `showHighlight`                  | No       | Show alignment highlight on structure                                           |
-| `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                     |
+| `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                    |
+| `feature`                        | No       | Genomic feature for cross-linking                                                 |
+| `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                      |
+| `connectedView`                  | No       | LGV init (`loc`/`assembly`/`tracks`) to create + connect a new LinearGenomeView   |
+| `alignmentAlgorithm`             | No       | 'emboss_matcher', 'emboss_needle', or 'emboss_water'                              |
+| `displayName`                    | No       | Custom view display name                                                          |
+| `height`                         | No       | View height in pixels (default: 650)                                              |
+| `showControls`                   | No       | Show Mol\* controls panel                                                         |
+| `showHighlight`                  | No       | Show alignment highlight on structure                                             |
+| `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
 
 \* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
 form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same
@@ -178,26 +178,26 @@ To open an **experimental** structure instead of an AlphaFold model, swap
 https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","pdbId":"1TUP","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
-1TUP is p53's core domain bound to DNA: entities [0] and [1] are the DNA
-strands and the protein is entity [2], so it exercises `chooseMappedEntity`, and
-its chain starts at UniProt residue 94, so it exercises the SIFTS offset that
-places the UniProt feature tracks. See [harness/](harness/) for more structures
-chosen to exercise specific paths.
+1TUP is p53's core domain bound to DNA: entities [0] and [1] are the DNA strands
+and the protein is entity [2], so it exercises `chooseMappedEntity`, and its
+chain starts at UniProt residue 94, so it exercises the SIFTS offset that places
+the UniProt feature tracks. See [harness/](harness/) for more structures chosen
+to exercise specific paths.
 
 Given the short form + `transcriptId`, the plugin:
 
-- derives the structure URL from `uniprotId`
-  (`AF-<uniprotId>-F1-model_v6.cif`) or `pdbId` (`<pdbId>.cif` from RCSB),
+- derives the structure URL from `uniprotId` (`AF-<uniprotId>-F1-model_v6.cif`)
+  or `pdbId` (`<pdbId>.cif` from RCSB),
 - fetches features at `loc` from the `connectedView` `tracks` and picks the
   transcript whose id/name matches `transcriptId` (trailing version optional, so
   `NM_000546` matches `NM_000546.6`),
 - translates that transcript's CDS against the connected assembly to build the
   alignment sequence.
 
-If any step fails (no structure for that id, transcript not found at that
-locus, transcript has no CDS, or it can't be translated), the launch is
-**aborted with an on-screen error** rather than leaving a half-wired structure —
-so a typo in `transcriptId` is visible, not silent.
+If any step fails (no structure for that id, transcript not found at that locus,
+transcript has no CDS, or it can't be translated), the launch is **aborted with
+an on-screen error** rather than leaving a half-wired structure — so a typo in
+`transcriptId` is visible, not silent.
 
 > The matched transcript must actually be present in one of the `tracks` at
 > `loc`. If it isn't (e.g. a custom isoform, or a track that isn't loaded), use

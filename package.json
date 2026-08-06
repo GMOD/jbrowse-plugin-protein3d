@@ -29,6 +29,7 @@
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
     "fetch-molstar-css": "node scripts/fetch-molstar-css.mjs",
     "format": "pnpm prettier --write .",
+    "format:check": "pnpm prettier --check .",
     "prebuild": "pnpm clean",
     "start": "pnpm fetch-molstar-css && node esbuild.mjs --watch",
     "build": "tsc && NODE_ENV=production node esbuild.mjs && cp distconfig.json dist/config.json",
@@ -36,7 +37,7 @@
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
     "prepack": "pnpm build",
-    "preversion": "pnpm lint && pnpm build && pnpm host-compat:candidate",
+    "preversion": "pnpm format:check && pnpm lint && pnpm build && pnpm host-compat:candidate",
     "version": "node scripts/sync-version.mjs && git add src/version.ts",
     "postversion": "git push --follow-tags"
   },

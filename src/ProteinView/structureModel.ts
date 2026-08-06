@@ -42,10 +42,7 @@ import {
   resolveStructureUrl,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import {
-  alignmentLength,
-  genomeToTranscriptSeqMapping,
-} from '../mappings'
+import { alignmentLength, genomeToTranscriptSeqMapping } from '../mappings'
 import {
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
@@ -126,10 +123,12 @@ const Structure = types
   // URL format. An explicit url/data always wins; the shorthand resolves the
   // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
   // shorthand keys and an already-set url, so it passes through unchanged.
-  .preProcessSnapshot(({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
-    ...rest,
-    url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
-  }))
+  .preProcessSnapshot(
+    ({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
+      ...rest,
+      url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
+    }),
+  )
   .volatile(() => ({
     /**
      * #volatile

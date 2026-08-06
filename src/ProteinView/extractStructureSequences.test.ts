@@ -9,7 +9,9 @@ import {
 } from './extractStructureSequences'
 
 // A molstar model stub shaped like the fields extractEntities reads.
-function model(entities: { entityId: string; seq: string; seqIds: number[] }[]) {
+function model(
+  entities: { entityId: string; seq: string; seqIds: number[] }[],
+) {
   return {
     obj: {
       data: {

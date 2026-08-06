@@ -106,7 +106,9 @@ function select(labelSeqIds: number[], entityId?: string) {
       loc.element = e.unit.elements[OrderedSet.getAt(e.indices, i)]!
       chains.add(SP.chain.auth_asym_id(loc))
       entities.add(SP.entity.id(loc))
-      residues.add(`${SP.chain.auth_asym_id(loc)}:${SP.residue.label_seq_id(loc)}`)
+      residues.add(
+        `${SP.chain.auth_asym_id(loc)}:${SP.residue.label_seq_id(loc)}`,
+      )
     }
   }
   return {

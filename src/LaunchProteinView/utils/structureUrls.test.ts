@@ -45,7 +45,9 @@ test('resolveStructureUrl: an explicit url wins over any shorthand', () => {
 
 test('resolveStructureUrl: inline data suppresses the shorthand', () => {
   // a structure supplied as data has no url, and must not acquire one
-  expect(resolveStructureUrl({ data: 'ATOM...', pdbId: '1TUP' })).toBeUndefined()
+  expect(
+    resolveStructureUrl({ data: 'ATOM...', pdbId: '1TUP' }),
+  ).toBeUndefined()
 })
 
 test('resolveStructureUrl: uniprotId resolves to the AlphaFold model', () => {

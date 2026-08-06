@@ -38,9 +38,7 @@ export function structureFileExtension(nameOrUrl: string) {
 export function structureFormatFromName(
   nameOrUrl: string,
 ): BuiltInTrajectoryFormat {
-  return PDB_EXTENSIONS.has(structureFileExtension(nameOrUrl))
-    ? 'pdb'
-    : 'mmcif'
+  return PDB_EXTENSIONS.has(structureFileExtension(nameOrUrl)) ? 'pdb' : 'mmcif'
 }
 
 /** Whether a URL points at a binary-encoded structure, which molstar must be

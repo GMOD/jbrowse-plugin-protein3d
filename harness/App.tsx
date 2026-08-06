@@ -18,8 +18,7 @@ import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 // has no imports of its own, so it costs the harness nothing, and the AlphaFold
 // model version now lives in exactly one place instead of drifting between the
 // plugin and the page that is supposed to reproduce it.
-const pdbFormatUrl = (id: string) =>
-  `https://files.rcsb.org/download/${id}.pdb`
+const pdbFormatUrl = (id: string) => `https://files.rcsb.org/download/${id}.pdb`
 
 // Deep-link into the real plugin running in the hosted webgl-poc JBrowse build,
 // using the config.json published alongside this page.
@@ -176,10 +175,10 @@ export default function App() {
         </div>
         <div style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>
           Runs the plugin's real entity resolution and alignment over a
-          structure and reports what it would map, flagging multi-chain,
-          partial and oddly-numbered cases. Run it here for a fast verdict, or
-          open any example gene in the real plugin via its{' '}
-          <strong>↗ JBrowse</strong> link.
+          structure and reports what it would map, flagging multi-chain, partial
+          and oddly-numbered cases. Run it here for a fast verdict, or open any
+          example gene in the real plugin via its <strong>↗ JBrowse</strong>{' '}
+          link.
         </div>
 
         <div

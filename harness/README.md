@@ -48,10 +48,10 @@ For a chosen structure + transcript (paste a sequence or fetch by UniProt acc):
 - **Verdicts** flagging:
   - `RESOLVED_CHAIN` — the protein of interest is **not** entity `[0]` and
     `chooseMappedEntity` found the right one. The case that used to mis-map.
-  - `WRONG_CHAIN` — the resolver did **not** pick the best-matching entity.
-    A regression alarm: no built-in example should produce this.
-  - `MULTI_ENTITY` — heteromeric complex; hovers on the other chains are
-    dropped rather than mapped through the wrong alignment.
+  - `WRONG_CHAIN` — the resolver did **not** pick the best-matching entity. A
+    regression alarm: no built-in example should produce this.
+  - `MULTI_ENTITY` — heteromeric complex; hovers on the other chains are dropped
+    rather than mapped through the wrong alignment.
   - `AUTHOR_NUMBERING` — the entity's `label_seq_id`s don't run `1..N`, so a
     residue id is not `position + 1`. Happens with PDB-format files that carry
     no SEQRES records, where molstar reports the author numbering instead.
@@ -69,17 +69,17 @@ For a chosen structure + transcript (paste a sequence or fetch by UniProt acc):
 Built-in examples live in `examples.ts`, each grounded against the RCSB data API
 and tagged with the verdict it should produce:
 
-| example                                   | what it shows                                                  |
-| ----------------------------------------- | -------------------------------------------------------------- |
-| AF p53                                    | `CLEAN` — single chain, full length                            |
-| 4HHB → β / 1FIN → cyclin A / 6M0J → spike | `RESOLVED_CHAIN` — protein of interest isn't entity [0]        |
-| 1TUP → p53                                | `RESOLVED_CHAIN` — entity [0] and [1] are DNA strands          |
-| 1TUP.pdb → p53                            | PDB format rather than mmCIF; the author-numbering path        |
-| 6M0J → ACE2                               | `MULTI_ENTITY` contrast — [0] is right, but still a complex    |
-| 1TIT / 1N11 / 4INS                        | `PARTIAL_OR_REPEAT` — domain/fragment & repeat anchoring       |
-| AF BRCA2                                  | `AF_FRAGMENT` — >2700 aa, only F1 loaded                       |
+| example                                   | what it shows                                               |
+| ----------------------------------------- | ----------------------------------------------------------- |
+| AF p53                                    | `CLEAN` — single chain, full length                         |
+| 4HHB → β / 1FIN → cyclin A / 6M0J → spike | `RESOLVED_CHAIN` — protein of interest isn't entity [0]     |
+| 1TUP → p53                                | `RESOLVED_CHAIN` — entity [0] and [1] are DNA strands       |
+| 1TUP.pdb → p53                            | PDB format rather than mmCIF; the author-numbering path     |
+| 6M0J → ACE2                               | `MULTI_ENTITY` contrast — [0] is right, but still a complex |
+| 1TIT / 1N11 / 4INS                        | `PARTIAL_OR_REPEAT` — domain/fragment & repeat anchoring    |
+| AF BRCA2                                  | `AF_FRAGMENT` — >2700 aa, only F1 loaded                    |
 
 To add one: find a PDB's entities at
 `https://data.rcsb.org/rest/v1/core/polymer_entity/<PDBID>/<n>`, note which is
-entity [0] and which UniProt you care about, and append a row to `EXAMPLES`.
-Set `format: 'pdb'` to load the PDB-format file instead of mmCIF.
+entity [0] and which UniProt you care about, and append a row to `EXAMPLES`. Set
+`format: 'pdb'` to load the PDB-format file instead of mmCIF.
