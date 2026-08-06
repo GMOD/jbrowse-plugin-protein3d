@@ -147,7 +147,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
         {choice === 'file' ? (
           <div style={{ marginBottom: 16 }}>
             <Button variant="outlined" component="label">
-              {file ? file.name : 'Choose File'}
+              {file ? file.name : 'Choose file'}
               <input
                 type="file"
                 hidden

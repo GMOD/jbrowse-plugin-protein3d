@@ -106,7 +106,7 @@ structure   MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG`}
           color="primary"
           disabled={!alignment.trim()}
         >
-          Apply Alignment
+          Apply alignment
         </Button>
       </DialogActions>
     </Dialog>

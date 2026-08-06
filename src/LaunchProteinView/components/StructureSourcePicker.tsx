@@ -68,7 +68,7 @@ export default function StructureSourcePicker({
             Open a PDB/mmCIF/etc. file from your local drive
           </Typography>
           <Button variant="outlined" component="label">
-            Choose File
+            Choose file
             <input
               type="file"
               hidden

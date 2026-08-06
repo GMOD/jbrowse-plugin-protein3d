@@ -174,7 +174,7 @@ b  MKAAYLSMFGKEDHKPFGD`}
             color="primary"
             disabled={tabValue === 1 && !manualAlignment.trim()}
           >
-            {tabValue === 0 ? 'Save' : 'Apply Alignment'}
+            {tabValue === 0 ? 'Save' : 'Apply alignment'}
           </Button>
         </DialogActions>
       </Dialog>
