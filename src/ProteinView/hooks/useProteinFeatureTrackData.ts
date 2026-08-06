@@ -1,5 +1,6 @@
 import { useMemo } from 'react'
 
+import { alignmentLength } from '../../mappings'
 import { CHAR_WIDTH } from '../constants'
 import useUniProtFeatures from './useUniProtFeatures'
 
@@ -136,7 +137,7 @@ export default function useProteinFeatureTrackData(
     }))
     return {
       visibleGroups,
-      sequenceLength: pairwiseAlignment.alns[0].seq.length,
+      sequenceLength: alignmentLength(pairwiseAlignment),
     }
   }, [
     features,

@@ -36,14 +36,21 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction, {
   type MolstarLocationInfo,
 } from './subscribeMolstarInteraction'
-import { checkHovered } from './util'
+import { genomeHoverToTranscriptPos } from './util'
 import {
-  getAlphaFoldStructureUrl,
-  getPdbStructureUrl,
   getUniprotIdFromAlphaFoldTarget,
+  resolveStructureUrl,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import { genomeToTranscriptSeqMapping } from '../mappings'
+import {
+  alignmentLength,
+  genomeToTranscriptSeqMapping,
+} from '../mappings'
+import {
+  makeLabelSeqIdIndex,
+  rangeToLabelSeqIds,
+  toLabelSeqIds,
+} from './extractStructureSequences'
 
 import type { Entity } from './extractStructureSequences'
 import type { EntityConfidence, StructureData } from './loadStructureData'
@@ -119,17 +126,10 @@ const Structure = types
   // URL format. An explicit url/data always wins; the shorthand resolves the
   // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
   // shorthand keys and an already-set url, so it passes through unchanged.
-  .preProcessSnapshot(({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => {
-    const hasSource = rest.url !== undefined || rest.data !== undefined
-    const url = hasSource
-      ? rest.url
-      : uniprotId !== undefined
-        ? getAlphaFoldStructureUrl(uniprotId)
-        : pdbId !== undefined
-          ? getPdbStructureUrl(pdbId)
-          : rest.url
-    return { ...rest, url }
-  })
+  .preProcessSnapshot(({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
+    ...rest,
+    url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
+  }))
   .volatile(() => ({
     /**
      * #volatile
@@ -546,6 +546,41 @@ const Structure = types
 
     /**
      * #getter
+     * molstar's label_seq_id -> 0-based structure position for the mapped
+     * entity. Computed once per entity rather than per hover event.
+     */
+    get labelSeqIdIndex() {
+      return makeLabelSeqIdIndex(this.mappedEntity)
+    },
+
+    /**
+     * #getter
+     * The residues the molstar 'select' channel should light, as label_seq_ids:
+     * a clicked/declarative domain range takes priority, else the whole
+     * alignment-covered set when showHighlight is on, else nothing.
+     */
+    get selectLabelSeqIds() {
+      const entity = this.mappedEntity
+      const range = self.clickedStructureRange
+      if (range) {
+        return rangeToLabelSeqIds(entity, range)
+      }
+      const covered = this.structureSeqToTranscriptSeqPosition
+      return this.showHighlight && covered
+        ? toLabelSeqIds(entity, Object.keys(covered).map(Number))
+        : []
+    },
+
+    /**
+     * #getter
+     * The residues the molstar 'highlight' (hover) channel should light.
+     */
+    get hoverLabelSeqIds() {
+      return rangeToLabelSeqIds(this.mappedEntity, this.hoverHighlightRange)
+    },
+
+    /**
+     * #getter
      * Persistent click selection in alignment coordinates, derived from
      * clickedStructureRange via structurePositionToAlignmentMap.
      */
@@ -845,7 +880,7 @@ const Structure = types
             }
             self.setMappedEntityIndex(selection.index)
             self.setAlignment(selection.alignment)
-            if (selection.matches < selection.alignment.alns[0].seq.length) {
+            if (selection.matches < alignmentLength(selection.alignment)) {
               self.parentView.setShowAlignment(true)
             }
           } catch (e) {
@@ -864,20 +899,21 @@ const Structure = types
             genomeToTranscriptSeqMapping,
             connectedView,
           } = self
-          if (
-            connectedView?.initialized &&
-            genomeToTranscriptSeqMapping &&
-            checkHovered(hovered)
-          ) {
-            const { hoverPosition } = hovered
-            const pos =
-              genomeToTranscriptSeqMapping.g2p[hoverPosition.coord - 1]
-            const c0 =
-              pos === undefined
-                ? undefined
-                : transcriptSeqToStructureSeqPosition?.[pos]
-            self.setGenomeHoveredPosition(c0)
+          // genomeHoverToTranscriptPos gates on the transcript's refName: the
+          // session hover is global, so without it a hover on an unrelated
+          // chromosome at a numerically overlapping coordinate lit up a residue
+          // here (the 1D protein highlight already gated on it, so the two
+          // directions disagreed).
+          const transcriptPos = connectedView?.initialized
+            ? genomeHoverToTranscriptPos(hovered, genomeToTranscriptSeqMapping)
+            : undefined
+          if (transcriptPos !== undefined) {
+            self.setGenomeHoveredPosition(
+              transcriptSeqToStructureSeqPosition?.[transcriptPos],
+            )
           } else if (self.hoverPosition?.source === 'genome') {
+            // Only clear a hover this autorun owns — a hover sourced from the
+            // 3D structure is cleared by molstar's own leave event.
             self.setGenomeHoveredPosition(undefined)
           }
         }),
@@ -887,14 +923,24 @@ const Structure = types
       // click on any other chain is dropped (see interactionMatchesMappedEntity).
       // Pass the mapped entity only once a mapping exists, so a standalone
       // structure with no transcript stays fully interactive.
-      const forMappedEntity = (info?: MolstarLocationInfo) =>
-        info &&
-        interactionMatchesMappedEntity(
-          info.entityId,
-          self.coordinateMapper ? self.mappedEntityId : undefined,
-        )
-          ? info
-          : undefined
+      // Also the single point where molstar's label_seq_id becomes a structure
+      // position: resolved through the entity's own ids rather than `- 1`, so a
+      // PDB numbered from its author residues maps to the right residue.
+      const forMappedEntity = (info?: MolstarLocationInfo) => {
+        if (
+          !info ||
+          !interactionMatchesMappedEntity(
+            info.entityId,
+            self.coordinateMapper ? self.mappedEntityId : undefined,
+          )
+        ) {
+          return undefined
+        }
+        const structureSeqPos = self.labelSeqIdIndex.get(info.labelSeqId)
+        return structureSeqPos === undefined
+          ? undefined
+          : { ...info, structureSeqPos }
+      }
 
       // Click only acts on positive matches; clicks that didn't land on the
       // mapped entity are ignored.
@@ -917,69 +963,35 @@ const Structure = types
         self.setHoveredPosition(forMappedEntity(info))
       })
 
-      // Drive the molstar 'select' channel (the persistent magenta selection)
-      // reactively from a single source of truth: a clicked/declarative domain
-      // range takes priority, else the whole alignment-covered set when
-      // showHighlight is on, else nothing. Centralizing it here (rather than
-      // only applying the clicked range imperatively from the feature bar) lets
-      // a declarative `initialSelection` seed light the 3D structure the same
-      // way a click does, with no race against this autorun.
-      addDisposer(
-        self,
-        autorun(async () => {
-          const {
-            showHighlight,
-            clickedStructureRange,
-            structureSeqToTranscriptSeqPosition,
-            molstarPluginContext,
-            molstarStructure,
-          } = self
-          // Only the showHighlight "whole alignment" branch needs the
-          // transcript map; a clicked/declarative range (incl. a standalone
-          // structure with no transcript) must still light up without it.
-          if (molstarStructure && molstarPluginContext) {
-            await setMolstarLoci({
-              structure: molstarStructure,
-              plugin: molstarPluginContext,
-              channel: 'select',
-              entityId: self.mappedEntityId,
-              spec: clickedStructureRange
-                ? { kind: 'range', ...clickedStructureRange }
-                : showHighlight && structureSeqToTranscriptSeqPosition
-                  ? {
-                      kind: 'list',
-                      residues: Object.keys(
-                        structureSeqToTranscriptSeqPosition,
-                      ).map(coord => +coord),
-                    }
-                  : undefined,
-            })
-          }
-        }),
-      )
+      // Drive molstar's two interactivity channels reactively from a single
+      // source of truth each (selectLabelSeqIds / hoverLabelSeqIds). Deriving
+      // the selection here — rather than applying a clicked range imperatively
+      // from the feature bar — lets a declarative `initialSelection` seed light
+      // the 3D structure the same way a click does, with no race.
+      const driveChannel = (
+        channel: 'highlight' | 'select',
+        getLabelSeqIds: () => number[],
+      ) => {
+        addDisposer(
+          self,
+          autorun(async () => {
+            const { molstarStructure, molstarPluginContext } = self
+            const labelSeqIds = getLabelSeqIds()
+            if (molstarStructure && molstarPluginContext) {
+              await setMolstarLoci({
+                structure: molstarStructure,
+                plugin: molstarPluginContext,
+                channel,
+                entityId: self.mappedEntityId,
+                labelSeqIds,
+              })
+            }
+          }),
+        )
+      }
 
-      // Drive molstar hover-highlight from the model's hoverHighlightRange.
-      addDisposer(
-        self,
-        autorun(async () => {
-          const {
-            molstarStructure,
-            molstarPluginContext,
-            hoverHighlightRange,
-          } = self
-          if (molstarStructure && molstarPluginContext) {
-            await setMolstarLoci({
-              structure: molstarStructure,
-              plugin: molstarPluginContext,
-              channel: 'highlight',
-              entityId: self.mappedEntityId,
-              spec: hoverHighlightRange
-                ? { kind: 'range', ...hoverHighlightRange }
-                : undefined,
-            })
-          }
-        }),
-      )
+      driveChannel('select', () => self.selectLabelSeqIds)
+      driveChannel('highlight', () => self.hoverLabelSeqIds)
     },
   }))
 

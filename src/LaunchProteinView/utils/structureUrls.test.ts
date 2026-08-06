@@ -4,6 +4,7 @@ import {
   getAlphaFoldStructureUrl,
   getPdbIdFromUrl,
   getPdbStructureUrl,
+  resolveStructureUrl,
 } from './structureUrls'
 
 test('recognizes pdb archive urls', () => {
@@ -34,4 +35,42 @@ test('ignores non-pdb urls', () => {
     getPdbIdFromUrl('https://files.rcsb.org/download/0abc.cif'),
   ).toBeUndefined()
   expect(getPdbIdFromUrl('not a url')).toBeUndefined()
+})
+
+test('resolveStructureUrl: an explicit url wins over any shorthand', () => {
+  expect(
+    resolveStructureUrl({ url: 'https://e.com/x.cif', uniprotId: 'P04637' }),
+  ).toBe('https://e.com/x.cif')
+})
+
+test('resolveStructureUrl: inline data suppresses the shorthand', () => {
+  // a structure supplied as data has no url, and must not acquire one
+  expect(resolveStructureUrl({ data: 'ATOM...', pdbId: '1TUP' })).toBeUndefined()
+})
+
+test('resolveStructureUrl: uniprotId resolves to the AlphaFold model', () => {
+  expect(resolveStructureUrl({ uniprotId: 'P04637' })).toBe(
+    getAlphaFoldStructureUrl('P04637'),
+  )
+})
+
+test('resolveStructureUrl: pdbId resolves to the RCSB mmCIF', () => {
+  expect(resolveStructureUrl({ pdbId: '1TUP' })).toBe(
+    getPdbStructureUrl('1TUP'),
+  )
+})
+
+test('resolveStructureUrl: uniprotId takes precedence over pdbId', () => {
+  expect(resolveStructureUrl({ uniprotId: 'P04637', pdbId: '1TUP' })).toBe(
+    getAlphaFoldStructureUrl('P04637'),
+  )
+})
+
+test('resolveStructureUrl is idempotent over an already-resolved spec', () => {
+  const once = resolveStructureUrl({ pdbId: '1TUP' })
+  expect(resolveStructureUrl({ url: once })).toBe(once)
+})
+
+test('resolveStructureUrl: nothing to go on yields undefined', () => {
+  expect(resolveStructureUrl({})).toBeUndefined()
 })

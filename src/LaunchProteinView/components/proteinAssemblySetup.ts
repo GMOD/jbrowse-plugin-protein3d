@@ -1,3 +1,5 @@
+import { uniprotFastaUrl } from '../utils/structureUrls'
+
 import type { SessionWithAddTracks } from '@jbrowse/core/util'
 
 /**
@@ -17,7 +19,7 @@ export function setupProteinAssembly(
         type: 'UnindexedFastaAdapter',
         rewriteRefNames: "jexl:split(refName,'|')[1]",
         fastaLocation: {
-          uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.fasta`,
+          uri: uniprotFastaUrl(uniprotId),
         },
       },
     },

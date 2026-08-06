@@ -60,8 +60,8 @@ export default function FoldseekActionMenu({
   const handleLaunch3D = runLaunch(() => {
     // Use tCa coordinates to generate PDB data if no URL is available
     const pdbData =
-      !hit.structureUrl && hasValidCaCoords(hit.tCa, hit.tSeq)
-        ? caCoordsToPdb(hit.tCa!, hit.tSeq!, 'A', hit.target)
+      !hit.structureUrl && hasValidCaCoords(hit)
+        ? caCoordsToPdb(hit.tCa, hit.tSeq, 'A', hit.target)
         : undefined
     launch3DProteinView({
       ...baseParams,
@@ -76,7 +76,7 @@ export default function FoldseekActionMenu({
     confidenceUrl: getConfidenceUrlFromTarget(hit.target),
   })
 
-  const canLoad = !!hit.structureUrl || hasValidCaCoords(hit.tCa, hit.tSeq)
+  const canLoad = !!hit.structureUrl || hasValidCaCoords(hit)
   if (!canLoad) {
     return <span>-</span>
   }

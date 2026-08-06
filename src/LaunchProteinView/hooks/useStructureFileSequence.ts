@@ -6,25 +6,13 @@ import { addStructureFromURL } from '../../ProteinView/addStructureFromURL'
 import { extractStructureSequences } from '../../ProteinView/extractStructureSequences'
 import { withTemporaryMolstarPlugin } from '../../ProteinView/withTemporaryMolstarPlugin'
 
-type StructureFormat = 'pdb' | 'mmcif'
-
-function detectStructureFormat(fileName: string): StructureFormat {
-  const dot = fileName.lastIndexOf('.')
-  const ext = dot >= 0 ? fileName.slice(dot + 1).toLowerCase() : ''
-  if (ext === 'cif' || ext === 'mmcif' || ext === 'bcif') {
-    return 'mmcif'
-  }
-  return 'pdb'
-}
-
+// Format is detected by addStructureFromData/addStructureFromURL themselves.
+// This hook used to detect it here, for the file branch only, which meant the
+// dialog preview and the view that followed could disagree about the same file.
 async function fetchSequences({ file, url }: { file?: File; url?: string }) {
   return withTemporaryMolstarPlugin(async plugin => {
     const { model } = file
-      ? await addStructureFromData({
-          data: await file.text(),
-          plugin,
-          format: detectStructureFormat(file.name),
-        })
+      ? await addStructureFromData({ data: await file.text(), plugin })
       : await addStructureFromURL({ url: url!, plugin })
     return extractStructureSequences(model)
   })

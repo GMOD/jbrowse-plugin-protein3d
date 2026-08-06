@@ -3,6 +3,7 @@ import {
   resolveShortLaunch,
 } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
+import { resolveStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
@@ -36,6 +37,8 @@ export default function LaunchProteinViewExtensionPointF(
       session: AbstractSessionModel
       url?: string
       uniprotId?: string
+      // RCSB entry id, the experimental-structure counterpart of uniprotId
+      pdbId?: string
       transcriptId?: string
       userProvidedTranscriptSequence?: string
       feature?: SimpleFeatureSerialized
@@ -60,6 +63,7 @@ export default function LaunchProteinViewExtensionPointF(
         session,
         url,
         uniprotId,
+        pdbId,
         transcriptId,
         userProvidedTranscriptSequence,
         feature,
@@ -74,17 +78,21 @@ export default function LaunchProteinViewExtensionPointF(
         sideBySide,
         initialSelection,
       } = args
-      // Short-URL form: `uniprotId` + `transcriptId` + `connectedView` (no
-      // explicit `url`/`feature`/sequence). Derive the structure URL, the
-      // transcript feature, and the translated sequence from the connected
-      // track. Failures surface via notify and abort — we never leave a
-      // half-wired view (see agent-docs/urlparam_plan.md).
+      // Short-URL form: `uniprotId` (AlphaFold) or `pdbId` (RCSB) plus
+      // `transcriptId` + `connectedView`, with no explicit
+      // `url`/`feature`/sequence. resolveStructureUrl turns the shorthand into
+      // a structure URL — the same precedence the Structure model applies to a
+      // snapshot — and resolveShortLaunch derives the transcript feature and
+      // the translated sequence from the connected track. Failures surface via
+      // notify and abort — we never leave a half-wired view (see
+      // agent-docs/urlparam_plan.md).
+      const shorthandUrl = resolveStructureUrl({ url, uniprotId, pdbId })
       let resolved
-      if (!url && uniprotId) {
+      if (!url && shorthandUrl) {
         try {
           resolved = await resolveShortLaunch({
             session,
-            uniprotId,
+            structureUrl: shorthandUrl,
             transcriptId,
             connectedView,
           })
@@ -98,7 +106,7 @@ export default function LaunchProteinViewExtensionPointF(
       const finalUrl = url ?? resolved?.url
       if (!finalUrl) {
         const message =
-          'No url or uniprotId provided when launching protein view'
+          'No url, uniprotId or pdbId provided when launching protein view'
         console.error(message)
         session.notify(`Could not launch protein view: ${message}`, 'error')
         return args

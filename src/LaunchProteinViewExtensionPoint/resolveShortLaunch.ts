@@ -2,7 +2,6 @@ import { readConfObject } from '@jbrowse/core/configuration'
 import { parseLocString } from '@jbrowse/core/util'
 
 import { fetchProteinSeq } from '../LaunchProteinView/utils/calculateProteinSequence'
-import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 import {
   getTranscriptFeatures,
   stripTrailingVersion,
@@ -79,17 +78,20 @@ function transcriptMatches(transcript: Feature, transcriptId: string) {
  */
 export async function resolveShortLaunch({
   session,
-  uniprotId,
+  structureUrl,
   transcriptId,
   connectedView,
 }: {
   session: AbstractSessionModel
-  uniprotId: string
+  /** already resolved from the uniprotId/pdbId shorthand by the caller */
+  structureUrl: string
   transcriptId?: string
   connectedView?: ConnectedViewSpec
 }): Promise<ResolvedShortLaunch> {
   if (!transcriptId) {
-    throw new Error('transcriptId is required to launch from a uniprotId')
+    throw new Error(
+      'transcriptId is required to launch from a uniprotId or pdbId',
+    )
   }
   const assemblyName = connectedView?.assembly
   const loc = connectedView?.loc
@@ -161,7 +163,7 @@ export async function resolveShortLaunch({
   }
 
   return {
-    url: getAlphaFoldStructureUrl(uniprotId),
+    url: structureUrl,
     feature: transcript.toJSON(),
     userProvidedTranscriptSequence,
   }

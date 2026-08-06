@@ -24,8 +24,8 @@ const KYTE_DOOLITTLE: Record<string, number> = {
   R: -4.5,
 }
 
-export const KYTE_DOOLITTLE_MIN = -4.5
-export const KYTE_DOOLITTLE_MAX = 4.5
+const KYTE_DOOLITTLE_MIN = -4.5
+const KYTE_DOOLITTLE_MAX = 4.5
 
 export function kyteDoolittleScores(seq: string): (number | undefined)[] {
   return Array.from(seq, aa => KYTE_DOOLITTLE[aa])

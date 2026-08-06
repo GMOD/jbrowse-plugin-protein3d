@@ -15,7 +15,7 @@ export interface NcbiGeneticCode {
   sncbieaa: string
 }
 
-export const ncbiGeneticCodes: NcbiGeneticCode[] = [
+const ncbiGeneticCodes: NcbiGeneticCode[] = [
   {
     id: 1,
     name: 'Standard',

@@ -3,17 +3,23 @@ import React, { useRef, useState } from 'react'
 import { diagnose, sampleCoordinateMap } from './diagnostics'
 import { EXAMPLES } from './examples'
 import { createPlugin, loadAndIntrospect } from './molstar'
+import {
+  getAlphaFoldStructureUrl,
+  getPdbStructureUrl,
+  uniprotFastaUrl,
+} from '../src/LaunchProteinView/utils/structureUrls'
 
 import type { Diagnosis, Severity } from './diagnostics'
 import type { Example } from './examples'
 import type { LoadedStructure } from './molstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-// mirrors src/LaunchProteinView/utils/launchViewUtils.ts (inlined to avoid
-// pulling JBrowse runtime deps into the harness)
-const pdbUrl = (id: string) => `https://files.rcsb.org/download/${id}.cif`
-const alphaFoldUrl = (acc: string) =>
-  `https://alphafold.ebi.ac.uk/files/AF-${acc}-F1-model_v6.cif`
+// The plugin's own URL builders, imported rather than mirrored: structureUrls
+// has no imports of its own, so it costs the harness nothing, and the AlphaFold
+// model version now lives in exactly one place instead of drifting between the
+// plugin and the page that is supposed to reproduce it.
+const pdbFormatUrl = (id: string) =>
+  `https://files.rcsb.org/download/${id}.pdb`
 
 // Deep-link into the real plugin running in the hosted webgl-poc JBrowse build,
 // using the config.json published alongside this page.
@@ -38,10 +44,24 @@ interface RunInput {
   customUrl: string
   uniprot: string
   transcript: string
+  /** archive format for a 'pdb' source; mmCIF unless 'pdb' */
+  format?: 'cif' | 'pdb'
+}
+
+function structureUrl(input: RunInput) {
+  if (input.source === 'url') {
+    return input.customUrl
+  }
+  if (input.source === 'alphafold') {
+    return getAlphaFoldStructureUrl(input.structureId)
+  }
+  return input.format === 'pdb'
+    ? pdbFormatUrl(input.structureId)
+    : getPdbStructureUrl(input.structureId)
 }
 
 async function fetchUniProtSeq(acc: string) {
-  const res = await fetch(`https://rest.uniprot.org/uniprotkb/${acc}.fasta`)
+  const res = await fetch(uniprotFastaUrl(acc))
   if (!res.ok) {
     throw new Error(`UniProt ${acc}: ${res.status}`)
   }
@@ -77,12 +97,7 @@ export default function App() {
     setBusy(true)
     setDiag(undefined)
     setLoaded(undefined)
-    const url =
-      input.source === 'url'
-        ? input.customUrl
-        : input.source === 'alphafold'
-          ? alphaFoldUrl(input.structureId)
-          : pdbUrl(input.structureId)
+    const url = structureUrl(input)
     try {
       if (!pluginRef.current && viewerRef.current) {
         setStatus('Initializing molstar…')
@@ -135,6 +150,7 @@ export default function App() {
       customUrl: '',
       uniprot: ex.uniprot,
       transcript: '',
+      format: ex.format,
     })
   }
 
@@ -159,10 +175,11 @@ export default function App() {
           PDB ↔ transcript mapping harness
         </div>
         <div style={{ color: '#666', fontSize: 11, marginBottom: 8 }}>
-          Surfaces how the plugin's entity-[0]-only, label_seq_id mapping breaks
-          on multi-chain / partial structures. Run the plugin's mapping code
-          here for a fast verdict, or open any example gene in the real plugin
-          via its <strong>↗ JBrowse</strong> link.
+          Runs the plugin's real entity resolution and alignment over a
+          structure and reports what it would map, flagging multi-chain,
+          partial and oddly-numbered cases. Run it here for a fast verdict, or
+          open any example gene in the real plugin via its{' '}
+          <strong>↗ JBrowse</strong> link.
         </div>
 
         <div
@@ -419,14 +436,16 @@ function Report({
         </div>
       ) : null}
 
-      <div style={sectionHead}>Coordinate map sample (entity [0])</div>
+      <div style={sectionHead}>
+        Coordinate map sample (entity [{diag.usedIndex}])
+      </div>
       <div style={{ fontSize: 10, color: '#666' }}>
         structureSeqPos → transcriptPos, first {sample.length} of{' '}
         {mapKeys.length}:
       </div>
       <code style={{ fontSize: 10 }}>
         {sample.map(k => `${k}→${map[k]}`).join('  ') ||
-          '(none — entity [0] does not map to this transcript)'}
+          `(none — entity [${diag.usedIndex}] does not map to this transcript)`}
       </code>
     </div>
   )

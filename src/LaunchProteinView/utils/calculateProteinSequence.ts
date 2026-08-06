@@ -44,7 +44,7 @@ export function calculateProteinSequence({
   })
 }
 
-export function revlist(list: Feat[], seqlen: number) {
+function revlist(list: Feat[], seqlen: number) {
   return list
     .map(sub => ({
       ...sub,
@@ -58,13 +58,13 @@ function getItemId(feat: Feat) {
   return `${feat.start}-${feat.end}`
 }
 
-export function dedupe(list: Feat[]) {
+function dedupe(list: Feat[]) {
   return list.filter(
     (item, pos, ary) => !pos || getItemId(item) !== getItemId(ary[pos - 1]!),
   )
 }
 
-export function getProteinSequence({
+function getProteinSequence({
   feature,
   seq,
 }: {

@@ -1,26 +1,23 @@
+import { myfetch } from '../../fetchUtils'
+import { uniprotGffUrl } from '../utils/structureUrls'
+
 import type { SessionWithAddTracks } from '@jbrowse/core/util'
 
 /**
  * Fetches UniProt GFF data and extracts unique feature types
  */
-export async function fetchUniProtFeatureTypes(
-  uniprotId: string,
-): Promise<string[]> {
-  const url = `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`
-  const res = await fetch(url)
-  if (!res.ok) {
-    throw new Error(`HTTP ${res.status} fetching ${url}`)
-  }
-  const data = await res.text()
+async function fetchUniProtFeatureTypes(uniprotId: string): Promise<string[]> {
+  const data = await (await myfetch(uniprotGffUrl(uniprotId))).text()
 
   return [
     ...new Set(
       data
         .split('\n')
         .filter(f => !f.startsWith('#'))
-        .map(f => f.trim())
-        .filter(f => !!f)
-        .map(f => f.split('\t')[2]!),
+        // column 3 is the GFF type; a line without one would otherwise become an
+        // `undefined`-named track
+        .map(f => f.split('\t')[2]?.trim())
+        .filter((f): f is string => !!f),
     ),
   ]
 }
@@ -28,7 +25,7 @@ export async function fetchUniProtFeatureTypes(
 /**
  * Adds UniProt feature tracks for each feature type
  */
-export function addUniProtFeatureTracks({
+function addUniProtFeatureTracks({
   session,
   uniprotId,
   featureTypes,
@@ -46,7 +43,7 @@ export function addUniProtFeatureTracks({
       adapter: {
         type: 'Gff3Adapter',
         gffLocation: {
-          uri: `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`,
+          uri: uniprotGffUrl(uniprotId),
         },
       },
       assemblyNames: [uniprotId],
@@ -64,7 +61,7 @@ export function addUniProtFeatureTracks({
 /**
  * Adds antigen annotation track from EBI
  */
-export function addAntigenTrack({
+function addAntigenTrack({
   session,
   uniprotId,
 }: {
@@ -88,7 +85,7 @@ export function addAntigenTrack({
 /**
  * Adds variation track from EBI
  */
-export function addVariationTrack({
+function addVariationTrack({
   session,
   uniprotId,
 }: {
@@ -112,7 +109,7 @@ export function addVariationTrack({
 /**
  * Adds AlphaFold confidence track
  */
-export function addAlphaFoldConfidenceTrack({
+function addAlphaFoldConfidenceTrack({
   session,
   uniprotId,
   confidenceUrl,
@@ -140,7 +137,7 @@ export function addAlphaFoldConfidenceTrack({
 /**
  * Adds AlphaMissense pathogenicity scores track
  */
-export function addAlphaMissenseTrack({
+function addAlphaMissenseTrack({
   session,
   uniprotId,
 }: {

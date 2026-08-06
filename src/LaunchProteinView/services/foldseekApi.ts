@@ -1,4 +1,4 @@
-import { jsonfetch, timeout } from '../../fetchUtils'
+import { abortError, jsonfetch, timeout } from '../../fetchUtils'
 
 export const FOLDSEEK_DATABASES = [
   { id: 'pdb100', label: 'PDB (100% redundancy)' },
@@ -137,7 +137,7 @@ export async function submitFoldseekSearch({
   return JSON.parse(text) as FoldseekTicketResponse
 }
 
-export async function pollFoldseekStatus({
+async function pollFoldseekStatus({
   ticketId,
   signal,
 }: {
@@ -181,7 +181,7 @@ interface FoldseekApiResponse {
   }[]
 }
 
-export async function getFoldseekResults({
+async function getFoldseekResults({
   ticketId,
   signal,
 }: {
@@ -203,12 +203,16 @@ export async function waitForFoldseekResults({
   onStatusChange?: (status: string) => void
   signal?: AbortSignal
 }) {
-  const maxAttempts = 180
-  let attempts = 0
+  // Wall-clock budget, not a poll count: each round trips to the server and
+  // then sleeps a second, so counting polls under-reports elapsed time by
+  // however slow the server is — and the progress message read as seconds.
+  const timeoutMs = 180_000
+  const startedAt = Date.now()
+  const elapsedSeconds = () => Math.round((Date.now() - startedAt) / 1000)
 
-  while (attempts < maxAttempts) {
+  while (Date.now() - startedAt < timeoutMs) {
     if (signal?.aborted) {
-      throw signal.reason
+      throw abortError(signal)
     }
     const status = await pollFoldseekStatus({ ticketId, signal })
 
@@ -236,11 +240,12 @@ export async function waitForFoldseekResults({
     }
 
     onStatusChange?.(
-      `Search ${status.status.toLowerCase()}... (${attempts + 1}s)`,
+      `Search ${status.status.toLowerCase()}... (${elapsedSeconds()}s)`,
     )
     await timeout(1000, signal)
-    attempts++
   }
 
-  throw new Error('Foldseek search timed out')
+  throw new Error(
+    `Foldseek search timed out after ${Math.round(timeoutMs / 1000)}s`,
+  )
 }

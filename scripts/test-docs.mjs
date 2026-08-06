@@ -8,6 +8,9 @@
 //      (genome<->protein mapping built, structure aligned, genome tracks render)
 //   3. short form: uniprotId + transcriptId derive url/feature/sequence from
 //      the connected track (no explicit url/feature/userProvidedTranscriptSeq)
+//   4. short form with pdbId: same, against a real experimental entry (1TUP),
+//      which additionally proves entity resolution — 1TUP's entities [0] and
+//      [1] are DNA strands, so a working launch must map to entity [2]
 //
 // Usage:
 //   pnpm test:docs                 # auto-starts `pnpm start` if :9000 is down
@@ -93,6 +96,21 @@ const shortSpec = {
       type: 'ProteinView',
       height: 540,
       uniprotId: 'P04637',
+      transcriptId: 'NM_000546.6',
+      connectedView: CONNECTED_VIEW,
+    },
+  ],
+}
+// Short form against an experimental structure. 1TUP is p53's core domain bound
+// to DNA: entity [0] and [1] are the DNA strands and the protein is entity [2],
+// so this only maps correctly if chooseMappedEntity resolves the chain by
+// alignment rather than taking entity [0].
+const pdbShortSpec = {
+  views: [
+    {
+      type: 'ProteinView',
+      height: 540,
+      pdbId: '1TUP',
       transcriptId: 'NM_000546.6',
       connectedView: CONNECTED_VIEW,
     },
@@ -329,6 +347,75 @@ try {
     saveStableScreenshot(
       await page.screenshot(),
       'test-screenshots/docs-short.png',
+    )
+    await page.close()
+  }
+
+  // 4. short form with pdbId: a real experimental entry, protein not entity [0]
+  {
+    const page = await browser.newPage()
+    await page.setViewport({
+      width: 1280,
+      height: 1400,
+      deviceScaleFactor: 1.5,
+    })
+    const errors = []
+    page.on('pageerror', e => errors.push(e.message))
+    page.on('console', m => {
+      if (m.type() === 'error') errors.push(m.text())
+    })
+    await page.goto(specUrl(pdbShortSpec), {
+      waitUntil: 'networkidle2',
+      timeout: 90_000,
+    })
+    let state
+    for (let i = 0; i < 50; i++) {
+      await sleep(3000)
+      state = await page.evaluate(() => {
+        const s = window.JBrowseSession
+        const lgv = s?.views?.find(v => v.type === 'LinearGenomeView')
+        const pv = s?.views?.find(v => v.type === 'ProteinView')
+        const st = pv?.structures?.[0]
+        return {
+          wired: !!lgv && st?.connectedViewId === lgv?.id,
+          derivedUrl: st?.url,
+          entityCount: st?.structureSequences?.length ?? 0,
+          mappedEntityIndex: st?.mappedEntityIndex,
+          mappedSeqLen: st?.mappedStructureSeq?.length ?? 0,
+          hasAlignment: !!st?.pairwiseAlignment,
+          canvases: document.querySelectorAll('canvas').length,
+        }
+      })
+      if (state.wired && state.hasAlignment && state.canvases >= 4) break
+    }
+    check(
+      'pdb: url derived from pdbId',
+      state.derivedUrl === 'https://files.rcsb.org/download/1TUP.cif',
+      `url=${state.derivedUrl}`,
+    )
+    check('pdb: structure connectedViewId wired to the LGV', state.wired)
+    check(
+      'pdb: all three polymer entities loaded',
+      state.entityCount === 3,
+      `entities=${state.entityCount}`,
+    )
+    // The whole point of the example: entities [0] and [1] are DNA, so mapping
+    // to anything but [2] means the protein was aligned against a DNA strand.
+    check(
+      'pdb: transcript resolved to the protein entity, not a DNA strand',
+      state.mappedEntityIndex === 2,
+      `mappedEntityIndex=${state.mappedEntityIndex}`,
+    )
+    check(
+      'pdb: aligned against the p53 core domain (219 residues)',
+      state.hasAlignment && state.mappedSeqLen === 219,
+      `mappedSeqLen=${state.mappedSeqLen}`,
+    )
+    check('pdb: no console/page errors', errors.length === 0, errors[0])
+
+    saveStableScreenshot(
+      await page.screenshot(),
+      'test-screenshots/docs-pdb-short.png',
     )
     await page.close()
   }

@@ -15,6 +15,7 @@ import {
 import { makeStyles } from 'tss-react/mui'
 
 import ExternalLink from '../../components/ExternalLink'
+import { uniprotEntryUrl } from '../utils/structureUrls'
 
 import type { UniProtEntry } from '../services/lookupMethods'
 
@@ -101,9 +102,7 @@ export default function UniProtResultsTable({
                   />
                 </TableCell>
                 <TableCell>
-                  <ExternalLink
-                    href={`https://www.uniprot.org/uniprotkb/${entry.accession}`}
-                  >
+                  <ExternalLink href={uniprotEntryUrl(entry.accession)}>
                     {entry.accession}
                   </ExternalLink>
                 </TableCell>

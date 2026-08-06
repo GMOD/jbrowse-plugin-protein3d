@@ -2,6 +2,7 @@
 // so the numbers shown are the numbers the plugin would actually compute, then
 // derives the verdicts the plugin never surfaces to the user.
 import { structureSeqVsTranscriptSeqMap } from '../src/mappings'
+import { chooseMappedEntity } from '../src/ProteinView/chooseMappedEntity'
 import { runLocalAlignment } from '../src/ProteinView/pairwiseAlignment'
 
 import type { EntityInfo, LoadedStructure } from './molstar'
@@ -79,6 +80,24 @@ function analyzeEntity(
   }
 }
 
+/**
+ * How an entity's label_seq_ids depart from a plain 1..N, or undefined when
+ * they don't. This is the difference between "position + 1 is the residue id"
+ * and "you must look the id up".
+ */
+function authorNumbering(entity: EntityInfo) {
+  const { seqIds } = entity
+  const from = seqIds[0]
+  const to = seqIds.at(-1)
+  if (from === undefined || to === undefined) {
+    return undefined
+  }
+  const contiguousFromOne = seqIds.every((id, i) => id === i + 1)
+  return contiguousFromOne
+    ? undefined
+    : { from, to, gapped: to - from + 1 !== seqIds.length }
+}
+
 export function diagnose({
   loaded,
   transcript,
@@ -93,7 +112,16 @@ export function diagnose({
   const alignments = loaded.entities.map(e =>
     analyzeEntity(transcript, e, algorithm),
   )
-  const usedIndex = 0
+  // The plugin's OWN entity resolution, not an assumption about it. This used
+  // to be hardcoded to 0, which was faithful when the plugin hardcoded entity
+  // [0] — since chooseMappedEntity landed, hardcoding it here made the harness
+  // report WRONG_CHAIN for every heteromer the plugin now handles correctly.
+  const usedIndex =
+    chooseMappedEntity(
+      transcript,
+      loaded.entities.map(e => e.seq),
+      algorithm,
+    )?.index ?? 0
   let bestIndex = 0
   for (let i = 1; i < alignments.length; i++) {
     if (alignments[i]!.matches > alignments[bestIndex]!.matches) {
@@ -105,19 +133,41 @@ export function diagnose({
   const used = alignments[usedIndex]
   const best = alignments[bestIndex]
 
-  if (loaded.entities.length > 1) {
-    verdicts.push({
-      severity: bestIndex === usedIndex ? 'warn' : 'error',
-      code: 'MULTI_ENTITY',
-      message: `${loaded.entities.length} polymer entities present. The plugin only ever maps entity [0] (${loaded.entities[0]!.description}); hovers on other chains are read with their own label_seq_id but mapped through entity [0]'s alignment.`,
-    })
-  }
-
+  // Now a regression alarm rather than a known bug: chooseMappedEntity scores
+  // by identical aligned residues, so its pick should always be the best-
+  // matching entity. If these ever disagree, entity resolution has broken.
   if (best && used && bestIndex !== usedIndex) {
     verdicts.push({
       severity: 'error',
       code: 'WRONG_CHAIN',
-      message: `Transcript best-matches entity [${bestIndex}] "${best.entity.description}" (${(best.identity * 100).toFixed(0)}% id, ${(best.transcriptCoverage * 100).toFixed(0)}% transcript coverage) but the plugin uses entity [0] "${used.entity.description}" (${(used.identity * 100).toFixed(0)}% id, ${(used.transcriptCoverage * 100).toFixed(0)}% coverage). Every genome<->structure mapping would be wrong.`,
+      message: `Transcript best-matches entity [${bestIndex}] "${best.entity.description}" (${(best.identity * 100).toFixed(0)}% id, ${(best.transcriptCoverage * 100).toFixed(0)}% transcript coverage) but the plugin resolved entity [${usedIndex}] "${used.entity.description}" (${(used.identity * 100).toFixed(0)}% id, ${(used.transcriptCoverage * 100).toFixed(0)}% coverage). Every genome<->structure mapping would be wrong.`,
+    })
+  } else if (used && usedIndex !== 0) {
+    verdicts.push({
+      severity: 'ok',
+      code: 'RESOLVED_CHAIN',
+      message: `The protein of interest is entity [${usedIndex}] "${used.entity.description}", not entity [0] "${loaded.entities[0]!.description}". chooseMappedEntity resolved it by alignment, so the genome<->structure mapping follows the right chain — this is the case that used to map onto the wrong one.`,
+    })
+  }
+
+  if (loaded.entities.length > 1) {
+    verdicts.push({
+      severity: 'warn',
+      code: 'MULTI_ENTITY',
+      message: `${loaded.entities.length} polymer entities present. Only the resolved entity [${usedIndex}] drives genome navigation; hovers and clicks on the other chains are dropped rather than mapped through the wrong alignment.`,
+    })
+  }
+
+  // label_seq_id is the plugin's outbound/inbound residue address. It equals
+  // (structure position + 1) only when the entity's ids run 1..N — true for any
+  // mmCIF with entity_poly_seq and for PDB files carrying SEQRES, but NOT for a
+  // SEQRES-less PDB, where molstar reports the author numbering instead.
+  const numbering = used && authorNumbering(used.entity)
+  if (numbering) {
+    verdicts.push({
+      severity: 'warn',
+      code: 'AUTHOR_NUMBERING',
+      message: `Entity [${usedIndex}] is numbered ${numbering.from}..${numbering.to}, not 1..${used.entity.seqLength}${numbering.gapped ? ' (and is non-contiguous)' : ''}. Residues are addressed by their real label_seq_id, so this maps correctly — but any code deriving the id as "position + 1" would be off by ${numbering.from - 1}.`,
     })
   }
 
@@ -126,7 +176,7 @@ export function diagnose({
     verdicts.push({
       severity: 'warn',
       code: 'DISORDER_DRIFT',
-      message: `Entity [0] has ${missing} unmodeled residue(s) (${used.entity.observedCount}/${used.entity.seqLength} observed). The confidence/B-factor track walks observed residues in order but is indexed by label_seq_id, so values drift after the first gap.`,
+      message: `Entity [${usedIndex}] has ${missing} unmodeled residue(s) (${used.entity.observedCount}/${used.entity.seqLength} observed). Hovers and highlights are unaffected (they go through label_seq_id), but the confidence/B-factor track walks observed residues in model order while being indexed by sequence position, so its values drift after the first gap.`,
     })
   }
 
@@ -134,7 +184,7 @@ export function diagnose({
     verdicts.push({
       severity: 'warn',
       code: 'PARTIAL_OR_REPEAT',
-      message: `Entity [0] aligns at ${(used.identity * 100).toFixed(0)}% identity but covers only ${(used.transcriptCoverage * 100).toFixed(0)}% of the transcript — a domain/fragment. Local alignment anchors it to a single position; for repeat-containing proteins it may anchor to the wrong copy. Verify the genomic location.`,
+      message: `Entity [${usedIndex}] aligns at ${(used.identity * 100).toFixed(0)}% identity but covers only ${(used.transcriptCoverage * 100).toFixed(0)}% of the transcript — a domain/fragment. Local alignment anchors it to a single position; for repeat-containing proteins it may anchor to the wrong copy. Verify the genomic location.`,
     })
   }
 

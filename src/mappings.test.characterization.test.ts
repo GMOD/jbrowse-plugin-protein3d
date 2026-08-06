@@ -64,6 +64,9 @@ test('transcriptPositionToAlignmentMap pins transcriptPos -> alignment column', 
   })
 })
 
+// The message is the one pairwiseAlignmentProblem produces, so the manual
+// alignment dialog rejects exactly what the map builder would refuse, with the
+// same wording.
 test('mismatched alignment row lengths throw', () => {
   expect(() =>
     structureSeqVsTranscriptSeqMap({
@@ -73,5 +76,17 @@ test('mismatched alignment row lengths throw', () => {
         { id: 'b', seq: 'MKD' },
       ],
     }),
-  ).toThrow('mismatched length')
+  ).toThrow('must be the same length (got 2 and 3)')
+})
+
+test('empty alignment rows throw', () => {
+  expect(() =>
+    structureSeqVsTranscriptSeqMap({
+      consensus: '',
+      alns: [
+        { id: 'a', seq: '' },
+        { id: 'b', seq: '' },
+      ],
+    }),
+  ).toThrow('must not be empty')
 })

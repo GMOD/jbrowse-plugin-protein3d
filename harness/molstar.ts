@@ -1,9 +1,9 @@
 // Loads a structure through the SAME molstar path the plugin uses
-// (addStructureFromURL -> createModel -> extractStructureSequences) and then
-// introspects the loaded structure for per-entity / per-chain facts the plugin
-// silently ignores. The point is faithfulness: sequences[] here is byte-for-byte
-// what `structureModel.structureSequences` would hold, so index [0] is exactly
-// the entity the plugin maps against.
+// (addStructureFromURL -> createModel -> extractEntities) and then introspects
+// the loaded structure for per-entity / per-chain facts the plugin does not
+// surface. The point is faithfulness: the entities here are byte-for-byte what
+// `structureModel.entities` would hold, so the diagnosis can run the plugin's
+// own chooseMappedEntity over them and report what it would really do.
 import {
   StructureElement,
   StructureProperties as SP,
@@ -14,14 +14,12 @@ import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginConfig } from 'molstar/lib/mol-plugin/config'
 
 import { addStructureFromURL } from '../src/ProteinView/addStructureFromURL'
-import { extractStructureSequences } from '../src/ProteinView/extractStructureSequences'
-// faithfulness: extractStructureSequences gives the exact strings the plugin
-// stores; we only zip on entityId (which it discards) from the raw model array.
+import { extractEntities } from '../src/ProteinView/extractStructureSequences'
 
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export interface EntityInfo {
-  /** index into the plugin's structureSequences array — [0] is what it uses */
+  /** index into the plugin's entities array */
   index: number
   entityId: string
   description: string
@@ -30,6 +28,9 @@ export interface EntityInfo {
   /** full entity_poly sequence (incl. unmodeled residues), label-indexed */
   seq: string
   seqLength: number
+  /** molstar label_seq_id of each residue in `seq`. Usually 1..N; a PDB-format
+   * file with no SEQRES reports the author numbering instead. */
+  seqIds: number[]
   /** distinct label_seq_id values that actually have coordinates */
   observedCount: number
 }
@@ -74,11 +75,7 @@ export async function loadAndIntrospect({
   if (!data) {
     throw new Error('no model data')
   }
-  const sequences = extractStructureSequences(model) ?? []
-  const seqEntities = data.sequence.sequences.map((s, i) => ({
-    entityId: s.entityId,
-    seq: sequences[i] ?? '',
-  }))
+  const seqEntities = extractEntities(model) ?? []
 
   const structure =
     plugin.managers.structure.hierarchy.current.structures[0]?.cell.obj?.data
@@ -132,6 +129,7 @@ export async function loadAndIntrospect({
       chains: b ? [...b.chains].sort() : [],
       seq: e.seq,
       seqLength: e.seq.length,
+      seqIds: e.seqIds,
       observedCount: b ? b.observed.size : 0,
     }
   })

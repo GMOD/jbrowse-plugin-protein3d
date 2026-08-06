@@ -53,7 +53,7 @@ export default function useProteinView({
           target: host,
           render: renderReact18,
           spec: {
-            ...DefaultPluginUISpec(),
+            ...defaultSpec,
             behaviors: [
               ...defaultSpec.behaviors,
               PluginSpec.Behavior(GeometryExport),

@@ -1,6 +1,38 @@
 import { expect, test } from 'vitest'
 
-import { invertMap } from './util'
+import { genomeHoverToTranscriptPos, invertMap } from './util'
+
+// g2p is keyed by 0-based genome position; hovered.coord is 1-based display
+const mapping = { refName: 'chr17', g2p: { 999: 4, 1002: 5 } }
+const hoveredAt = (refName: string, coord: number) => ({
+  hoverPosition: { refName, coord },
+})
+
+test('genomeHoverToTranscriptPos maps a hover on the transcript refName', () => {
+  expect(genomeHoverToTranscriptPos(hoveredAt('chr17', 1000), mapping)).toBe(4)
+})
+
+test('genomeHoverToTranscriptPos ignores a hover on another refName', () => {
+  // the same numeric coordinate on an unrelated chromosome matches a g2p key,
+  // so without the refName gate this reported residue 4 for a different locus
+  expect(
+    genomeHoverToTranscriptPos(hoveredAt('chr1', 1000), mapping),
+  ).toBeUndefined()
+})
+
+test('genomeHoverToTranscriptPos returns undefined off the CDS', () => {
+  expect(
+    genomeHoverToTranscriptPos(hoveredAt('chr17', 1001), mapping),
+  ).toBeUndefined()
+})
+
+test('genomeHoverToTranscriptPos tolerates no mapping and no hover', () => {
+  expect(
+    genomeHoverToTranscriptPos(hoveredAt('chr17', 1000), undefined),
+  ).toBeUndefined()
+  expect(genomeHoverToTranscriptPos(undefined, mapping)).toBeUndefined()
+  expect(genomeHoverToTranscriptPos({}, mapping)).toBeUndefined()
+})
 
 test('invertMap - simple case', () => {
   const map = { 0: 10, 1: 20, 2: 30 }

@@ -13,7 +13,12 @@ import {
 } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
+import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
+import {
+  structureAlignedSeq,
+  transcriptAlignedSeq,
+} from '../../mappings'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
@@ -58,7 +63,7 @@ function UniProtProvenance({
   return uniprotId ? (
     <Typography variant="caption" color="textSecondary" component="div">
       Feature tracks from UniProt{' '}
-      <ExternalLink href={`https://www.uniprot.org/uniprotkb/${uniprotId}`}>
+      <ExternalLink href={uniprotEntryUrl(uniprotId)}>
         {uniprotName ? `${uniprotId} (${uniprotName})` : uniprotId}
       </ExternalLink>
     </Typography>
@@ -194,8 +199,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
     return <div>No pairwiseAlignment</div>
   }
 
-  const a0 = pairwiseAlignment.alns[0].seq
-  const a1 = pairwiseAlignment.alns[1].seq
+  const a0 = transcriptAlignedSeq(pairwiseAlignment)
+  const a1 = structureAlignedSeq(pairwiseAlignment)
   const con = pairwiseAlignment.consensus
 
   return (

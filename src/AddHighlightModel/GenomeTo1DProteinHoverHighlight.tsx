@@ -5,7 +5,7 @@ import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
 import { protein1DViewRegistry } from '../Protein1DViewRegistry'
-import { checkHovered } from '../ProteinView/util'
+import { genomeHoverToTranscriptPos } from '../ProteinView/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -30,19 +30,11 @@ const GenomeTo1DProteinHoverHighlight = observer(
       return null
     }
 
-    if (!checkHovered(hovered)) {
-      return null
-    }
-
-    const { coord, refName } = hovered.hoverPosition
-
     const feature = new SimpleFeature(protein1DInfo.feature)
-    const mapping = genomeToTranscriptSeqMapping(feature)
-    const { g2p } = mapping
-    // g2p is keyed by genomic position on the transcript's own refName; without
-    // this gate the same numeric coord on an unrelated chromosome would match a
-    // key and light a protein residue for a different locus.
-    const proteinPos = refName === mapping.refName ? g2p[coord - 1] : undefined
+    const proteinPos = genomeHoverToTranscriptPos(
+      hovered,
+      genomeToTranscriptSeqMapping(feature),
+    )
     if (proteinPos === undefined) {
       return null
     }

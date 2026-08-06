@@ -1,5 +1,6 @@
 import { alignmentTooLarge, runLocalAlignment } from './pairwiseAlignment'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
+import { structureAlignedSeq, transcriptAlignedSeq } from '../mappings'
 
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
@@ -29,8 +30,8 @@ export interface EntitySelection {
 }
 
 function countMatches(pa: PairwiseAlignment) {
-  const a = pa.alns[0].seq
-  const b = pa.alns[1].seq
+  const a = transcriptAlignedSeq(pa)
+  const b = structureAlignedSeq(pa)
   let matches = 0
   for (let i = 0; i < a.length; i++) {
     const ca = a[i]

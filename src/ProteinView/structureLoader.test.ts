@@ -9,7 +9,11 @@ import type { StructureData } from './loadStructureData'
 import type { StructureLoaderHost } from './structureLoader'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
-const entity = (seq: string): Entity => ({ entityId: '1', seq })
+const entity = (seq: string): Entity => ({
+  entityId: '1',
+  seq,
+  seqIds: Array.from(seq, (_, i) => i + 1),
+})
 // stand-in for a molstar Structure — the loader only passes the handle through
 const molstarStructure = (id: string) => ({ id }) as unknown as Structure
 

@@ -18,7 +18,13 @@ export async function jsonfetch<T = unknown>(
   return response.json()
 }
 
-function abortError(signal: AbortSignal) {
+/**
+ * An AbortSignal's reason as a real Error. `signal.reason` is `any` — usually a
+ * DOMException, but a caller can abort with anything at all — and throwing a
+ * non-Error loses the stack and breaks `instanceof Error` checks in the UI's
+ * error rendering. Normalize at every throw site.
+ */
+export function abortError(signal: AbortSignal) {
   return signal.reason instanceof Error
     ? signal.reason
     : new Error('Aborted', { cause: signal.reason })

@@ -1,5 +1,7 @@
 import useSWR from 'swr'
 
+import { STATIC_SWR_OPTIONS } from '../../LaunchProteinView/hooks/swrOptions'
+import { uniprotGffUrl } from '../../LaunchProteinView/utils/structureUrls'
 import { myfetch } from '../../fetchUtils'
 
 export interface UniProtFeature {
@@ -99,8 +101,11 @@ async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
 
 export default function useUniProtFeatures(uniprotId: string | undefined) {
   const { data, error, isLoading } = useSWR(
-    uniprotId ? `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff` : null,
+    uniprotId ? uniprotGffUrl(uniprotId) : null,
     fetchUniProtFeatures,
+    // A UniProt entry's GFF is static reference data, so the default
+    // refetch-on-focus/reconnect only re-downloads and re-lays out the tracks.
+    STATIC_SWR_OPTIONS,
   )
 
   return {

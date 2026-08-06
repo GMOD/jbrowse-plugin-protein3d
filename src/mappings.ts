@@ -5,19 +5,57 @@ export interface AlignmentRow {
   id: string
   seq: string
 }
+
+/**
+ * A two-row alignment whose ROW ORDER IS A CONTRACT: row 0 is the transcript,
+ * row 1 is the structure. Every producer honors it — runLocalAlignment is
+ * always called as (transcript, structure), and the manual-import dialog tells
+ * the user to paste them in that order — and every consumer depends on it, but
+ * nothing in the type can enforce it, and swapping the two silently inverts
+ * every coordinate map. Read the rows through the accessors below rather than
+ * indexing, so a call site states which sequence it means.
+ */
 export interface PairwiseAlignment {
   consensus: string
   alns: readonly [AlignmentRow, AlignmentRow]
 }
 
+export const transcriptAlignedSeq = (pa: PairwiseAlignment) => pa.alns[0].seq
+export const structureAlignedSeq = (pa: PairwiseAlignment) => pa.alns[1].seq
+
+/** Number of columns, gaps included. Both rows have this length by definition;
+ * `pairwiseAlignmentProblem` is what guarantees it. */
+export const alignmentLength = (pa: PairwiseAlignment) =>
+  transcriptAlignedSeq(pa).length
+
+/**
+ * Why a pairwise alignment can't be used, or undefined if it's usable. The two
+ * rows must be the same non-zero length — every coordinate map walks them in
+ * lockstep, so a ragged pair would map positions to nonsense. Callers that
+ * accept alignments from outside (the manual-import dialog) check this and
+ * report it; the internal map builders assert on it.
+ */
+export function pairwiseAlignmentProblem(pa: PairwiseAlignment) {
+  const transcript = transcriptAlignedSeq(pa)
+  const structure = structureAlignedSeq(pa)
+  if (transcript.length === 0 || structure.length === 0) {
+    return 'The aligned sequences must not be empty'
+  }
+  if (transcript.length !== structure.length) {
+    return `The two aligned sequences must be the same length (got ${transcript.length} and ${structure.length})`
+  }
+  return undefined
+}
+
 export function structureSeqVsTranscriptSeqMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
-  const structureSeq = pairwiseAlignment.alns[1].seq
-  const transcriptSeq = pairwiseAlignment.alns[0].seq
-  if (structureSeq.length !== transcriptSeq.length) {
-    throw new Error('mismatched length')
+  const problem = pairwiseAlignmentProblem(pairwiseAlignment)
+  if (problem) {
+    throw new Error(problem)
   }
+  const structureSeq = structureAlignedSeq(pairwiseAlignment)
+  const transcriptSeq = transcriptAlignedSeq(pairwiseAlignment)
 
   let j = 0
   let k = 0
@@ -60,13 +98,13 @@ function seqPositionToAlignmentMap(seq: string) {
 export function structurePositionToAlignmentMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
-  return seqPositionToAlignmentMap(pairwiseAlignment.alns[1].seq)
+  return seqPositionToAlignmentMap(structureAlignedSeq(pairwiseAlignment))
 }
 
 export function transcriptPositionToAlignmentMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
-  return seqPositionToAlignmentMap(pairwiseAlignment.alns[0].seq)
+  return seqPositionToAlignmentMap(transcriptAlignedSeq(pairwiseAlignment))
 }
 
 // see similar function in msaview plugin

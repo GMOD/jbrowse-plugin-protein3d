@@ -74,7 +74,11 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
     let structureRowName: string | undefined
     disposers.push(
       autorun(() => {
-        const seq = proteinView.primaryStructure?.structureSequences?.[0]
+        // The *mapped* entity, not entity [0]: hover positions below are in the
+        // mapped entity's coordinates (molstar interactions are gated to it), so
+        // matching chain A's sequence for a heteromer whose gene is chain C
+        // finds no row and silently falls back to a wrong 1:1 mapping.
+        const seq = proteinView.primaryStructure?.mappedStructureSeq
         structureRowName = findStructureRowName(
           msaView.rowMap,
           seq === undefined ? undefined : stripStopCodon(seq),

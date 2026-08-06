@@ -98,13 +98,14 @@ export function caCoordsToPdb(
 }
 
 /**
- * Check if a hit has valid tCa data that can be converted to PDB
+ * Whether a Foldseek hit carries tCa data that can be converted to PDB. A type
+ * predicate rather than a boolean so a guarded caller can pass `hit.tCa`/
+ * `hit.tSeq` straight to caCoordsToPdb without re-asserting they're defined.
  */
-export function hasValidCaCoords(tCa?: string, tSeq?: string) {
-  if (!tCa || !tSeq) {
-    return false
-  }
-  const coords = tCa.split(',')
-  // Need at least 3 coordinates (x,y,z for one residue) and matching sequence
-  return coords.length >= 3 && tSeq.length > 0
+export function hasValidCaCoords<T extends { tCa?: string; tSeq?: string }>(
+  hit: T,
+): hit is T & { tCa: string; tSeq: string } {
+  const { tCa, tSeq } = hit
+  // Need at least 3 coordinates (x,y,z for one residue) and a sequence
+  return !!tCa && !!tSeq && tCa.split(',').length >= 3
 }

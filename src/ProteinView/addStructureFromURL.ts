@@ -1,13 +1,19 @@
+import {
+  isBinaryStructureUrl,
+  structureFormatFromName,
+} from './structureFormat'
 import { applyStructurePreset } from './structurePipeline'
 
 import type { LoadStructureOptions } from './structurePipeline'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 
+/** Format and binary-ness default to what the URL's extension says, so a
+ * `.pdb`/`.ent` archive URL loads rather than throwing in the mmCIF parser. */
 export async function addStructureFromURL({
   url,
-  format = 'mmcif',
-  isBinary,
+  format = structureFormatFromName(url),
+  isBinary = isBinaryStructureUrl(url),
   options,
   plugin,
 }: {

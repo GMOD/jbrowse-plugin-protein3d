@@ -4,14 +4,16 @@ import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 export interface MolstarLocationInfo {
   /**
-   * 0-based label position (label_seq_id - 1). This is the plugin's canonical
-   * structure coordinate: structureSequences, the coordinate maps, and the
-   * outbound highlight in setMolstarLoci are all label-based, so the inbound
-   * read must be too. For AlphaFold structures label_seq_id == auth_seq_id, but
-   * for PDB structures whose author numbering is offset or gapped they diverge,
-   * and reading auth_seq_id here would mis-map every hover/click.
+   * Molstar's own `label_seq_id` for the residue, passed up raw. The model
+   * converts it to a 0-based structure position through the entity's seqIds —
+   * `label_seq_id - 1` is right only when the entity's residues run from 1, and
+   * silently wrong for a PDB file numbered from its author residues.
+   *
+   * label_ rather than auth_ deliberately: for AlphaFold the two agree, but for
+   * PDB structures whose author numbering is offset or gapped they diverge, and
+   * label_seq_id is what the outbound highlight speaks.
    */
-  structureSeqPos: number
+  labelSeqId: number
   code: string
   chain: string
   /** mmCIF label_entity_id of the hovered residue. Lets the model reject
@@ -27,8 +29,7 @@ function extractLocationInfo(
     object,
 ): MolstarLocationInfo {
   return {
-    structureSeqPos:
-      molstar.StructureProperties.residue.label_seq_id(location) - 1,
+    labelSeqId: molstar.StructureProperties.residue.label_seq_id(location),
     code: molstar.StructureProperties.atom.label_comp_id(location),
     chain: molstar.StructureProperties.chain.auth_asym_id(location),
     entityId: molstar.StructureProperties.entity.id(location),

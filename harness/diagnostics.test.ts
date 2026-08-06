@@ -12,6 +12,7 @@ function entity(
     description: `entity ${p.index}`,
     chains: ['A'],
     seqLength: p.seq.length,
+    seqIds: Array.from(p.seq, (_, i) => i + 1),
     observedCount: p.seq.length,
     ...p,
   }
@@ -20,7 +21,11 @@ function entity(
 const ACE2 = 'STIEEQAKTFLDKFNHEAEDLFYQSSLASWNYNTNITEENVQNMNNAGDKWSAFLKEQST'
 const RBD = 'RVQPTESIVRFPNITNLCPFGEVFNATRFASVYAWNRKRISNCVADYSVLYNSASFSTFK'
 
-test('WRONG_CHAIN fires when the transcript matches entity [1], not [0]', () => {
+// This test used to assert usedIndex === 0 and WRONG_CHAIN, which was faithful
+// while the plugin hardcoded entity [0]. The harness now runs the plugin's real
+// chooseMappedEntity, so the same input demonstrates the fix instead of the bug
+// — and WRONG_CHAIN became a regression alarm that should never fire here.
+test('the transcript resolves to entity [1], not [0]', () => {
   const loaded: LoadedStructure = {
     entities: [entity({ index: 0, seq: RBD }), entity({ index: 1, seq: ACE2 })],
     ligands: [],
@@ -32,11 +37,50 @@ test('WRONG_CHAIN fires when the transcript matches entity [1], not [0]', () => 
     isAlphaFold: false,
   })
   expect(d.bestIndex).toBe(1)
-  expect(d.usedIndex).toBe(0)
-  expect(d.verdicts.map(v => v.code)).toContain('WRONG_CHAIN')
+  expect(d.usedIndex).toBe(1)
+  const codes = d.verdicts.map(v => v.code)
+  expect(codes).toContain('RESOLVED_CHAIN')
+  expect(codes).toContain('MULTI_ENTITY')
+  expect(codes).not.toContain('WRONG_CHAIN')
 })
 
-test('DISORDER_DRIFT fires when entity [0] has unmodeled residues', () => {
+test('AUTHOR_NUMBERING fires when label_seq_ids do not start at 1', () => {
+  const loaded: LoadedStructure = {
+    entities: [
+      entity({
+        index: 0,
+        seq: ACE2,
+        seqIds: Array.from(ACE2, (_, i) => i + 94),
+      }),
+    ],
+    ligands: [],
+  }
+  const d = diagnose({
+    loaded,
+    transcript: ACE2,
+    algorithm: 'smith_waterman',
+    isAlphaFold: false,
+  })
+  const numbering = d.verdicts.find(v => v.code === 'AUTHOR_NUMBERING')
+  expect(numbering).toBeDefined()
+  expect(numbering!.message).toContain('off by 93')
+})
+
+test('AUTHOR_NUMBERING does not fire for ordinary 1..N numbering', () => {
+  const loaded: LoadedStructure = {
+    entities: [entity({ index: 0, seq: ACE2 })],
+    ligands: [],
+  }
+  const d = diagnose({
+    loaded,
+    transcript: ACE2,
+    algorithm: 'smith_waterman',
+    isAlphaFold: false,
+  })
+  expect(d.verdicts.map(v => v.code)).not.toContain('AUTHOR_NUMBERING')
+})
+
+test('DISORDER_DRIFT fires when the mapped entity has unmodeled residues', () => {
   const loaded: LoadedStructure = {
     entities: [
       entity({ index: 0, seq: ACE2, observedCount: ACE2.length - 12 }),

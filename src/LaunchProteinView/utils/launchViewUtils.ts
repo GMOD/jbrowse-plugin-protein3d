@@ -99,7 +99,7 @@ export function launch3DProteinView({
 // SessionWithAddTracks and a known uniprotId. Demanding both in the signature
 // forces callers to narrow up front — there's no silent no-op when a wide
 // session or missing id slips through.
-export async function launch1DProteinView({
+async function launch1DProteinView({
   session,
   view,
   feature,
@@ -129,7 +129,7 @@ export async function launch1DProteinView({
 // clears. These are NOT type-checked here because we only depend on it at runtime
 // (gated by hasMsaViewPlugin()). If react-msaview renames these, the launch
 // silently degrades. Keep in step with that repo.
-export function launchMsaView({
+function launchMsaView({
   session,
   view,
   feature,
@@ -154,7 +154,7 @@ export function launchMsaView({
   })
 }
 
-export function hasMsaViewPlugin() {
+function hasMsaViewPlugin() {
   return window.JBrowsePluginMsaView !== undefined
 }
 

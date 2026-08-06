@@ -2,11 +2,17 @@
 // Entity order / UniProt mappings were confirmed against the RCSB data API, so
 // the "expect" column is what the harness should actually report.
 //
+// NOTE the verdicts moved once: while the plugin hardcoded entity [0], every
+// heteromer here expected WRONG_CHAIN. chooseMappedEntity now resolves the
+// chain by alignment, so those same structures expect RESOLVED_CHAIN — they
+// went from demonstrating a bug to demonstrating the fix. WRONG_CHAIN is now a
+// regression alarm and no example should produce it.
+//
 // To add one: pick a PDB, look up its polymer entities at
 //   https://data.rcsb.org/rest/v1/core/polymer_entity/<PDBID>/<n>
 // note which entity is [0] (mmCIF order) and which UniProt you care about, then
 // add a row. If the protein of interest is NOT entity [0], it demonstrates
-// WRONG_CHAIN; if it is [0] but partial, DISORDER_DRIFT / PARTIAL_OR_REPEAT.
+// RESOLVED_CHAIN; if it is a fragment, PARTIAL_OR_REPEAT.
 import type { Severity } from './diagnostics'
 
 export interface Example {
@@ -21,6 +27,9 @@ export interface Example {
   /** human gene symbol, for launching the real plugin in JBrowse (omit if the
    * protein has no human gene, e.g. a viral chain) */
   gene?: string
+  /** archive file format to load; mmCIF unless stated. PDB format is the one
+   * that can lose entity_poly_seq and fall back to author numbering. */
+  format?: 'cif' | 'pdb'
 }
 
 export const EXAMPLES: Example[] = [
@@ -40,9 +49,9 @@ export const EXAMPLES: Example[] = [
     structureId: '4HHB',
     uniprot: 'P68871',
     gene: 'HBB',
-    expect: 'WRONG_CHAIN',
-    expectSeverity: 'error',
-    note: 'α/β tetramer. Plugin maps entity[0]=α; the β transcript belongs to entity[1].',
+    expect: 'RESOLVED_CHAIN',
+    expectSeverity: 'ok',
+    note: 'α/β tetramer, entity[0]=α. The β transcript belongs to entity[1] and chooseMappedEntity finds it — this is the case that used to mis-map.',
   },
   {
     label: '1FIN → cyclin A',
@@ -50,17 +59,17 @@ export const EXAMPLES: Example[] = [
     structureId: '1FIN',
     uniprot: 'P20248',
     gene: 'CCNA2',
-    expect: 'WRONG_CHAIN',
-    expectSeverity: 'error',
-    note: 'CDK2–cyclin A complex. entity[0]=CDK2, so a cyclin transcript mis-maps.',
+    expect: 'RESOLVED_CHAIN',
+    expectSeverity: 'ok',
+    note: 'CDK2–cyclin A complex, entity[0]=CDK2. A cyclin transcript resolves to the cyclin entity instead of mis-mapping onto CDK2.',
   },
   {
     label: '6M0J → SARS-CoV-2 spike',
     source: 'pdb',
     structureId: '6M0J',
     uniprot: 'P0DTC2',
-    expect: 'WRONG_CHAIN',
-    expectSeverity: 'error',
+    expect: 'RESOLVED_CHAIN',
+    expectSeverity: 'ok',
     note: 'entity[0]=human ACE2; the spike RBD is entity[1]. (viral chain — no human gene to launch from)',
   },
   {
@@ -69,9 +78,9 @@ export const EXAMPLES: Example[] = [
     structureId: '1TUP',
     uniprot: 'P04637',
     gene: 'TP53',
-    expect: 'WRONG_CHAIN',
-    expectSeverity: 'error',
-    note: 'entity[0] and [1] are DNA strands; p53 is entity[2]. Plugin tries to map protein onto a DNA chain.',
+    expect: 'RESOLVED_CHAIN',
+    expectSeverity: 'ok',
+    note: 'entity[0] and [1] are DNA strands; p53 is entity[2]. Resolving by alignment skips the DNA chains a positional guess would hit.',
   },
   {
     label: '6M0J → ACE2 (contrast)',
@@ -112,6 +121,17 @@ export const EXAMPLES: Example[] = [
     expect: 'PARTIAL_OR_REPEAT',
     expectSeverity: 'warn',
     note: 'Proprotein cleaved into A+B chains (separate entities); each covers only a fraction of the UniProt proprotein.',
+  },
+  {
+    label: '1TUP.pdb → p53 (author numbering)',
+    source: 'pdb',
+    structureId: '1TUP',
+    uniprot: 'P04637',
+    gene: 'TP53',
+    format: 'pdb',
+    expect: 'RESOLVED_CHAIN',
+    expectSeverity: 'ok',
+    note: 'Same entry served as PDB format rather than mmCIF. p53 chains are numbered from UniProt 94; molstar keeps SEQRES here so ids still run 1..N, but strip SEQRES (any trimmed/modeled file) and they become 94.. — which is why residue ids are looked up rather than derived as position+1.',
   },
   {
     label: 'AF BRCA2 (>2700aa)',

@@ -2,7 +2,23 @@
 // the launch flow and the ProteinView model (e.g. resolving a `uniprotId`/`pdbId`
 // shorthand at hydration) can import them without pulling in heavy launch code.
 
-export const ALPHAFOLD_VERSION = 'v6'
+const ALPHAFOLD_VERSION = 'v6'
+
+// UniProt endpoints. rest.* is the machine API (the GFF the feature tracks and
+// the alignment's annotation rows both read, the FASTA the temporary protein
+// assembly is built from); www.*/entry is the human-facing entry page the UI
+// links to. Centralized so a path change is one edit rather than a grep.
+export function uniprotGffUrl(uniprotId: string) {
+  return `https://rest.uniprot.org/uniprotkb/${uniprotId}.gff`
+}
+
+export function uniprotFastaUrl(uniprotId: string) {
+  return `https://rest.uniprot.org/uniprotkb/${uniprotId}.fasta`
+}
+
+export function uniprotEntryUrl(uniprotId: string) {
+  return `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
+}
 
 export function getAlphaFoldStructureUrl(
   uniprotId: string,
@@ -27,6 +43,41 @@ export function getAlphaFoldMsaUrl(
 
 export function getPdbStructureUrl(pdbId: string) {
   return `https://files.rcsb.org/download/${pdbId}.cif`
+}
+
+/**
+ * Resolve the `{ uniprotId }` / `{ pdbId }` shorthand to a concrete structure
+ * URL, so a hand-authored snapshot or a short launch URL doesn't have to know
+ * the AlphaFold/RCSB filename formats.
+ *
+ * An explicit `url` (or inline `data`) always wins, and the shorthand resolves
+ * the canonical form only — AlphaFold's F1 fragment, RCSB's mmCIF. Idempotent:
+ * re-resolving an already-resolved spec returns the same url.
+ *
+ * Shared by the Structure model's snapshot preprocessor and the
+ * LaunchView-ProteinView extension point, which would otherwise each carry
+ * their own copy of the same precedence rule and drift on which ids they
+ * accept — the extension point took uniprotId but not pdbId for exactly that
+ * reason.
+ */
+export function resolveStructureUrl({
+  url,
+  data,
+  uniprotId,
+  pdbId,
+}: {
+  url?: string
+  data?: string
+  uniprotId?: string
+  pdbId?: string
+}) {
+  if (url !== undefined || data !== undefined) {
+    return url
+  }
+  if (uniprotId !== undefined) {
+    return getAlphaFoldStructureUrl(uniprotId)
+  }
+  return pdbId === undefined ? undefined : getPdbStructureUrl(pdbId)
 }
 
 // Hosts that serve the PDB archive, so a 4-character filename there really is

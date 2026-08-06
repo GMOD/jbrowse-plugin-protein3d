@@ -4,6 +4,7 @@ import { Typography } from '@mui/material'
 
 import IsoformSequencesToggle from './IsoformSequencesToggle'
 import ExternalLink from '../../components/ExternalLink'
+import { uniprotEntryUrl } from '../utils/structureUrls'
 import { getTranscriptDisplayName } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
@@ -40,9 +41,7 @@ export default function AlphaFoldDBSearchStatus({
       <div>
         <Typography>
           UniProt link:{' '}
-          <ExternalLink
-            href={`https://www.uniprot.org/uniprotkb/${uniprotId}/entry`}
-          >
+          <ExternalLink href={uniprotEntryUrl(uniprotId)}>
             {uniprotId}
           </ExternalLink>
         </Typography>
