@@ -2,6 +2,8 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  LAUNCH_DIALOG,
+  PAINTED_FEATURES,
   captureScreenshot,
   cleanupJBrowse,
   clickLaunch,
@@ -11,7 +13,6 @@ import {
   getProteinViewState,
   launchBrowser,
   openFeatureContextMenu,
-  PAINTED_FEATURES,
   pageErrors,
   setupJBrowse,
   startJBrowseServer,
@@ -112,7 +113,7 @@ describe('Protein3d Plugin E2E', () => {
 
   it('launches a protein view with the structure aligned and rendered', async () => {
     await clickMenuItem(page, 'Launch protein view')
-    await page.waitForSelector('[role="dialog"]', { timeout: 30_000 })
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await captureScreenshot(page, screenshot('04-protein-dialog'))
 
     await waitForLaunchEnabled(page)

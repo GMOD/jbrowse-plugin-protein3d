@@ -334,14 +334,29 @@ export async function waitForJBrowseLoad(page: Page): Promise<void> {
 // svg boxes; v4 server-side renders each block to its own canvas and suffixes
 // that canvas's testid with `_done`. Current main deleted the block-based
 // display (jbrowse-components 8b1dacf9ff): the display is one GPU canvas with
-// no testid at all, and the signal moved to the wrapper — `-done` for first
-// paint, `data-display-phase` for the state the paint is in. Both are required:
+// no testid at all, and the signal moved to the display wrapper.
+//
+// That wrapper keeps changing shape, so this list is append-only and every
+// entry is a host still under test — dropping one silently stops testing that
+// host. The previous entry assumed `data-display-phase` sat on a DESCENDANT of
+// the `-done` element (note the space); main has since collapsed them onto one
+// element, so that selector quietly matched nothing and the nightly job timed
+// out waiting for a track that had in fact rendered.
+//
+// Prefer the most explicit signal main now offers: `data-display-drawn` is
+// literally "something has been drawn", which is what the older two-part check
+// was approximating. Both conditions are kept because neither alone is enough —
 // `-done` flips on an empty canvas while the fetch is still in flight, and
 // `ready` is reachable before anything has been drawn.
 export const PAINTED_FEATURES = [
+  // v4 block-based canvases
   'canvas[data-testid$="_done"]',
+  // v3 svg boxes
   '[data-testid^="box-"]',
+  // main, while phase lived on a child of the -done wrapper
   '[data-testid$="-done"] [data-display-phase="ready"]',
+  // main today: one wrapper carrying both flags
+  '[data-display-drawn="true"][data-display-phase="ready"]',
 ].join(', ')
 
 export async function waitForTrackLoad(page: Page): Promise<void> {
@@ -399,27 +414,28 @@ export async function clickMenuItem(page: Page, label: string): Promise<void> {
   throw new Error(`no context menu item labelled "${label}"`)
 }
 
+// Selectors for the plugin's OWN UI. Unlike the host-DOM selectors above these
+// are stable by construction: the e2e always builds and installs the plugin
+// from this working tree, so only the JBrowse version varies underneath. Match
+// on these rather than on button labels or a library's internal class names.
+export const LAUNCH_BUTTON = '[data-testid="protein-launch-button"]'
+export const LAUNCH_DIALOG = '[data-testid="launch-protein-view-dialog"]'
+export const MOLSTAR_CANVAS = '[data-testid="protein-view-molstar"] canvas'
+
 // The dialog resolves the transcript, isoform sequences and structure file over
 // the network before it will let you launch.
 export async function waitForLaunchEnabled(page: Page): Promise<void> {
-  await page.waitForFunction(
-    () =>
-      [...document.querySelectorAll('button')].some(
-        el => el.textContent?.trim() === 'Launch' && !el.disabled,
-      ),
-    { timeout: 90_000, polling: 500 },
-  )
+  await page.waitForSelector(`${LAUNCH_BUTTON}:not([disabled])`, {
+    timeout: 90_000,
+  })
 }
 
 export async function clickLaunch(page: Page): Promise<void> {
-  for (const button of await page.$$('button')) {
-    const text = await button.evaluate(el => el.textContent?.trim() ?? '')
-    if (text === 'Launch') {
-      await button.click()
-      return
-    }
+  const button = await page.$(LAUNCH_BUTTON)
+  if (!button) {
+    throw new Error(`no element matching ${LAUNCH_BUTTON} in the dialog`)
   }
-  throw new Error('no Launch button in the dialog')
+  await button.click()
 }
 
 export async function getProteinViewState(page: Page) {
@@ -468,13 +484,11 @@ async function molstarInk(page: Page): Promise<number> {
   return inked / (width * height)
 }
 
-// The msp-plugin container mounts within a second of the launch click, ~5s
-// before the structure is drawn, so waiting on the container alone would
-// screenshot an empty viewer.
+// The molstar canvas mounts within a second of the launch click, ~5s before the
+// structure is drawn, so waiting on the element alone would screenshot an empty
+// viewer — hence the ink check below.
 export async function waitForStructureRendered(page: Page): Promise<number> {
-  await page.waitForSelector('[class*="msp-plugin"] canvas', {
-    timeout: 30_000,
-  })
+  await page.waitForSelector(MOLSTAR_CANVAS, { timeout: 30_000 })
   const deadline = Date.now() + 90_000
   let ink = 0
   while (Date.now() < deadline) {

@@ -36,6 +36,7 @@ export default function LaunchProteinViewDialog({
 
   return (
     <Dialog
+      data-testid="launch-protein-view-dialog"
       maxWidth="xl"
       title="Launch protein view"
       titleNode={

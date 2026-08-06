@@ -184,10 +184,18 @@ export default function ProteinViewActions({
         </Typography>
       ) : null}
       <ButtonGroup variant="contained" color="primary" size="small">
-        <Button disabled={!canLaunch} onClick={handleLaunch3DView}>
+        {/* Tagged rather than found by its "Launch" label: the dialog is not
+            the only button on the page, and a label is a UI-copy decision that
+            should be free to change without breaking callers. */}
+        <Button
+          data-testid="protein-launch-button"
+          disabled={!canLaunch}
+          onClick={handleLaunch3DView}
+        >
           Launch
         </Button>
         <Button
+          data-testid="protein-launch-options-button"
           disabled={!canLaunch}
           onClick={() => {
             setDialogOpen(true)

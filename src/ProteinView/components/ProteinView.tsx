@@ -65,8 +65,12 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
       ) : (
         <ProteinViewHeader model={model} />
       )}
+      {/* Molstar mounts its own DOM inside here. Tagged so callers (and the
+          e2e suite) can find the viewer without reaching for molstar's internal
+          `msp-plugin` class names, which are not ours to depend on. */}
       <div
         ref={parentRef}
+        data-testid="protein-view-molstar"
         style={{
           position: 'relative',
           width,

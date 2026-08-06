@@ -35,7 +35,7 @@
     "build": "tsc && NODE_ENV=production node esbuild.mjs && cp distconfig.json dist/config.json",
     "build:bundle": "NODE_ENV=production node esbuild.mjs",
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
-    "pretest": "test -d .test-jbrowse-nightly || jbrowse create .test-jbrowse-nightly --nightly",
+    "pretest": "node scripts/ensure-nightly.mjs",
     "prepack": "pnpm build",
     "preversion": "pnpm format:check && pnpm lint && pnpm build && pnpm host-compat:candidate",
     "version": "node scripts/sync-version.mjs && git add src/version.ts",
