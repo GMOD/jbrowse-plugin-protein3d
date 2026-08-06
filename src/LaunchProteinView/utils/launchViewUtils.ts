@@ -158,6 +158,24 @@ function hasMsaViewPlugin() {
   return window.JBrowsePluginMsaView !== undefined
 }
 
+// What the launches below are CALLED, shared for the same reason their
+// availability is: the AlphaFold and Foldseek menus offer the same three
+// actions, and had drifted to different names for two of them ("Launch 3D
+// protein structure view" vs "Launch 3D protein view", and an MSA item that
+// named its source on one menu and not the other). Two names for one action
+// reads as two actions.
+//
+// The MSA item says "(AlphaFold a3m)" rather than a bare "Launch MSA view"
+// because msaview contributes a gene right-click item by that exact name, and
+// the two build different things: msaview's is one row per species from NCBI's
+// orthologs, this one is the deep unlabelled alignment AlphaFold folded from.
+export const PROTEIN_LAUNCH_LABELS = {
+  '3d': 'Launch 3D protein structure view',
+  '1d': 'Launch 1D protein annotation view',
+  msa: 'Launch MSA view (AlphaFold a3m)',
+  '3d-msa': 'Launch 3D structure + MSA view',
+} as const
+
 // The 1D-annotation and MSA launches share identical availability rules across
 // the AlphaFold and Foldseek launch menus: the 1D view needs an add-tracks
 // session and a uniprotId, the MSA view needs the msaview plugin and a

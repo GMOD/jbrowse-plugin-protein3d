@@ -17,6 +17,7 @@ import SequenceMismatchNotice from './SequenceMismatchNotice'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { getLaunchMissingReasons } from '../utils/launchHelpers'
 import {
+  PROTEIN_LAUNCH_LABELS,
   getConditionalProteinLaunches,
   launch3DProteinView,
   launch3DProteinViewWithMsa,
@@ -112,7 +113,7 @@ export default function ProteinViewActions({
   const launchOptions = [
     {
       key: '3d',
-      title: 'Launch 3D protein structure view',
+      title: PROTEIN_LAUNCH_LABELS['3d'],
       description:
         'View protein structure with genome-to-structure coordinate mapping',
       onClick: handleLaunch3DView,
@@ -121,7 +122,7 @@ export default function ProteinViewActions({
       ? [
           {
             key: '1d',
-            title: 'Launch 1D protein annotation view',
+            title: PROTEIN_LAUNCH_LABELS['1d'],
             description:
               'View protein features and annotations as a linear track',
             onClick: runLaunch(launch1D),
@@ -132,13 +133,13 @@ export default function ProteinViewActions({
       ? [
           {
             key: 'msa',
-            title: 'Launch MSA view',
+            title: PROTEIN_LAUNCH_LABELS.msa,
             description: 'View AlphaFold a3m multiple sequence alignment',
             onClick: runLaunch(launchMsa),
           },
           {
             key: '3d-msa',
-            title: 'Launch 3D structure + MSA view',
+            title: PROTEIN_LAUNCH_LABELS['3d-msa'],
             description: 'Launch both views with AlphaFold a3m MSA',
             onClick: runLaunch(() =>
               launch3DProteinViewWithMsa(launch3DParams),

@@ -79,7 +79,7 @@ export default function AlignmentSettingsButton({
       </IconButton>
 
       <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
-        <DialogTitle>Alignment Settings</DialogTitle>
+        <DialogTitle>Alignment settings</DialogTitle>
         <DialogContent>
           <Tabs
             value={tabValue}

@@ -6,6 +6,7 @@ import { Button, Menu, MenuItem } from '@mui/material'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
 import {
+  PROTEIN_LAUNCH_LABELS,
   getConditionalProteinLaunches,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
@@ -88,15 +89,26 @@ export default function FoldseekActionMenu({
         Load
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>
-        <MenuItem onClick={handleLaunch3D}>Launch 3D protein view</MenuItem>
+        <MenuItem
+          data-testid="protein-launch-option-3d"
+          onClick={handleLaunch3D}
+        >
+          {PROTEIN_LAUNCH_LABELS['3d']}
+        </MenuItem>
         {launch1D ? (
-          <MenuItem onClick={runLaunch(launch1D)}>
-            Launch 1D protein annotation view
+          <MenuItem
+            data-testid="protein-launch-option-1d"
+            onClick={runLaunch(launch1D)}
+          >
+            {PROTEIN_LAUNCH_LABELS['1d']}
           </MenuItem>
         ) : null}
         {launchMsa ? (
-          <MenuItem onClick={runLaunch(launchMsa)}>
-            Launch MSA view (AlphaFoldDB a3m)
+          <MenuItem
+            data-testid="protein-launch-option-msa"
+            onClick={runLaunch(launchMsa)}
+          >
+            {PROTEIN_LAUNCH_LABELS.msa}
           </MenuItem>
         ) : null}
       </Menu>

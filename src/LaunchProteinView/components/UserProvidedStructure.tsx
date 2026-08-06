@@ -179,7 +179,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
             handleLaunch()
           }}
         >
-          Launch 3-D protein structure view
+          Launch 3D protein structure view
         </Button>
       </DialogActions>
     </>

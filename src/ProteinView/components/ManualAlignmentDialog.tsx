@@ -61,7 +61,7 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
 
   return (
     <Dialog open onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Import Manual Alignment</DialogTitle>
+      <DialogTitle>Import manual alignment</DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Paste a pre-computed alignment in Clustal format. The first sequence

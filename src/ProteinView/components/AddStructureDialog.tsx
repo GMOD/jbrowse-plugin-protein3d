@@ -79,7 +79,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>Add Structure</DialogTitle>
+      <DialogTitle>Add structure</DialogTitle>
       <DialogContent>
         {error ? <ErrorMessage error={error} /> : null}
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
@@ -189,7 +189,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
           color="primary"
           disabled={!canAdd}
         >
-          Add Structure
+          Add structure
         </Button>
       </DialogActions>
     </Dialog>
