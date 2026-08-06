@@ -25,6 +25,18 @@ import net from 'node:net'
 
 import { saveStableScreenshot } from './pngSnapshot.mjs'
 
+// "The genome track painted", in every shape the hosts render it. Counting
+// canvases used to stand in for this, but that was a proxy for the old
+// block-based renderer (many canvases); current main draws one GPU canvas per
+// display, so the count dropped below the threshold on a page that had in fact
+// rendered. Keep this in step with PAINTED_FEATURES in test/setup.ts.
+const PAINTED_FEATURES = [
+  'canvas[data-testid$="_done"]',
+  '[data-testid^="box-"]',
+  '[data-testid$="-done"] [data-display-phase="ready"]',
+  '[data-display-drawn="true"][data-display-phase="ready"]',
+].join(', ')
+
 const PORT = 9000
 const BASE = `http://localhost:${PORT}`
 const APP = `${BASE}/.test-jbrowse-nightly/?config=/config.json`
@@ -227,7 +239,7 @@ try {
     let state
     for (let i = 0; i < 50; i++) {
       await sleep(3000)
-      state = await page.evaluate(() => {
+      state = await page.evaluate(PAINTED => {
         const s = window.JBrowseSession
         const lgv = s?.views?.find(v => v.type === 'LinearGenomeView')
         const pv = s?.views?.find(v => v.type === 'ProteinView')
@@ -240,10 +252,10 @@ try {
             : 0,
           hasAlignment: !!st?.pairwiseAlignment,
           seqLen: st?.structureSequences?.[0]?.length ?? 0,
-          canvases: document.querySelectorAll('canvas').length,
+          painted: document.querySelectorAll(PAINTED).length,
         }
-      })
-      if (state.wired && state.hasAlignment && state.canvases >= 4) break
+      }, PAINTED_FEATURES)
+      if (state.wired && state.hasAlignment && state.painted > 0) break
     }
     check('connected: connectedView created an LGV', state.createdLgv)
     check('connected: structure connectedViewId wired to that LGV', state.wired)
@@ -258,9 +270,9 @@ try {
       `seqLen=${state.seqLen}`,
     )
     check(
-      'connected: genome tracks rendered (canvases>=4)',
-      state.canvases >= 4,
-      `canvases=${state.canvases}`,
+      'connected: genome tracks painted',
+      state.painted > 0,
+      `painted=${state.painted}`,
     )
     check('connected: no console/page errors', errors.length === 0, errors[0])
 
@@ -291,7 +303,7 @@ try {
     let state
     for (let i = 0; i < 50; i++) {
       await sleep(3000)
-      state = await page.evaluate(() => {
+      state = await page.evaluate(PAINTED => {
         const s = window.JBrowseSession
         const lgv = s?.views?.find(v => v.type === 'LinearGenomeView')
         const pv = s?.views?.find(v => v.type === 'ProteinView')
@@ -310,10 +322,10 @@ try {
           resolvedProtein: (
             st?.userProvidedTranscriptSequence ?? ''
           ).replaceAll('*', ''),
-          canvases: document.querySelectorAll('canvas').length,
+          painted: document.querySelectorAll(PAINTED).length,
         }
-      })
-      if (state.wired && state.hasAlignment && state.canvases >= 4) break
+      }, PAINTED_FEATURES)
+      if (state.wired && state.hasAlignment && state.painted > 0) break
     }
     check(
       'short: url derived from uniprotId',
@@ -371,7 +383,7 @@ try {
     let state
     for (let i = 0; i < 50; i++) {
       await sleep(3000)
-      state = await page.evaluate(() => {
+      state = await page.evaluate(PAINTED => {
         const s = window.JBrowseSession
         const lgv = s?.views?.find(v => v.type === 'LinearGenomeView')
         const pv = s?.views?.find(v => v.type === 'ProteinView')
@@ -383,10 +395,10 @@ try {
           mappedEntityIndex: st?.mappedEntityIndex,
           mappedSeqLen: st?.mappedStructureSeq?.length ?? 0,
           hasAlignment: !!st?.pairwiseAlignment,
-          canvases: document.querySelectorAll('canvas').length,
+          painted: document.querySelectorAll(PAINTED).length,
         }
-      })
-      if (state.wired && state.hasAlignment && state.canvases >= 4) break
+      }, PAINTED_FEATURES)
+      if (state.wired && state.hasAlignment && state.painted > 0) break
     }
     check(
       'pdb: url derived from pdbId',
