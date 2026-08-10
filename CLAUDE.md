@@ -68,16 +68,36 @@ exactly this regression in v2.7.0/v2.7.1.) This plugin resolves both shapes to
 one `MenuTarget` in `src/LaunchProteinView/index.ts`; which property is present
 *is* the version check. Keep both.
 
-**On v4 hosts the feature handed to the context menu has already lost its CDS
-records.** Measured against the E2E fixture (GENCODE v44, NRAS
-ENST00000369535.5): v3.7.0 hands over the *gene* and the plugin resolves all 4
-CDS records → 190aa, 570 mapped genome positions. Nightly (4.3.0) hands over the
-*transcript* with `CDS` reduced to a single record while all 7 exons survive →
-40aa, 120 mapped positions, aligned against the full 189-residue structure. It is
-not block clipping — the dropped records sit inside the same rendered block, and
-the truncation is present before any plugin code runs. **The fix belongs upstream
-in jbrowse-components, not here.** Meanwhile: don't pin exact mapping counts in
-tests across hosts.
+**The CDS truncation is fixed upstream — take the `fetchFullFeature` route and
+it cannot come back.** It was real: measured 2026-08-01 on the E2E fixture
+(GENCODE v44, NRAS ENST00000369535.5), a host handed over a transcript whose
+`CDS` was reduced to a single record while all 7 exons survived, giving 40aa and
+120 mapped positions against a 189-residue structure, where v3.7.0 resolved all
+4 CDS → 190aa and 570 positions.
+
+The cause was **not** block clipping and not anything in this plugin. GENCODE
+gives every segment of a multi-segment CDS **the same `ID`**
+(`ID=CDS:ENST00000369535.5` on all four lines) while each exon gets a unique one
+(`ID=exon:…:1..7`) — that asymmetry is the whole tell. A parser that treats the
+GFF3 `ID` as a unique key keeps one CDS and drops the continuation lines, and
+leaves the exons alone. `gff-nostream` now registers the id once but still
+attaches every line to its parent, and jbrowse-components pins that behaviour
+with `keeps every segment of a CDS that shares one ID across lines` in both
+`Gff3Adapter` and `Gff3TabixAdapter`. Verified 2026-08-10 against the live
+`gencode.v44.annotation.sorted.gff3.gz`: the adapter returns 4 CDS, 570 bp,
+190aa.
+
+What is left is not truncation but **architecture**, and it is why
+`fetchFullFeature` matters. On canvas hosts the render payload is typed arrays
+and hit-detection items — there are no `Feature` objects in it at all, so a
+plugin reading render data has no CDS to find, by design.
+`fetchFullFeature(parentId, displayedRegionIndex)` re-queries the adapter
+(`GetCanvasFeatureDetails` → `getFeaturesArray`) and returns the complete
+feature. `resolveTarget` in `src/LaunchProteinView/index.ts` already prefers that
+path and falls back to `contextMenuFeature` only on legacy hosts — so the short
+alignment can only reappear on an old host, where it is unfixable from here.
+
+Still: don't pin exact mapping counts in tests across hosts.
 
 **A red nightly leg is usually upstream churn, not your diff.** `jbrowse create
 --nightly` fetches a zip that is rebuilt without notice, and `pretest` only
