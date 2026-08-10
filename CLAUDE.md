@@ -87,16 +87,20 @@ with `keeps every segment of a CDS that shares one ID across lines` in both
 `gencode.v44.annotation.sorted.gff3.gz`: the adapter returns 4 CDS, 570 bp,
 190aa.
 
-**Which hosts are affected, exactly** — bisected against the real records
-2026-08-10, so the e2e legs' differing answers are expected rather than a bug
-here. Only **gff-nostream 3.0.6 – 3.0.9** truncate (published 2026-05-18 to
-2026-06-01); 3.0.5 and earlier are fine, 1.3.9 is fine, 3.0.10+ is fine.
-`@jbrowse/plugin-gff3@4.3.0` was published 2026-05-21 declaring `^3.0.5`, which
-resolved to 3.0.9 that day — so **the prebuilt v4.3.0 host bundles the bug and
-always will**, and its leg legitimately reports 40aa. v3.7.0 declared `^1.3.3`
-and reports 190aa. A host built from current main reports 190aa. So a leg
-disagreeing across those three is the dependency's history showing through, not
-a regression in this plugin.
+**No released host was ever affected, so a released leg reporting 40aa means a
+stale zip.** Bisected against the real records 2026-08-10: only **gff-nostream
+3.0.6 – 3.0.9** truncate; 3.0.5 and earlier are fine, 1.3.9 is fine, 3.0.10+ is
+fine. Checking the lockfiles rather than the caret ranges — which is the step
+that matters, since pnpm builds from the lockfile — **`v4.3.0` shipped with
+`gff-nostream@3.0.5` pinned and is clean**, and v3.7.0's `^1.3.3` is clean.
+jbrowse-components `main` carried 3.0.9 for about thirteen days (2026-05-19 to
+2026-06-01) and nothing else ever did.
+
+So the only build that can show 40aa is a **nightly zip fetched during that
+window** — which is precisely the frozen-`.test-jbrowse-nightly` trap below,
+since `pretest` never refreshes an existing one. That is the likely source of
+the 2026-08-01 measurement. If a leg reports 40aa today, date the zip before
+suspecting anything else.
 
 What is left is not truncation but **architecture**, and it is why
 `fetchFullFeature` matters. On canvas hosts the render payload is typed arrays
