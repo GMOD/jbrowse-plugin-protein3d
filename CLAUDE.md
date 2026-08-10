@@ -87,6 +87,17 @@ with `keeps every segment of a CDS that shares one ID across lines` in both
 `gencode.v44.annotation.sorted.gff3.gz`: the adapter returns 4 CDS, 570 bp,
 190aa.
 
+**Which hosts are affected, exactly** — bisected against the real records
+2026-08-10, so the e2e legs' differing answers are expected rather than a bug
+here. Only **gff-nostream 3.0.6 – 3.0.9** truncate (published 2026-05-18 to
+2026-06-01); 3.0.5 and earlier are fine, 1.3.9 is fine, 3.0.10+ is fine.
+`@jbrowse/plugin-gff3@4.3.0` was published 2026-05-21 declaring `^3.0.5`, which
+resolved to 3.0.9 that day — so **the prebuilt v4.3.0 host bundles the bug and
+always will**, and its leg legitimately reports 40aa. v3.7.0 declared `^1.3.3`
+and reports 190aa. A host built from current main reports 190aa. So a leg
+disagreeing across those three is the dependency's history showing through, not
+a regression in this plugin.
+
 What is left is not truncation but **architecture**, and it is why
 `fetchFullFeature` matters. On canvas hosts the render payload is typed arrays
 and hit-detection items — there are no `Feature` objects in it at all, so a
