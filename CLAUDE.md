@@ -114,6 +114,17 @@ asserting only on our row calls that a missing feature. Verified by making the
 contribution throw: `the feature context menu lost the host's own rows: []`,
 exit 1, on v4.3.0 and main.
 
+**Side-by-side launch works on `main` only, and that is the v4 hangover rather
+than a break.** Measured 2026-08-17 on the hosted releases: `main` has
+`session.setPendingMove`, so the protein view lands in a right-hand panel;
+v4.3.0 and `latest` expose `setUseWorkspaces` but place views through
+`setPendingMoveToSplitRight`, a module function in `@jbrowse/app-core`'s
+DockviewContext, so the views stack and `sideBySide.ts` warns. Nothing on the
+session distinguishes that host from a newer one that dropped the action, which
+is why the warning names both and why sniffing the version to quiet it would
+throw away the alarm. Wiring up v4's door would be new v4-only accommodation, so
+it stays unwired.
+
 **The e2e finds a feature by asking the host, not by pixel arithmetic.**
 `openFeatureContextMenu` hovers across the track container until the display
 reports `featureIdUnderMouse`, then right-clicks that point — the same hit test
