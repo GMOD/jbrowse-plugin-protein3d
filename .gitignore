@@ -136,11 +136,11 @@ test-screenshots/docs-connected.png
 test-screenshots/docs-short.png
 test-screenshots/docs-pdb-short.png
 # Reference screenshots are committed only for the versions CI actually runs
-# (nightly and v3.7.0). A local `pnpm test:all` also writes dirs for the other
+# (nightly and v4.3.0). A local `pnpm test:all` also writes dirs for the other
 # pinned versions; untracked, those left the tree dirty and blocked the
 # clean-tree check in `pnpm version patch`.
 test-screenshots/v4.0.4/
-test-screenshots/v4.3.0/
+test-screenshots/v3.7.0/
 
 # captures from a failing E2E run, kept out of the committed references
 test-screenshots/failed/
