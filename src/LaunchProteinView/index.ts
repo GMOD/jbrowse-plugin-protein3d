@@ -108,12 +108,16 @@ function launchProteinView(self: DisplayModel, target: MenuTarget) {
 
 function extendStateModel(stateModel: IAnyModelType) {
   return stateModel.views((self: DisplayModel) => {
+    // .call(self), not a bare call: the canvas display's own contextMenuItems
+    // reads `this.isGeneLike`, so invoking it detached throws on undefined and
+    // the ErrorBoundary around the menu swallows it -- the user right-clicks a
+    // feature and gets no menu at all, not merely no protein item.
     const superContextMenuItems = self.contextMenuItems
     return {
       contextMenuItems() {
         const target = resolveTarget(self)
         return [
-          ...superContextMenuItems(),
+          ...superContextMenuItems.call(self),
           ...(target && PROTEIN_FEATURE_TYPES.includes(target.type)
             ? [
                 {

@@ -35,6 +35,7 @@ interface ProteinViewStructure {
 interface SessionView {
   type: string
   structures?: ProteinViewStructure[]
+  tracks?: { displays?: { featureIdUnderMouse?: string }[] }[]
 }
 declare global {
   interface Window {
@@ -377,30 +378,58 @@ async function readMenuItems(page: Page, timeout = 2000): Promise<string[]> {
   return items
 }
 
-/**
- * Right-click the track's first feature row until JBrowse opens a feature
- * context menu, and return its items. Which x lands on a feature depends on how
- * the host lays the gene out, so a few positions across the track are tried.
- */
-export async function openFeatureContextMenu(page: Page): Promise<string[]> {
+// Where a feature is, according to the host rather than to us. Hovering sets
+// `featureIdUnderMouse` on the display on every host under test, and it is the
+// same hit test the right-click itself runs, so a point that answers here is a
+// point whose context menu is the feature's.
+//
+// Nothing about the glyph's placement is written down here on purpose. The
+// previous version right-clicked a hardcoded 10px below the track container,
+// which stopped landing on a 10px-tall glyph the moment the row moved by two
+// pixels, and reported it as "no context menu" -- a layout change wearing the
+// costume of a broken menu.
+async function findFeature(page: Page) {
   const box = await page.$eval(TRACK_CONTAINER, el => {
-    const { left, right, top } = el.getBoundingClientRect()
-    return { left, right, top }
+    const { left, right, top, bottom } = el.getBoundingClientRect()
+    return { left, right, top, bottom }
   })
-  const y = box.top + 10
-
-  for (const fraction of [0.35, 0.5, 0.65, 0.2, 0.8]) {
-    const x = box.left + (box.right - box.left) * fraction
-    await page.mouse.click(x, y, { button: 'right' })
-    const items = await readMenuItems(page)
-    if (items.length > 0) {
-      return items
+  for (let y = box.top + 1; y < box.bottom; y += 2) {
+    for (const fraction of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+      const x = box.left + (box.right - box.left) * fraction
+      await page.mouse.move(x, y)
+      const featureId = await page.evaluate(
+        () =>
+          window.JBrowseSession?.views?.find(v => v.type === 'LinearGenomeView')
+            ?.tracks?.[0]?.displays?.[0]?.featureIdUnderMouse,
+      )
+      if (featureId) {
+        return { x, y, featureId }
+      }
     }
-    await page.keyboard.press('Escape')
   }
   throw new Error(
-    `no feature context menu opened at y=${y} across the track width`,
+    `the host reported no feature anywhere in the track container ${JSON.stringify(box)}`,
   )
+}
+
+/**
+ * Right-click a feature and return the context menu's items.
+ */
+export async function openFeatureContextMenu(page: Page): Promise<string[]> {
+  const { x, y, featureId } = await findFeature(page)
+  console.log(`feature ${featureId} at (${x.toFixed(0)}, ${y.toFixed(0)})`)
+  await page.mouse.click(x, y, { button: 'right' })
+  const items = await readMenuItems(page)
+  if (items.length === 0) {
+    // The host put a feature here and then opened nothing, so this is a broken
+    // menu rather than a missed click. A plugin can cause it: the menu builds
+    // inside an ErrorBoundary, so anything thrown while assembling the items
+    // leaves the user with no menu at all.
+    throw new Error(
+      `right-clicking feature ${featureId} at (${x.toFixed(0)}, ${y.toFixed(0)}) opened no menu`,
+    )
+  }
+  return items
 }
 
 export async function clickMenuItem(page: Page, label: string): Promise<void> {
