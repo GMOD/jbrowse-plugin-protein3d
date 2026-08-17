@@ -49,7 +49,17 @@ jobs:
         run: npx puppeteer browsers install chrome
       - name: Install JBrowse CLI
         run: npm install -g @jbrowse/cli
+      # GITHUB_TOKEN because `--tag` resolves the release through api.github.com,
+      # and unauthenticated that is 60 requests an hour PER IP with runners
+      # sharing addresses: this step failed with "Could not find version: rate
+      # limit exceeded" on 2026-08-17 while every other job in the run passed,
+      # and msaview lost the same leg a minute later. The published CLI ignores
+      # the variable today (GMOD/jbrowse-components a6a8d4a553 teaches `fetchJson`
+      # to send it); setting it now means the flake stops on its own the next
+      # time `npm install -g @jbrowse/cli` picks up a release.
       - name: Setup JBrowse ${{ matrix.jbrowse-version }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ "${{ matrix.jbrowse-version }}" = "nightly" ]; then
             jbrowse create .test-jbrowse-nightly --nightly
