@@ -81,10 +81,12 @@ one either. tsc types the super as a plain `() => MenuItem[]`, `host-compat`
 boots the bundle but never opens a menu, and the throw needs a host whose
 implementation happens to read `this`.
 
-The same bare call sits in **msaview, icn3d, alphagenome, alphagenome2 and
-graphgenomeview** as of 2026-08-17. The real fix is upstream — a state model
-should reach its own views through `self`, not `this` — but a plugin cannot
-choose which host it runs on, so pass the receiver here regardless.
+jbrowse-components fixed its side the same day (`104bbfc581`, 2026-08-17: the
+getter moves to an earlier `.views()` block so `self` carries it, plus a guard
+that calls the view detached). Keep `.call(self)` anyway — a plugin cannot
+choose which host it runs on, and every nightly zip built before that commit
+still throws. The same bare call sits in **msaview, icn3d, alphagenome,
+alphagenome2 and graphgenomeview**.
 
 **The e2e finds a feature by asking the host, not by pixel arithmetic.**
 `openFeatureContextMenu` hovers across the track container until the display
