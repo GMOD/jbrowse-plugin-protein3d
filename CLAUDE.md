@@ -77,9 +77,9 @@ ErrorBoundary around the menu swallows the throw: the user right-clicks a
 feature and gets **no menu at all** — the host's own items vanish along with
 ours, which is a worse outcome than the plugin simply not contributing.
 `superContextMenuItems.call(self)` is the entire fix. Nothing static sees this
-one either. tsc types the super as a plain `() => MenuItem[]`, `host-compat`
-boots the bundle but never opens a menu, and the throw needs a host whose
-implementation happens to read `this`.
+one: tsc types the super as a plain `() => MenuItem[]`, and the throw needs a
+host whose implementation happens to read `this`. `host-compat` did not see it
+either, because it booted the bundle and never opened a menu — it does now.
 
 jbrowse-components fixed its side the same day (`104bbfc581`, 2026-08-17: the
 getter moves to an earlier `.views()` block so `self` carries it, plus a guard
@@ -87,6 +87,32 @@ that calls the view detached). Keep `.call(self)` anyway — a plugin cannot
 choose which host it runs on, and every nightly zip built before that commit
 still throws. The same bare call sits in **msaview, icn3d, alphagenome,
 alphagenome2 and graphgenomeview**.
+
+**`host-compat` intercepted every request and broke what it was measuring.**
+`page.setRequestInterception(true)` routes the whole page through node, and with
+it on, v4.3.0, latest and main booted the config and then sat on "Select a view
+to launch" with `session.views` empty and not one console message — the same url
+in a plain browser opened both views. Passthrough interception reproduced it, so
+the candidate bundle was never the variable. The interception is now scoped to
+`*jbrowse-plugin-protein3d*` through CDP `Fetch.enable` patterns, which serves
+the local dist (molstar chunk included) and leaves every other request alone.
+
+What made it expensive is that it was never red: no views meant the probe
+excused `viewReady` and printed
+`ok (booted; host did not apply the session spec, view not asserted)` for the
+three hosts that matter, so the pre-publish gate had quietly become "the umd
+evaluated". An unapplied spec is now a failure. A check that cannot tell "fine"
+from "didn't look" reports both as fine.
+
+**`host-compat` right-clicks a gene now.** Booting the bundle only proves it
+evaluates, and the declarative launch enters through `LaunchView-ProteinView` —
+neither touches the context menu. Both earlier outages happened at evaluation;
+the 2026-08-17 one did not, and nothing on the hosted-release side would have
+seen it. The leg asserts the menu carries the host's own rows as well as ours,
+because a plugin that throws while contributing takes the whole menu down and
+asserting only on our row calls that a missing feature. Verified by making the
+contribution throw: `the feature context menu lost the host's own rows: []`,
+exit 1, on v4.3.0 and main.
 
 **The e2e finds a feature by asking the host, not by pixel arithmetic.**
 `openFeatureContextMenu` hovers across the track container until the display

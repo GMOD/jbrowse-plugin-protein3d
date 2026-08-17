@@ -108,6 +108,11 @@ describe('Protein3d Plugin E2E', () => {
     const items = await openFeatureContextMenu(page)
     console.log(`context menu: ${items.join(' | ')}`)
     expect(items).toContain('Launch protein view')
+    // The host's own rows, asserted alongside ours because the plugin extends
+    // the display's contextMenuItems and a throw in there costs the user the
+    // whole menu. Checking only for our row would read that as a missing
+    // feature, and the wipeout is the worse outcome of the two.
+    expect(items).toContain('Open feature details')
     await captureScreenshot(page, screenshot('03-context-menu'))
   }, 60_000)
 

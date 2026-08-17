@@ -2,8 +2,9 @@
 //
 // Probes one plugin bundle against many hosted JBrowse builds and reports, per
 // host version, whether the session boots, the UMD global is defined, the view
-// type registered, and a declarative ProteinView launch reaches its settled
-// state.
+// type registered, a declarative ProteinView launch reaches its settled state,
+// and right-clicking a gene still opens a feature context menu carrying both
+// the plugin's row and the host's own.
 //
 // jbrowse.org/code/jb2/<vX.Y.Z>/ hosts every release, so the matrix needs no
 // `jbrowse create` per version.
@@ -13,9 +14,11 @@
 // gate. That distinction is the whole point: the store uploads `latest/` with
 // no-cache, so a publish is a live change to configs shipped months ago, and
 // "does this build error-page the app" has to be answerable before the tag, not
-// after. The failure mode is a runtime throw while the UMD evaluates -- an
-// import the host does not re-export, or a barrel export that disappeared -- and
-// no amount of type checking or linting in this repo can rule that out.
+// after. The failure modes are a runtime throw while the UMD evaluates -- an
+// import the host does not re-export, or a barrel export that disappeared --
+// and a throw while the plugin contributes to the host's UI, which costs the
+// user the whole feature menu. No amount of type checking or linting in this
+// repo can rule either out.
 //
 // Usage:
 //   node scripts/host-compat-probe.mjs                       # published bundle
@@ -82,9 +85,9 @@ const { values } = parseArgs({
 })
 const versions = values.versions?.split(',') ?? DEFAULT_VERSIONS
 const timeout = Number(values.timeout)
-const candidateBundle = values.bundle
-  ? fs.readFileSync(values.bundle, 'utf8')
-  : undefined
+if (values.bundle && !fs.existsSync(values.bundle)) {
+  throw new Error(`no bundle at ${values.bundle}`)
+}
 
 function url(version, withSpec) {
   const spec = withSpec
@@ -112,42 +115,131 @@ function readSession() {
 // function" on every host -- a probe artifact indistinguishable from a real
 // incompatibility. A gate that cries wolf gets ignored, so it has to serve the
 // whole directory, not one file.
+//
+// SCOPED to the plugin's own assets through CDP `Fetch.enable` patterns, rather
+// than puppeteer's `page.setRequestInterception(true)`, which routes EVERY
+// request through node. That routing is not free: with it on, v4.3.0, latest
+// and main booted the config and then sat on "Select a view to launch" with
+// `session.views` empty and not one console message, while the same url in a
+// plain browser opened both views. Passthrough interception -- serving nothing
+// local, `continue()` on everything -- reproduced it, so the bundle was never
+// the variable. Measured 2026-08-17.
+//
+// The cost was not a red run, which is what makes it worth this comment: no
+// views meant `specApplied` was false, `viewReady` was excused, and the probe
+// printed `ok` for the three hosts anyone cares about while asserting nothing
+// beyond "the umd evaluated". `failure()` now treats an unapplied spec as a
+// failure, so this can never quietly degrade to a smoke test again.
 async function serveCandidateBundle(page) {
   const dir = path.dirname(values.bundle)
   const mainName = path.basename(values.bundle)
-  await page.setRequestInterception(true)
-  page.on('request', req => {
-    const u = req.url()
-    const name = path.basename(new URL(u).pathname)
+  const client = await page.createCDPSession()
+  await client.send('Fetch.enable', {
+    patterns: [
+      { urlPattern: '*jbrowse-plugin-protein3d*', requestStage: 'Request' },
+    ],
+  })
+  client.on('Fetch.requestPaused', ({ requestId, request }) => {
+    const name = path.basename(new URL(request.url).pathname)
     const local = path.join(dir, name)
-    const isPluginAsset =
-      u.includes('/jbrowse-plugin-protein3d/') && name.endsWith('.js')
     // the published umd name and the local one can differ, so the config's
     // bundle request maps to --bundle by position; siblings map by name
-    const body =
-      isPluginAsset && name !== mainName && fs.existsSync(local)
-        ? fs.readFileSync(local, 'utf8')
-        : isPluginAsset
-          ? candidateBundle
-          : undefined
-    if (body === undefined) {
-      req.continue().catch(() => {})
+    const file = !name.endsWith('.js')
+      ? undefined
+      : name !== mainName && fs.existsSync(local)
+        ? local
+        : values.bundle
+    if (file === undefined) {
+      client.send('Fetch.continueRequest', { requestId }).catch(() => {})
     } else {
-      req
-        .respond({
-          status: 200,
-          contentType: 'application/javascript',
-          headers: { 'Access-Control-Allow-Origin': '*' },
-          body,
+      client
+        .send('Fetch.fulfillRequest', {
+          requestId,
+          responseCode: 200,
+          responseHeaders: [
+            { name: 'content-type', value: 'application/javascript' },
+            { name: 'access-control-allow-origin', value: '*' },
+          ],
+          body: fs.readFileSync(file).toString('base64'),
         })
         .catch(() => {})
     }
   })
 }
 
+// Right-click a gene in the connected view and read the menu back. This is the
+// half the probe was missing: booting the umd only proves it evaluates, and the
+// declarative launch above enters through `LaunchView-ProteinView`, so neither
+// touches the context menu the plugin actually contributes to. Both outages
+// this file's header names -- the deep @mui import, the vanished core export --
+// happened at evaluation and so were catchable without it. The one on
+// 2026-08-17 was not: the umd evaluated, the global was defined, the launch
+// settled, and right-clicking a feature produced NO menu at all, because the
+// plugin called the display's super view detached and the host's own
+// `this.isGeneLike` threw inside the ErrorBoundary the menu builds in.
+//
+// The click point comes from the host: hover until the display reports
+// `featureIdUnderMouse`, which is the same hit test the right-click runs. Do not
+// reintroduce a fixed offset -- a 10px-tall glyph moving two pixels then reads
+// as a broken menu.
+async function probeContextMenu(page) {
+  const container = await page.$('[data-testid^="trackRenderingContainer-"]')
+  if (!container) {
+    return { reached: false, why: 'no track container in the connected view' }
+  }
+  const box = await container.evaluate(el => {
+    const { left, right, top, bottom } = el.getBoundingClientRect()
+    return { left, right, top, bottom }
+  })
+  const featureAt = () =>
+    page.evaluate(() => {
+      const w = /** @type {Record<string, any>} */ (window)
+      const session = w.JBrowseSession ?? w.__jbrowse_session
+      const view = session?.views?.find(v => v.type === 'LinearGenomeView')
+      return view?.tracks?.[0]?.displays?.[0]?.featureIdUnderMouse
+    })
+
+  let point
+  for (let y = box.top + 1; y < box.bottom && !point; y += 2) {
+    for (const fraction of [0.5, 0.35, 0.65, 0.2, 0.8]) {
+      const x = box.left + (box.right - box.left) * fraction
+      await page.mouse.move(x, y)
+      if (await featureAt()) {
+        point = { x, y }
+        break
+      }
+    }
+  }
+  if (!point) {
+    return { reached: false, why: 'the host reported no feature in the track' }
+  }
+
+  await page.mouse.click(point.x, point.y, { button: 'right' })
+  const deadline = Date.now() + 5000
+  let labels = []
+  while (Date.now() < deadline && labels.length === 0) {
+    labels = await page.$$eval('[role="menuitem"]', els =>
+      els.map(el => el.textContent ?? ''),
+    )
+    if (labels.length === 0) {
+      await new Promise(r => setTimeout(r, 250))
+    }
+  }
+  await page.keyboard.press('Escape').catch(() => {})
+  return {
+    reached: true,
+    labels,
+    // Ours, and the host's own. A plugin that throws while contributing takes
+    // the whole menu down with it, so asserting only on our row would call that
+    // outage a missing feature.
+    ours: labels.some(l => l.includes('Launch protein view')),
+    hostRows: labels.some(l => l.includes('Open feature details')),
+  }
+}
+
 async function probeOne(browser, version) {
   const page = await browser.newPage()
-  if (candidateBundle) {
+  if (values.bundle) {
     await serveCandidateBundle(page)
   }
   const consoleErrors = []
@@ -211,6 +303,8 @@ async function probeOne(browser, version) {
       return session?.views?.map(v => v.type)
     })
 
+    result.contextMenu = await probeContextMenu(page)
+
     result.bodyText = await page.evaluate(() =>
       document.body.innerText.replace(/\s+/g, ' ').slice(0, 200),
     )
@@ -233,34 +327,47 @@ if (values.floor && floorIndex === -1) {
 }
 
 console.log(
-  candidateBundle
+  values.bundle
     ? `serving candidate build ${values.bundle} in place of the published bundle`
     : 'probing the published bundle',
 )
 
 const retries = Number(values.retries)
 
-// A host that ignored the session spec produced no view, so "did it settle" says
-// nothing about the plugin. jbrowse-web on `main` boots the config, defines the
-// global, logs nothing, and lands on "Select a view to launch" with
-// session.views empty -- gating on viewReady there fails a bundle that is fine.
+// A host that produced no view asserted nothing about the plugin, so this is a
+// failed probe rather than a passing one. It used to be excused -- the theory
+// was that newer hosts ignore the session spec -- and that excuse covered
+// v4.3.0, latest and main for as long as the probe intercepted every request
+// (see serveCandidateBundle). The three hosts that matter most reported `ok`
+// while testing nothing. An excuse a check applies to itself is indistinguishable
+// from a pass, so there isn't one any more.
 function specApplied(r) {
   return (r.sessionViews?.length ?? 0) > 0
 }
 
 // What must hold for a build to be safe to publish, in blast-radius order. The
-// first two are the ones that have actually bitten: a throw while the UMD
+// first is the one that has actually bitten twice: a throw while the UMD
 // evaluates leaves the global undefined and error-pages every config naming it.
-// The third is a real functional assertion but only meaningful where the host
-// applied the spec.
+// The rest are functional, and each covers a failure the one above it does not
+// see -- the context menu most of all, since a plugin that throws while
+// contributing to it takes the host's own rows down with it and never touches
+// the launch path at all.
 function failure(r) {
   return r.appError
     ? `SESSION FAILED: ${r.appError}`
-    : r.globalDefined
-      ? specApplied(r) && !r.viewReady
-        ? 'view did NOT settle'
-        : undefined
-      : 'plugin global missing'
+    : !r.globalDefined
+      ? 'plugin global missing'
+      : !specApplied(r)
+        ? 'no view launched, so nothing was asserted'
+        : !r.viewReady
+          ? 'view did NOT settle'
+          : !r.contextMenu?.reached
+            ? `no context menu: ${r.contextMenu?.why}`
+            : !r.contextMenu.hostRows
+              ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
+              : r.contextMenu.ours
+                ? undefined
+                : 'no "Launch protein view" row in the feature context menu'
 }
 
 async function probeWithRetry(version) {
@@ -278,11 +385,7 @@ for (const [i, version] of versions.entries()) {
   const r = await probeWithRetry(version)
   results.push(r)
   const bad = failure(r)
-  const verdict = bad
-    ? bad
-    : r.viewReady
-      ? 'ok (view reached settled state)'
-      : 'ok (booted; host did not apply the session spec, view not asserted)'
+  const verdict = bad ? bad : 'ok (view settled, feature context menu intact)'
   const gated = floorIndex !== -1 && i >= floorIndex
   console.log(
     `${version.padEnd(10)} ${verdict}${bad && !gated ? ' (below floor, not gated)' : ''}`,
