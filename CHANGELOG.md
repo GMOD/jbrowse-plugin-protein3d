@@ -1,3 +1,20 @@
+## [0.8.4](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.8.3...v0.8.4) (2026-08-17)
+
+### Bug Fixes
+
+- Stop intercepting every request, and assert the menu ([6436d90](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6436d9072260c71b725b417d9d5b09e13160d166))
+
+### Chores
+
+- Ignore a node_modules symlink, not just the directory ([6c6b35b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6c6b35bf53fd84d1a2328499c768c87a93ef7bc1))
+- Give the pinned-host setup a GitHub token ([561670f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/561670fbceedfa38d05d504ea71b1cd9547a2c20))
+- Generate the changelog with git-cliff, release from the tag ([51788b4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/51788b418ea5ca1a575556a87d8bdef5f41393eb))
+
+### Documentation
+
+- Name both hosts the warning can mean ([54e2c48](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/54e2c48d24d552a0cb074d8321cecc029565a2c0))
+- Add a CHANGELOG, backfilled across every tag ([2a2d3d6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2a2d3d6f5941fb03bccb50e0bde928631feaa41a))
+
 ## [0.8.3](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.8.2...v0.8.3) (2026-08-17)
 
 - Call the display's super contextMenuItems with a receiver, so Launch protein
