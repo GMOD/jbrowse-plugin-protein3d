@@ -38,8 +38,11 @@ bower_components
 # Compiled binary addons (https://nodejs.org/api/addons.html)
 build/Release
 
-# Dependency directories
-node_modules/
+# Dependency directories. No trailing slash: that form matches a directory only,
+# so a `node_modules` SYMLINK (a worktree pointing at the primary checkout's
+# install) sails past it into `git add -A`, and merging that branch replaces the
+# real directory with a dangling link.
+node_modules
 jspm_packages/
 
 # Snowpack dependency directory (https://snowpack.dev/)
