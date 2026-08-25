@@ -191,17 +191,22 @@ theorizing, then `rm -rf` and recreate to reproduce. `curl -sI` the zip url to
 date what CI got; it has flipped mid-run. The **released-host legs are the ones
 that mean a user is affected**.
 
-## `pnpm build` does not work locally, and that is expected
+## `pnpm build` fails locally for a day after each `@jbrowse` release
 
-`node_modules/@jbrowse/` only contains `mobx-state-tree`: the npm
-`@jbrowse/core` / `app-core` / `plugin-linear-genome-view` are gated out by
-pnpm's **minimumReleaseAge** policy (see `minimumReleaseAgeExclude` in
-`pnpm-workspace.yaml`; the main setting is global), so
-`pnpm install --frozen-lockfile` says "Already up to date" and never
-materializes them. CI has no such gating, so its build job works.
+pnpm's **minimumReleaseAge** is 1440 minutes globally (see
+`minimumReleaseAgeExclude` in `pnpm-workspace.yaml` for the one pin that opts
+out), so for 24 hours after `@jbrowse/core` / `app-core` /
+`plugin-linear-genome-view` publish, `pnpm install --frozen-lockfile` says
+"Already up to date" and never materializes them — `node_modules/@jbrowse/` then
+holds `mobx-state-tree` alone and `tsc` cannot resolve the imports. CI has no
+such gating, so its build job works throughout.
 
-Don't rely on a local `pnpm build` or full `tsc`. The dev harness builds anyway,
-because vite/esbuild only needs runtime modules and the `@jbrowse/core` import
-in `mappings.ts` is type-only. To build locally you would have to bypass
-minimumReleaseAge or link `@jbrowse/*` to a local `~/src/jbrowse-components`
-workspace.
+**Once the window passes, the local build works and is worth using.** Verified
+2026-08-25 against `@jbrowse/core` 4.3.0: `pnpm build`, `pnpm lint`,
+`pnpm vitest run` and `pnpm host-compat:candidate` all pass from a cold
+`pnpm install --frozen-lockfile`, which is the whole of `preversion`. So don't
+read a red build as expected — check the age of the `@jbrowse` release in the
+lockfile first. If you are inside the window, the dev harness still builds
+(vite/esbuild only needs runtime modules and the `@jbrowse/core` import in
+`mappings.ts` is type-only), and the ways out are bypassing minimumReleaseAge or
+linking `@jbrowse/*` to a local `~/src/jbrowse-components` workspace.
