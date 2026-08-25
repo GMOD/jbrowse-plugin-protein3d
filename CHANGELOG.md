@@ -1,3 +1,9 @@
+## [0.9.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.8.4...v0.9.0) (2026-08-25)
+
+### Features
+
+- **BREAKING** Drop the two AlphaFold a3m MSA launches (#36) ([7b70869](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7b70869604a2cf796d0ef2c2aee0831866318807))
+
 ## [0.8.4](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.8.3...v0.8.4) (2026-08-17)
 
 ### Bug Fixes
