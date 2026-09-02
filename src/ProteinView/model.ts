@@ -11,6 +11,7 @@ import {
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
+import { showLoading } from './showLoading'
 import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
@@ -346,6 +347,13 @@ function stateModelFactory() {
     .views(self => ({
       get primaryStructure() {
         return self.structures[0]
+      },
+      /**
+       * #getter
+       * JBrowse's per-view readiness hook, see showLoading.ts
+       */
+      get showLoading() {
+        return showLoading(self)
       },
       menuItems() {
         return [

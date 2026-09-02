@@ -30,9 +30,7 @@ every field is a plain top-level property that MST restores natively:
     {
       "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
       "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
-      "feature": {
-        /* serialized transcript, see "feature shape" */
-      },
+      "feature": {/* serialized transcript, see "feature shape" */},
       "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
       "initialSelection": { "start": 338, "end": 350 }, // optional pre-lit domain
     },
