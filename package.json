@@ -37,7 +37,8 @@
     "lint": "eslint src --report-unused-disable-directives --max-warnings 0",
     "pretest": "node scripts/ensure-nightly.mjs",
     "prepack": "pnpm build",
-    "preversion": "pnpm format:check && pnpm lint && pnpm build && pnpm host-compat:candidate",
+    "check-ci": "node scripts/require-green-ci.mjs",
+    "preversion": "pnpm check-ci && pnpm format:check && pnpm lint && pnpm build && pnpm host-compat:candidate",
     "version": "node scripts/sync-version.mjs && git-cliff --tag v$npm_package_version --unreleased --prepend CHANGELOG.md && git add src/version.ts CHANGELOG.md",
     "postversion": "git push --follow-tags"
   },
