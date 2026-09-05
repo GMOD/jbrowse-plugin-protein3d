@@ -228,3 +228,37 @@ test('hoverString reads out the aligned transcript residue beside the structure 
   model.setHoveredPosition({ structureSeqPos: 1 })
   expect(model.hoverString).toBe('2, Transcript residue: 4')
 })
+
+test('hoverString uses the author number and drops the transcript residue when they agree', () => {
+  // a 1TUP-like construct: label ids 1..4 for a chain the authors numbered
+  // from 3, which is also where it sits in the transcript
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'PPMKAA',
+        pairwiseAlignment: {
+          consensus: '  ||||',
+          alns: [
+            { id: 'a', seq: 'PPMKAA' },
+            { id: 'b', seq: '--MKAA' },
+          ],
+        },
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'MKAA',
+        seqIds: [1, 2, 3, 4],
+        authSeqIds: [3, 4, 5, 6],
+        chains: ['A'],
+      },
+    ],
+  })
+  model.setHoveredPosition({ structureSeqPos: 1 })
+  expect(model.residueNumber(1)).toBe(4)
+  expect(model.hoverString).toBe('4, Structure: K')
+})

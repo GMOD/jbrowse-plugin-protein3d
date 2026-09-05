@@ -3,15 +3,21 @@ import { expect, test } from 'vitest'
 import {
   type Entity,
   extractEntities,
+  fillAuthSeqIds,
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
+  residueNumber,
   toLabelSeqIds,
 } from './extractStructureSequences'
 
-// A molstar model stub shaped like the fields extractEntities reads.
+// A molstar model stub shaped like the fields extractEntities reads. Observed
+// residues, when given, build the atomic hierarchy: one atom per residue, each
+// residue on the chain of its entity.
 function model(
   entities: { entityId: string; seq: string; seqIds: number[] }[],
+  observed?: { entityId: string; labelSeqId: number; authSeqId: number }[],
 ) {
+  const entityIds = entities.map(e => e.entityId)
   return {
     obj: {
       data: {
@@ -24,10 +30,83 @@ function model(
             },
           })),
         },
+        ...(observed
+          ? {
+              atomicHierarchy: {
+                chains: {
+                  label_entity_id: {
+                    rowCount: entityIds.length,
+                    value: (row: number) => entityIds[row]!,
+                  },
+                  auth_asym_id: {
+                    rowCount: entityIds.length,
+                    value: (row: number) => 'ABCDEFG'[row]!,
+                  },
+                },
+                residues: {
+                  label_seq_id: {
+                    rowCount: observed.length,
+                    value: (row: number) => observed[row]!.labelSeqId,
+                  },
+                  auth_seq_id: {
+                    rowCount: observed.length,
+                    value: (row: number) => observed[row]!.authSeqId,
+                  },
+                },
+                residueAtomSegments: {
+                  offsets: observed.map((_, i) => i),
+                  count: observed.length,
+                },
+                chainAtomSegments: {
+                  index: observed.map(o => entityIds.indexOf(o.entityId)),
+                },
+              },
+            }
+          : {}),
       },
     },
   }
 }
+
+test('extractEntities carries author numbering, filling unobserved residues by offset', () => {
+  // an RCSB-style entity numbered 1..6 whose construct starts at author 94,
+  // with residue 3 unobserved and a renumbering after a disordered loop
+  const [e] = extractEntities(
+    model(
+      [{ entityId: '1', seq: 'SSSVPS', seqIds: [1, 2, 3, 4, 5, 6] }],
+      [
+        { entityId: '1', labelSeqId: 1, authSeqId: 94 },
+        { entityId: '1', labelSeqId: 2, authSeqId: 95 },
+        { entityId: '1', labelSeqId: 4, authSeqId: 97 },
+        { entityId: '1', labelSeqId: 5, authSeqId: 120 },
+        { entityId: '1', labelSeqId: 6, authSeqId: 121 },
+      ],
+    ),
+  )!
+  expect(e.chains).toEqual(['A'])
+  expect(e.authSeqIds).toEqual([94, 95, 96, 97, 120, 121])
+  expect(residueNumber(e, 0)).toBe(94)
+  expect(residueNumber(e, 5)).toBe(121)
+})
+
+test('fillAuthSeqIds: an unobserved N-terminus takes the first observed offset', () => {
+  const observed = new Map([
+    [3, 103],
+    [4, 104],
+  ])
+  expect(fillAuthSeqIds([1, 2, 3, 4], observed)).toEqual([101, 102, 103, 104])
+})
+
+test('fillAuthSeqIds: nothing observed keeps the label numbering', () => {
+  expect(fillAuthSeqIds([1, 2, 3], new Map())).toEqual([1, 2, 3])
+  expect(fillAuthSeqIds([1, 2, 3], undefined)).toEqual([1, 2, 3])
+})
+
+test('residueNumber falls back to label ids, then to position + 1', () => {
+  const e: Entity = { entityId: '1', seq: 'AB', seqIds: [94, 95], chains: [] }
+  expect(residueNumber(e, 1)).toBe(95)
+  expect(residueNumber(undefined, 1)).toBe(2)
+})
 
 const contiguous = (seq: string, from = 1): Entity => ({
   entityId: '1',

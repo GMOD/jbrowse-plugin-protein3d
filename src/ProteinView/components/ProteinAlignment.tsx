@@ -272,7 +272,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           </div>
           <GutterLabel
             label="residue"
-            title="Structure residue number, as the 3D view counts them"
+            title="Residue numbers as the structure's authors assigned them, the numbering papers and the 3D view's hover label use"
             height={ROW_HEIGHT}
           />
           {showProteinTracks ? (

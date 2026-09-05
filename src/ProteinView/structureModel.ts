@@ -52,6 +52,7 @@ import {
 import {
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
+  residueNumber,
   toLabelSeqIds,
 } from './extractStructureSequences'
 
@@ -468,10 +469,19 @@ const Structure = types
       return this.coordinateMapper?.maps.alignmentToStructurePosition
     },
     /**
+     * #method
+     * What the mapped entity's residue at a 0-based position is called: its
+     * author number where the file has one (R248 of p53 in 1TUP, where the
+     * position is 154), so the ruler and hover read like the literature.
+     */
+    residueNumber(pos: number) {
+      return residueNumber(this.mappedEntity, pos)
+    },
+    /**
      * #getter
-     * The hovered residue, read out for the header: structure residue number
-     * first, then the transcript residue it aligns to (the number a paper or
-     * ClinVar calls the variant by), letters, chain and codon locus.
+     * The hovered residue, read out for the header: its author number first,
+     * then the transcript residue it aligns to when that differs (a crystal
+     * whose construct was renumbered from one), letters, chain and codon locus.
      */
     get hoverString() {
       const r = self.hoverPosition
@@ -483,10 +493,11 @@ const Structure = types
       const parts = []
 
       if (r.structureSeqPos !== undefined) {
-        parts.push(`${r.structureSeqPos + 1}`)
+        const residue = this.residueNumber(r.structureSeqPos)
+        parts.push(`${residue}`)
         const transcriptPos =
           this.structureSeqToTranscriptSeqPosition?.[r.structureSeqPos]
-        if (transcriptPos !== undefined) {
+        if (transcriptPos !== undefined && transcriptPos + 1 !== residue) {
           parts.push(`Transcript residue: ${transcriptPos + 1}`)
         }
       }

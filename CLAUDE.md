@@ -55,6 +55,15 @@ truth is molstar's `mol-model-formats/structure/basic/sequence`.
 - `navToLocString("ref:start-end")` parses a **1-based** locString.
 - `g2p_mapper` (`g2p`/`p2g`/`p2gCodon`/`getCodonRanges`) is entirely **0-based
   interbase**, half-open.
+- **Residue numbers the user sees are `auth_seq_id`**, the depositors'
+  numbering, which for an RCSB entry is what papers and UniProt cite (1TUP
+  position 154 reads 248) and what Mol\*'s own hover shows. `Entity.authSeqIds`
+  carries it, `residueNumber()` reads it, and it is display-only: the ruler and
+  the hover line. Every stored or computed coordinate (`initialSelection`,
+  `clickedStructureRange`, the alignment maps) stays a 0-based position, and
+  molstar is addressed by `label_seq_id` through `Entity.seqIds`. Unobserved
+  residues borrow the nearest observed residue's offset, so a disordered loop
+  keeps counting.
 
 ## Host compatibility
 

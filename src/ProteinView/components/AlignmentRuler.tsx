@@ -6,12 +6,14 @@ import { CHAR_WIDTH, ROW_HEIGHT } from '../constants'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-/** Which alignment columns get a tick, and which of those a label, in
- * 1-based structure residue numbers so the ruler reads like the 3D view's
- * hover text. Pure so it can be tested without the DOM. */
+/** Which alignment columns get a tick, and which of those a label, in the
+ * structure's author residue numbering (see residueNumber), so the ruler reads
+ * like the paper and Mol*'s hover label. Pure so it can be tested without the
+ * DOM. */
 export function rulerTicks(
   alignmentToStructure: Record<number, number> | undefined,
   columns: number,
+  residueNumber: (pos: number) => number,
 ) {
   const ticks: { col: number; label?: string }[] = []
   if (!alignmentToStructure) {
@@ -22,7 +24,7 @@ export function rulerTicks(
     if (pos === undefined) {
       continue
     }
-    const residue = pos + 1
+    const residue = residueNumber(pos)
     if (residue % 10 === 0) {
       ticks.push({ col, label: `${residue}` })
     } else if (residue % 5 === 0) {
@@ -39,7 +41,11 @@ const AlignmentRuler = observer(function AlignmentRuler({
   model: JBrowsePluginProteinStructureModel
   columns: number
 }) {
-  const ticks = rulerTicks(model.pairwiseAlignmentToStructurePosition, columns)
+  const ticks = rulerTicks(
+    model.pairwiseAlignmentToStructurePosition,
+    columns,
+    pos => model.residueNumber(pos),
+  )
   return (
     <div
       style={{

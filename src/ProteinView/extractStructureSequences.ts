@@ -27,6 +27,13 @@ export interface Entity {
    * what a user recognises from the PDB entry page, where the entity id is
    * molstar's own bookkeeping */
   chains: string[]
+  /** `auth_seq_id` per position: the numbering the depositors chose, which
+   * for an RCSB entry is the one papers and UniProt cite (1TUP's position 154
+   * is R248) and what Mol*'s own hover label shows. Display only; every
+   * coordinate the plugin computes with stays a 0-based position, and molstar
+   * is addressed through `seqIds`. Absent when the model has no atomic
+   * hierarchy to read it from. See `residueNumber`. */
+  authSeqIds?: number[]
 }
 
 interface Column<T> {
@@ -55,9 +62,77 @@ interface StructureModel {
           label_entity_id: Column<string>
           auth_asym_id: Column<string>
         }
+        residues?: {
+          label_seq_id: Column<number>
+          auth_seq_id: Column<number>
+        }
+        residueAtomSegments?: { offsets: ArrayLike<number>; count: number }
+        chainAtomSegments?: { index: ArrayLike<number> }
       }
     }
   }
+}
+
+/** Observed residues' label_seq_id -> auth_seq_id, per entity. The first chain
+ * carrying an entity wins, so a homodimer's copies agree. */
+function authSeqIdsByEntity(model: StructureModel) {
+  const hierarchy = model.obj?.data.atomicHierarchy
+  const byEntity = new Map<string, Map<number, number>>()
+  const { residues, residueAtomSegments, chainAtomSegments, chains } =
+    hierarchy ?? {}
+  if (!residues || !residueAtomSegments || !chainAtomSegments || !chains) {
+    return undefined
+  }
+  for (let residue = 0; residue < residueAtomSegments.count; residue++) {
+    const atom = residueAtomSegments.offsets[residue]!
+    const entityId = chains.label_entity_id.value(
+      chainAtomSegments.index[atom]!,
+    )
+    let ids = byEntity.get(entityId)
+    if (!ids) {
+      ids = new Map()
+      byEntity.set(entityId, ids)
+    }
+    const labelSeqId = residues.label_seq_id.value(residue)
+    if (!ids.has(labelSeqId)) {
+      ids.set(labelSeqId, residues.auth_seq_id.value(residue))
+    }
+  }
+  return byEntity
+}
+
+/**
+ * Author numbering for every SEQRES position, observed or not. A residue with
+ * no atoms has no auth_seq_id of its own, so it takes the offset of the nearest
+ * observed residue before it (after it, at an unobserved N-terminus): a
+ * disordered loop keeps counting the way the paper does. With nothing observed
+ * the label numbering stands.
+ */
+export function fillAuthSeqIds(
+  seqIds: number[],
+  observed: Map<number, number> | undefined,
+) {
+  const out: number[] = []
+  let offset: number | undefined
+  const firstObserved = seqIds.find(id => observed?.has(id))
+  if (firstObserved !== undefined) {
+    offset = observed!.get(firstObserved)! - firstObserved
+  }
+  for (const id of seqIds) {
+    const auth = observed?.get(id)
+    if (auth !== undefined) {
+      offset = auth - id
+    }
+    out.push(id + (offset ?? 0))
+  }
+  return out
+}
+
+/** The number a residue is called by: author numbering when the file carries
+ * it, else molstar's label_seq_id, which is the author numbering already for a
+ * SEQRES-less PDB and 1..N for everything else. */
+export function residueNumber(entity: Entity | undefined, pos: number) {
+  return entity?.authSeqIds?.[pos] ?? entity?.seqIds[pos] ?? pos + 1
 }
 
 function chainsByEntity(model: StructureModel) {
@@ -79,12 +154,19 @@ function chainsByEntity(model: StructureModel) {
 
 export function extractEntities(model: StructureModel): Entity[] | undefined {
   const chains = chainsByEntity(model)
-  return model.obj?.data.sequence.sequences.map(s => ({
-    entityId: s.entityId,
-    seq: Array.from(s.sequence.label.toArray()).join(''),
-    seqIds: Array.from(s.sequence.seqId.toArray()),
-    chains: chains.get(s.entityId) ?? [],
-  }))
+  const authIds = authSeqIdsByEntity(model)
+  return model.obj?.data.sequence.sequences.map(s => {
+    const seqIds = Array.from(s.sequence.seqId.toArray())
+    return {
+      entityId: s.entityId,
+      seq: Array.from(s.sequence.label.toArray()).join(''),
+      seqIds,
+      chains: chains.get(s.entityId) ?? [],
+      ...(authIds
+        ? { authSeqIds: fillAuthSeqIds(seqIds, authIds.get(s.entityId)) }
+        : {}),
+    }
+  })
 }
 
 /** A user-facing name for an entity: its chains when known, else its id. */
