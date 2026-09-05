@@ -5,6 +5,7 @@ import {
   getPdbIdFromUrl,
   getPdbStructureUrl,
   resolveStructureUrl,
+  structureDisplayLabel,
 } from './structureUrls'
 
 test('recognizes pdb archive urls', () => {
@@ -75,4 +76,18 @@ test('resolveStructureUrl is idempotent over an already-resolved spec', () => {
 
 test('resolveStructureUrl: nothing to go on yields undefined', () => {
   expect(resolveStructureUrl({})).toBeUndefined()
+})
+
+test('structureDisplayLabel names a structure by its id, else its file', () => {
+  expect(structureDisplayLabel({ url: getPdbStructureUrl('1TUP') })).toBe(
+    '1TUP',
+  )
+  expect(
+    structureDisplayLabel({ url: getAlphaFoldStructureUrl('P04637') }),
+  ).toBe('AlphaFold P04637')
+  expect(
+    structureDisplayLabel({ url: 'https://e.com/models/ranked_0.pdb?x=1' }),
+  ).toBe('ranked_0.pdb')
+  expect(structureDisplayLabel({ data: 'ATOM...' })).toBe('Uploaded structure')
+  expect(structureDisplayLabel({})).toBe('')
 })

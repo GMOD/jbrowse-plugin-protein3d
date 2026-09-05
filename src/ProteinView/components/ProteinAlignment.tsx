@@ -110,6 +110,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
     showHighlight,
     showProteinTracks,
     url,
+    label,
     confidenceCells,
     hydrophobicityCells,
   } = model
@@ -203,16 +204,22 @@ const ProteinAlignment = observer(function ProteinAlignment({
   const con = pairwiseAlignment.consensus
 
   return (
-    <div>
+    <div data-testid="protein-alignment-panel" data-structure={label}>
       <div style={{ float: 'right', display: 'flex', alignItems: 'center' }}>
         <ChainSelect model={model} />
         <ProteinAlignmentHelpButton model={model} />
       </div>
 
-      <Typography>
-        Alignment of the protein structure file&apos;s sequence with the
-        selected transcript&apos;s sequence.{' '}
-        {showHighlight ? 'Green is the aligned portion' : null}
+      {/* Names the structure this panel aligns, since several panels stack
+          over one canvas and nothing else tells 1TUP's from 1YCR's. What the
+          rows mean is in the help dialog. */}
+      <Typography variant="subtitle2">
+        {label}
+        {showHighlight ? (
+          <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+            green is the aligned portion
+          </Typography>
+        ) : null}
       </Typography>
       {showProteinTracks ? (
         <UniProtProvenance uniprotId={uniprotId} uniprotName={uniprotName} />

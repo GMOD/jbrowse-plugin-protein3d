@@ -397,7 +397,7 @@ function stateModelFactory() {
                 },
               },
               {
-                label: 'Show all protein feature tracks',
+                label: 'Restore hidden feature tracks',
                 onClick: () => {
                   for (const structure of self.structures) {
                     structure.showAllFeatureTypes()

@@ -197,3 +197,34 @@ test('a persisted mappedEntityId survives a reload alongside its alignment', () 
   })
   expect(model.mappedEntity?.entityId).toBe('2')
 })
+
+test('label names the structure by id so stacked panels can be told apart', () => {
+  const parent = TestParent.create({
+    structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],
+  })
+  expect(parent.structures.map(s => s.label)).toEqual([
+    '1TUP',
+    'AlphaFold P04637',
+    'Uploaded structure',
+  ])
+})
+
+test('hoverString reads out the aligned transcript residue beside the structure residue', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'PPMKAA',
+        pairwiseAlignment: {
+          consensus: '  ||||',
+          alns: [
+            { id: 'a', seq: 'PPMKAA' },
+            { id: 'b', seq: '--MKAA' },
+          ],
+        },
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setHoveredPosition({ structureSeqPos: 1 })
+  expect(model.hoverString).toBe('2, Transcript residue: 4')
+})

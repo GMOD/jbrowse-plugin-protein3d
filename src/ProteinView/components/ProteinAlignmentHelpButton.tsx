@@ -6,8 +6,6 @@ import { IconButton } from '@mui/material'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-// icons
-
 const ProteinAlignmentHelpDialog = lazy(
   () => import('./ProteinAlignmentHelpDialog'),
 )
@@ -19,7 +17,6 @@ export default function ProteinAlignmentHelpButton({
 }) {
   return (
     <IconButton
-      style={{ float: 'right' }}
       onClick={() => {
         getSession(model).queueDialog(handleClose => [
           ProteinAlignmentHelpDialog,

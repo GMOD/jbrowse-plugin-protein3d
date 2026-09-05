@@ -41,6 +41,7 @@ import { genomeHoverToTranscriptPos } from './util'
 import {
   getUniprotIdFromAlphaFoldTarget,
   resolveStructureUrl,
+  structureDisplayLabel,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import {
@@ -362,6 +363,16 @@ const Structure = types
     },
     /**
      * #getter
+     * The structure's name in the UI: PDB id, AlphaFold accession, else file
+     * name. Heads its alignment panel and prefixes its hover readout, so with
+     * several structures open a reader can tell which panel and which residue
+     * belongs to which structure.
+     */
+    get label() {
+      return structureDisplayLabel(self)
+    },
+    /**
+     * #getter
      * Extracts UniProt ID from AlphaFold URL if available
      */
     get uniprotId() {
@@ -458,6 +469,9 @@ const Structure = types
     },
     /**
      * #getter
+     * The hovered residue, read out for the header: structure residue number
+     * first, then the transcript residue it aligns to (the number a paper or
+     * ClinVar calls the variant by), letters, chain and codon locus.
      */
     get hoverString() {
       const r = self.hoverPosition
@@ -470,6 +484,11 @@ const Structure = types
 
       if (r.structureSeqPos !== undefined) {
         parts.push(`${r.structureSeqPos + 1}`)
+        const transcriptPos =
+          this.structureSeqToTranscriptSeqPosition?.[r.structureSeqPos]
+        if (transcriptPos !== undefined) {
+          parts.push(`Transcript residue: ${transcriptPos + 1}`)
+        }
       }
 
       if (structureLetter) {

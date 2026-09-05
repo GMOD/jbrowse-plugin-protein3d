@@ -137,3 +137,29 @@ export function getConfidenceUrlFromTarget(target: string) {
   }
   return undefined
 }
+
+/**
+ * What a structure is called in the UI: its PDB id, its AlphaFold accession,
+ * else the file's name. Shared by the view title, the alignment panel heading
+ * and the hover readout, so one structure reads the same everywhere.
+ */
+export function structureDisplayLabel({
+  url,
+  data,
+}: {
+  url?: string
+  data?: string
+}) {
+  if (url === undefined) {
+    return data === undefined ? '' : 'Uploaded structure'
+  }
+  const pdbId = getPdbIdFromUrl(url)
+  if (pdbId) {
+    return pdbId.toUpperCase()
+  }
+  const uniprotId = getUniprotIdFromAlphaFoldTarget(url)
+  if (uniprotId) {
+    return `AlphaFold ${uniprotId}`
+  }
+  return url.split('/').pop()?.split('?')[0] || url
+}

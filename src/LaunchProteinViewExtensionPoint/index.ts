@@ -4,7 +4,10 @@ import {
   resolveShortLaunch,
 } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
-import { resolveStructureUrl } from '../LaunchProteinView/utils/structureUrls'
+import {
+  resolveStructureUrl,
+  structureDisplayLabel,
+} from '../LaunchProteinView/utils/structureUrls'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
@@ -25,12 +28,6 @@ interface LaunchStructure {
   pdbId?: string
   initialSelection?: { start: number; end: number }
   mappedEntityId?: string
-}
-
-// What a structure is called in the view's title: the id it was asked for by,
-// else the file's name.
-function structureLabel(s: LaunchStructure) {
-  return s.uniprotId ?? s.pdbId ?? s.url?.split('/').pop()?.split('?')[0] ?? ''
 }
 
 export default function LaunchProteinViewExtensionPointF(
@@ -179,7 +176,11 @@ export default function LaunchProteinViewExtensionPointF(
               : coerceAlignmentAlgorithm(alignmentAlgorithm),
           displayName:
             displayName ??
-            ['Protein view', transcriptName, ...requested.map(structureLabel)]
+            [
+              'Protein view',
+              transcriptName,
+              ...structures.map(structureDisplayLabel),
+            ]
               .filter(s => !!s)
               .join(' - '),
           height,

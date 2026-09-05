@@ -13,12 +13,16 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
   model: JBrowsePluginProteinViewModel
 }) {
   const { structures } = model
+  // With several structures open a hover lights the same residue on each, so
+  // every readout is prefixed with the structure it describes.
   const hoverText = structures
-    .map(
-      (structure: JBrowsePluginProteinStructureModel) => structure.hoverString,
+    .filter((s: JBrowsePluginProteinStructureModel) => !!s.hoverString)
+    .map((s: JBrowsePluginProteinStructureModel) =>
+      structures.length > 1 && s.label
+        ? `${s.label}: ${s.hoverString}`
+        : s.hoverString,
     )
-    .filter(Boolean)
-    .join(' ')
+    .join(' | ')
   return (
     <div
       style={{
