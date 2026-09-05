@@ -121,6 +121,7 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 | `url`                            | Yes\*    | Structure file URL (PDB, mmCIF, etc.)                                             |
 | `uniprotId`                      | Yes\*    | UniProt accession; derives the AlphaFold `url` (short form, see below)            |
 | `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url` (short form, see below)                    |
+| `structures`                     | Yes\*    | Several structures in one view, each `{ url \| uniprotId \| pdbId, … }`           |
 | `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form) |
 | `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                    |
 | `feature`                        | No       | Genomic feature for cross-linking                                                 |
@@ -249,6 +250,18 @@ In both forms, `connectedView` accepts the same `init` keys as a
 `LinearGenomeView` spec (`loc`, `assembly`, `tracks`); `tracks` is a list of
 trackIds (or `{ trackId, displaySnapshot }` objects) that must exist in the
 target config.
+
+#### Several structures in one launch
+
+`structures` opens one view holding several structures, superposed with TM-align
+and each mapped to the same transcript, which is what the view's **Add
+structure...** dialog builds by hand. Each entry takes `url`, `uniprotId` or
+`pdbId`, and may carry its own `initialSelection` and `mappedEntityId`. The
+top-level `url`/`uniprotId`/`pdbId` is the one-structure shorthand for it.
+
+```
+https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
+```
 
 #### feature shape
 

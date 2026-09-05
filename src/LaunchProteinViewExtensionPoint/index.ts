@@ -1,5 +1,6 @@
 import {
   type ConnectedViewSpec,
+  type ResolvedShortLaunch,
   resolveShortLaunch,
 } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
@@ -7,11 +8,24 @@ import { resolveStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
+import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type {
   AbstractSessionModel,
   SimpleFeatureSerialized,
 } from '@jbrowse/core/util'
+
+// One structure of a launch: where it comes from, plus the per-structure
+// settings a spec may carry. The transcript mapping is shared across all of
+// them and comes from the launch's own transcriptId/feature/sequence.
+interface LaunchStructure {
+  url?: string
+  data?: string
+  uniprotId?: string
+  pdbId?: string
+  initialSelection?: { start: number; end: number }
+  mappedEntityId?: string
+}
 
 export default function LaunchProteinViewExtensionPointF(
   pluginManager: PluginManager,
@@ -39,6 +53,10 @@ export default function LaunchProteinViewExtensionPointF(
       uniprotId?: string
       // RCSB entry id, the experimental-structure counterpart of uniprotId
       pdbId?: string
+      // several structures in one view, each mapped to the same transcript
+      // and superposed; the top-level url/uniprotId/pdbId is the one-structure
+      // shorthand for this
+      structures?: LaunchStructure[]
       transcriptId?: string
       userProvidedTranscriptSequence?: string
       feature?: SimpleFeatureSerialized
@@ -78,21 +96,31 @@ export default function LaunchProteinViewExtensionPointF(
         sideBySide,
         initialSelection,
       } = args
-      // Short-URL form: `uniprotId` (AlphaFold) or `pdbId` (RCSB) plus
-      // `transcriptId` + `connectedView`, with no explicit
-      // `url`/`feature`/sequence. resolveStructureUrl turns the shorthand into
-      // a structure URL — the same precedence the Structure model applies to a
-      // snapshot — and resolveShortLaunch derives the transcript feature and
-      // the translated sequence from the connected track. Failures surface via
-      // notify and abort — we never leave a half-wired view (see
-      // agent-docs/urlparam_plan.md).
-      const shorthandUrl = resolveStructureUrl({ url, uniprotId, pdbId })
-      let resolved
-      if (!url && shorthandUrl) {
+      const requested: LaunchStructure[] = args.structures?.length
+        ? args.structures
+        : [{ url, uniprotId, pdbId, initialSelection }]
+      const urls = requested.map(s => resolveStructureUrl(s))
+      const primary = requested[0]!
+      const primaryUrl = urls[0]
+      if (!primaryUrl && primary.data === undefined) {
+        const message =
+          'No url, uniprotId or pdbId provided when launching protein view'
+        console.error(message)
+        session.notify(`Could not launch protein view: ${message}`, 'error')
+        return args
+      }
+
+      // Short form: a `transcriptId` plus a `connectedView` in place of an
+      // explicit `feature` + sequence. resolveShortLaunch derives both from the
+      // connected track, and the same mapping then applies to every structure
+      // of the launch. Failures surface via notify and abort — we never leave a
+      // half-wired view (see agent-docs/urlparam_plan.md).
+      let resolved: ResolvedShortLaunch | undefined
+      if (!userProvidedTranscriptSequence && transcriptId && primaryUrl) {
         try {
           resolved = await resolveShortLaunch({
             session,
-            structureUrl: shorthandUrl,
+            structureUrl: primaryUrl,
             transcriptId,
             connectedView,
           })
@@ -101,15 +129,6 @@ export default function LaunchProteinViewExtensionPointF(
           session.notify(`Could not launch protein view: ${e}`, 'error')
           return args
         }
-      }
-
-      const finalUrl = url ?? resolved?.url
-      if (!finalUrl) {
-        const message =
-          'No url, uniprotId or pdbId provided when launching protein view'
-        console.error(message)
-        session.notify(`Could not launch protein view: ${message}`, 'error')
-        return args
       }
 
       // A session spec launches each view independently with an auto-generated
@@ -129,6 +148,18 @@ export default function LaunchProteinViewExtensionPointF(
             }).id
           : undefined)
 
+      const structures: ProteinStructureSpec[] = requested.map((s, i) => ({
+        url: urls[i],
+        data: s.data,
+        initialSelection: s.initialSelection,
+        mappedEntityId: s.mappedEntityId,
+        userProvidedTranscriptSequence:
+          resolved?.userProvidedTranscriptSequence ??
+          userProvidedTranscriptSequence,
+        feature: resolved?.feature ?? feature,
+        connectedViewId: resolvedConnectedViewId,
+      }))
+
       const proteinView = session.addView(
         'ProteinView',
         proteinViewSnapshot({
@@ -142,17 +173,7 @@ export default function LaunchProteinViewExtensionPointF(
           showControls,
           showHighlight,
           zoomToBaseLevel,
-          structures: [
-            {
-              url: finalUrl,
-              userProvidedTranscriptSequence:
-                resolved?.userProvidedTranscriptSequence ??
-                userProvidedTranscriptSequence,
-              feature: resolved?.feature ?? feature,
-              connectedViewId: resolvedConnectedViewId,
-              initialSelection,
-            },
-          ],
+          structures,
         }),
       )
 
