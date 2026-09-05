@@ -19,19 +19,45 @@ export function interactionMatchesMappedEntity(
   return mappedEntityId === undefined || entityId === mappedEntityId
 }
 
-export interface EntitySelection {
-  /** index into the entity-sequence array that best matches the transcript */
+export interface EntitySelection extends ScoredAlignment {
+  /** index into the candidate array of the entity that is the transcript's */
   index: number
-  /** alignment of the transcript against the chosen entity (stop codons
-   * stripped on both sides, matching the rest of the mapping pipeline) */
-  alignment: PairwiseAlignment
-  /** identical aligned residues, the score used to pick the entity */
-  matches: number
 }
 
 export interface ScoredAlignment {
+  /** alignment of the transcript against the entity (stop codons stripped on
+   * both sides, matching the rest of the mapping pipeline) */
   alignment: PairwiseAlignment
+  /** identical aligned residues */
   matches: number
+  /** the share of the entity's residues the transcript reproduces, the score
+   * that picks the entity; see `explainedFraction` */
+  explained: number
+}
+
+/** A candidate entity: its sequence, and whether it is DNA/RNA, which is never
+ * the transcript's product however its letters happen to align. */
+export interface EntityCandidate {
+  seq: string
+  nucleicAcid?: boolean
+}
+
+/**
+ * How much of an entity the transcript accounts for: identical residues over
+ * the entity's length. A raw match count favours whatever chain is longest,
+ * and a complex's partner usually is: on 1H26 the 11-residue p53 peptide
+ * matches 11 while CDK2 accrues 58 scattered identities, and on 4ZZJ SIRT1
+ * beats the 7-residue p53 peptide 63 to 6. The Smith-Waterman score is no
+ * better there (56 vs 58). Dividing by the entity's length asks the question
+ * the picker actually has, which chain *is* this gene's product: the peptide
+ * scores 0.69 and 0.50, the partners 0.19 and 0.17, and across a ribosome's
+ * 55 chains no decoy passes 0.29. The pseudocount keeps a two-residue
+ * fragment that happens to match (a tRNA end in 7K00) from scoring 1.0.
+ */
+const EXPLAINED_PSEUDOCOUNT = 5
+
+export function explainedFraction(matches: number, entityLength: number) {
+  return matches / (entityLength + EXPLAINED_PSEUDOCOUNT)
 }
 
 function countMatches(pa: PairwiseAlignment) {
@@ -74,10 +100,12 @@ export function alignTranscriptToEntity(
         ],
       },
       matches: t.length,
+      explained: explainedFraction(t.length, s.length),
     }
   }
   const alignment = runLocalAlignment(t, s, algorithm)
-  return { alignment, matches: countMatches(alignment) }
+  const matches = countMatches(alignment)
+  return { alignment, matches, explained: explainedFraction(matches, s.length) }
 }
 
 /**
@@ -87,25 +115,36 @@ export function alignTranscriptToEntity(
  * heteromeric / protein-DNA / processed-peptide structure where the protein of
  * interest is some other chain. Selecting by alignment makes the structure self-
  * describe which entity is the gene's protein: an exact sequence match wins
- * outright, otherwise the entity with the most identical aligned residues.
+ * outright, otherwise the entity the transcript explains the largest share of
+ * (see `explainedFraction`). Nucleic-acid entities are never candidates.
  *
  * Returns `undefined` only when there is nothing to map (no transcript or no
- * entities) — never a silent fallback to the wrong entity.
+ * protein entities) — never a silent fallback to the wrong entity.
  */
 export function chooseMappedEntity(
   transcript: string,
-  entitySeqs: string[],
+  entities: readonly (string | EntityCandidate)[],
   algorithm: AlignmentAlgorithm,
 ): EntitySelection | undefined {
   const t = stripStopCodon(transcript)
-  if (!t || entitySeqs.length === 0) {
+  if (!t) {
     return undefined
   }
 
-  const stripped = entitySeqs.map(stripStopCodon)
-  const exactIndex = stripped.findIndex(s => s.length > 0 && s === t)
+  const candidates = entities.map(e =>
+    typeof e === 'string'
+      ? { seq: stripStopCodon(e) }
+      : { ...e, seq: stripStopCodon(e.seq) },
+  )
+  const exactIndex = candidates.findIndex(
+    c => !c.nucleicAcid && c.seq.length > 0 && c.seq === t,
+  )
   if (exactIndex !== -1) {
-    const exact = alignTranscriptToEntity(t, stripped[exactIndex]!, algorithm)!
+    const exact = alignTranscriptToEntity(
+      t,
+      candidates[exactIndex]!.seq,
+      algorithm,
+    )!
     return { index: exactIndex, ...exact }
   }
 
@@ -114,13 +153,16 @@ export function chooseMappedEntity(
   // sequence, so align each distinct one once and reuse the result.
   const bySeq = new Map<string, ScoredAlignment | undefined>()
   let best: EntitySelection | undefined
-  for (let index = 0; index < stripped.length; index++) {
-    const s = stripped[index]!
-    if (!bySeq.has(s)) {
-      bySeq.set(s, alignTranscriptToEntity(t, s, algorithm))
+  for (let index = 0; index < candidates.length; index++) {
+    const { seq, nucleicAcid } = candidates[index]!
+    if (nucleicAcid) {
+      continue
     }
-    const scored = bySeq.get(s)
-    if (scored && (!best || scored.matches > best.matches)) {
+    if (!bySeq.has(seq)) {
+      bySeq.set(seq, alignTranscriptToEntity(t, seq, algorithm))
+    }
+    const scored = bySeq.get(seq)
+    if (scored && (!best || scored.explained > best.explained)) {
       best = { index, ...scored }
     }
   }

@@ -44,6 +44,31 @@ modeling-tool output usually has no SEQRES) and through `caCoordsToPdb`, which
 emits no SEQRES and survives only because it happens to number from 1. Source of
 truth is molstar's `mol-model-formats/structure/basic/sequence`.
 
+## Which chain is the gene's: score by share of the chain, not by matches
+
+`chooseMappedEntity` ranks a structure's protein chains by the fraction of the
+chain the transcript reproduces (`explainedFraction`), not by how many residues
+match. Measured 2026-09-05 with the plugin's own aligner on real entries: the
+commonest shape of a p53 PDB entry is a short p53 peptide bound to a large
+partner, and a raw match count picks the partner every time the partner is long
+enough. 1H26 gives CDK2 58 scattered identities against the 11-residue peptide's
+11; 4ZZJ gives SIRT1 63 against 6. The Smith-Waterman score does not separate
+them either (56 vs 58). Matches over chain length puts the peptides at 0.69 and
+0.50, the partners at 0.19 and 0.17, and the best decoy across a ribosome's 55
+chains at 0.29. Those entries are test fixtures; keep them.
+
+Nucleic-acid chains are excluded by molstar's entity subtype rather than left to
+score low, because A, C, G, T and U are amino-acid letters too. They stay in the
+**Mapped chain** picker, labelled in nt, for a user who wants them.
+
+Two things sequence scoring cannot do, and the picker is the way out of both:
+tell paralogs apart in a complex, and keep the halves of a chimera apart. On
+2RH1, the β2-adrenergic receptor fused to T4 lysozyme, the local alignment
+bridges the fusion but scatters about thirty ICL3 residues onto lysozyme, so
+those codons hover to a bacterial protein. SIFTS knows the fusion boundary (it
+maps each segment to its own accession) and is the right fix for that; today the
+plugin only reads SIFTS after the chain is chosen, for feature tracks.
+
 ## Coordinate conventions, the off-by-one source here
 
 - `pxToBp(...).coord` (hover) is **1-based** display; subtract 1 for a 0-based

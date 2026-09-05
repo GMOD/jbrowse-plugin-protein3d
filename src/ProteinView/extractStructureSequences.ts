@@ -27,6 +27,10 @@ export interface Entity {
    * what a user recognises from the PDB entry page, where the entity id is
    * molstar's own bookkeeping */
   chains: string[]
+  /** DNA, RNA or a hybrid, by molstar's entity subtype. Its one-letter
+   * sequence spells amino acids too (A, C, G, T, U), so it has to be kept
+   * out of the transcript alignment rather than merely scoring low. */
+  nucleicAcid?: boolean
   /** `auth_seq_id` per position: the numbering the depositors chose, which
    * for an RCSB entry is the one papers and UniProt cite (1TUP's position 154
    * is R248) and what Mol*'s own hover label shows. Display only; every
@@ -44,6 +48,10 @@ interface Column<T> {
 interface StructureModel {
   obj?: {
     data: {
+      entities?: {
+        subtype: Column<string>
+        getEntityIndex(id: string): number
+      }
       sequence: {
         sequences: readonly {
           entityId: string
@@ -179,6 +187,25 @@ function chainsByEntity(model: StructureModel) {
   return byEntity
 }
 
+// mmCIF entity_poly.type values for nucleic-acid polymers. Molstar derives the
+// subtype from residue components when a file (PDB format) carries no
+// entity_poly, so the flag is available for either format.
+const NUCLEIC_ACID_SUBTYPES = new Set([
+  'polydeoxyribonucleotide',
+  'polyribonucleotide',
+  'polydeoxyribonucleotide/polyribonucleotide hybrid',
+  'peptide nucleic acid',
+])
+
+function isNucleicAcid(model: StructureModel, entityId: string) {
+  const entities = model.obj?.data.entities
+  if (!entities) {
+    return false
+  }
+  const index = entities.getEntityIndex(entityId)
+  return index >= 0 && NUCLEIC_ACID_SUBTYPES.has(entities.subtype.value(index))
+}
+
 export function extractEntities(model: StructureModel): Entity[] | undefined {
   const chains = chainsByEntity(model)
   const authIds = authSeqIdsByEntity(model)
@@ -189,6 +216,7 @@ export function extractEntities(model: StructureModel): Entity[] | undefined {
       seq: Array.from(s.sequence.label.toArray()).join(''),
       seqIds,
       chains: chains.get(s.entityId) ?? [],
+      ...(isNucleicAcid(model, s.entityId) ? { nucleicAcid: true } : {}),
       ...(authIds
         ? { authSeqIds: fillAuthSeqIds(seqIds, authIds.get(s.entityId)) }
         : {}),
@@ -202,7 +230,7 @@ export function entityLabel(entity: Entity) {
     entity.chains.length > 0
       ? `Chain ${entity.chains.join('/')}`
       : `Entity ${entity.entityId}`
-  return `${chains} (${entity.seq.length} aa)`
+  return `${chains} (${entity.seq.length} ${entity.nucleicAcid ? 'nt' : 'aa'})`
 }
 
 /** Back-compat helper for callers that only need the sequence strings (e.g. the

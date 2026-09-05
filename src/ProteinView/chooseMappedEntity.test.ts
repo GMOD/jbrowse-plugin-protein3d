@@ -1,15 +1,23 @@
 import { expect, test } from 'vitest'
 
 import {
+  CCNA2_1H26_ENTITY1,
+  CDK2_1H26_ENTITY0,
   DNA_1TUP_ENTITY0,
   HBA_ALPHA_4HHB_ENTITY0,
   HBA_TRANSCRIPT_P69905,
   HBB_BETA_4HHB_ENTITY1,
   HBB_TRANSCRIPT_P68871,
   P53_1TUP_ENTITY2,
+  P53_PEPTIDE_1H26_ENTITY2,
+  P53_PEPTIDE_4ZZJ_ENTITY1,
   P53_TRANSCRIPT_P04637,
+  RPS11_7K00_CHAIN_K,
+  SIRT1_4ZZJ_ENTITY0,
+  TRNA_FRAGMENT_7K00_CHAIN_5,
 } from './__fixtures__/structureFixtures'
 import {
+  alignTranscriptToEntity,
   chooseMappedEntity,
   interactionMatchesMappedEntity,
 } from './chooseMappedEntity'
@@ -46,6 +54,61 @@ test('1TUP: p53 maps to the protein entity[2], not the DNA strands at [0]/[1]', 
   const sel = chooseMappedEntity(
     P53_TRANSCRIPT_P04637,
     entities,
+    'smith_waterman',
+  )
+  expect(sel?.index).toBe(2)
+})
+
+// A peptide-plus-partner entry is the commonest shape a p53 PDB entry takes,
+// and the partner is always the longer chain. Counting identical residues
+// picked the partner on both of these (CDK2 58 to 11, SIRT1 63 to 6); the
+// share of the entity the transcript explains picks the peptide.
+test('1H26: the 11-residue p53 peptide wins over CDK2 and cyclin A2', () => {
+  const sel = chooseMappedEntity(
+    P53_TRANSCRIPT_P04637,
+    [CDK2_1H26_ENTITY0, CCNA2_1H26_ENTITY1, P53_PEPTIDE_1H26_ENTITY2],
+    'smith_waterman',
+  )
+  expect(sel?.index).toBe(2)
+  const cdk2 = alignTranscriptToEntity(
+    P53_TRANSCRIPT_P04637,
+    CDK2_1H26_ENTITY0,
+    'smith_waterman',
+  )!
+  expect(cdk2.matches).toBeGreaterThan(sel!.matches)
+})
+
+test('4ZZJ: the 7-residue acetylated p53 peptide wins over SIRT1', () => {
+  const sel = chooseMappedEntity(
+    P53_TRANSCRIPT_P04637,
+    [SIRT1_4ZZJ_ENTITY0, P53_PEPTIDE_4ZZJ_ENTITY1],
+    'smith_waterman',
+  )
+  expect(sel?.index).toBe(1)
+})
+
+test('a decoy chain and a two-residue fragment both score below a real one', () => {
+  const decoys = [RPS11_7K00_CHAIN_K, TRNA_FRAGMENT_7K00_CHAIN_5]
+  for (const real of [P53_PEPTIDE_4ZZJ_ENTITY1, P53_1TUP_ENTITY2]) {
+    const sel = chooseMappedEntity(
+      P53_TRANSCRIPT_P04637,
+      [...decoys, real],
+      'smith_waterman',
+    )
+    expect(sel?.index).toBe(2)
+  }
+})
+
+// A DNA strand's letters are amino-acid letters too, so it aligns like a
+// protein and must be excluded by type rather than trusted to score low.
+test('a nucleic-acid entity is never chosen, even when it is the only match', () => {
+  const dna = { seq: DNA_1TUP_ENTITY0, nucleicAcid: true }
+  expect(
+    chooseMappedEntity(DNA_1TUP_ENTITY0, [dna], 'smith_waterman'),
+  ).toBeUndefined()
+  const sel = chooseMappedEntity(
+    P53_TRANSCRIPT_P04637,
+    [dna, dna, { seq: P53_1TUP_ENTITY2 }],
     'smith_waterman',
   )
   expect(sel?.index).toBe(2)

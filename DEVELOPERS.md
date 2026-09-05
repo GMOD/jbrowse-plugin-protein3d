@@ -62,8 +62,10 @@ This snapshot shorthand only sets the structure; it does **not** build the
 genome↔protein connection (feature/sequence) — for that use the extension
 point's `uniprotId` + `transcriptId` short form below.
 
-A structure with several polymer chains maps the transcript to the chain whose
-sequence aligns best. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …)
+A structure with several polymer chains maps the transcript to the protein chain
+it explains the largest share of (identical residues over the chain's length, so
+a short peptide beats the long partner it is bound to); DNA and RNA chains are
+never candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …)
 overrides that choice in a snapshot and is what the alignment panel's **Mapped
 chain** picker writes, so a saved session restores the chain the user chose
 along with the alignment computed against it.

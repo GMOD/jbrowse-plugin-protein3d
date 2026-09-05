@@ -7,9 +7,10 @@ import { entityLabel } from '../extractStructureSequences'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-// Which chain the transcript maps to. The structure picks one by alignment
-// score, which cannot separate paralogs in a complex or the halves of a
-// chimeric construct, so the choice is exposed for the cases it gets wrong.
+// Which chain the transcript maps to. The structure picks the protein chain
+// the transcript explains most of, which cannot separate paralogs in a complex
+// or the halves of a chimeric construct, so the choice is exposed for the
+// cases it gets wrong.
 const ChainSelect = observer(function ChainSelect({
   model,
 }: {

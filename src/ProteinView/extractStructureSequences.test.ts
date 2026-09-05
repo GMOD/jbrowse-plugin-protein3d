@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import {
   type Entity,
+  entityLabel,
   extractEntities,
   fillAuthSeqIds,
   makeLabelSeqIdIndex,
@@ -15,13 +16,25 @@ import {
 // residues, when given, build the atomic hierarchy: one atom per residue, each
 // residue on the chain of its entity.
 function model(
-  entities: { entityId: string; seq: string; seqIds: number[] }[],
+  entities: {
+    entityId: string
+    seq: string
+    seqIds: number[]
+    subtype?: string
+  }[],
   observed?: { entityId: string; labelSeqId: number; authSeqId: number }[],
 ) {
   const entityIds = entities.map(e => e.entityId)
   return {
     obj: {
       data: {
+        entities: {
+          subtype: {
+            rowCount: entities.length,
+            value: (row: number) => entities[row]!.subtype ?? 'polypeptide(L)',
+          },
+          getEntityIndex: (id: string) => entityIds.indexOf(id),
+        },
         sequence: {
           sequences: entities.map(e => ({
             entityId: e.entityId,
@@ -88,6 +101,31 @@ test('extractEntities carries author numbering, filling unobserved residues by o
   expect(e.authSeqIds).toEqual([94, 95, 96, 97, 120, 121])
   expect(residueNumber(e, 0)).toBe(94)
   expect(residueNumber(e, 5)).toBe(121)
+})
+
+test('extractEntities flags DNA and RNA entities and labels them in nt', () => {
+  const [dna, rna, protein] = extractEntities(
+    model([
+      {
+        entityId: '1',
+        seq: 'TTTCC',
+        seqIds: [1, 2, 3, 4, 5],
+        subtype: 'polydeoxyribonucleotide',
+      },
+      {
+        entityId: '2',
+        seq: 'GGAU',
+        seqIds: [1, 2, 3, 4],
+        subtype: 'polyribonucleotide',
+      },
+      { entityId: '3', seq: 'MKV', seqIds: [1, 2, 3] },
+    ]),
+  )!
+  expect(dna.nucleicAcid).toBe(true)
+  expect(rna.nucleicAcid).toBe(true)
+  expect(protein.nucleicAcid).toBeUndefined()
+  expect(entityLabel(dna)).toBe('Entity 1 (5 nt)')
+  expect(entityLabel(protein)).toBe('Entity 3 (3 aa)')
 })
 
 test('fillAuthSeqIds: an unobserved N-terminus takes the first observed offset', () => {

@@ -971,14 +971,14 @@ const Structure = types
           try {
             const {
               userProvidedTranscriptSequence,
-              structureSequences,
+              entities,
               alignmentAlgorithm,
             } = self
 
             if (
               self.pairwiseAlignment ||
               !userProvidedTranscriptSequence ||
-              !structureSequences?.length
+              !entities?.length
             ) {
               return
             }
@@ -986,13 +986,13 @@ const Structure = types
             // and align against it in one pass.
             const selection = chooseMappedEntity(
               userProvidedTranscriptSequence,
-              structureSequences,
+              entities,
               alignmentAlgorithm,
             )
             if (!selection) {
               return
             }
-            self.setMappedEntityId(self.entities?.[selection.index]?.entityId)
+            self.setMappedEntityId(entities[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
             if (selection.matches < alignmentLength(selection.alignment)) {
               self.parentView.setShowAlignment(true)
