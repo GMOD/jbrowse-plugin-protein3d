@@ -1,3 +1,10 @@
+[default]
+# git-cliff writes every changelog entry as ([<short sha>](<commit url>)), and a
+# 7-character hash is short enough that typos reads it as a word: 2543caf
+# tripped "caf should be calf" and failed the release gate. Skip the whole link
+# group; the prose beside it stays checked.
+extend-ignore-re = ["\\(\\[[0-9a-f]{7,40}\\]\\(https://[^)]+\\)\\)"]
+
 [default.extend-words]
 # amino acid three-letter codes
 THR = "THR"
