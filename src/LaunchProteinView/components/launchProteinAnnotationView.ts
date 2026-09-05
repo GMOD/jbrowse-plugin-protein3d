@@ -1,8 +1,8 @@
 import { setupProteinAssembly } from './proteinAssemblySetup'
 import { addAllProteinTracks } from './proteinTrackSetup'
-import { protein1DViewRegistry } from '../../Protein1DViewRegistry'
 import { formatViewName } from '../utils/launchViewUtils'
 
+import type { Protein1DLinkage } from '../../Protein1DLinkage'
 import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -29,6 +29,13 @@ export async function launchProteinAnnotationView({
     confidenceUrl,
   })
 
+  // The linkage drives the 1D<->genome hover highlight. It is a property of
+  // the view (see Protein1DLinkage) so it is saved with the session.
+  const proteinLinkage: Protein1DLinkage | undefined =
+    connectedViewId && selectedTranscript
+      ? { connectedViewId, feature: selectedTranscript.toJSON(), uniprotId }
+      : undefined
+
   const view = session.addView('LinearGenomeView', {
     type: 'LinearGenomeView',
     displayName: formatViewName(
@@ -37,17 +44,8 @@ export async function launchProteinAnnotationView({
       selectedTranscript,
       uniprotId,
     ),
+    proteinLinkage,
   }) as LinearGenomeViewModel
-
-  // Register for linked highlighting between 1D and 3D views
-  if (connectedViewId && selectedTranscript) {
-    protein1DViewRegistry.register({
-      viewId: view.id,
-      connectedViewId,
-      feature: selectedTranscript.toJSON(),
-      uniprotId,
-    })
-  }
 
   await view.navToLocString(uniprotId, uniprotId)
 }

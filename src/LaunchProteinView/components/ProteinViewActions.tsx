@@ -11,7 +11,7 @@ import {
   Typography,
 } from '@mui/material'
 
-import LaunchOptionsDialog from './LaunchOptionsDialog'
+import LaunchOptionsMenu from './LaunchOptionsMenu'
 import LaunchSettingsDialog from './LaunchSettingsDialog'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
@@ -64,7 +64,7 @@ export default function ProteinViewActions({
   isLoading,
   error,
 }: ProteinViewActionsProps) {
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const missingReasons = getLaunchMissingReasons({
@@ -80,7 +80,7 @@ export default function ProteinViewActions({
   const showMissingReasons = !isLoading && !error && missingReasons.length > 0
 
   const closeMenu = () => {
-    setDialogOpen(false)
+    setMenuAnchor(null)
   }
 
   const { runLaunch, launchError } = useSafeLaunch(handleClose, closeMenu)
@@ -179,16 +179,16 @@ export default function ProteinViewActions({
         <Button
           data-testid="protein-launch-options-button"
           disabled={!canLaunch}
-          onClick={() => {
-            setDialogOpen(true)
+          onClick={event => {
+            setMenuAnchor(event.currentTarget)
           }}
           aria-label="More launch options"
         >
           <ArrowDropDownIcon />
         </Button>
       </ButtonGroup>
-      <LaunchOptionsDialog
-        open={dialogOpen}
+      <LaunchOptionsMenu
+        anchorEl={menuAnchor}
         onClose={closeMenu}
         options={launchOptions}
       />

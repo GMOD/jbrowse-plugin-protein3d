@@ -1,6 +1,7 @@
 import { getContainingTrack, getSession } from '@jbrowse/core/util'
 import AddIcon from '@mui/icons-material/Add'
 
+import { extendPluggableStateModel } from '../extendStateModel'
 import LaunchProteinViewDialog from './components/LaunchProteinViewDialog'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
@@ -135,35 +136,12 @@ function extendStateModel(stateModel: IAnyModelType) {
   })
 }
 
-// A display registered with a lazy state-model loader (jbrowse-components
-// main, as of writing) has not resolved `stateModel` yet when
-// Core-extendPluggableElement fires, so reading it here is `undefined` and
-// `.views(...)` on it throws. Those hosts expose `extendStateModel` instead,
-// which composes the extension immediately if the model already resolved or
-// queues it for when the loader does. A host without that method (v4.3.0 and
-// earlier, where every display's state model is synchronous) never has this
-// problem, so a plain read-and-reassign is correct there. Duck-typed rather
-// than imported: `@jbrowse/core`'s installed DisplayType type doesn't declare
-// the method on those older hosts, only the ones that need it.
-interface LazyLoadableDisplay {
-  extendStateModel?: (
-    extend: (stateModel: IAnyModelType) => IAnyModelType,
-  ) => void
-}
-
 export default function LaunchProteinViewF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
     'Core-extendPluggableElement',
     (elt: PluggableElementType) => {
       if (isDisplay(elt)) {
-        const display = elt as unknown as LazyLoadableDisplay
-        if (display.extendStateModel) {
-          // new: lazy-loader host, queues/composes via extendStateModel
-          display.extendStateModel(extendStateModel)
-        } else {
-          // old: v4.3.0 and earlier, stateModel is synchronous
-          elt.stateModel = extendStateModel(elt.stateModel)
-        }
+        extendPluggableStateModel(elt, extendStateModel)
       }
       return elt
     },

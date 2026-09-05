@@ -4,11 +4,18 @@ import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
-import { protein1DViewRegistry } from '../Protein1DViewRegistry'
+import {
+  findProteinLinkedView,
+  genomeHighlightForProteinPosition,
+  getProteinLinkage,
+} from '../Protein1DLinkage'
 import { checkHovered } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+// A hover on a 1D protein-annotation view names the UniProt entry as its
+// refName; this paints the codon on the genome view that 1D view was launched
+// from.
 const Protein1DToGenomeHoverHighlight = observer(
   function Protein1DToGenomeHoverHighlight({
     model,
@@ -24,24 +31,16 @@ const Protein1DToGenomeHoverHighlight = observer(
     }
 
     const { coord, refName } = hovered.hoverPosition
-    const protein1DInfo = protein1DViewRegistry.getByUniprotId(refName, session)
-
-    if (protein1DInfo?.connectedViewId !== viewId) {
-      return null
-    }
-
+    const linkage = getProteinLinkage(findProteinLinkedView(session, refName))
     const assemblyName = assemblyNames[0]
-    if (!assemblyName) {
+    if (linkage?.connectedViewId !== viewId || !assemblyName) {
       return null
     }
 
-    const genomeHighlight =
-      protein1DViewRegistry.getGenomeHighlightForProteinPosition(
-        refName,
-        coord - 1,
-        session,
-      )
-
+    const genomeHighlight = genomeHighlightForProteinPosition(
+      linkage,
+      coord - 1,
+    )
     if (!genomeHighlight) {
       return null
     }
