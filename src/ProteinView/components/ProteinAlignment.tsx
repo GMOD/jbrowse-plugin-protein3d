@@ -205,22 +205,32 @@ const ProteinAlignment = observer(function ProteinAlignment({
 
   return (
     <div data-testid="protein-alignment-panel" data-structure={label}>
-      <div style={{ float: 'right', display: 'flex', alignItems: 'center' }}>
-        <ChainSelect model={model} />
-        <ProteinAlignmentHelpButton model={model} />
+      {/* A header row rather than a float: a floated picker narrowed the whole
+          alignment below it, since a flex container will not overlap a float,
+          so a panel with a chain picker lost 200px of sequence to it. */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        {/* Names the structure this panel aligns, since several panels stack
+            over one canvas and nothing else tells 1TUP's from 1YCR's. What the
+            rows mean is in the help dialog. */}
+        <Typography variant="subtitle2">
+          {label}
+          {showHighlight ? (
+            <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
+              green is the aligned portion
+            </Typography>
+          ) : null}
+        </Typography>
+        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+          <ChainSelect model={model} />
+          <ProteinAlignmentHelpButton model={model} />
+        </div>
       </div>
-
-      {/* Names the structure this panel aligns, since several panels stack
-          over one canvas and nothing else tells 1TUP's from 1YCR's. What the
-          rows mean is in the help dialog. */}
-      <Typography variant="subtitle2">
-        {label}
-        {showHighlight ? (
-          <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
-            green is the aligned portion
-          </Typography>
-        ) : null}
-      </Typography>
       {showProteinTracks ? (
         <UniProtProvenance uniprotId={uniprotId} uniprotName={uniprotName} />
       ) : null}
