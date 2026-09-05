@@ -7,6 +7,7 @@ import { Tab, Tabs } from '@mui/material'
 import AlphaFoldDBSearch from './AlphaFoldDBSearch'
 import FoldseekSearch from './FoldseekSearch'
 import HelpButton from './HelpButton'
+import PdbSearch from './PdbSearch'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
 import { DEFAULT_ALIGNMENT_ALGORITHM } from '../../ProteinView/types'
@@ -54,8 +55,9 @@ export default function LaunchProteinViewDialog({
         }}
       >
         <Tab value={0} label="AlphaFoldDB search" />
-        <Tab value={1} label="Foldseek search" />
-        <Tab value={2} label="Open file manually" />
+        <Tab value={1} label="PDB search" />
+        <Tab value={2} label="Foldseek search" />
+        <Tab value={3} label="Open file manually" />
       </Tabs>
       <TabPanel value={choice} index={0}>
         <AlphaFoldDBSearch
@@ -68,6 +70,16 @@ export default function LaunchProteinViewDialog({
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
+        <PdbSearch
+          session={session}
+          view={view}
+          feature={feature}
+          handleClose={handleClose}
+          alignmentAlgorithm={alignmentAlgorithm}
+          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
+        />
+      </TabPanel>
+      <TabPanel value={choice} index={2}>
         <FoldseekSearch
           session={session}
           view={view}
@@ -75,7 +87,7 @@ export default function LaunchProteinViewDialog({
           handleClose={handleClose}
         />
       </TabPanel>
-      <TabPanel value={choice} index={2}>
+      <TabPanel value={choice} index={3}>
         <UserProvidedStructure
           session={session}
           view={view}

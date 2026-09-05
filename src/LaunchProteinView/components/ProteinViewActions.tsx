@@ -71,6 +71,7 @@ export default function ProteinViewActions({
     uniprotId,
     userSelectedProteinSequence,
     selectedTranscript,
+    url,
   })
   // Disable launch while loading — SWR's keepPreviousData would otherwise let
   // a user click Launch on stale results (wrong UniProt ID) during a refetch.

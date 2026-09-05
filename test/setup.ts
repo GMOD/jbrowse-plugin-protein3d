@@ -43,7 +43,10 @@ interface SessionView {
 }
 declare global {
   interface Window {
-    JBrowseSession?: { views?: SessionView[] }
+    JBrowseSession?: {
+      views?: SessionView[]
+      removeView?: (view: SessionView) => void
+    }
     JBrowsePluginProtein3d?: unknown
   }
 }
@@ -434,6 +437,17 @@ export async function openFeatureContextMenu(page: Page): Promise<string[]> {
     )
   }
   return items
+}
+
+export async function clickTab(page: Page, label: string): Promise<void> {
+  for (const tab of await page.$$('[role="tab"]')) {
+    const text = await tab.evaluate(el => el.textContent ?? '')
+    if (text.includes(label)) {
+      await tab.click()
+      return
+    }
+  }
+  throw new Error(`no tab labelled "${label}"`)
 }
 
 export async function clickMenuItem(page: Page, label: string): Promise<void> {

@@ -9,6 +9,7 @@ import {
   cleanupJBrowse,
   clickLaunch,
   clickMenuItem,
+  clickTab,
   createJBrowsePage,
   flushScreenshots,
   getProteinViewState,
@@ -142,6 +143,47 @@ describe('Protein3d Plugin E2E', () => {
     expect(state.transcriptLength).toBeGreaterThan(0)
     expect(pageErrors).toEqual([])
   }, 240_000)
+
+  // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
+  // the first row preselected, launched against the RCSB file. NRAS has
+  // dozens of crystals, every one a fragment with partners, so the alignment
+  // and the chain choice both have to come out of the load.
+  it('launches an experimental structure from the PDB search tab', async () => {
+    await page.evaluate(() => {
+      const session = window.JBrowseSession!
+      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
+        session.removeView!(view)
+      }
+    })
+    await openFeatureContextMenu(page)
+    await clickMenuItem(page, 'Launch protein view')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await clickTab(page, 'PDB search')
+    await page.waitForSelector('[data-testid="pdb-results-table"] tbody tr', {
+      timeout: 90_000,
+    })
+    await captureScreenshot(page, screenshot('09-pdb-search-tab'))
+    await waitForLaunchEnabled(page)
+    await clickLaunch(page)
+
+    await waitForStructureRendered(page)
+    await page.waitForFunction(
+      () =>
+        window.JBrowseSession?.views
+          ?.find(v => v.type === 'ProteinView')
+          ?.structures?.every(s => s.pairwiseAlignment) ?? false,
+      { timeout: 120_000 },
+    )
+    await captureScreenshot(page, screenshot('10-pdb-protein-view'))
+
+    const state = await getProteinViewState(page)
+    console.log(`pdb search state: ${JSON.stringify(state.structures)}`)
+    expect(state.structureCount).toBe(1)
+    expect(state.structures[0]?.url).toMatch(/files\.rcsb\.org/)
+    expect(state.hasAlignment).toBe(true)
+    expect(state.structures[0]?.mappedEntityId).toBeDefined()
+    expect(pageErrors).toEqual([])
+  }, 300_000)
 
   // The declarative multi-structure launch: an AlphaFold model, the p53 core
   // bound to DNA (1TUP, three protein copies as one entity beside two DNA

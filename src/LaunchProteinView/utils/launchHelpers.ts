@@ -21,6 +21,7 @@ interface LaunchRequirements {
   uniprotId?: string
   userSelectedProteinSequence?: { seq: string }
   selectedTranscript?: unknown
+  url?: string
 }
 
 /**
@@ -33,11 +34,13 @@ export function getLaunchMissingReasons({
   uniprotId,
   userSelectedProteinSequence,
   selectedTranscript,
+  url,
 }: LaunchRequirements): string[] {
   return [
     !uniprotId && 'No UniProt ID found',
     !userSelectedProteinSequence?.seq &&
       'Could not compute protein sequence (feature may be missing CDS subfeatures)',
     !selectedTranscript && 'No transcript selected',
+    !url && 'No structure selected',
   ].filter((s): s is string => typeof s === 'string')
 }

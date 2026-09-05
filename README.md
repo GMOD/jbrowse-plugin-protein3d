@@ -8,8 +8,9 @@ The major workflow enabled by this is
   mouseover between genome and structure
 
 It has features to automatically look up a protein structure of interest using
-the UniProt ID mapping API to connect to AlphaFoldDB, and can also use Foldseek
-to look up related structures also
+the UniProt ID mapping API to connect to AlphaFoldDB, lists the experimental PDB
+entries SIFTS maps to that UniProt entry, and can also use Foldseek to look up
+related structures
 
 ## Coordinate-mapping harness
 
