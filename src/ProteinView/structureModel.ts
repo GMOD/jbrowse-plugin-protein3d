@@ -42,7 +42,11 @@ import {
   resolveStructureUrl,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import { alignmentLength, genomeToTranscriptSeqMapping } from '../mappings'
+import {
+  alignmentLength,
+  codonGenomeSpan,
+  genomeToTranscriptSeqMapping,
+} from '../mappings'
 import {
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
@@ -166,11 +170,10 @@ const Structure = types
     mappedEntityIndex: 0,
     /**
      * #volatile
-     * Per-residue B-factor / pLDDT for the first chain, indexed by 0-based
-     * structure sequence position, tagged with the entity it came from. Drives
-     * the confidence feature track.
+     * Per-entity B-factor / pLDDT keyed by label_seq_id. Drives the
+     * confidence feature track.
      */
-    structureConfidence: undefined as EntityConfidence | undefined,
+    structureConfidence: undefined as EntityConfidence[] | undefined,
     /**
      * #volatile
      */
@@ -410,21 +413,24 @@ const Structure = types
     },
     /**
      * #getter
-     * Per-residue pLDDT values mapped to alignment columns, shown only when the
-     * structure's B-factor column actually looks like AlphaFold confidence.
-     *
-     * The values are read from the structure's first entity, but the alignment
-     * map belongs to the *mapped* entity, so they are only comparable when
-     * those are the same chain. An AlphaFold monomer always satisfies that; an
-     * AlphaFold-multimer prediction whose transcript maps to a later chain does
-     * not, and would otherwise plot chain A's confidence against chain C's
-     * residues. Mismatched entities drop the track rather than mis-draw it.
+     * Per-residue pLDDT of the mapped entity, mapped to alignment columns and
+     * shown only when the B-factor column actually looks like AlphaFold
+     * confidence. Values are looked up by label_seq_id through the entity's own
+     * seqIds, so an unobserved residue leaves a gap instead of shifting the
+     * rest of the track.
      */
     get confidenceCells() {
-      const c = self.structureConfidence
-      return c && c.entityId === this.mappedEntityId && looksLikePlddt(c.values)
+      const entity = this.mappedEntity
+      const confidence = self.structureConfidence?.find(
+        c => c.entityId === entity?.entityId,
+      )
+      if (!entity || !confidence) {
+        return []
+      }
+      const values = entity.seqIds.map(id => confidence.byLabelSeqId.get(id))
+      return looksLikePlddt(values.filter(v => v !== undefined))
         ? mapResidueValuesToColumns(
-            c.values,
+            values,
             this.structurePositionToAlignmentMap,
           )
         : []
@@ -482,7 +488,30 @@ const Structure = types
         parts.push(`Chain: ${r.chain}`)
       }
 
+      const locus = this.hoverGenomeLocus
+      if (locus) {
+        parts.push(locus)
+      }
+
       return parts.join(', ')
+    },
+    /**
+     * #getter
+     * The hovered residue's codon as a 1-based locString, so the header can
+     * name where in the genome a residue sits without a click.
+     */
+    get hoverGenomeLocus() {
+      const pos = this.structureSeqHoverPos
+      const mapping = this.genomeToTranscriptSeqMapping
+      const transcriptPos =
+        pos === undefined
+          ? undefined
+          : this.structureSeqToTranscriptSeqPosition?.[pos]
+      if (!mapping || transcriptPos === undefined) {
+        return undefined
+      }
+      const span = codonGenomeSpan(mapping.p2gCodon, transcriptPos)
+      return span ? `${mapping.refName}:${span[0] + 1}-${span[1]}` : undefined
     },
     /**
      * #getter
@@ -852,7 +881,7 @@ const Structure = types
 
       addDisposer(
         self,
-        autorun(async () => {
+        autorun(() => {
           try {
             const {
               userProvidedTranscriptSequence,

@@ -3,24 +3,16 @@ import { addStructureFromURL } from './addStructureFromURL'
 import { extractPerResidueConfidence } from './extractPerResidueConfidence'
 import { extractEntities } from './extractStructureSequences'
 
+import type { EntityConfidence } from './extractPerResidueConfidence'
 import type { Entity } from './extractStructureSequences'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-/**
- * Per-residue B-factor / pLDDT, tagged with the entity it was read from.
- * `extractPerResidueConfidence` walks residues in model order, so the values
- * only describe the *first* entity — consumers must check `entityId` against
- * the entity they are plotting against rather than assume the two line up.
- */
-export interface EntityConfidence {
-  entityId: string
-  values: number[]
-}
+export type { EntityConfidence } from './extractPerResidueConfidence'
 
 export interface StructureData {
   entities?: Entity[]
-  confidence?: EntityConfidence
+  confidence?: EntityConfidence[]
   /** The molstar Structure this load created. Held by identity so highlights
    * bind to the right geometry — concurrent loads finish in arbitrary order, so
    * a position in `hierarchy.current.structures` identifies nothing stable. */
@@ -45,15 +37,9 @@ export async function loadStructureData({
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
       : { model: undefined, structure: undefined }
-  const entities = model ? extractEntities(model) : undefined
-  const first = entities?.[0]
-  const values = model
-    ? extractPerResidueConfidence(model, first?.seq.length)
-    : undefined
   return {
-    entities,
-    confidence:
-      first && values ? { entityId: first.entityId, values } : undefined,
+    entities: model ? extractEntities(model) : undefined,
+    confidence: model ? extractPerResidueConfidence(model) : undefined,
     molstarStructure,
   }
 }
