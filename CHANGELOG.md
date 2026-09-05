@@ -1,3 +1,39 @@
+## [0.10.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.9.0...v0.10.0) (2026-09-05)
+
+### Bug Fixes
+
+- Route the display extension through extendStateModel, not a synchronous stateModel read ([85323a3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/85323a3fd444d6cc7bd9b52a73968d6137cdd7bf))
+- Preview structures on a headless molstar plugin and dispose it ([9ccd192](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9ccd19214eca2f5ebe8ca0d96fe816478157b741))
+- Key the confidence track by label_seq_id, not residue order ([bf3ca39](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bf3ca394f3723e0dff38b2bd68d52c16d2581e45))
+- Let a stored preference fill only what the snapshot leaves unsaid ([5176a04](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5176a04a71b9339cc8015776ce8219b557758cdf))
+- A hover with no linked 1D view open must not throw ([806ab13](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/806ab13b624b4543ecc06af5ca0d2781104d79d6))
+
+### Documentation
+
+- The local build works outside minimumReleaseAge's 24h window ([c62f4d3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c62f4d31ac7d13c1d03407194060ffffa24a7ebc))
+- Correct stale alignment-algorithm descriptions ([2543caf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2543caf44879ec76c60ba3b0c5cbb67b12eaab7c))
+
+### Features
+
+- Publish showLoading so JBrowse's readiness contract waits for the structure load ([aa5c2f0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/aa5c2f0d886abb989a42f5af27a1681d258b1ab6))
+- Chain picker, mapped added structures, gzip uploads, residue ruler ([18d4bac](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/18d4bac2b90ea98698671060672849ad9299842e))
+- Open several structures from one session spec ([fd6c31e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/fd6c31e5eddb631834a7ab707881bd0434bf9230))
+- Title a spec-launched view by its transcript and structure ids ([dbbe5fb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/dbbe5fbb31c2b4e31f840d0846c8226a98922151))
+
+### Other Changes
+
+- Bump deps ([e4940b3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e4940b3a39e76479962588d60bee6dba3f6215d7))
+
+### Refactoring
+
+- One toggle list for both menus, dismissable errors, smaller main bundle ([ad3e276](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ad3e2760b003bc31f9269e6d942703dd141fd9fa))
+- Keep the 1D<->genome linkage on the view, not in a module registry ([7413cbe](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7413cbed6371bc7181d9a187b3adf09edc160062))
+
+### Tests
+
+- Refresh the nightly protein-view reference for the residue ruler ([0960ab7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0960ab703059c5fbfb6892b316ac6da7a22683b3))
+- Open three structures from one spec and check each maps its p53 chain ([b3d4477](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b3d447743b8d4a6435708786dc33128fcd64b480))
+
 ## [0.9.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.8.4...v0.9.0) (2026-08-25)
 
 ### Features
