@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import {
   LAUNCH_DIALOG,
   PAINTED_FEATURES,
+  TRACK_ID,
   captureScreenshot,
   cleanupJBrowse,
   clickLaunch,
@@ -13,6 +14,7 @@ import {
   getProteinViewState,
   launchBrowser,
   openFeatureContextMenu,
+  openSessionSpec,
   pageErrors,
   setupJBrowse,
   startJBrowseServer,
@@ -140,4 +142,51 @@ describe('Protein3d Plugin E2E', () => {
     expect(state.transcriptLength).toBeGreaterThan(0)
     expect(pageErrors).toEqual([])
   }, 240_000)
+
+  // The declarative multi-structure launch: an AlphaFold model, the p53 core
+  // bound to DNA (1TUP, three protein copies as one entity beside two DNA
+  // entities) and the p53 peptide on MDM2 (1YCR, where the transcript's chain
+  // is the short one). Every structure has to map to the transcript, and the
+  // chain choice has to land on the p53 entity of each complex.
+  it('opens several structures from one spec, each mapped to the right chain', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [
+            { uniprotId: 'P04637' },
+            { pdbId: '1TUP' },
+            { pdbId: '1YCR' },
+          ],
+          transcriptId: 'ENST00000269305.9',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,668,421-7,687,550',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    await waitForJBrowseLoad(page)
+    await waitForStructureRendered(page)
+    await page.waitForFunction(
+      () =>
+        window.JBrowseSession?.views
+          ?.find(v => v.type === 'ProteinView')
+          ?.structures?.every(s => s.pairwiseAlignment) ?? false,
+      { timeout: 120_000 },
+    )
+    await captureScreenshot(page, screenshot('07-multi-structure'))
+
+    const state = await getProteinViewState(page)
+    console.log(`multi-structure state: ${JSON.stringify(state.structures)}`)
+    expect(state.structures.map(s => s.hasAlignment)).toEqual([
+      true,
+      true,
+      true,
+    ])
+    expect(state.structures[1]?.mappedEntityId).toBe('3')
+    expect(state.structures[2]?.mappedEntityId).toBe('2')
+    expect(pageErrors).toEqual([])
+  }, 300_000)
 })

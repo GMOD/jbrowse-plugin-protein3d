@@ -31,6 +31,8 @@ interface ProteinViewStructure {
   userProvidedTranscriptSequence?: string
   feature?: { name?: string; id?: string }
   genomeToTranscriptSeqMapping?: { g2p: Record<string, number> }
+  mappedEntityId?: string
+  url?: string
 }
 interface SessionView {
   type: string
@@ -481,8 +483,20 @@ export async function getProteinViewState(page: Page) {
       transcriptName: structure?.feature?.name ?? structure?.feature?.id ?? '',
       hasAlignment: Boolean(structure?.pairwiseAlignment),
       mappedGenomePositions: mapping ? Object.keys(mapping.g2p).length : 0,
+      structures: (view?.structures ?? []).map(s => ({
+        url: s.url ?? '',
+        entityCount: s.structureSequences?.length ?? 0,
+        hasAlignment: Boolean(s.pairwiseAlignment),
+        mappedEntityId: s.mappedEntityId,
+      })),
     }
   })
+}
+
+// Open a session spec on the test instance, the way a shared link does.
+export async function openSessionSpec(page: Page, spec: object) {
+  const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
+  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
 }
 
 // Fraction of the molstar canvas that is not blank. Read back from a real
