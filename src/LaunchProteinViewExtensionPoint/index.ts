@@ -27,6 +27,12 @@ interface LaunchStructure {
   mappedEntityId?: string
 }
 
+// What a structure is called in the view's title: the id it was asked for by,
+// else the file's name.
+function structureLabel(s: LaunchStructure) {
+  return s.uniprotId ?? s.pdbId ?? s.url?.split('/').pop()?.split('?')[0] ?? ''
+}
+
 export default function LaunchProteinViewExtensionPointF(
   pluginManager: PluginManager,
 ) {
@@ -160,6 +166,9 @@ export default function LaunchProteinViewExtensionPointF(
         connectedViewId: resolvedConnectedViewId,
       }))
 
+      const featureName = resolved?.feature.name ?? feature?.name
+      const transcriptName =
+        typeof featureName === 'string' ? featureName : transcriptId
       const proteinView = session.addView(
         'ProteinView',
         proteinViewSnapshot({
@@ -168,7 +177,11 @@ export default function LaunchProteinViewExtensionPointF(
             alignmentAlgorithm === undefined
               ? undefined
               : coerceAlignmentAlgorithm(alignmentAlgorithm),
-          displayName,
+          displayName:
+            displayName ??
+            ['Protein view', transcriptName, ...requested.map(structureLabel)]
+              .filter(s => !!s)
+              .join(' - '),
           height,
           showControls,
           showHighlight,

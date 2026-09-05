@@ -167,7 +167,12 @@ describe('Protein3d Plugin E2E', () => {
         },
       ],
     })
-    await waitForJBrowseLoad(page)
+    // the spec's own genome view has a generated id, so the fixture's track
+    // container is not what to wait for; the protein view's ready flag flips
+    // once every structure has loaded and aligned
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
     await waitForStructureRendered(page)
     await page.waitForFunction(
       () =>
