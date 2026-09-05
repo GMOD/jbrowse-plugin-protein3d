@@ -63,8 +63,17 @@ genome↔protein connection (feature/sequence) — for that use the extension
 point's `uniprotId` + `transcriptId` short form below.
 
 Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
-localStorage) only fill settings the snapshot left at their default, so an
-explicitly declared value always wins over a sticky preference.
+localStorage) only fill settings the snapshot does not name, so an explicitly
+declared value always wins over a sticky preference, even when it equals the
+property default.
+
+#### The 1D annotation view's link back to the genome
+
+A LinearGenomeView launched as a 1D protein-annotation view carries a
+`proteinLinkage` property: the `connectedViewId` of the genome view it came
+from, the transcript `feature`, and the `uniprotId`. The plugin adds the
+property to every LinearGenomeView, so a hand-authored snapshot can set it and
+the 1D↔genome hover highlight works after a reload or from a shared session.
 
 #### UniProt feature tracks on PDB structures
 

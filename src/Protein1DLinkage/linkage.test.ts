@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 import {
   findProteinLinkedView,
   genomeHighlightForProteinPosition,
+  getProteinLinkage,
 } from './linkage'
 
 import type { Protein1DLinkage } from './linkage'
@@ -64,6 +65,11 @@ test('highlight for an exon-boundary codon encloses all its genomic bases', () =
     start: 12,
     end: 15,
   })
+})
+
+test('a missing view has no linkage rather than throwing', () => {
+  expect(getProteinLinkage(undefined)).toBeUndefined()
+  expect(getProteinLinkage({ id: 'lgv' })).toBeUndefined()
 })
 
 test('finds the open 1D view for a UniProt entry by its linkage', () => {

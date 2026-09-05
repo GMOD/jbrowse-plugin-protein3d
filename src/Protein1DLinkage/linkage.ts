@@ -23,7 +23,7 @@ interface LinkableView {
 }
 
 export function getProteinLinkage(view: unknown) {
-  return (view as LinkableView).proteinLinkage
+  return (view as LinkableView | undefined)?.proteinLinkage
 }
 
 /** The 1D view showing this UniProt entry, if one is open. */
