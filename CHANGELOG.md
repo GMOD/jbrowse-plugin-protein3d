@@ -1,3 +1,31 @@
+## [0.11.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.10.0...v0.11.0) (2026-09-05)
+
+### Bug Fixes
+
+- Put the chain picker in a header row so it stops narrowing the alignment ([5722e5b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5722e5b67b46ca6e2c6c110ab80f67f610b42e42))
+- Pick the chain the transcript explains most of, never a nucleic acid ([f6e5d1f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f6e5d1f4e7b2a02e35e0f7b2d294cc331e451e52))
+- Click the launch button in the visible tab, not the hidden one ([b695181](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b695181f8a5d5eb9d0595dc5fa1964d50e783ec3))
+
+### Chores
+
+- Stop typos reading a 7-char commit hash as a word ([58be205](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/58be205af5f0b830519d74b1043b9687a73c7c4d))
+- Ignore .claude/, which blocked pnpm version on a clean tree ([c4205d2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c4205d230d6bd66e230ea9b820de1cf46d6f18e5))
+
+### Features
+
+- Name each alignment panel and hover readout by its structure ([6db4edd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6db4edd04155e14a2b92f96e23c25599b11fa60f))
+- Number residues the way the structure's authors did ([84e6ba8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/84e6ba86d58a2f77f2c98ac5a2a1205282fe01b9))
+- Let a spec select a residue by its author number ([f1de9b2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f1de9b2b4159e97bf79a244e7f825abcf4a5c4bb))
+- Add a PDB search tab listing SIFTS-mapped experimental structures ([00133b4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/00133b463b8e0b2e5d103c25b836e516f05ab2ba))
+
+### Other Changes
+
+- Require green ([4cef6c6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4cef6c62bd0bfcbd4f69788da9ad56fd651177c8))
+
+### Tests
+
+- Reference screenshots for the PDB search leg, on both CI hosts ([a51bac5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a51bac5b134b467411dca0878e522b4f45bd0810))
+
 ## [0.10.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.9.0...v0.10.0) (2026-09-05)
 
 ### Bug Fixes
