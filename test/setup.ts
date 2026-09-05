@@ -465,7 +465,11 @@ export async function clickMenuItem(page: Page, label: string): Promise<void> {
 // are stable by construction: the e2e always builds and installs the plugin
 // from this working tree, so only the JBrowse version varies underneath. Match
 // on these rather than on button labels or a library's internal class names.
-export const LAUNCH_BUTTON = '[data-testid="protein-launch-button"]'
+// Every tab renders its own launch button and TabPanel keeps hidden tabs
+// mounted, so an unscoped selector matches the AlphaFoldDB tab's button from
+// any tab -- enabled, invisible, and unclickable. Scope to the visible panel.
+export const LAUNCH_BUTTON =
+  '[role="tabpanel"]:not([hidden]) [data-testid="protein-launch-button"]'
 export const LAUNCH_DIALOG = '[data-testid="launch-protein-view-dialog"]'
 export const MOLSTAR_CANVAS = '[data-testid="protein-view-molstar"] canvas'
 
