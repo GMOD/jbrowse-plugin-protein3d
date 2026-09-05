@@ -1,44 +1,26 @@
 import {
-  isBinaryStructureUrl,
-  structureFormatFromName,
-} from './structureFormat'
-import { applyStructurePreset } from './structurePipeline'
+  applyStructurePreset,
+  parseStructureTrajectory,
+} from './structurePipeline'
 
 import type { LoadStructureOptions } from './structurePipeline'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 
-/** Format and binary-ness default to what the URL's extension says, so a
- * `.pdb`/`.ent` archive URL loads rather than throwing in the mmCIF parser. */
+/** Format defaults to what the URL's extension says, so a `.pdb`/`.ent`
+ * archive URL loads rather than throwing in the mmCIF parser. */
 export async function addStructureFromURL({
   url,
-  format = structureFormatFromName(url),
-  isBinary = isBinaryStructureUrl(url),
+  format,
   options,
   plugin,
 }: {
   url: string
   format?: BuiltInTrajectoryFormat
-  isBinary?: boolean
   options?: LoadStructureOptions & { label?: string }
   plugin: PluginContext
 }) {
-  const data = await plugin.builders.data.download(
-    {
-      url,
-      isBinary,
-    },
-    {
-      state: {
-        isGhost: true,
-      },
-    },
-  )
-
-  const trajectory = await plugin.builders.structure.parseTrajectory(
-    data,
-    format,
-  )
+  const trajectory = await parseStructureTrajectory({ plugin, url, format })
   return applyStructurePreset({ plugin, trajectory, options })
 }
 

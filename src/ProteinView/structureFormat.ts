@@ -69,15 +69,3 @@ export function structureFormatFromContent(
   }
   return 'pdb'
 }
-
-export function structureFormatFor({
-  url,
-  data,
-}: {
-  url?: string
-  data?: string
-}): BuiltInTrajectoryFormat {
-  return data !== undefined
-    ? structureFormatFromContent(data)
-    : structureFormatFromName(url ?? '')
-}

@@ -3,7 +3,6 @@ import { expect, test } from 'vitest'
 import {
   isBinaryStructureUrl,
   structureFileExtension,
-  structureFormatFor,
   structureFormatFromContent,
   structureFormatFromName,
 } from './structureFormat'
@@ -71,11 +70,4 @@ test('content sniffing reads PDB records as pdb', () => {
 test('caCoordsToPdb output is detected as pdb', () => {
   const pdb = caCoordsToPdb('1,2,3,4,5,6', 'MK', 'A', 'hit')
   expect(structureFormatFromContent(pdb)).toBe('pdb')
-})
-
-test('structureFormatFor prefers content over url', () => {
-  // inline data is authoritative; a stale/absent url must not override it
-  expect(structureFormatFor({ data: 'data_X\n', url: 'x.pdb' })).toBe('mmcif')
-  expect(structureFormatFor({ url: 'x.pdb' })).toBe('pdb')
-  expect(structureFormatFor({})).toBe('mmcif')
 })

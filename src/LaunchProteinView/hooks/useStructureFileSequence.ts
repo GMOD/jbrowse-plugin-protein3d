@@ -1,19 +1,17 @@
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { addStructureFromData } from '../../ProteinView/addStructureFromData'
-import { addStructureFromURL } from '../../ProteinView/addStructureFromURL'
 import { extractStructureSequences } from '../../ProteinView/extractStructureSequences'
+import { parseStructureTrajectory } from '../../ProteinView/structurePipeline'
 import { withTemporaryMolstarPlugin } from '../../ProteinView/withTemporaryMolstarPlugin'
 
-// Format is detected by addStructureFromData/addStructureFromURL themselves.
-// This hook used to detect it here, for the file branch only, which meant the
-// dialog preview and the view that followed could disagree about the same file.
+// Only the model is built here, never a representation: the dialog wants the
+// sequences, and the format detection is the same one the view applies later.
 async function fetchSequences({ file, url }: { file?: File; url?: string }) {
+  const data = file ? await file.text() : undefined
   return withTemporaryMolstarPlugin(async plugin => {
-    const { model } = file
-      ? await addStructureFromData({ data: await file.text(), plugin })
-      : await addStructureFromURL({ url: url!, plugin })
+    const trajectory = await parseStructureTrajectory({ plugin, data, url })
+    const model = await plugin.builders.structure.createModel(trajectory)
     return extractStructureSequences(model)
   })
 }
