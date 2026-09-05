@@ -24,6 +24,8 @@ export interface ProteinStructureSpec {
   // 0-based half-open structure-residue range lit on load, as if clicked
   initialSelection?: { start: number; end: number }
   pairwiseAlignment?: PairwiseAlignment
+  // mmCIF entity id the transcript maps to; chosen by alignment when absent
+  mappedEntityId?: string
 }
 
 /**

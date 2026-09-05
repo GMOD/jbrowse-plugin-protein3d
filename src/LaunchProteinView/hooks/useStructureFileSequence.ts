@@ -4,11 +4,12 @@ import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { extractStructureSequences } from '../../ProteinView/extractStructureSequences'
 import { parseStructureTrajectory } from '../../ProteinView/structurePipeline'
 import { withTemporaryMolstarPlugin } from '../../ProteinView/withTemporaryMolstarPlugin'
+import { readStructureFile } from '../utils/readStructureFile'
 
 // Only the model is built here, never a representation: the dialog wants the
 // sequences, and the format detection is the same one the view applies later.
 async function fetchSequences({ file, url }: { file?: File; url?: string }) {
-  const data = file ? await file.text() : undefined
+  const data = file ? await readStructureFile(file) : undefined
   return withTemporaryMolstarPlugin(async plugin => {
     const trajectory = await parseStructureTrajectory({ plugin, data, url })
     const model = await plugin.builders.structure.createModel(trajectory)

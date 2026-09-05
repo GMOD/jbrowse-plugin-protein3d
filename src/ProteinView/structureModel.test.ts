@@ -148,3 +148,52 @@ test('alignmentHoverPos reflects hoverPosition via structurePositionToAlignmentM
   model.setHoveredPosition({ structureSeqPos: 2 })
   expect(model.alignmentHoverPos).toBe(2)
 })
+
+test('chooseEntity realigns to the chosen chain and drops stale highlights', () => {
+  const parent = TestParent.create({
+    structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'GGGGGG',
+        seqIds: [1, 2, 3, 4, 5, 6],
+        chains: ['A'],
+      },
+      { entityId: '2', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['B'] },
+    ],
+  })
+  // the load autorun picks the exact match
+  expect(model.mappedEntity?.entityId).toBe('2')
+  model.setClickedStructureRange({ start: 0, end: 2 })
+
+  model.chooseEntity('1')
+  expect(model.mappedEntityId).toBe('1')
+  expect(model.mappedEntity?.chains).toEqual(['A'])
+  expect(model.pairwiseAlignment?.alns[1].seq.replaceAll('-', '')).toBe(
+    'GGGGGG',
+  )
+  expect(model.clickedStructureRange).toBeUndefined()
+})
+
+test('a persisted mappedEntityId survives a reload alongside its alignment', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'MKAA',
+        pairwiseAlignment,
+        mappedEntityId: '2',
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      { entityId: '1', seq: 'GGGG', seqIds: [1, 2, 3, 4], chains: ['A'] },
+      { entityId: '2', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['B'] },
+    ],
+  })
+  expect(model.mappedEntity?.entityId).toBe('2')
+})

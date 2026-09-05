@@ -29,6 +29,11 @@ export interface EntitySelection {
   matches: number
 }
 
+export interface ScoredAlignment {
+  alignment: PairwiseAlignment
+  matches: number
+}
+
 function countMatches(pa: PairwiseAlignment) {
   const a = transcriptAlignedSeq(pa)
   const b = structureAlignedSeq(pa)
@@ -41,6 +46,38 @@ function countMatches(pa: PairwiseAlignment) {
     }
   }
   return matches
+}
+
+/**
+ * Align one transcript to one entity, stop codons stripped on both sides. An
+ * exact match skips the DP entirely; an oversized pair returns undefined rather
+ * than locking up the tab. Used both to score every entity of a structure and
+ * to honour a user's explicit chain choice.
+ */
+export function alignTranscriptToEntity(
+  transcript: string,
+  entitySeq: string,
+  algorithm: AlignmentAlgorithm,
+): ScoredAlignment | undefined {
+  const t = stripStopCodon(transcript)
+  const s = stripStopCodon(entitySeq)
+  if (!t || !s || alignmentTooLarge(t.length, s.length)) {
+    return undefined
+  }
+  if (s === t) {
+    return {
+      alignment: {
+        consensus: '|'.repeat(t.length),
+        alns: [
+          { id: 'seq1', seq: t },
+          { id: 'seq2', seq: s },
+        ],
+      },
+      matches: t.length,
+    }
+  }
+  const alignment = runLocalAlignment(t, s, algorithm)
+  return { alignment, matches: countMatches(alignment) }
 }
 
 /**
@@ -66,44 +103,25 @@ export function chooseMappedEntity(
   }
 
   const stripped = entitySeqs.map(stripStopCodon)
-
   const exactIndex = stripped.findIndex(s => s.length > 0 && s === t)
   if (exactIndex !== -1) {
-    return {
-      index: exactIndex,
-      alignment: {
-        consensus: '|'.repeat(t.length),
-        alns: [
-          { id: 'seq1', seq: t },
-          { id: 'seq2', seq: stripped[exactIndex]! },
-        ],
-      },
-      matches: t.length,
-    }
+    const exact = alignTranscriptToEntity(t, stripped[exactIndex]!, algorithm)!
+    return { index: exactIndex, ...exact }
   }
 
   // Each alignment is an O(len(t) * len(s)) main-thread DP, so a complex with
   // many chains pays it once per chain. Homomers and repeated chains share a
-  // sequence, so align each distinct one once and reuse the result; oversized
-  // chains (long nucleic-acid strands, say) are skipped rather than allowed to
-  // lock up the tab.
-  const bySeq = new Map<
-    string,
-    { alignment: PairwiseAlignment; matches: number }
-  >()
+  // sequence, so align each distinct one once and reuse the result.
+  const bySeq = new Map<string, ScoredAlignment | undefined>()
   let best: EntitySelection | undefined
   for (let index = 0; index < stripped.length; index++) {
     const s = stripped[index]!
-    if (s.length > 0 && !alignmentTooLarge(t.length, s.length)) {
-      let scored = bySeq.get(s)
-      if (!scored) {
-        const alignment = runLocalAlignment(t, s, algorithm)
-        scored = { alignment, matches: countMatches(alignment) }
-        bySeq.set(s, scored)
-      }
-      if (!best || scored.matches > best.matches) {
-        best = { index, ...scored }
-      }
+    if (!bySeq.has(s)) {
+      bySeq.set(s, alignTranscriptToEntity(t, s, algorithm))
+    }
+    const scored = bySeq.get(s)
+    if (scored && (!best || scored.matches > best.matches)) {
+      best = { index, ...scored }
     }
   }
   return best

@@ -5,6 +5,8 @@ import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
+import AlignmentRuler from './AlignmentRuler'
+import ChainSelect from './ChainSelect'
 import HoverMarker from './HoverMarker'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
@@ -108,10 +110,10 @@ const ProteinAlignment = observer(function ProteinAlignment({
     showHighlight,
     showProteinTracks,
     url,
-    mappedEntityId,
     confidenceCells,
     hydrophobicityCells,
   } = model
+  const mappedEntityId = model.mappedEntity?.entityId
   const { classes } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
@@ -202,7 +204,10 @@ const ProteinAlignment = observer(function ProteinAlignment({
 
   return (
     <div>
-      <ProteinAlignmentHelpButton model={model} />
+      <div style={{ float: 'right', display: 'flex', alignItems: 'center' }}>
+        <ChainSelect model={model} />
+        <ProteinAlignmentHelpButton model={model} />
+      </div>
 
       <Typography>
         Alignment of the protein structure file&apos;s sequence with the
@@ -248,6 +253,11 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <span>STRUCT</span>
             </Tooltip>
           </div>
+          <GutterLabel
+            label="residue"
+            title="Structure residue number, as the 3D view counts them"
+            height={ROW_HEIGHT}
+          />
           {showProteinTracks ? (
             featureLoading ? (
               <div className={classes.gutterStatus}>Loading...</div>
@@ -301,6 +311,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
               <SplitString model={model} str={a1} />
             </div>
           </div>
+          <AlignmentRuler model={model} columns={a0.length} />
           {/* One relative parent for every track, so the hover marker spans all
               of them — nested inside the feature tracks it stopped short of the
               pLDDT/hydrophobicity rows, and vanished entirely when a structure

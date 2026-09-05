@@ -11,6 +11,7 @@ import {
 } from '@mui/material'
 
 import HelpButton from './HelpButton'
+import { STRUCTURE_FILE_ACCEPT } from '../utils/readStructureFile'
 import { getPdbStructureUrl } from '../utils/structureUrls'
 
 export default function StructureSourcePicker({
@@ -72,6 +73,7 @@ export default function StructureSourcePicker({
             <input
               type="file"
               hidden
+              accept={STRUCTURE_FILE_ACCEPT}
               onChange={({ target }) => {
                 const f = target.files?.[0]
                 if (f) {

@@ -14,6 +14,7 @@ import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { launch3DProteinView } from '../utils/launchViewUtils'
+import { readStructureFile } from '../utils/readStructureFile'
 import { stripStopCodon } from '../utils/util'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
@@ -102,7 +103,9 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
 
   const handleLaunch = runLaunch(async () => {
     if (protein && selectedTranscript) {
-      const structureData = activeFile ? await activeFile.text() : undefined
+      const structureData = activeFile
+        ? await readStructureFile(activeFile)
+        : undefined
       launch3DProteinView({
         session,
         view,

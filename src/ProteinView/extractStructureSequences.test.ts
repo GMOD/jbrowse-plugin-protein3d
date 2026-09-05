@@ -33,6 +33,7 @@ const contiguous = (seq: string, from = 1): Entity => ({
   entityId: '1',
   seq,
   seqIds: Array.from(seq, (_, i) => i + from),
+  chains: [],
 })
 
 test('extractEntities carries molstar label_seq_ids alongside the sequence', () => {
@@ -40,7 +41,7 @@ test('extractEntities carries molstar label_seq_ids alongside the sequence', () 
     model([{ entityId: '3', seq: 'MKAA', seqIds: [1, 2, 3, 4] }]),
   )
   expect(entities).toEqual([
-    { entityId: '3', seq: 'MKAA', seqIds: [1, 2, 3, 4] },
+    { entityId: '3', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: [] },
   ])
 })
 

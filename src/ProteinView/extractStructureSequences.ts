@@ -23,6 +23,15 @@ export interface Entity {
   entityId: string
   seq: string
   seqIds: number[]
+  /** author chain ids carrying this entity, e.g. ['A', 'B'] for a homodimer;
+   * what a user recognises from the PDB entry page, where the entity id is
+   * molstar's own bookkeeping */
+  chains: string[]
+}
+
+interface Column<T> {
+  rowCount: number
+  value(row: number): T
 }
 
 interface StructureModel {
@@ -41,16 +50,50 @@ interface StructureModel {
           }
         }[]
       }
+      atomicHierarchy?: {
+        chains: {
+          label_entity_id: Column<string>
+          auth_asym_id: Column<string>
+        }
+      }
     }
   }
 }
 
+function chainsByEntity(model: StructureModel) {
+  const chains = model.obj?.data.atomicHierarchy?.chains
+  const byEntity = new Map<string, string[]>()
+  if (chains) {
+    for (let i = 0; i < chains.label_entity_id.rowCount; i++) {
+      const entityId = chains.label_entity_id.value(i)
+      const chain = chains.auth_asym_id.value(i)
+      const list = byEntity.get(entityId) ?? []
+      if (!list.includes(chain)) {
+        list.push(chain)
+      }
+      byEntity.set(entityId, list)
+    }
+  }
+  return byEntity
+}
+
 export function extractEntities(model: StructureModel): Entity[] | undefined {
+  const chains = chainsByEntity(model)
   return model.obj?.data.sequence.sequences.map(s => ({
     entityId: s.entityId,
     seq: Array.from(s.sequence.label.toArray()).join(''),
     seqIds: Array.from(s.sequence.seqId.toArray()),
+    chains: chains.get(s.entityId) ?? [],
   }))
+}
+
+/** A user-facing name for an entity: its chains when known, else its id. */
+export function entityLabel(entity: Entity) {
+  const chains =
+    entity.chains.length > 0
+      ? `Chain ${entity.chains.join('/')}`
+      : `Entity ${entity.entityId}`
+  return `${chains} (${entity.seq.length} aa)`
 }
 
 /** Back-compat helper for callers that only need the sequence strings (e.g. the

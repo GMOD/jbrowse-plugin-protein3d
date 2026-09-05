@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { ErrorMessage } from '@jbrowse/core/ui'
 import {
   Button,
+  Checkbox,
   Dialog,
   DialogActions,
   DialogContent,
@@ -15,6 +16,11 @@ import {
   Typography,
 } from '@mui/material'
 import { observer } from 'mobx-react'
+
+import {
+  STRUCTURE_FILE_ACCEPT,
+  readStructureFile,
+} from '../../LaunchProteinView/utils/readStructureFile'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 import type { ProteinStructureSpec } from '../proteinViewSpec'
@@ -30,7 +36,9 @@ const AddStructureDialog = observer(function AddStructureDialog({
   const [choice, setChoice] = useState('pdb')
   const [structureURL, setStructureURL] = useState('')
   const [error, setError] = useState<unknown>()
+  const [mapToTranscript, setMapToTranscript] = useState(true)
   const { showAddStructureDialog } = model
+  const canMap = !!model.primaryStructure?.userProvidedTranscriptSequence
 
   const handleClose = () => {
     setFile(undefined)
@@ -46,7 +54,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
   // AlphaFold/RCSB url formats a second time.
   const handleAdd = async () => {
     try {
-      const spec: ProteinStructureSpec | undefined =
+      const source: ProteinStructureSpec | undefined =
         choice === 'pdb' && pdbId
           ? { pdbId }
           : choice === 'uniprot' && uniprotId
@@ -54,11 +62,24 @@ const AddStructureDialog = observer(function AddStructureDialog({
             : choice === 'url' && structureURL
               ? { url: structureURL }
               : choice === 'file' && file
-                ? { data: await file.text() }
+                ? { data: await readStructureFile(file) }
                 : undefined
 
-      if (spec) {
-        model.addStructure(spec)
+      if (source) {
+        // Copying the primary's transcript, feature and genome view makes the
+        // new structure a peer: it gets its own alignment, hover and click
+        // mapping, rather than only a superposed shape.
+        const primary = model.primaryStructure
+        const mapping =
+          mapToTranscript && primary?.userProvidedTranscriptSequence
+            ? {
+                userProvidedTranscriptSequence:
+                  primary.userProvidedTranscriptSequence,
+                feature: primary.feature,
+                connectedViewId: primary.connectedViewId,
+              }
+            : {}
+        model.addStructure({ ...source, ...mapping })
         handleClose()
       }
     } catch (e) {
@@ -151,7 +172,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
               <input
                 type="file"
                 hidden
-                accept=".pdb,.cif,.mmcif,.ent"
+                accept={STRUCTURE_FILE_ACCEPT}
                 onChange={({ target }) => {
                   const f = target.files?.[0]
                   if (f) {
@@ -166,6 +187,20 @@ const AddStructureDialog = observer(function AddStructureDialog({
               </Typography>
             ) : null}
           </div>
+        ) : null}
+
+        {canMap ? (
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={mapToTranscript}
+                onChange={event => {
+                  setMapToTranscript(event.target.checked)
+                }}
+              />
+            }
+            label="Map to the same transcript as the first structure (alignment, hover and click linked to the genome)"
+          />
         ) : null}
 
         <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>

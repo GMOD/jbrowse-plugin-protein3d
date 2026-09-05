@@ -10,6 +10,7 @@ import { autorun } from 'mobx'
 
 import { setMolstarLoci } from './applyLociInteractivity'
 import {
+  alignTranscriptToEntity,
   chooseMappedEntity,
   interactionMatchesMappedEntity,
 } from './chooseMappedEntity'
@@ -119,6 +120,15 @@ const Structure = types
     initialSelection: types.frozen<
       { start: number; end: number } | undefined
     >(),
+    /**
+     * #property
+     * mmCIF entity the transcript maps to. Chosen by alignment when the
+     * structure loads (see chooseMappedEntity), or by the user through the
+     * chain picker. Persisted beside `pairwiseAlignment` because that
+     * alignment is against this entity's sequence: restoring one without the
+     * other would light chain A's residues with chain C's alignment.
+     */
+    mappedEntityId: types.maybe(types.string),
   })
   // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
   // concrete `url` at hydration and strip the shorthand keys (they are not
@@ -160,14 +170,6 @@ const Structure = types
      * #volatile
      */
     entities: undefined as Entity[] | undefined,
-    /**
-     * #volatile
-     * Index into entities of the one that matches the transcript. Resolved by
-     * alignment (see chooseMappedEntity) instead of assuming the protein of
-     * interest is entity [0], which mis-maps heteromers / protein-DNA complexes /
-     * processed peptides.
-     */
-    mappedEntityIndex: 0,
     /**
      * #volatile
      * Per-entity B-factor / pLDDT keyed by label_seq_id. Drives the
@@ -323,8 +325,8 @@ const Structure = types
     /**
      * #action
      */
-    setMappedEntityIndex(n: number) {
-      self.mappedEntityIndex = n
+    setMappedEntityId(id?: string) {
+      self.mappedEntityId = id
     },
     /**
      * #action
@@ -344,25 +346,19 @@ const Structure = types
     },
     /**
      * #getter
-     * The entity that maps to the transcript (chosen by chooseMappedEntity), not
-     * blindly entity [0].
+     * The entity that maps to the transcript: the chosen one when
+     * `mappedEntityId` is set, else the first, so a standalone structure with
+     * no transcript still has a chain to read hovers from.
      */
     get mappedEntity() {
-      return self.entities?.[self.mappedEntityIndex]
+      const { entities, mappedEntityId } = self
+      return entities?.find(e => e.entityId === mappedEntityId) ?? entities?.[0]
     },
     /**
      * #getter
      */
     get mappedStructureSeq() {
       return this.mappedEntity?.seq
-    },
-    /**
-     * #getter
-     * mmCIF entity id of the mapped entity. Used to reject hovers/clicks on
-     * other chains and to confine highlights to the gene's protein.
-     */
-    get mappedEntityId() {
-      return this.mappedEntity?.entityId
     },
     /**
      * #getter
@@ -809,6 +805,35 @@ const Structure = types
     },
     /**
      * #action
+     * The user's override of which chain the transcript maps to. The alignment
+     * is recomputed against that entity's sequence, and every highlight that
+     * derived from the old one is dropped, since its positions meant residues
+     * of another chain.
+     */
+    chooseEntity(entityId: string) {
+      const entity = self.entities?.find(e => e.entityId === entityId)
+      if (!entity || entity.entityId === self.mappedEntity?.entityId) {
+        return
+      }
+      const scored = alignTranscriptToEntity(
+        self.userProvidedTranscriptSequence,
+        entity.seq,
+        self.alignmentAlgorithm,
+      )
+      if (!scored) {
+        throw new Error(
+          `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
+        )
+      }
+      self.setMappedEntityId(entityId)
+      self.setAlignment(scored.alignment)
+      self.setClickedStructureRange(undefined)
+      self.setAlignmentHoverRange(undefined)
+      self.setSelectedFeatureId(undefined)
+      self.setHoveredPosition(undefined)
+    },
+    /**
+     * #action
      */
     clickAlignmentPosition(alignmentPos: number) {
       const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
@@ -906,7 +931,7 @@ const Structure = types
             if (!selection) {
               return
             }
-            self.setMappedEntityIndex(selection.index)
+            self.setMappedEntityId(self.entities?.[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
             if (selection.matches < alignmentLength(selection.alignment)) {
               self.parentView.setShowAlignment(true)
@@ -959,7 +984,7 @@ const Structure = types
           !info ||
           !interactionMatchesMappedEntity(
             info.entityId,
-            self.coordinateMapper ? self.mappedEntityId : undefined,
+            self.coordinateMapper ? self.mappedEntity?.entityId : undefined,
           )
         ) {
           return undefined
@@ -1010,7 +1035,7 @@ const Structure = types
                 structure: molstarStructure,
                 plugin: molstarPluginContext,
                 channel,
-                entityId: self.mappedEntityId,
+                entityId: self.mappedEntity?.entityId,
                 labelSeqIds,
               })
             }
