@@ -33,6 +33,8 @@ interface ProteinViewStructure {
   genomeToTranscriptSeqMapping?: { g2p: Record<string, number> }
   mappedEntityId?: string
   url?: string
+  clickedStructureRange?: { start: number; end: number }
+  residueNumber?: (pos: number) => number
 }
 interface SessionView {
   type: string

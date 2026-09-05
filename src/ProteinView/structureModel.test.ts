@@ -198,6 +198,45 @@ test('a persisted mappedEntityId survives a reload alongside its alignment', () 
   expect(model.mappedEntity?.entityId).toBe('2')
 })
 
+test('initialResidues seeds the selection by author numbering once the mapped entity is known', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'MKAA',
+        initialResidues: { start: 96, end: 97 },
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  // nothing to resolve against yet
+  expect(model.clickedStructureRange).toBeUndefined()
+  model.setStructureData({
+    entities: [
+      // a decoy first entity numbered the same way, as 1TUP's DNA strands are
+      {
+        entityId: '1',
+        seq: 'GGGG',
+        seqIds: [1, 2, 3, 4],
+        authSeqIds: [94, 95, 96, 97],
+        chains: ['D'],
+      },
+      {
+        entityId: '2',
+        seq: 'MKAA',
+        seqIds: [1, 2, 3, 4],
+        authSeqIds: [94, 95, 96, 97],
+        chains: ['A'],
+      },
+    ],
+  })
+  // the alignment autorun has picked entity 2, and the seed resolved on it
+  expect(model.mappedEntityId).toBe('2')
+  expect(model.clickedStructureRange).toEqual({ start: 2, end: 4 })
+  // the seed fires once: clearing the selection afterwards sticks
+  model.setClickedStructureRange(undefined)
+  expect(model.clickedStructureRange).toBeUndefined()
+})
+
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
     structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],

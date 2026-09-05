@@ -155,7 +155,9 @@ describe('Protein3d Plugin E2E', () => {
           type: 'ProteinView',
           structures: [
             { uniprotId: 'P04637' },
-            { pdbId: '1TUP' },
+            // R248 by the authors' numbering; the construct starts at 94, so
+            // this has to resolve to position 154 without the spec saying so
+            { pdbId: '1TUP', initialResidues: { start: 248, end: 248 } },
             { pdbId: '1YCR' },
           ],
           transcriptId: 'ENST00000269305.9',
@@ -192,6 +194,28 @@ describe('Protein3d Plugin E2E', () => {
     ])
     expect(state.structures[1]?.mappedEntityId).toBe('3')
     expect(state.structures[2]?.mappedEntityId).toBe('2')
+
+    // The author-numbered seed resolved on the real file: 1TUP's chain is
+    // numbered from 94, so R248 is position 154, and the ruler says 248.
+    const hotspot = await page.evaluate(() => {
+      const s = window.JBrowseSession!.views!.find(
+        v => v.type === 'ProteinView',
+      )!.structures![1]!
+      const panel = document.querySelector('[data-structure="1TUP"]')!
+      panel.scrollIntoView()
+      return {
+        clickedStructureRange: s.clickedStructureRange,
+        residueNumber: s.residueNumber?.(154),
+        rulerLabels: [...panel.querySelectorAll('span')]
+          .map(el => el.textContent)
+          .filter(t => /^\d+$/.test(t ?? '')),
+      }
+    })
+    console.log(`hotspot: ${JSON.stringify(hotspot)}`)
+    expect(hotspot.clickedStructureRange).toEqual({ start: 154, end: 155 })
+    expect(hotspot.residueNumber).toBe(248)
+    expect(hotspot.rulerLabels).toContain('250')
+    await captureScreenshot(page, screenshot('08-hotspot-panel'))
     expect(pageErrors).toEqual([])
   }, 300_000)
 })

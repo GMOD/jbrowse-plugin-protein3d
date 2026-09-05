@@ -135,6 +135,33 @@ export function residueNumber(entity: Entity | undefined, pos: number) {
   return entity?.authSeqIds?.[pos] ?? entity?.seqIds[pos] ?? pos + 1
 }
 
+/**
+ * The 0-based half-open position range covering an inclusive range of author
+ * residue numbers, the form a paper or a spec names a site by ("R248",
+ * "residues 102-292"). Undefined when no residue of the entity carries a number
+ * in the range, so a typo selects nothing rather than something else.
+ */
+export function residueRangeToPositions(
+  entity: Entity | undefined,
+  range: { start: number; end: number },
+) {
+  if (!entity) {
+    return undefined
+  }
+  let first: number | undefined
+  let last: number | undefined
+  for (let pos = 0; pos < entity.seq.length; pos++) {
+    const n = residueNumber(entity, pos)
+    if (n >= range.start && n <= range.end) {
+      first ??= pos
+      last = pos
+    }
+  }
+  return first === undefined || last === undefined
+    ? undefined
+    : { start: first, end: last + 1 }
+}
+
 function chainsByEntity(model: StructureModel) {
   const chains = model.obj?.data.atomicHierarchy?.chains
   const byEntity = new Map<string, string[]>()

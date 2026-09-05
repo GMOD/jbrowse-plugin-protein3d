@@ -27,6 +27,7 @@ interface LaunchStructure {
   uniprotId?: string
   pdbId?: string
   initialSelection?: { start: number; end: number }
+  initialResidues?: { start: number; end: number }
   mappedEntityId?: string
 }
 
@@ -79,6 +80,8 @@ export default function LaunchProteinViewExtensionPointF(
       // across the 3D structure, connected genome view, and alignment exactly
       // as a domain click would — so a spec can open with a domain highlighted.
       initialSelection?: { start: number; end: number }
+      // the same, by inclusive author residue numbers (R248 is 248-248)
+      initialResidues?: { start: number; end: number }
     }) => {
       const {
         session,
@@ -98,10 +101,11 @@ export default function LaunchProteinViewExtensionPointF(
         zoomToBaseLevel,
         sideBySide,
         initialSelection,
+        initialResidues,
       } = args
       const requested: LaunchStructure[] = args.structures?.length
         ? args.structures
-        : [{ url, uniprotId, pdbId, initialSelection }]
+        : [{ url, uniprotId, pdbId, initialSelection, initialResidues }]
       const urls = requested.map(s => resolveStructureUrl(s))
       const primary = requested[0]!
       const primaryUrl = urls[0]
@@ -155,6 +159,7 @@ export default function LaunchProteinViewExtensionPointF(
         url: urls[i],
         data: s.data,
         initialSelection: s.initialSelection,
+        initialResidues: s.initialResidues,
         mappedEntityId: s.mappedEntityId,
         userProvidedTranscriptSequence:
           resolved?.userProvidedTranscriptSequence ??

@@ -63,7 +63,10 @@ truth is molstar's `mol-model-formats/structure/basic/sequence`.
   `clickedStructureRange`, the alignment maps) stays a 0-based position, and
   molstar is addressed by `label_seq_id` through `Entity.seqIds`. Unobserved
   residues borrow the nearest observed residue's offset, so a disordered loop
-  keeps counting.
+  keeps counting. A spec that wants to name a site the literature's way uses
+  `initialResidues: { start: 248, end: 248 }` (inclusive author numbers) and the
+  model resolves it to positions after the load; `initialSelection` stays the
+  0-based form.
 
 ## Host compatibility
 

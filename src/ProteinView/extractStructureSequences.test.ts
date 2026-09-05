@@ -7,6 +7,7 @@ import {
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
   residueNumber,
+  residueRangeToPositions,
   toLabelSeqIds,
 } from './extractStructureSequences'
 
@@ -100,6 +101,30 @@ test('fillAuthSeqIds: an unobserved N-terminus takes the first observed offset',
 test('fillAuthSeqIds: nothing observed keeps the label numbering', () => {
   expect(fillAuthSeqIds([1, 2, 3], new Map())).toEqual([1, 2, 3])
   expect(fillAuthSeqIds([1, 2, 3], undefined)).toEqual([1, 2, 3])
+})
+
+test('residueRangeToPositions finds the positions an author range names', () => {
+  const e: Entity = {
+    entityId: '1',
+    seq: 'SSSVPS',
+    seqIds: [1, 2, 3, 4, 5, 6],
+    authSeqIds: [94, 95, 96, 97, 120, 121],
+    chains: ['A'],
+  }
+  expect(residueRangeToPositions(e, { start: 95, end: 95 })).toEqual({
+    start: 1,
+    end: 2,
+  })
+  // a range spanning the renumbered loop covers the positions on both sides
+  expect(residueRangeToPositions(e, { start: 96, end: 120 })).toEqual({
+    start: 2,
+    end: 5,
+  })
+  // residues the fragment does not hold select nothing
+  expect(residueRangeToPositions(e, { start: 1, end: 10 })).toBeUndefined()
+  expect(
+    residueRangeToPositions(undefined, { start: 1, end: 1 }),
+  ).toBeUndefined()
 })
 
 test('residueNumber falls back to label ids, then to position + 1', () => {

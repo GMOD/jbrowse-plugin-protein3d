@@ -41,6 +41,15 @@ export default function ProteinAlignmentHelpDialog({
           gap are unmapped and will not highlight.
         </Typography2>
         <Typography2>
+          The GENOME row is the transcript&apos;s translation and the STRUCT row
+          is the structure file&apos;s own sequence. The ruler under them counts
+          residues the way the structure&apos;s authors numbered them, which for
+          a PDB entry is the numbering papers and UniProt cite (p53&apos;s R248
+          is residue 248 in 1TUP even though the crystallised fragment starts at
+          residue 94). Click a residue to select it and jump the genome view to
+          its codon; hover one to light it in the 3D view.
+        </Typography2>
+        <Typography2>
           If you need a 100% fidelity protein, you can do a folding with e.g.
           AlphaFold to make sure the structure you are using matches exactly the
           sequence of the transcript

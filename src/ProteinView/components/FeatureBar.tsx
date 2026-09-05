@@ -11,15 +11,34 @@ import type { FeatureLayout } from '../hooks/useProteinFeatureTrackData'
 import type { UniProtFeature } from '../hooks/useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-function FeatureTooltipContent({ feature }: { feature: UniProtFeature }) {
+// UniProt numbers a feature on the full-length protein. For a crystal fragment
+// the ruler under the bar counts the authors' way, so name both when they
+// differ rather than leave the reader to reconcile two numberings.
+function FeatureTooltipContent({
+  feature,
+  layout,
+  model,
+}: {
+  feature: UniProtFeature
+  layout: FeatureLayout
+  model: JBrowsePluginProteinStructureModel
+}) {
+  const first = model.residueNumber(layout.structureStart)
+  const last = model.residueNumber(layout.structureEnd - 1)
+  const differs = first !== feature.start || last !== feature.end
   return (
     <div>
       <div>
         <strong>{feature.type}</strong>
       </div>
       <div>
-        Position: {feature.start}-{feature.end}
+        UniProt position: {feature.start}-{feature.end}
       </div>
+      {differs ? (
+        <div>
+          Structure residue: {first}-{last}
+        </div>
+      ) : null}
       {feature.description ? <div>{feature.description}</div> : null}
     </div>
   )
@@ -77,7 +96,16 @@ const FeatureBar = observer(function FeatureBar({
   const color = getFeatureColor(feature.type)
 
   return (
-    <Tooltip title={<FeatureTooltipContent feature={feature} />} followCursor>
+    <Tooltip
+      title={
+        <FeatureTooltipContent
+          feature={feature}
+          layout={layout}
+          model={model}
+        />
+      }
+      followCursor
+    >
       <div
         data-testid={`protein-feature-${feature.type}`}
         data-feature-id={feature.uniqueId}

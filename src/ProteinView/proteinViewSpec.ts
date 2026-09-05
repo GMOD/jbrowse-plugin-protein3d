@@ -23,6 +23,10 @@ export interface ProteinStructureSpec {
   userProvidedTranscriptSequence?: string
   // 0-based half-open structure-residue range lit on load, as if clicked
   initialSelection?: { start: number; end: number }
+  // the same selection named by author residue numbers, inclusive, the way a
+  // paper cites a site (R248 is { start: 248, end: 248 }); resolved through the
+  // structure's own numbering once it loads
+  initialResidues?: { start: number; end: number }
   pairwiseAlignment?: PairwiseAlignment
   // mmCIF entity id the transcript maps to; chosen by alignment when absent
   mappedEntityId?: string

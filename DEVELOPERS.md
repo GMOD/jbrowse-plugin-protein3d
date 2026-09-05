@@ -133,6 +133,8 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 | `showControls`                   | No       | Show Mol\* controls panel                                                         |
 | `showHighlight`                  | No       | Show alignment highlight on structure                                             |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
+| `initialResidues`                | No       | `{ start, end }` author residue numbers, inclusive, selected on load (R248 → 248) |
+| `initialSelection`               | No       | The same as a 0-based half-open position range, for callers that already have it  |
 
 \* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
 form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same
@@ -256,8 +258,10 @@ target config.
 `structures` opens one view holding several structures, superposed with TM-align
 and each mapped to the same transcript, which is what the view's **Add
 structure...** dialog builds by hand. Each entry takes `url`, `uniprotId` or
-`pdbId`, and may carry its own `initialSelection` and `mappedEntityId`. The
-top-level `url`/`uniprotId`/`pdbId` is the one-structure shorthand for it.
+`pdbId`, and may carry its own `initialResidues` (or `initialSelection`) and
+`mappedEntityId`. The top-level `url`/`uniprotId`/`pdbId` is the one-structure
+shorthand for it. See [docs/residue-numbering.md](docs/residue-numbering.md) for
+how a residue number in a spec becomes a position in the file.
 
 ```
 https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}

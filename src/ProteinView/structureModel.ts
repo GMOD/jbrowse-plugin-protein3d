@@ -6,7 +6,7 @@ import {
   isAlive,
   types,
 } from '@jbrowse/mobx-state-tree'
-import { autorun } from 'mobx'
+import { autorun, when } from 'mobx'
 
 import { setMolstarLoci } from './applyLociInteractivity'
 import {
@@ -53,6 +53,7 @@ import {
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
   residueNumber,
+  residueRangeToPositions,
   toLabelSeqIds,
 } from './extractStructureSequences'
 
@@ -122,6 +123,15 @@ const Structure = types
     initialSelection: types.frozen<
       { start: number; end: number } | undefined
     >(),
+    /**
+     * #property
+     * The same seed named by author residue numbers, inclusive, as a paper
+     * cites a site: `{ start: 248, end: 248 }` for p53's R248 whichever
+     * fragment the crystal holds. Resolved to positions through the mapped
+     * entity's numbering once the structure loads, so it needs no knowledge of
+     * where the construct starts.
+     */
+    initialResidues: types.frozen<{ start: number; end: number } | undefined>(),
     /**
      * #property
      * mmCIF entity the transcript maps to. Chosen by alignment when the
@@ -894,6 +904,27 @@ const Structure = types
       // it normally.
       if (self.initialSelection) {
         self.setClickedStructureRange(self.initialSelection)
+      }
+      // The author-numbered seed can only resolve once the entities are read
+      // and the transcript's entity is chosen: before that, mappedEntity falls
+      // back to entities[0], which in 1TUP is a DNA strand. Fires once, so a
+      // user clearing the selection afterwards is not overruled.
+      const { initialResidues } = self
+      if (initialResidues) {
+        addDisposer(
+          self,
+          when(
+            () =>
+              !!self.entities &&
+              (self.mappedEntityId !== undefined ||
+                !self.userProvidedTranscriptSequence),
+            () => {
+              self.setClickedStructureRange(
+                residueRangeToPositions(self.mappedEntity, initialResidues),
+              )
+            },
+          ),
+        )
       }
 
       // Re-subscribe to a molstar click/hover behavior whenever the plugin
