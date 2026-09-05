@@ -1,3 +1,5 @@
+import { readStorage, writeStorage } from '../../storage'
+
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
 // Self-contained launch preference (NOT the global/core preferences system):
@@ -10,12 +12,12 @@ const SIDE_BY_SIDE_KEY = 'proteinView-launchSideBySide'
 const DEFAULT_SIDE_BY_SIDE = true
 
 export function getLaunchSideBySide() {
-  const stored = localStorage.getItem(SIDE_BY_SIDE_KEY)
-  return stored === null ? DEFAULT_SIDE_BY_SIDE : stored === 'true'
+  const stored = readStorage(SIDE_BY_SIDE_KEY)
+  return stored === undefined ? DEFAULT_SIDE_BY_SIDE : stored === 'true'
 }
 
 export function setLaunchSideBySide(value: boolean) {
-  localStorage.setItem(SIDE_BY_SIDE_KEY, value ? 'true' : 'false')
+  writeStorage(SIDE_BY_SIDE_KEY, value ? 'true' : 'false')
 }
 
 // The workspaces split is driven by two session actions that only exist on the

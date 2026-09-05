@@ -12,6 +12,13 @@ import {
   applyColorTheme,
 } from './applyColorTheme'
 import { showLoading } from './showLoading'
+import {
+  PERSISTED_SETTINGS,
+  type PersistedSettings,
+  readStoredSettings,
+  withStoredSettings,
+  writeStoredSettings,
+} from './storedSettings'
 import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
@@ -21,28 +28,6 @@ import {
   type AlignmentAlgorithm,
   DEFAULT_ALIGNMENT_ALGORITHM,
 } from './types'
-
-const SETTINGS_KEY = 'proteinView-settings'
-const PERSISTED_SETTINGS = [
-  'showAlignment',
-  'showProteinTracks',
-  'showHighlight',
-  'zoomToBaseLevel',
-  'autoScrollAlignment',
-  'compactTracks',
-] as const
-
-// Must mirror the property defaults below; the Record type enforces the key set
-// so a persisted setting can't be added without giving its default. Used to tell
-// "left at default" from "explicitly declared" when restoring preferences.
-const SETTING_DEFAULTS: Record<(typeof PERSISTED_SETTINGS)[number], boolean> = {
-  showAlignment: true,
-  showProteinTracks: true,
-  showHighlight: false,
-  zoomToBaseLevel: true,
-  autoScrollAlignment: false,
-  compactTracks: true,
-}
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { Instance } from '@jbrowse/mobx-state-tree'
@@ -134,6 +119,10 @@ function stateModelFactory() {
          */
         connectedMsaViewId: types.maybe(types.string),
       }),
+    )
+    .preProcessSnapshot(
+      (snapshot: PersistedSettings & Record<string, unknown>) =>
+        withStoredSettings(snapshot, readStoredSettings()),
     )
     .volatile(() => ({
       /**
@@ -269,27 +258,6 @@ function stateModelFactory() {
     }))
     .actions(self => ({
       afterAttach() {
-        // Restore persisted UI preferences, but only for settings the launch
-        // snapshot left at their default. An explicitly declared value (e.g. a
-        // gene-explorer spec's zoomToBaseLevel:false) must win over a sticky
-        // preference, so declarative setup is honored.
-        try {
-          const stored = localStorage.getItem(SETTINGS_KEY)
-          if (stored) {
-            const settings = JSON.parse(stored) as Record<string, boolean>
-            for (const key of PERSISTED_SETTINGS) {
-              if (
-                settings[key] !== undefined &&
-                self[key] === SETTING_DEFAULTS[key]
-              ) {
-                self[key] = settings[key]
-              }
-            }
-          }
-        } catch (e) {
-          console.error('Failed to restore protein view settings', e)
-        }
-
         // Persist on user change only. reaction (unlike autorun) skips the
         // initial value, so launching a declaratively-configured view never
         // overwrites the stored preference — only a menu toggle does.
@@ -298,15 +266,11 @@ function stateModelFactory() {
           reaction(
             () => PERSISTED_SETTINGS.map(key => self[key]),
             () => {
-              try {
-                const settings: Record<string, boolean> = {}
-                for (const key of PERSISTED_SETTINGS) {
-                  settings[key] = self[key]
-                }
-                localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings))
-              } catch (e) {
-                console.error('Failed to save protein view settings', e)
+              const settings: PersistedSettings = {}
+              for (const key of PERSISTED_SETTINGS) {
+                settings[key] = self[key]
               }
+              writeStoredSettings(settings)
             },
           ),
         )
@@ -355,26 +319,54 @@ function stateModelFactory() {
       get showLoading() {
         return showLoading(self)
       },
-      menuItems() {
+      /**
+       * #getter
+       * The boolean display settings, in one list so the view menu and the
+       * header's settings menu offer the same toggles under the same names.
+       */
+      get displayToggles() {
         return [
           {
-            label: 'Pairwise alignment',
-            icon: Visibility,
-            type: 'checkbox',
+            label: 'Show alignment',
             checked: self.showAlignment,
-            onClick: () => {
+            toggle: () => {
               self.setShowAlignment(!self.showAlignment)
             },
           },
           {
-            label: 'Protein feature tracks',
-            icon: Visibility,
-            type: 'checkbox',
+            label: 'Show feature tracks',
             checked: self.showProteinTracks,
-            onClick: () => {
+            toggle: () => {
               self.setShowProteinTracks(!self.showProteinTracks)
             },
           },
+          {
+            label: 'Compact tracks',
+            checked: self.compactTracks,
+            toggle: () => {
+              self.setCompactTracks(!self.compactTracks)
+            },
+          },
+          {
+            label: 'Auto-scroll alignment to hovered position',
+            checked: self.autoScrollAlignment,
+            toggle: () => {
+              self.setAutoScrollAlignment(!self.autoScrollAlignment)
+            },
+          },
+        ]
+      },
+    }))
+    .views(self => ({
+      menuItems() {
+        return [
+          ...self.displayToggles.map(({ label, checked, toggle }) => ({
+            label,
+            icon: Visibility,
+            type: 'checkbox' as const,
+            checked,
+            onClick: toggle,
+          })),
           {
             label: 'Color scheme...',
             subMenu: COLOR_SCHEMES.map(scheme => ({
@@ -437,14 +429,6 @@ function stateModelFactory() {
                 checked: self.zoomToBaseLevel,
                 onClick: () => {
                   self.setZoomToBaseLevel(!self.zoomToBaseLevel)
-                },
-              },
-              {
-                label: 'Auto-scroll alignment to hovered position',
-                type: 'checkbox',
-                checked: self.autoScrollAlignment,
-                onClick: () => {
-                  self.setAutoScrollAlignment(!self.autoScrollAlignment)
                 },
               },
             ],
