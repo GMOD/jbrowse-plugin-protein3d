@@ -16,8 +16,14 @@ interface SessionWithViews {
   views: { id: string }[]
 }
 
+type GenomeMapping = ReturnType<typeof genomeToTranscriptSeqMapping>
+
 class Protein1DViewRegistry {
   views = observable.map<string, Protein1DViewInfo>()
+
+  // The g2p map walks every CDS of the transcript, and the hover bridges ask
+  // for it on every mouse move, so build it once per registration.
+  private mappings = new WeakMap<Protein1DViewInfo, GenomeMapping>()
 
   constructor() {
     makeObservable(this, {
@@ -37,6 +43,15 @@ class Protein1DViewRegistry {
 
   get(viewId: string) {
     return this.views.get(viewId)
+  }
+
+  genomeMapping(info: Protein1DViewInfo) {
+    let mapping = this.mappings.get(info)
+    if (!mapping) {
+      mapping = genomeToTranscriptSeqMapping(new SimpleFeature(info.feature))
+      this.mappings.set(info, mapping)
+    }
+    return mapping
   }
 
   /**
@@ -71,9 +86,7 @@ class Protein1DViewRegistry {
   ): { refName: string; start: number; end: number } | undefined {
     const info = this.getByUniprotId(uniprotId, session)
     if (info) {
-      const { p2gCodon, refName } = genomeToTranscriptSeqMapping(
-        new SimpleFeature(info.feature),
-      )
+      const { p2gCodon, refName } = this.genomeMapping(info)
       const span = codonGenomeSpan(p2gCodon, proteinPos)
       return span ? { refName, start: span[0], end: span[1] } : undefined
     }

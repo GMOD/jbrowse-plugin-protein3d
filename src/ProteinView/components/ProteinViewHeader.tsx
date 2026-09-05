@@ -75,39 +75,6 @@ function ToggleMenuItem({
   )
 }
 
-function getDisplayToggles(model: JBrowsePluginProteinViewModel) {
-  return [
-    {
-      label: 'Show alignment',
-      checked: model.showAlignment,
-      onToggle: () => {
-        model.setShowAlignment(!model.showAlignment)
-      },
-    },
-    {
-      label: 'Show features',
-      checked: model.showProteinTracks,
-      onToggle: () => {
-        model.setShowProteinTracks(!model.showProteinTracks)
-      },
-    },
-    {
-      label: 'Auto-scroll alignment',
-      checked: model.autoScrollAlignment,
-      onToggle: () => {
-        model.setAutoScrollAlignment(!model.autoScrollAlignment)
-      },
-    },
-    {
-      label: 'Compact tracks',
-      checked: model.compactTracks,
-      onToggle: () => {
-        model.setCompactTracks(!model.compactTracks)
-      },
-    },
-  ]
-}
-
 const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
   model,
 }: {
@@ -136,12 +103,12 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
           setAnchorEl(null)
         }}
       >
-        {getDisplayToggles(model).map(toggle => (
+        {model.displayToggles.map(toggle => (
           <ToggleMenuItem
             key={toggle.label}
             checked={toggle.checked}
             label={toggle.label}
-            onToggle={toggle.onToggle}
+            onToggle={toggle.toggle}
           />
         ))}
         {hasHiddenTracks ? (

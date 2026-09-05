@@ -1,18 +1,15 @@
 import React from 'react'
 
 import { ErrorMessage, LoadingEllipses, ResizeHandle } from '@jbrowse/core/ui'
+import CloseIcon from '@mui/icons-material/Close'
+import { IconButton } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import ManualAlignmentDialog from './ManualAlignmentDialog'
 import ProteinViewHeader from './ProteinViewHeader'
-import css from '../css/molstar'
 import useProteinView from '../useProteinView'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
-
-const style = document.createElement('style')
-style.append(css)
-document.head.append(style)
 
 const ProteinView = observer(function ProteinView({
   model,
@@ -37,6 +34,32 @@ const ProteinView = observer(function ProteinView({
   )
 })
 
+// A failed superposition or recolor is worth reporting, not worth wearing for
+// the rest of the session, so the message can be dismissed.
+const DismissableError = observer(function DismissableError({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
+  const { error } = model
+  return error ? (
+    <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+      <div style={{ flex: 1 }}>
+        <ErrorMessage error={error} />
+      </div>
+      <IconButton
+        size="small"
+        aria-label="Dismiss error"
+        onClick={() => {
+          model.setError(undefined)
+        }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+    </div>
+  ) : null
+})
+
 const ProteinViewContainer = observer(function ProteinViewContainer({
   model,
   parentRef,
@@ -46,7 +69,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
   parentRef?: React.RefObject<HTMLDivElement | null>
   loading?: boolean
 }) {
-  const { width, height, error, structures } = model
+  const { width, height, structures } = model
 
   // Capture/automation signal: the structure has finished loading and no
   // pairwise alignment is still pending, so the view is painted in its settled
@@ -59,7 +82,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
       style={{ background: '#ccc' }}
       data-testid={ready ? 'protein-view-ready' : 'protein-view-loading'}
     >
-      {error ? <ErrorMessage error={error} /> : null}
+      <DismissableError model={model} />
       {loading ? (
         <LoadingEllipses message="Loading protein viewer" />
       ) : (

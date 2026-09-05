@@ -7,6 +7,17 @@ import loadMolstar from './loadMolstar'
 import type { JBrowsePluginProteinViewModel } from './model'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
+let cssInjected = false
+
+function injectMolstarCss(css: string) {
+  if (!cssInjected) {
+    cssInjected = true
+    const style = document.createElement('style')
+    style.append(css)
+    document.head.append(style)
+  }
+}
+
 export default function useProteinView({
   showControls,
   model,
@@ -43,7 +54,9 @@ export default function useProteinView({
           DefaultPluginUISpec,
           createPluginUI,
           renderReact18,
+          css,
         } = await loadMolstar()
+        injectMolstarCss(css)
 
         const host = document.createElement('div')
         parentRef.current.append(host)

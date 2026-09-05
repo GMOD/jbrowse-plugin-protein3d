@@ -1,12 +1,11 @@
 import React from 'react'
 
-import { SimpleFeature, getSession } from '@jbrowse/core/util'
+import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
 import { protein1DViewRegistry } from '../Protein1DViewRegistry'
 import { genomeHoverToTranscriptPos } from '../ProteinView/util'
-import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -30,10 +29,9 @@ const GenomeTo1DProteinHoverHighlight = observer(
       return null
     }
 
-    const feature = new SimpleFeature(protein1DInfo.feature)
     const proteinPos = genomeHoverToTranscriptPos(
       hovered,
-      genomeToTranscriptSeqMapping(feature),
+      protein1DViewRegistry.genomeMapping(protein1DInfo),
     )
     if (proteinPos === undefined) {
       return null

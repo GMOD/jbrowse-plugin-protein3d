@@ -13,63 +13,49 @@ import {
   IconButton,
   Radio,
   RadioGroup,
-  Tab,
-  Tabs,
-  TextField,
   Typography,
 } from '@mui/material'
-import { parsePairwise } from 'clustal-js'
 
 import { ALIGNMENT_ALGORITHMS } from '../../ProteinView/types'
 
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
-import type { PairwiseAlignment } from '../../mappings'
 
-interface AlignmentSettingsButtonProps {
+function AlgorithmOption({
+  value,
+  label,
+  description,
+}: {
   value: AlignmentAlgorithm
-  onChange: (algorithm: AlignmentAlgorithm) => void
-  onManualAlignment?: (alignment: PairwiseAlignment) => void
+  label: string
+  description: string
+}) {
+  return (
+    <>
+      <FormControlLabel value={value} control={<Radio />} label={label} />
+      <Typography
+        variant="caption"
+        color="text.secondary"
+        sx={{ ml: 4, mt: -1, mb: 1 }}
+      >
+        {description}
+      </Typography>
+    </>
+  )
 }
 
 export default function AlignmentSettingsButton({
   value,
   onChange,
-  onManualAlignment,
-}: AlignmentSettingsButtonProps) {
+}: {
+  value: AlignmentAlgorithm
+  onChange: (algorithm: AlignmentAlgorithm) => void
+}) {
   const [open, setOpen] = useState(false)
-  const [tabValue, setTabValue] = useState(0)
   const [tempAlgorithm, setTempAlgorithm] = useState<AlignmentAlgorithm>(value)
-  const [manualAlignment, setManualAlignment] = useState('')
-  const [parseError, setParseError] = useState<string>()
 
   const handleOpen = () => {
     setTempAlgorithm(value)
-    setManualAlignment('')
-    setParseError(undefined)
-    setTabValue(0)
     setOpen(true)
-  }
-
-  const handleSave = () => {
-    if (tabValue === 0) {
-      onChange(tempAlgorithm)
-    } else if (tabValue === 1 && manualAlignment.trim() && onManualAlignment) {
-      try {
-        const parsed = parsePairwise(manualAlignment.trim())
-        onManualAlignment(parsed)
-      } catch (e) {
-        setParseError(`Failed to parse alignment: ${e}`)
-        return
-      }
-    }
-    setOpen(false)
-  }
-
-  const handleCancel = () => {
-    setTempAlgorithm(value)
-    setManualAlignment('')
-    setParseError(undefined)
-    setOpen(false)
   }
 
   return (
@@ -78,103 +64,60 @@ export default function AlignmentSettingsButton({
         <SettingsIcon />
       </IconButton>
 
-      <Dialog open={open} onClose={handleCancel} maxWidth="sm" fullWidth>
+      <Dialog
+        open={open}
+        onClose={() => {
+          setOpen(false)
+        }}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>Alignment settings</DialogTitle>
         <DialogContent>
-          <Tabs
-            value={tabValue}
-            onChange={(_, val) => {
-              setTabValue(val)
-            }}
-            sx={{ mb: 2 }}
-          >
-            <Tab label="Automatic" />
-            <Tab label="Manual" disabled={!onManualAlignment} />
-          </Tabs>
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+            Choose the algorithm for aligning transcript sequences to protein
+            structures. A hand-made alignment can be imported from the protein
+            view&apos;s menu once it is open.
+          </Typography>
 
-          {tabValue === 0 ? (
-            <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Choose the algorithm for aligning transcript sequences to
-                protein structures.
-              </Typography>
-
-              <FormControl component="fieldset">
-                <FormLabel component="legend">Algorithm</FormLabel>
-                <RadioGroup
-                  value={tempAlgorithm}
-                  onChange={event => {
-                    setTempAlgorithm(event.target.value as AlignmentAlgorithm)
-                  }}
-                >
-                  <FormControlLabel
-                    value={ALIGNMENT_ALGORITHMS.SMITH_WATERMAN}
-                    control={<Radio />}
-                    label="Smith-Waterman (local alignment)"
-                  />
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 4, mt: -1, mb: 1 }}
-                  >
-                    Finds best matching region. Recommended for most use cases.
-                  </Typography>
-
-                  <FormControlLabel
-                    value={ALIGNMENT_ALGORITHMS.NEEDLEMAN_WUNSCH}
-                    control={<Radio />}
-                    label="Needleman-Wunsch (global alignment)"
-                  />
-                  <Typography
-                    variant="caption"
-                    color="text.secondary"
-                    sx={{ ml: 4, mt: -1, mb: 1 }}
-                  >
-                    End-to-end alignment. Use when sequences should align
-                    completely.
-                  </Typography>
-                </RadioGroup>
-              </FormControl>
-            </>
-          ) : (
-            <>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Paste a pre-computed alignment in Clustal format. The first
-                sequence should be the transcript and the second should be the
-                structure.
-              </Typography>
-              <TextField
-                multiline
-                rows={10}
-                fullWidth
-                placeholder={`Example:
-a  MKAAYLSMFGKEDHKPFGD
-   |||||||||||||||||||
-b  MKAAYLSMFGKEDHKPFGD`}
-                value={manualAlignment}
-                onChange={e => {
-                  setManualAlignment(e.target.value)
-                  setParseError(undefined)
-                }}
-                sx={{ fontFamily: 'monospace', fontSize: 12 }}
+          <FormControl component="fieldset">
+            <FormLabel component="legend">Algorithm</FormLabel>
+            <RadioGroup
+              value={tempAlgorithm}
+              onChange={event => {
+                setTempAlgorithm(event.target.value as AlignmentAlgorithm)
+              }}
+            >
+              <AlgorithmOption
+                value={ALIGNMENT_ALGORITHMS.SMITH_WATERMAN}
+                label="Smith-Waterman (local alignment)"
+                description="Finds best matching region. Recommended for most use cases."
               />
-              {parseError ? (
-                <Typography color="error" variant="body2" sx={{ mt: 1 }}>
-                  {parseError}
-                </Typography>
-              ) : null}
-            </>
-          )}
+              <AlgorithmOption
+                value={ALIGNMENT_ALGORITHMS.NEEDLEMAN_WUNSCH}
+                label="Needleman-Wunsch (global alignment)"
+                description="End-to-end alignment. Use when sequences should align completely."
+              />
+            </RadioGroup>
+          </FormControl>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCancel}>Cancel</Button>
           <Button
-            onClick={handleSave}
+            onClick={() => {
+              setOpen(false)
+            }}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              onChange(tempAlgorithm)
+              setOpen(false)
+            }}
             variant="contained"
             color="primary"
-            disabled={tabValue === 1 && !manualAlignment.trim()}
           >
-            {tabValue === 0 ? 'Save' : 'Apply alignment'}
+            Save
           </Button>
         </DialogActions>
       </Dialog>

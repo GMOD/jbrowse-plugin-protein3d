@@ -56,13 +56,19 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
   // pair with the MSA either by an explicit connectedMsaViewId or, in the
   // genome-centric flow, by the genome view this structure and the MSA both
   // connect to (see findConnectedMsaView)
+  const structureViewId = proteinView?.primaryStructure?.connectedViewId
   const msaView = findConnectedMsaView(views as unknown as MsaView[], {
     connectedMsaViewId: proteinView?.connectedMsaViewId,
-    structureViewId: proteinView?.primaryStructure?.connectedViewId,
+    structureViewId,
   })
+  // This bridge is mounted once per genome view, and only the one the
+  // structure is connected to should run it: with two genome views open the
+  // other would install a second, identical set of autoruns.
+  const hostsSync =
+    structureViewId === undefined || structureViewId === model.id
 
   useEffect(() => {
-    if (!proteinView || !msaView) {
+    if (!proteinView || !msaView || !hostsSync) {
       return
     }
 
@@ -136,7 +142,7 @@ const ProteinToMsaHoverSync = observer(function ProteinToMsaHoverSync({
         d()
       })
     }
-  }, [proteinView, msaView])
+  }, [proteinView, msaView, hostsSync])
 
   return null
 })
