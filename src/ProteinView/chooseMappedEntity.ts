@@ -30,8 +30,8 @@ export interface ScoredAlignment {
   alignment: PairwiseAlignment
   /** identical aligned residues */
   matches: number
-  /** the share of the entity's residues the transcript reproduces, the score
-   * that picks the entity; see `explainedFraction` */
+  /** identical residues over the shorter sequence, the score that picks the
+   * entity; see `explainedFraction` */
   explained: number
 }
 
@@ -43,21 +43,36 @@ export interface EntityCandidate {
 }
 
 /**
- * How much of an entity the transcript accounts for: identical residues over
- * the entity's length. A raw match count favours whatever chain is longest,
- * and a complex's partner usually is: on 1H26 the 11-residue p53 peptide
- * matches 11 while CDK2 accrues 58 scattered identities, and on 4ZZJ SIRT1
- * beats the 7-residue p53 peptide 63 to 6. The Smith-Waterman score is no
- * better there (56 vs 58). Dividing by the entity's length asks the question
- * the picker actually has, which chain *is* this gene's product: the peptide
- * scores 0.69 and 0.50, the partners 0.19 and 0.17, and across a ribosome's
- * 55 chains no decoy passes 0.29. The pseudocount keeps a two-residue
- * fragment that happens to match (a tRNA end in 7K00) from scoring 1.0.
+ * Identical residues over the shorter of the two sequences: how much of
+ * whichever is smaller, transcript or entity, the other reproduces.
+ *
+ * A raw match count favours whatever chain is longest, and a complex's partner
+ * usually is: on 1H26 the 11-residue p53 peptide matches 11 while CDK2 accrues
+ * 58 scattered identities, and on 4ZZJ SIRT1 beats the 7-residue p53 peptide
+ * 63 to 6. The Smith-Waterman score is no better there (56 vs 58). Dividing
+ * by length asks the question the picker actually has, which chain *is* this
+ * gene's product: the peptide scores 0.69 and 0.50, the partners 0.19 and
+ * 0.17, and across a ribosome's 55 chains no decoy passes 0.29.
+ *
+ * Dividing by the *entity's* length alone penalised a fusion construct: a
+ * 60-residue target fused to a 370-residue carrier scored 0.14, and a random
+ * 10-mer decoy chain with 3 identities beat it a third of the time (measured
+ * 2026-09-11). Dividing by the shorter sequence leaves every chain shorter
+ * than the transcript scored as before and lets a chain that contains the
+ * whole transcript score near 1 however long its tag is. The pseudocount
+ * keeps a two-residue fragment that happens to match (a tRNA end in 7K00)
+ * from scoring 1.0.
  */
 const EXPLAINED_PSEUDOCOUNT = 5
 
-export function explainedFraction(matches: number, entityLength: number) {
-  return matches / (entityLength + EXPLAINED_PSEUDOCOUNT)
+export function explainedFraction(
+  matches: number,
+  transcriptLength: number,
+  entityLength: number,
+) {
+  return (
+    matches / (Math.min(transcriptLength, entityLength) + EXPLAINED_PSEUDOCOUNT)
+  )
 }
 
 function countMatches(pa: PairwiseAlignment) {
@@ -100,12 +115,16 @@ export function alignTranscriptToEntity(
         ],
       },
       matches: t.length,
-      explained: explainedFraction(t.length, s.length),
+      explained: explainedFraction(t.length, t.length, s.length),
     }
   }
   const alignment = runLocalAlignment(t, s, algorithm)
   const matches = countMatches(alignment)
-  return { alignment, matches, explained: explainedFraction(matches, s.length) }
+  return {
+    alignment,
+    matches,
+    explained: explainedFraction(matches, t.length, s.length),
+  }
 }
 
 /**
@@ -115,8 +134,9 @@ export function alignTranscriptToEntity(
  * heteromeric / protein-DNA / processed-peptide structure where the protein of
  * interest is some other chain. Selecting by alignment makes the structure self-
  * describe which entity is the gene's protein: an exact sequence match wins
- * outright, otherwise the entity the transcript explains the largest share of
- * (see `explainedFraction`). Nucleic-acid entities are never candidates.
+ * outright, otherwise the entity with the highest identity over the shorter
+ * sequence (see `explainedFraction`). Nucleic-acid entities are never
+ * candidates.
  *
  * Returns `undefined` only when there is nothing to map (no transcript or no
  * protein entities) — never a silent fallback to the wrong entity.

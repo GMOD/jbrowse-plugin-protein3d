@@ -44,18 +44,26 @@ modeling-tool output usually has no SEQRES) and through `caCoordsToPdb`, which
 emits no SEQRES and survives only because it happens to number from 1. Source of
 truth is molstar's `mol-model-formats/structure/basic/sequence`.
 
-## Which chain is the gene's: score by share of the chain, not by matches
+## Which chain is the gene's: identity over the shorter sequence, not matches
 
-`chooseMappedEntity` ranks a structure's protein chains by the fraction of the
-chain the transcript reproduces (`explainedFraction`), not by how many residues
-match. Measured 2026-09-05 with the plugin's own aligner on real entries: the
-commonest shape of a p53 PDB entry is a short p53 peptide bound to a large
-partner, and a raw match count picks the partner every time the partner is long
-enough. 1H26 gives CDK2 58 scattered identities against the 11-residue peptide's
-11; 4ZZJ gives SIRT1 63 against 6. The Smith-Waterman score does not separate
-them either (56 vs 58). Matches over chain length puts the peptides at 0.69 and
-0.50, the partners at 0.19 and 0.17, and the best decoy across a ribosome's 55
-chains at 0.29. Those entries are test fixtures; keep them.
+`chooseMappedEntity` ranks a structure's protein chains by identical residues
+over the shorter of transcript and chain (`explainedFraction`), not by how many
+residues match. Measured 2026-09-05 with the plugin's own aligner on real
+entries: the commonest shape of a p53 PDB entry is a short p53 peptide bound to
+a large partner, and a raw match count picks the partner every time the partner
+is long enough. 1H26 gives CDK2 58 scattered identities against the 11-residue
+peptide's 11; 4ZZJ gives SIRT1 63 against 6. The Smith-Waterman score does not
+separate them either (56 vs 58). Dividing by length puts the peptides at 0.69
+and 0.50, the partners at 0.19 and 0.17, and the best decoy across a ribosome's
+55 chains at 0.29. Those entries are test fixtures; keep them.
+
+Dividing by the _chain's_ length alone, as it did until 2026-09-11, penalised a
+fusion construct on the correct chain: a 60-residue product on a 370-residue
+carrier scored 0.14 and lost to a random 10-mer decoy a third of the time. Over
+the shorter sequence a chain containing the whole transcript scores near 1
+whatever its tag. `docs/genome-to-structure-alignment.md` carries the
+measurements, the precedent (SIFTS and G2S are both alignment-derived), and the
+cases sequence cannot decide.
 
 Nucleic-acid chains are excluded by molstar's entity subtype rather than left to
 score low, because A, C, G, T and U are amino-acid letters too. They stay in the

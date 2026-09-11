@@ -19,6 +19,7 @@ import {
 import {
   alignTranscriptToEntity,
   chooseMappedEntity,
+  explainedFraction,
   interactionMatchesMappedEntity,
 } from './chooseMappedEntity'
 import { MAX_ALIGNMENT_CELLS } from './pairwiseAlignment'
@@ -101,6 +102,31 @@ test('a decoy chain and a two-residue fragment both score below a real one', () 
 
 // A DNA strand's letters are amino-acid letters too, so it aligns like a
 // protein and must be excluded by type rather than trusted to score low.
+// A small protein is often crystallised fused to a carrier (MBP, T4 lysozyme,
+// GST). Scoring identity over the entity's own length charged the carrier
+// against the correct chain: a 60-residue product on a 370-residue carrier
+// scored 0.14 and lost to a random 10-mer decoy with 3 identities a third of
+// the time. Over the shorter sequence the fusion scores near 1 whatever its
+// tag, and every chain shorter than the transcript scores as before.
+test('a chain carrying the whole transcript scores near 1 however long its fusion tag', () => {
+  expect(explainedFraction(60, 60, 430)).toBeGreaterThan(0.9)
+  expect(explainedFraction(3, 60, 10)).toBeLessThan(0.25)
+
+  const fused = CDK2_1H26_ENTITY0 + HBB_BETA_4HHB_ENTITY1
+  const scored = alignTranscriptToEntity(
+    HBB_TRANSCRIPT_P68871,
+    fused,
+    'smith_waterman',
+  )!
+  expect(scored.explained).toBeGreaterThan(0.9)
+  const sel = chooseMappedEntity(
+    HBB_TRANSCRIPT_P68871,
+    [P53_PEPTIDE_1H26_ENTITY2, fused],
+    'smith_waterman',
+  )
+  expect(sel?.index).toBe(1)
+})
+
 test('a nucleic-acid entity is never chosen, even when it is the only match', () => {
   const dna = { seq: DNA_1TUP_ENTITY0, nucleicAcid: true }
   expect(
