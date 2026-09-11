@@ -54,6 +54,10 @@ See [DEVELOPERS.md](DEVELOPERS.md)
 Notes on the parts that are easy to get subtly wrong, written for someone
 extending the plugin or checking what a number on screen means:
 
+- [Genome to structure alignment](docs/genome-to-structure-alignment.md): why
+  the plugin aligns the transcript's translation to the structure on the fly,
+  the precedent for that in SIFTS and G2S, how it picks the chain and isoform,
+  and what sequence alignment cannot decide.
 - [Residue numbering](docs/residue-numbering.md): how a paper's R248 becomes
   position 154 in the file, `label_seq_id` 155 for Mol\*, and the codon on
   chr17, and how a session spec names a residue the literature's way.
