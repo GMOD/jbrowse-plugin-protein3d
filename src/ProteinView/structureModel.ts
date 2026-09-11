@@ -8,6 +8,7 @@ import {
 } from '@jbrowse/mobx-state-tree'
 import { autorun, when } from 'mobx'
 
+import { alignmentQuality } from './alignmentQuality'
 import { setMolstarLoci } from './applyLociInteractivity'
 import {
   alignTranscriptToEntity,
@@ -50,6 +51,7 @@ import {
   genomeToTranscriptSeqMapping,
 } from '../mappings'
 import {
+  entityLabel,
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
   residueNumber,
@@ -194,6 +196,14 @@ const Structure = types
     isMouseInAlignment: false,
     /**
      * #volatile
+     * Why no alignment could be computed, when the structure has sequences but
+     * none was alignable: every protein chain over the DP ceiling, or no
+     * protein chain at all. Without it the header shows "Loading pairwise
+     * alignment" forever and the ready signal never fires.
+     */
+    alignmentSkipped: undefined as string | undefined,
+    /**
+     * #volatile
      * Tracks whether this structure has been loaded into Molstar
      */
     loadedToMolstar: false,
@@ -333,6 +343,10 @@ const Structure = types
      */
     setAlignment(r?: PairwiseAlignment) {
       self.pairwiseAlignment = r
+      self.alignmentSkipped = undefined
+    },
+    setAlignmentSkipped(reason?: string) {
+      self.alignmentSkipped = reason
     },
     /**
      * #action
@@ -778,9 +792,20 @@ const Structure = types
     get alignmentPending() {
       return (
         !self.pairwiseAlignment &&
+        !self.alignmentSkipped &&
         !!self.userProvidedTranscriptSequence &&
         !!this.structureSequences?.length
       )
+    },
+    /**
+     * #getter
+     * Identity and coverage of the pairwise alignment, for the header readout
+     * and the low-similarity warning. See alignmentQuality.ts.
+     */
+    get alignmentQuality() {
+      return self.pairwiseAlignment
+        ? alignmentQuality(self.pairwiseAlignment)
+        : undefined
     },
 
     /**
@@ -990,6 +1015,21 @@ const Structure = types
               alignmentAlgorithm,
             )
             if (!selection) {
+              // chooseMappedEntity returns undefined for both "no protein
+              // chain" and "every protein chain over the DP ceiling"; either
+              // way the user has to hear it, or the header loads forever.
+              const proteins = entities.filter(
+                e => !e.nucleicAcid && e.seq.length > 0,
+              )
+              const reason = proteins.length
+                ? `No chain could be aligned: ${proteins
+                    .map(e => entityLabel(e))
+                    .join(', ')} exceed the alignment size limit against this ${
+                    stripStopCodon(userProvidedTranscriptSequence).length
+                  } aa transcript`
+                : 'This structure has no protein chain to align the transcript to'
+              self.setAlignmentSkipped(reason)
+              self.parentView.setError(new Error(reason))
               return
             }
             self.setMappedEntityId(entities[selection.index]?.entityId)

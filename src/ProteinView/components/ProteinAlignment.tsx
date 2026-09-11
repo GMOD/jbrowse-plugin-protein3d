@@ -18,6 +18,12 @@ import SplitString, { AlignmentHighlights } from './SplitString'
 import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
+import {
+  LOW_IDENTITY_OVER_SHORTER,
+  MIN_IDENTICAL_RESIDUES,
+  describeAlignmentQuality,
+  isLowSimilarity,
+} from '../alignmentQuality'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
@@ -107,6 +113,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
 }) {
   const {
     pairwiseAlignment,
+    alignmentQuality: quality,
     showHighlight,
     showProteinTracks,
     url,
@@ -220,10 +227,32 @@ const ProteinAlignment = observer(function ProteinAlignment({
             rows mean is in the help dialog. */}
         <Typography variant="subtitle2">
           {label}
-          {showHighlight ? (
-            <Typography variant="caption" color="textSecondary" sx={{ ml: 1 }}>
-              green is the aligned portion
+          {/* The alignment always produces something, so the readout is what
+              tells a chance hit on an unrelated chain from a real mapping. */}
+          {quality ? (
+            <Typography
+              variant="caption"
+              color="textSecondary"
+              sx={{ ml: 1 }}
+              data-testid="alignment-quality"
+            >
+              {describeAlignmentQuality(quality)}
+              {showHighlight ? ', green is the aligned portion' : ''}
             </Typography>
+          ) : null}
+          {quality && isLowSimilarity(quality) ? (
+            <Tooltip
+              title={`Fewer than ${MIN_IDENTICAL_RESIDUES} identical residues, or under ${Math.round(LOW_IDENTITY_OVER_SHORTER * 100)}% of the shorter sequence identical: an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`}
+            >
+              <Typography
+                variant="caption"
+                color="error"
+                sx={{ ml: 1 }}
+                data-testid="alignment-low-similarity"
+              >
+                low similarity: mapped positions may not correspond
+              </Typography>
+            </Tooltip>
           ) : null}
         </Typography>
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

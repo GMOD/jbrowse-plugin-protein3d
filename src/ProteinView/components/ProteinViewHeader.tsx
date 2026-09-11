@@ -10,6 +10,7 @@ import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
+import Typography from '@mui/material/Typography'
 import { observer } from 'mobx-react'
 
 import AddStructureDialog from './AddStructureDialog'
@@ -158,11 +159,18 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
       </div>
       {showAlignment
         ? structures
-            .filter(s => s.pairwiseAlignment || s.alignmentPending)
+            .filter(
+              s =>
+                s.pairwiseAlignment || s.alignmentPending || s.alignmentSkipped,
+            )
             .map((structure: JBrowsePluginProteinStructureModel, idx) => (
               <div key={idx}>
                 {structure.pairwiseAlignment ? (
                   <ProteinAlignment model={structure} />
+                ) : structure.alignmentSkipped ? (
+                  <Typography variant="caption" color="error">
+                    {structure.alignmentSkipped}
+                  </Typography>
                 ) : (
                   <LoadingEllipses message="Loading pairwise alignment" />
                 )}

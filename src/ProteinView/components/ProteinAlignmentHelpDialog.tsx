@@ -38,7 +38,12 @@ export default function ProteinAlignmentHelpDialog({
           and EMBOSS-style gap penalties) to get a pairwise alignment of the
           genome&apos;s representation of the protein and the structure
           file&apos;s representation of the protein. Positions that fall in a
-          gap are unmapped and will not highlight.
+          gap are unmapped and will not highlight. The header reports the
+          identity and how much of the structure the alignment covers; an
+          alignment always comes back with something, so a low-similarity
+          warning there means the mapped positions may be chance rather than
+          homology, and the chain picker or a different isoform is the first
+          thing to check.
         </Typography2>
         <Typography2>
           The GENOME row is the transcript&apos;s translation and the STRUCT row
