@@ -1,7 +1,13 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { describe, expect, test } from 'vitest'
 
-import { selectBestTranscript } from './util'
+import { selectBestTranscript } from './isoformRanking'
+import {
+  CDK2_1H26_ENTITY0,
+  HBA_TRANSCRIPT_P69905,
+  HBB_BETA_4HHB_ENTITY1,
+  HBB_TRANSCRIPT_P68871,
+} from '../../ProteinView/__fixtures__/structureFixtures'
 
 describe('selectBestTranscript', () => {
   const transcript1 = new SimpleFeature({
@@ -135,6 +141,25 @@ describe('selectBestTranscript', () => {
     })
 
     expect(result?.id()).toBe('transcript-2')
+  })
+
+  // 4HHB's β chain is HBB minus Met1, so no isoform matches exactly; the
+  // longest-first fallback then took a longer paralog-like isoform over the
+  // one the structure was made from.
+  test('with no exact match, prefers the isoform that aligns best over the longest', () => {
+    const isoformSequences = {
+      'transcript-1': { feature: transcript1, seq: HBB_TRANSCRIPT_P68871 },
+      'transcript-2': {
+        feature: transcript2,
+        seq: HBA_TRANSCRIPT_P69905 + CDK2_1H26_ENTITY0.slice(0, 80),
+      },
+    }
+    const result = selectBestTranscript({
+      options: [transcript1, transcript2],
+      isoformSequences,
+      structureSequence: HBB_BETA_4HHB_ENTITY1,
+    })
+    expect(result?.id()).toBe('transcript-1')
   })
 
   test('only considers transcripts with sequence data', () => {

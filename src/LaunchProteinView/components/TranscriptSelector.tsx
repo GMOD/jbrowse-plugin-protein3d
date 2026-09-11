@@ -2,13 +2,15 @@ import React from 'react'
 
 import { MenuItem, TextField } from '@mui/material'
 
+import { classifyIsoforms } from '../utils/isoformRanking'
 import {
-  classifyIsoforms,
   getGeneDisplayName,
   getTranscriptDisplayName,
+  stripStopCodon,
 } from '../utils/util'
 
-import type { IsoformSequences, RankedIsoform } from '../utils/util'
+import type { RankedIsoform } from '../utils/isoformRanking'
+import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
 
 export default function TranscriptSelector({
@@ -35,7 +37,15 @@ export default function TranscriptSelector({
     structureSequence,
   })
 
-  const renderOption = ({ feature: f, length }: RankedIsoform, note = '') => (
+  const structureLength = structureSequence
+    ? stripStopCodon(structureSequence).length
+    : undefined
+  const renderOption = (
+    { feature: f, length, identical }: RankedIsoform,
+    note = identical === undefined
+      ? ''
+      : ` (${identical}/${structureLength} structure residues identical)`,
+  ) => (
     <MenuItem value={f.id()} key={f.id()}>
       {geneName} - {getTranscriptDisplayName(f)} ({length}aa){note}
     </MenuItem>

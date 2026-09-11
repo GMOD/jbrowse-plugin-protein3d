@@ -9,6 +9,7 @@ import useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsofor
 import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
 import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
 // Import utility functions and constants directly
+import * as isoformRanking from '../src/LaunchProteinView/utils/isoformRanking'
 import * as util from '../src/LaunchProteinView/utils/util' // Import all utilities from util
 
 // Use vi.mock for Vitest
@@ -17,6 +18,9 @@ vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
+vi.mock('../src/LaunchProteinView/utils/isoformRanking', () => ({
+  selectBestTranscript: vi.fn(),
+}))
 vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   const actual = await importOriginal()
   return {
@@ -24,7 +28,6 @@ vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
     extractFeatureIdentifiers: vi.fn(), // Mock extractFeatureIdentifiers to control its output
     getTranscriptFeatures: vi.fn(),
     getId: vi.fn(f => f?.id() || ''),
-    selectBestTranscript: vi.fn(), // Mock selectBestTranscript
   }
 })
 
@@ -37,7 +40,7 @@ const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
 const mockGetTranscriptFeatures = util.getTranscriptFeatures as vi.Mock
 const mockGetId = util.getId as vi.Mock
-const mockSelectBestTranscript = util.selectBestTranscript as vi.Mock
+const mockSelectBestTranscript = isoformRanking.selectBestTranscript as vi.Mock
 
 describe('useAlphaFoldDBSearch', () => {
   let mockFeature: SimpleFeature

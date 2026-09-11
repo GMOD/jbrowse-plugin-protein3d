@@ -1,6 +1,6 @@
 import { useState } from 'react'
 
-import { selectBestTranscript } from '../utils/util'
+import { selectBestTranscript } from '../utils/isoformRanking'
 
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'

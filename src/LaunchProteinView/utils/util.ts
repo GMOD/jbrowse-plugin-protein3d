@@ -282,58 +282,6 @@ export interface IsoformSequence {
 
 export type IsoformSequences = Record<string, IsoformSequence>
 
-export interface RankedIsoform {
-  feature: Feature
-  length: number
-}
-
-export interface ClassifiedIsoforms {
-  // protein matches the structure residues, longest first
-  matches: RankedIsoform[]
-  // has a protein sequence but doesn't match the structure, longest first
-  nonMatches: RankedIsoform[]
-  // no protein sequence could be computed
-  noData: Feature[]
-}
-
-// The single rule for ranking transcript isoforms against a structure, shared
-// by the picker UI and the auto-selection: partition by whether the translated
-// protein matches the structure residues, with each group ordered longest-first.
-export function classifyIsoforms({
-  options,
-  isoformSequences,
-  structureSequence,
-}: {
-  options: Feature[]
-  isoformSequences: IsoformSequences
-  structureSequence?: string
-}): ClassifiedIsoforms {
-  const matches: RankedIsoform[] = []
-  const nonMatches: RankedIsoform[] = []
-  const noData: Feature[] = []
-  for (const feature of options) {
-    const entry = isoformSequences[feature.id()]
-    const ranked = { feature, length: entry?.seq.length ?? 0 }
-    if (!entry) {
-      noData.push(feature)
-    } else if (
-      structureSequence &&
-      stripStopCodon(entry.seq) === structureSequence
-    ) {
-      matches.push(ranked)
-    } else {
-      nonMatches.push(ranked)
-    }
-  }
-  const byLengthDesc = (a: RankedIsoform, b: RankedIsoform) =>
-    b.length - a.length
-  return {
-    matches: matches.toSorted(byLengthDesc),
-    nonMatches: nonMatches.toSorted(byLengthDesc),
-    noData,
-  }
-}
-
 /**
  * Which of a structure's polymer chains the launch dialog should compare
  * transcripts against. A multi-chain deposit (heteromer, protein-DNA complex,
@@ -352,13 +300,4 @@ export function pickStructureSequence(
   )
   const exact = structureSequences?.find(s => translated.has(stripStopCodon(s)))
   return exact ?? structureSequences?.[0]
-}
-
-export function selectBestTranscript(args: {
-  options: Feature[]
-  isoformSequences: IsoformSequences
-  structureSequence?: string
-}) {
-  const { matches, nonMatches } = classifyIsoforms(args)
-  return (matches[0] ?? nonMatches[0])?.feature
 }
