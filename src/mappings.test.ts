@@ -3,11 +3,34 @@ import { expect, test } from 'vitest'
 
 import {
   genomeToTranscriptSeqMapping,
+  pairwiseAlignmentSequenceProblem,
   structurePositionToAlignmentMap,
   structureSeqVsTranscriptSeqMap,
   transcriptPositionToAlignmentMap,
 } from './mappings'
 import { feature, pairwiseAlignment } from './test_data/gene'
+
+import type { PairwiseAlignment } from './mappings'
+
+test('pairwiseAlignmentSequenceProblem: rows must spell the mapped sequences', () => {
+  const pa: PairwiseAlignment = {
+    consensus: '',
+    alns: [
+      { id: 'a', seq: 'MKAA*WYVL' },
+      { id: 'b', seq: 'mkaa-WYVL' },
+    ],
+  }
+  expect(pairwiseAlignmentSequenceProblem(pa, 'MKAA*WYVL', 'MKAAWYVL')).toBe(
+    undefined,
+  )
+  // an alignment made against another isoform: same length, other residues
+  expect(pairwiseAlignmentSequenceProblem(pa, 'MKAA*WYVL', 'MKAAWYVQ')).toMatch(
+    /second sequence/,
+  )
+  expect(pairwiseAlignmentSequenceProblem(pa, 'MKAAWYVL', 'MKAAWYVL')).toMatch(
+    /first sequence.*9 vs 8/,
+  )
+})
 
 test('structureSeqVsTranscriptSeqMap snapshot', () => {
   const ret = structureSeqVsTranscriptSeqMap(pairwiseAlignment)

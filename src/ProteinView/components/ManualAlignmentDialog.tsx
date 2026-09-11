@@ -12,7 +12,11 @@ import {
 import { parsePairwise } from 'clustal-js'
 import { observer } from 'mobx-react'
 
-import { pairwiseAlignmentProblem } from '../../mappings'
+import { stripStopCodon } from '../../LaunchProteinView/utils/util'
+import {
+  pairwiseAlignmentProblem,
+  pairwiseAlignmentSequenceProblem,
+} from '../../mappings'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 
@@ -40,7 +44,18 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
         // a bad pair during render — outside this catch, taking the whole view
         // down instead of reporting a bad paste. Same predicate the map builder
         // asserts on, so what the dialog accepts is exactly what it can use.
-        const problem = pairwiseAlignmentProblem(parsed)
+        // The rows also have to spell the transcript and the mapped chain:
+        // the maps count residues along each row, so an alignment made
+        // against another isoform or chain is well-formed and wrong.
+        const problem =
+          pairwiseAlignmentProblem(parsed) ??
+          (primaryStructure
+            ? pairwiseAlignmentSequenceProblem(
+                parsed,
+                stripStopCodon(primaryStructure.userProvidedTranscriptSequence),
+                stripStopCodon(primaryStructure.mappedStructureSeq ?? ''),
+              )
+            : undefined)
         if (!primaryStructure) {
           setParseError('No structure loaded to apply alignment to')
         } else if (problem) {

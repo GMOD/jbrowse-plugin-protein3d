@@ -47,6 +47,32 @@ export function pairwiseAlignmentProblem(pa: PairwiseAlignment) {
   return undefined
 }
 
+const ungapped = (row: string) => row.replaceAll('-', '').toUpperCase()
+
+/**
+ * Why an externally supplied alignment does not describe these two sequences,
+ * or undefined if it does. The coordinate maps index the transcript and the
+ * structure by counting residues along each row, so a row whose residues are
+ * not the sequence being mapped (an alignment made against UniProt canonical
+ * for a different isoform, or against another chain) shifts every position
+ * after the first difference without any map noticing.
+ */
+export function pairwiseAlignmentSequenceProblem(
+  pa: PairwiseAlignment,
+  transcript: string,
+  structure: string,
+) {
+  const t = ungapped(transcriptAlignedSeq(pa))
+  const s = ungapped(structureAlignedSeq(pa))
+  if (t !== transcript.toUpperCase()) {
+    return `The first sequence is not this transcript's translation (${t.length} vs ${transcript.length} residues)`
+  }
+  if (s !== structure.toUpperCase()) {
+    return `The second sequence is not the mapped chain's sequence (${s.length} vs ${structure.length} residues)`
+  }
+  return undefined
+}
+
 export function structureSeqVsTranscriptSeqMap(
   pairwiseAlignment: PairwiseAlignment,
 ) {
