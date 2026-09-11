@@ -32,11 +32,19 @@ export interface AlignmentQuality {
  * identity nor coverage alone separates those from a real match. Identical
  * residues over the shorter sequence does: 0.03, 0.20 and 0.24 for the chance
  * cases against 0.9 or better for any structure of the transcript's protein
- * and about 0.6 for an ortholog. The residue floor keeps a 20-column chance
- * hit on a short peptide from passing on ratio alone.
+ * and about 0.6 for an ortholog.
+ *
+ * A short alignment has to be nearly perfect instead: a 10-residue decoy with
+ * 3 identities sits at the ratio floor, while a real bound peptide (1YCR's 15
+ * p53 residues, 4ZZJ's 7) is identical or one off. So under
+ * SHORT_ALIGNMENT_RESIDUES identical residues the ratio floor rises to
+ * SHORT_ALIGNMENT_IDENTITY, and under MIN_IDENTICAL_RESIDUES nothing passes,
+ * since a tetrapeptide is never the gene's product.
  */
 export const LOW_IDENTITY_OVER_SHORTER = 0.3
-export const MIN_IDENTICAL_RESIDUES = 20
+export const SHORT_ALIGNMENT_RESIDUES = 20
+export const SHORT_ALIGNMENT_IDENTITY = 0.8
+export const MIN_IDENTICAL_RESIDUES = 5
 
 export function alignmentQuality(pa: PairwiseAlignment): AlignmentQuality {
   const t = transcriptAlignedSeq(pa)
@@ -76,10 +84,11 @@ export function alignmentQuality(pa: PairwiseAlignment): AlignmentQuality {
 }
 
 export function isLowSimilarity(q: AlignmentQuality) {
-  return (
-    q.identical < MIN_IDENTICAL_RESIDUES ||
-    q.identityOverShorter < LOW_IDENTITY_OVER_SHORTER
-  )
+  const floor =
+    q.identical < SHORT_ALIGNMENT_RESIDUES
+      ? SHORT_ALIGNMENT_IDENTITY
+      : LOW_IDENTITY_OVER_SHORTER
+  return q.identical < MIN_IDENTICAL_RESIDUES || q.identityOverShorter < floor
 }
 
 /** One line for the alignment header: "87% identity over 219 of 393

@@ -59,8 +59,8 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
    what keeps a point-mutant structure usable.
 5. **Report.** The alignment panel header shows identity over the aligned
    columns and how many of the structure's residues they cover, and warns when
-   fewer than 20 residues are identical or fewer than 30% of the shorter
-   sequence's residues are.
+   fewer than 30% of the shorter sequence's residues are identical, or fewer
+   than 80% for an alignment under 20 residues.
 
 ## Why the scores are what they are
 
@@ -97,7 +97,11 @@ identity. Coverage does not either, since the 500 × 150 case covers two thirds
 of the shorter chain. Identical residues over the shorter sequence does: 0.03,
 0.20, 0.15 and 0.24 for the chance cases, against 0.9 or better for any
 structure of the transcript's protein and about 0.6 for an ortholog. The warning
-fires under 0.3 on that ratio or under 20 identical residues.
+fires under 0.3 on that ratio. A short alignment has to be nearly perfect
+instead: under 20 identical residues the floor rises to 0.8, which a real bound
+peptide clears (1YCR's 15 p53 residues are all identical, 4ZZJ's 7 are one off)
+and a 10-residue decoy with 3 identities does not; under 5 identical residues
+nothing passes.
 
 **Isoform ranking.** An isoform whose translation equals the structure's
 sequence is chosen outright. Any SEQRES lacking Met1 or carrying a tag, which is

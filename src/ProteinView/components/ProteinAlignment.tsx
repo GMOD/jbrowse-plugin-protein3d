@@ -20,7 +20,8 @@ import ExternalLink from '../../components/ExternalLink'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
 import {
   LOW_IDENTITY_OVER_SHORTER,
-  MIN_IDENTICAL_RESIDUES,
+  SHORT_ALIGNMENT_IDENTITY,
+  SHORT_ALIGNMENT_RESIDUES,
   describeAlignmentQuality,
   isLowSimilarity,
 } from '../alignmentQuality'
@@ -242,7 +243,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ) : null}
           {quality && isLowSimilarity(quality) ? (
             <Tooltip
-              title={`Fewer than ${MIN_IDENTICAL_RESIDUES} identical residues, or under ${Math.round(LOW_IDENTITY_OVER_SHORTER * 100)}% of the shorter sequence identical: an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`}
+              title={`Under ${Math.round(LOW_IDENTITY_OVER_SHORTER * 100)}% of the shorter sequence is identical (${Math.round(SHORT_ALIGNMENT_IDENTITY * 100)}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`}
             >
               <Typography
                 variant="caption"

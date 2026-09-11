@@ -3,11 +3,12 @@ import { expect, test } from 'vitest'
 import {
   HBB_BETA_4HHB_ENTITY1,
   HBB_TRANSCRIPT_P68871,
+  P53_PEPTIDE_4ZZJ_ENTITY1,
   P53_TRANSCRIPT_P04637,
   RPS11_7K00_CHAIN_K,
 } from './__fixtures__/structureFixtures'
 import {
-  MIN_IDENTICAL_RESIDUES,
+  SHORT_ALIGNMENT_RESIDUES,
   alignmentQuality,
   describeAlignmentQuality,
   isLowSimilarity,
@@ -69,8 +70,32 @@ test('a real match is not flagged, a chance alignment is', () => {
       'smith_waterman',
     )!.alignment,
   )
-  expect(chance.identical).toBeGreaterThanOrEqual(MIN_IDENTICAL_RESIDUES)
+  expect(chance.identical).toBeGreaterThanOrEqual(SHORT_ALIGNMENT_RESIDUES)
   expect(chance.identity).toBeGreaterThan(0.3)
   expect(chance.identityOverShorter).toBeLessThan(0.3)
   expect(isLowSimilarity(chance)).toBe(true)
+})
+
+// 1YCR's chain B is 15 p53 residues, every one identical; the e2e screenshot
+// showed it flagged under a flat 20-residue floor. A short alignment passes
+// when it is nearly perfect, which a chance hit on a short chain never is.
+test('a short but near-perfect peptide alignment is not flagged, a partial one is', () => {
+  const peptide = alignmentQuality(
+    alignTranscriptToEntity(
+      P53_TRANSCRIPT_P04637,
+      P53_PEPTIDE_4ZZJ_ENTITY1,
+      'smith_waterman',
+    )!.alignment,
+  )
+  expect(peptide.identical).toBe(6)
+  expect(isLowSimilarity(peptide)).toBe(false)
+  expect(
+    isLowSimilarity(alignmentQuality(pa('A'.repeat(15), 'A'.repeat(15)))),
+  ).toBe(false)
+  // a 10-residue decoy with 3 identities
+  expect(
+    isLowSimilarity(alignmentQuality(pa('AAAWWWWWWW', 'AAAKKKKKKK'))),
+  ).toBe(true)
+  // a tetrapeptide is never the gene's product
+  expect(isLowSimilarity(alignmentQuality(pa('AAAA', 'AAAA')))).toBe(true)
 })
