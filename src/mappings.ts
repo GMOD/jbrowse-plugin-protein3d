@@ -109,6 +109,57 @@ export function structureSeqVsTranscriptSeqMap(
   }
 }
 
+/** 0-based structure positions that sit opposite a transcript residue. */
+export function mappedStructurePositions(pa: PairwiseAlignment) {
+  return Object.keys(
+    structureSeqVsTranscriptSeqMap(pa).structureSeqToTranscriptSeqPosition,
+  ).map(Number)
+}
+
+/**
+ * The alignment with each listed structure position taken out of its column:
+ * the column splits into the transcript residue against a gap and a gap
+ * against the structure residue, so both rows still spell their sequences and
+ * that residue maps to nothing. Returns `pa` itself when nothing changes.
+ */
+export function unmapStructurePositions(
+  pa: PairwiseAlignment,
+  positions: ReadonlySet<number>,
+): PairwiseAlignment {
+  const transcript = transcriptAlignedSeq(pa)
+  const structure = structureAlignedSeq(pa)
+  const t: string[] = []
+  const s: string[] = []
+  const c: string[] = []
+  let j = 0
+  let changed = false
+  for (let i = 0; i < structure.length; i++) {
+    const inStructure = structure[i] !== '-'
+    if (inStructure && transcript[i] !== '-' && positions.has(j)) {
+      t.push(transcript[i]!, '-')
+      s.push('-', structure[i]!)
+      c.push(' ', ' ')
+      changed = true
+    } else {
+      t.push(transcript[i]!)
+      s.push(structure[i]!)
+      c.push(pa.consensus[i] ?? ' ')
+    }
+    if (inStructure) {
+      j++
+    }
+  }
+  return changed
+    ? {
+        consensus: c.join(''),
+        alns: [
+          { ...pa.alns[0], seq: t.join('') },
+          { ...pa.alns[1], seq: s.join('') },
+        ],
+      }
+    : pa
+}
+
 function seqPositionToAlignmentMap(seq: string) {
   const map: Record<number, number> = {}
   for (let i = 0, j = 0; i < seq.length; i++) {

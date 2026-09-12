@@ -7,6 +7,7 @@ import {
   structurePositionToAlignmentMap,
   structureSeqVsTranscriptSeqMap,
   transcriptPositionToAlignmentMap,
+  unmapStructurePositions,
 } from './mappings'
 import { feature, pairwiseAlignment } from './test_data/gene'
 
@@ -30,6 +31,24 @@ test('pairwiseAlignmentSequenceProblem: rows must spell the mapped sequences', (
   expect(pairwiseAlignmentSequenceProblem(pa, 'MKAAWYVL', 'MKAAWYVL')).toMatch(
     /first sequence.*9 vs 8/,
   )
+})
+
+test('unmapStructurePositions splits a column so its residue maps to nothing', () => {
+  const pa: PairwiseAlignment = {
+    consensus: '|| |',
+    alns: [
+      { id: 'a', seq: 'MKQA' },
+      { id: 'b', seq: 'MKGA' },
+    ],
+  }
+  const unmapped = unmapStructurePositions(pa, new Set([2]))
+  expect(unmapped.alns.map(r => r.seq)).toEqual(['MKQ-A', 'MK-GA'])
+  expect(unmapped.consensus).toBe('||  |')
+  expect(structureSeqVsTranscriptSeqMap(unmapped)).toEqual({
+    structureSeqToTranscriptSeqPosition: { 0: 0, 1: 1, 3: 3 },
+    transcriptSeqToStructureSeqPosition: { 0: 0, 1: 1, 3: 3 },
+  })
+  expect(unmapStructurePositions(pa, new Set([9]))).toBe(pa)
 })
 
 // Two rows cut from a multiple alignment keep the columns only a third

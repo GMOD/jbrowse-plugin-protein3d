@@ -28,6 +28,11 @@ import {
   structurePos,
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
+import {
+  fusionPartnerPositions,
+  parseUniProtStructureMappings,
+  pdbeSiftsUrl,
+} from './pdbUniProtMapping'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
@@ -40,15 +45,19 @@ import subscribeMolstarInteraction, {
 } from './subscribeMolstarInteraction'
 import { genomeHoverToTranscriptPos } from './util'
 import {
+  getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
   resolveStructureUrl,
   structureDisplayLabel,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
+import { jsonfetch } from '../fetchUtils'
 import {
   alignmentLength,
   codonGenomeSpan,
   genomeToTranscriptSeqMapping,
+  mappedStructurePositions,
+  unmapStructurePositions,
 } from '../mappings'
 import {
   entityLabel,
@@ -61,6 +70,7 @@ import {
 
 import type { Entity } from './extractStructureSequences'
 import type { EntityConfidence, StructureData } from './loadStructureData'
+import type { UniProtStructureMapping } from './pdbUniProtMapping'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { PairwiseAlignment } from '../mappings'
 import type { AlignmentAlgorithm } from './types'
@@ -238,8 +248,24 @@ const Structure = types
      * its own lane (collapsed types draw all features on a single row)
      */
     expandedFeatureTypes: new Set<string>(),
+    /**
+     * #volatile
+     * SIFTS' UniProt segments for an RCSB entry, undefined until fetched and
+     * for any other structure. Drives the UniProt feature tracks and keeps a
+     * fusion partner's residues out of the mapping (see `alignment`).
+     */
+    uniProtMappings: undefined as UniProtStructureMapping[] | undefined,
+    /**
+     * #volatile
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    uniProtMappingsError: undefined as unknown,
   }))
   .actions(self => ({
+    setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
+      self.uniProtMappings = mappings
+      self.uniProtMappingsError = error
+    },
     setStructureData(data: StructureData) {
       self.entities = data.entities
       self.structureConfidence = data.confidence
@@ -409,15 +435,45 @@ const Structure = types
     },
     /**
      * #getter
+     * The RCSB entry id, for a structure loaded from the PDB archive
+     */
+    get pdbId() {
+      const { url } = self
+      return url && !getUniprotIdFromAlphaFoldTarget(url)
+        ? getPdbIdFromUrl(url)
+        : undefined
+    },
+    /**
+     * #getter
+     * The alignment every map, highlight and the panel read: the stored one,
+     * minus any residue SIFTS assigns to a protein fused to the transcript's
+     * (see fusionPartnerPositions). Until SIFTS answers, or without it, the
+     * stored alignment as is.
+     */
+    get alignment(): MaybePairwiseAlignment {
+      const pa = self.pairwiseAlignment
+      if (!pa || !self.uniProtMappings) {
+        return pa
+      }
+      return unmapStructurePositions(
+        pa,
+        fusionPartnerPositions(
+          self.uniProtMappings,
+          this.mappedEntity?.entityId,
+          mappedStructurePositions(pa),
+        ),
+      )
+    },
+    /**
+     * #getter
      * All structure/transcript/alignment coordinate conversions, built once
-     * from the pairwise alignment (see coordinates.ts). Use its typed methods
-     * for point conversions; the getters below expose the raw maps for
-     * whole-map consumers.
+     * from the alignment (see coordinates.ts). Use its typed methods for point
+     * conversions; the getters below expose the raw maps for whole-map
+     * consumers.
      */
     get coordinateMapper(): CoordinateMapper | undefined {
-      return self.pairwiseAlignment
-        ? makeCoordinateMapper(self.pairwiseAlignment)
-        : undefined
+      const { alignment } = this
+      return alignment ? makeCoordinateMapper(alignment) : undefined
     },
     /**
      * #getter
@@ -690,7 +746,7 @@ const Structure = types
       }
       const model = {
         genomeToTranscriptSeqMapping: mapping,
-        pairwiseAlignment: self.pairwiseAlignment,
+        pairwiseAlignment: this.alignment,
         structureSeqToTranscriptSeqPosition:
           this.structureSeqToTranscriptSeqPosition,
       }
@@ -768,7 +824,7 @@ const Structure = types
      * #getter
      */
     get alignmentMatchSet() {
-      const con = self.pairwiseAlignment?.consensus
+      const con = this.alignment?.consensus
       if (!con) {
         return undefined
       }
@@ -803,9 +859,8 @@ const Structure = types
      * and the low-similarity warning. See alignmentQuality.ts.
      */
     get alignmentQuality() {
-      return self.pairwiseAlignment
-        ? alignmentQuality(self.pairwiseAlignment)
-        : undefined
+      const { alignment } = this
+      return alignment ? alignmentQuality(alignment) : undefined
     },
 
     /**
@@ -929,6 +984,21 @@ const Structure = types
       // it normally.
       if (self.initialSelection) {
         self.setClickedStructureRange(self.initialSelection)
+      }
+      const { pdbId } = self
+      if (pdbId) {
+        jsonfetch(pdbeSiftsUrl(pdbId)).then(
+          json => {
+            if (isAlive(self)) {
+              self.setUniProtMappings(parseUniProtStructureMappings(json))
+            }
+          },
+          (e: unknown) => {
+            if (isAlive(self)) {
+              self.setUniProtMappings(undefined, e)
+            }
+          },
+        )
       }
       // The author-numbered seed can only resolve once the entities are read
       // and the transcript's entity is chosen: before that, mappedEntity falls

@@ -82,13 +82,16 @@ Nucleic-acid chains are excluded by molstar's entity subtype rather than left to
 score low, because A, C, G, T and U are amino-acid letters too. They stay in the
 **Mapped chain** picker, labelled in nt, for a user who wants them.
 
-Two things sequence scoring cannot do, and the picker is the way out of both:
-tell paralogs apart in a complex, and keep the halves of a chimera apart. On
-2RH1, the β2-adrenergic receptor fused to T4 lysozyme, the local alignment
-bridges the fusion but scatters about thirty ICL3 residues onto lysozyme, so
-those codons hover to a bacterial protein. SIFTS knows the fusion boundary (it
-maps each segment to its own accession) and is the right fix for that; today the
-plugin only reads SIFTS after the chain is chosen, for feature tracks.
+Two things sequence scoring cannot do: tell paralogs apart in a complex, where
+the picker is the way out, and keep the halves of a chimera apart. On 2RH1, the
+β2-adrenergic receptor fused to T4 lysozyme, the local alignment bridges the
+fusion and scatters 33 ICL3 residues onto lysozyme, so those codons hovered to a
+bacterial protein. SIFTS maps each segment to its own accession, so for an RCSB
+entry the model's `alignment` getter unmaps residues SIFTS gives another protein
+(`fusionPartnerPositions`); 351 such residues across 70 entries went to 0 with
+no correct residue lost. Read `alignment`, not the stored `pairwiseAlignment`,
+anywhere a column or a coordinate is computed: the two differ in length for a
+fusion.
 
 ## Coordinate conventions, the off-by-one source here
 

@@ -1,5 +1,5 @@
 import { types } from '@jbrowse/mobx-state-tree'
-import { expect, test, vi } from 'vitest'
+import { beforeEach, expect, test, vi } from 'vitest'
 
 import Structure from './structureModel'
 
@@ -9,6 +9,14 @@ import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
   return { ...actual, getSession: () => ({ hovered: undefined, views: [] }) }
+})
+
+// an RCSB url makes the model ask PDBe for SIFTS
+beforeEach(() => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response('not found', { status: 404 })),
+  )
 })
 
 // Structure uses getParent(self, 2) for parentView, so it needs to live inside
@@ -196,6 +204,74 @@ test('a persisted mappedEntityId survives a reload alongside its alignment', () 
     ],
   })
   expect(model.mappedEntity?.entityId).toBe('2')
+})
+
+// A receptor with a partner protein fused into one of its loops, as in 2RH1:
+// the alignment bridges the insert, and SIFTS says residues 5-8 are the
+// partner's
+test('residues SIFTS assigns to a fused partner leave the mapping, the stored alignment untouched', async () => {
+  const segment = (start: number, end: number, unpStart: number) => ({
+    entity_id: 1,
+    start: { residue_number: start },
+    end: { residue_number: end },
+    unp_start: unpStart,
+    unp_end: unpStart + end - start,
+  })
+  const sifts = {
+    '9zzz': {
+      UniProt: {
+        RECEPTOR: { mappings: [segment(1, 4, 1), segment(9, 12, 9)] },
+        PARTNER: { mappings: [segment(5, 8, 2)] },
+      },
+    },
+  }
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify(sifts))),
+  )
+  const stored = {
+    consensus: '||||    ||||',
+    alns: [
+      { id: 'a', seq: 'MKAAQRSTWYVL' },
+      { id: 'b', seq: 'MKAAGGGGWYVL' },
+    ],
+  }
+  const parent = TestParent.create({
+    structures: [
+      {
+        url: 'https://files.rcsb.org/download/9ZZZ.cif',
+        userProvidedTranscriptSequence: 'MKAAQRSTWYVL',
+        pairwiseAlignment: stored,
+        mappedEntityId: '1',
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'MKAAGGGGWYVL',
+        seqIds: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+        chains: ['A'],
+      },
+    ],
+  })
+  expect(model.structureSeqToTranscriptSeqPosition?.[5]).toBe(5)
+
+  await vi.waitFor(() => {
+    expect(model.uniProtMappings).toBeDefined()
+  })
+  const s2t = model.structureSeqToTranscriptSeqPosition!
+  expect([4, 5, 6, 7].map(p => s2t[p])).toEqual([
+    undefined,
+    undefined,
+    undefined,
+    undefined,
+  ])
+  expect(s2t[8]).toBe(8)
+  expect(model.alignmentQuality?.aligned).toBe(8)
+  expect(model.pairwiseAlignment).toEqual(stored)
 })
 
 test('initialResidues seeds the selection by author numbering once the mapped entity is known', () => {

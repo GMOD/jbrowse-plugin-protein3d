@@ -103,7 +103,7 @@ export default function useProteinFeatureTrackData(
 } {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
   const {
-    pairwiseAlignment,
+    alignment: pairwiseAlignment,
     hiddenFeatureTypes,
     structurePositionToAlignmentMap,
   } = model

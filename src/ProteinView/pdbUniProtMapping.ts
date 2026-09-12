@@ -148,6 +148,50 @@ export function chooseUniProtMappingForEntity(
   return best
 }
 
+/**
+ * Mapped structure positions that SIFTS assigns to a protein other than the
+ * transcript's, on a chain that fuses two. Local alignment bridges a fusion
+ * boundary, and on every GPCR fusion construct checked it scattered receptor
+ * residues onto the partner, 33 of them onto T4 lysozyme in 2RH1.
+ *
+ * The transcript's own accession is the one covering most mapped positions.
+ * When none covers at least half, the SIFTS entity is taken not to be this
+ * chain (a PDB-format file numbers its entities differently) and nothing is
+ * unmapped. Residues SIFTS assigns to no accession, such as tags, stay mapped.
+ */
+export function fusionPartnerPositions(
+  mappings: UniProtStructureMapping[],
+  entityId: string | undefined,
+  mappedPositions: readonly number[],
+) {
+  const partners = new Set<number>()
+  const byAccession = mappings
+    .map(m => dedupeSegments(m.segments.filter(s => s.entityId === entityId)))
+    .filter(segments => segments.length > 0)
+  if (entityId === undefined || byAccession.length < 2) {
+    return partners
+  }
+  const covers = (segments: UniProtStructureSegment[], pos: number) =>
+    segments.some(s => pos >= s.structStart && pos <= s.structEnd)
+  const counts = byAccession.map(
+    segments => mappedPositions.filter(pos => covers(segments, pos)).length,
+  )
+  const ownCount = Math.max(...counts)
+  if (ownCount * 2 < mappedPositions.length) {
+    return partners
+  }
+  const own = byAccession[counts.indexOf(ownCount)]!
+  for (const pos of mappedPositions) {
+    if (
+      !covers(own, pos) &&
+      byAccession.some(segments => segments !== own && covers(segments, pos))
+    ) {
+      partners.add(pos)
+    }
+  }
+  return partners
+}
+
 // SIFTS lists one mapping per *chain*, so the several chains of a homodimer
 // repeat the same entity-level correspondence. They collapse to one segment.
 function dedupeSegments(segments: UniProtStructureSegment[]) {

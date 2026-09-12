@@ -2,6 +2,7 @@ import { expect, test } from 'vitest'
 
 import {
   chooseUniProtMappingForEntity,
+  fusionPartnerPositions,
   identityUniProtPositionMap,
   makeUniProtPositionMap,
   parseUniProtStructureMappings,
@@ -181,4 +182,65 @@ test('a gapped multi-segment mapping maps each segment by its own offset', () =>
   expect(map(50)).toBe(11)
   expect(map(60)).toBe(21)
   expect(map(30)).toBeUndefined()
+})
+
+// 2RH1's SIFTS: ADRB2 on SEQRES 8-237 and 399-500, T4 lysozyme spliced in at
+// 238-398 (0-based below). The alignment scattered ICL3 onto the lysozyme.
+const SEGMENTS_2RH1 = [
+  {
+    accession: 'P07550',
+    segments: [
+      {
+        entityId: '1',
+        unpStart: 1,
+        unpEnd: 230,
+        structStart: 7,
+        structEnd: 236,
+      },
+      {
+        entityId: '1',
+        unpStart: 264,
+        unpEnd: 365,
+        structStart: 398,
+        structEnd: 499,
+      },
+    ],
+  },
+  {
+    accession: 'P00720',
+    segments: [
+      {
+        entityId: '1',
+        unpStart: 2,
+        unpEnd: 162,
+        structStart: 237,
+        structEnd: 397,
+      },
+    ],
+  },
+]
+const range = (start: number, end: number) =>
+  Array.from({ length: end - start }, (_, i) => start + i)
+
+test('unmaps the positions SIFTS gives the fusion partner, and nothing SIFTS leaves unassigned', () => {
+  const icl3OnLysozyme = range(237, 270)
+  const mapped = [...range(0, 237), ...icl3OnLysozyme, ...range(398, 500)]
+  expect([...fusionPartnerPositions(SEGMENTS_2RH1, '1', mapped)]).toEqual(
+    icl3OnLysozyme,
+  )
+})
+
+test('a chain with one accession, or another entity, unmaps nothing', () => {
+  expect(
+    fusionPartnerPositions(SEGMENTS_2RH1.slice(0, 1), '1', range(0, 500)).size,
+  ).toBe(0)
+  expect(fusionPartnerPositions(SEGMENTS_2RH1, '2', range(0, 500)).size).toBe(0)
+})
+
+// A PDB-format file numbers entities its own way, so SIFTS' entity 1 may be
+// some other chain: when no accession covers half the mapped positions, trust
+// none of them
+test('unmaps nothing when no accession covers half the mapped positions', () => {
+  const mapped = [...range(200, 240), ...range(600, 700)]
+  expect(fusionPartnerPositions(SEGMENTS_2RH1, '1', mapped).size).toBe(0)
 })

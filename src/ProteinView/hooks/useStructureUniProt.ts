@@ -1,20 +1,11 @@
 import { useMemo } from 'react'
 
-import useSWR from 'swr'
-
-import { STATIC_SWR_OPTIONS } from '../../LaunchProteinView/hooks/swrOptions'
-import {
-  getPdbIdFromUrl,
-  getUniprotIdFromAlphaFoldTarget,
-} from '../../LaunchProteinView/utils/structureUrls'
-import { jsonfetch } from '../../fetchUtils'
 import {
   type MapUniProtPosition,
+  type UniProtStructureMapping,
   chooseUniProtMappingForEntity,
   identityUniProtPositionMap,
   makeUniProtPositionMap,
-  parseUniProtStructureMappings,
-  pdbeSiftsUrl,
 } from '../pdbUniProtMapping'
 
 export interface StructureUniProt {
@@ -37,37 +28,30 @@ export interface StructureUniProt {
  * the accession isn't in the URL at all, and the construct's numbering differs
  * from UniProt's by a per-segment offset. Without this, PDB structures showed no
  * UniProt feature tracks at all (no accession to query) — and any that did
- * resolve would have been drawn at the wrong residues.
+ * resolve would have been drawn at the wrong residues. The structure model
+ * fetches SIFTS, since its mapping reads the same segments.
  */
 export default function useStructureUniProt({
-  url,
+  uniprotId: alphaFoldUniprotId,
+  pdbId,
+  uniProtMappings,
+  uniProtMappingsError,
   mappedEntityId,
 }: {
-  url: string | undefined
+  uniprotId: string | undefined
+  pdbId: string | undefined
+  uniProtMappings: UniProtStructureMapping[] | undefined
+  uniProtMappingsError: unknown
   mappedEntityId: string | undefined
 }): StructureUniProt {
-  const alphaFoldUniprotId = url
-    ? getUniprotIdFromAlphaFoldTarget(url)
-    : undefined
-  const pdbId = url && !alphaFoldUniprotId ? getPdbIdFromUrl(url) : undefined
-
-  const { data, error, isLoading } = useSWR(
-    pdbId ? pdbeSiftsUrl(pdbId) : null,
-    jsonfetch,
-    STATIC_SWR_OPTIONS,
-  )
-
   // Memoized because the mapper is a fresh closure each time it's built, and
   // consumers key their own layout memos on its identity.
   const siftsMapping = useMemo(
     () =>
-      data
-        ? chooseUniProtMappingForEntity(
-            parseUniProtStructureMappings(data),
-            mappedEntityId,
-          )
+      uniProtMappings
+        ? chooseUniProtMappingForEntity(uniProtMappings, mappedEntityId)
         : undefined,
-    [data, mappedEntityId],
+    [uniProtMappings, mappedEntityId],
   )
   const siftsPositionMap = useMemo(
     () =>
@@ -89,7 +73,7 @@ export default function useStructureUniProt({
         uniprotId: siftsMapping?.accession,
         uniprotName: siftsMapping?.name,
         mapUniProtPosition: siftsPositionMap,
-        isLoading,
-        error,
+        isLoading: !!pdbId && !uniProtMappings && !uniProtMappingsError,
+        error: uniProtMappingsError,
       }
 }

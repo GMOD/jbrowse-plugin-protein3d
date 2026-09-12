@@ -113,11 +113,10 @@ const ProteinAlignment = observer(function ProteinAlignment({
   model: JBrowsePluginProteinStructureModel
 }) {
   const {
-    pairwiseAlignment,
+    alignment: pairwiseAlignment,
     alignmentQuality: quality,
     showHighlight,
     showProteinTracks,
-    url,
     label,
     confidenceCells,
     hydrophobicityCells,
@@ -134,7 +133,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
     mapUniProtPosition,
     isLoading: uniprotLoading,
     error: uniprotError,
-  } = useStructureUniProt({ url, mappedEntityId })
+  } = useStructureUniProt({
+    uniprotId: model.uniprotId,
+    pdbId: model.pdbId,
+    uniProtMappings: model.uniProtMappings,
+    uniProtMappingsError: model.uniProtMappingsError,
+    mappedEntityId,
+  })
   const {
     data: featureData,
     isLoading: trackLoading,

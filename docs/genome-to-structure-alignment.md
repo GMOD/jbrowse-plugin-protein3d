@@ -17,7 +17,8 @@ It is how the reference resources themselves are made:
   the PDBe/UniProt cross-reference every structure viewer uses for UniProt to
   PDB residue numbering. It is produced by pairwise-aligning each PDB SEQRES to
   its UniProt sequence, with a taxonomy check to pick the accession. The
-  plugin's `pdbUniProtMapping.ts` reads its output for feature tracks.
+  plugin's `pdbUniProtMapping.ts` reads its output for feature tracks and to
+  keep a fusion partner out of the mapping.
 - **G2S, Genome to Structure** (Wang et al., _Bioinformatics_ 2018, from the
   cBioPortal group) maps genomic positions to PDB residues by aligning the
   protein sequence to SEQRES on demand, BLAST-based, and serves the result as an
@@ -146,10 +147,11 @@ residue-level mapping.
   choice of copy and the plugin's are equally right. 34 are 5G53, where SIFTS
   itself is wrong: it maps the structure's `KQLQKDKQVYRA` to Gαs 151 rather than
   28, where that sequence is.
-- **Onto the wrong protein:** 351 residues map onto residues SIFTS assigns to a
-  fused partner, all in engineered constructs: β2AR, D3R, A2A, μOR and NTSR1
-  receptors fused to T4 lysozyme or BRIL, and a Gα chimera in 6OIJ. See chimeras
-  below.
+- **Onto the wrong protein:** 351 residues mapped onto residues SIFTS assigns to
+  a fused partner, all in engineered constructs: β2AR, D3R, A2A, μOR and NTSR1
+  receptors fused to T4 lysozyme or BRIL, and a Gα chimera in 6OIJ. The plugin
+  now unmaps them (see chimeras below): 0 remain, with the 26,463 agreeing
+  residues and the 5 missed ones unchanged.
 - **Unmapped:** 302 residues SIFTS maps sit on a second chain of the same
   product (insulin's A chain in 4INS, nsp7 and nsp8 in 7BV2), which the plugin
   does not map, since it maps one chain per transcript.
@@ -202,9 +204,16 @@ picker and the manual-alignment import exist:
 - **Chimeras.** On 2RH1, the β2-adrenergic receptor fused to T4 lysozyme, the
   local alignment bridges the fusion boundary and scatters 33 ICL3 residues onto
   lysozyme. Every GPCR fusion construct in the SIFTS check does the same, up to
-  85 residues on 3PBL. BLAST's 11/1 gap costs do not help (361 residues against
-  351). Unmapping 10-column windows under 50% identity inside a 90%-identical
-  alignment removes 186 of the 351 and loses 9 correct residues.
+  85 residues on 3PBL. Sequence cannot fix it: BLAST's 11/1 gap costs do not
+  help (361 residues against 351), and unmapping 10-column windows under 50%
+  identity removes only 186 of the 351 while losing 9 correct residues. For an
+  RCSB entry the plugin asks SIFTS which protein each residue belongs to and
+  unmaps any aligned residue SIFTS assigns to a protein other than the one
+  covering most of the alignment (`fusionPartnerPositions`). It trusts SIFTS
+  only when that protein covers at least half the aligned residues, since a
+  PDB-format file numbers its entities differently. The stored alignment is left
+  as computed. Without SIFTS (AlphaFold, Foldseek, a user's file, PDBe
+  unreachable) the alignment is used as is.
 - **Products split across chains.** Insulin's A and B chains, or a viral
   polyprotein's cleavage products, each align to a separate stretch of one
   transcript. The picker maps the best of them and leaves the rest unmapped.
@@ -212,11 +221,11 @@ picker and the manual-alignment import exist:
   equivalent positions, which is what the user asked for, but with the identity
   a homolog has. The header readout is the only indication.
 
-SIFTS resolves the first four for RCSB entries, because the depositors declared
-which UniProt range each segment is. The plugin reads SIFTS only after the chain
-is chosen and only for feature tracks; using its segments as the primary mapping
-for PDB entries, with alignment as the fallback for everything else, is the
-natural next step.
+SIFTS could resolve the first four for RCSB entries, because the depositors
+declared which UniProt range each segment is. The plugin uses it for chimeras
+and feature tracks only. Repeats and paralogs would need SIFTS' segments to
+choose the chain and the copy, which only helps when the transcript's UniProt
+accession is known and its sequence matches the transcript's.
 
 ## Known limitations of the aligner itself
 
