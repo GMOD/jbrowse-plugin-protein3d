@@ -28,6 +28,9 @@ export interface ProteinStructureSpec {
   // structure's own numbering once it loads
   initialResidues?: { start: number; end: number }
   pairwiseAlignment?: PairwiseAlignment
+  // whether pairwiseAlignment came from outside and is used exactly as given;
+  // defaults to true when a pairwiseAlignment is present
+  alignmentImported?: boolean
   // mmCIF entity id the transcript maps to; chosen by alignment when absent
   mappedEntityId?: string
 }

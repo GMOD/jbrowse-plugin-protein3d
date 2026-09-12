@@ -20,7 +20,7 @@ match count picks it. The plugin maps TP53 to the peptide, chain E.
 
 [TP53 on 1H26](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221H26%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
-<!-- expect {"chain":"E","minIdentity":0.9} -->
+<!-- expect {"chain":"E","minIdentity":0.9,"minAligned":11} -->
 
 ## A protein bound to DNA
 
@@ -37,12 +37,13 @@ DNA-binding domain.
 2RH1 is the β2-adrenergic receptor with T4 lysozyme spliced into its third
 intracellular loop. The alignment bridges the insert and used to pair 33 loop
 codons with lysozyme residues. SIFTS assigns those residues to lysozyme, so the
-plugin leaves them unmapped: the alignment shows the loop and the lysozyme as
-gaps against each other, and hovering the loop's codons lights nothing.
+plugin leaves them unmapped: the alignment shows the loop against gaps and then
+the lysozyme against gaps, hovering the loop's codons lights nothing, and all
+332 receptor residues SIFTS names stay mapped.
 
 [ADRB2 on 2RH1](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222RH1%22%2C%22transcriptId%22%3A%22NM_000024.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr5%3A148%2C825%2C000-148%2C829%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
-<!-- expect {"chain":"A","unmapped":[237,398],"minIdentity":0.9} -->
+<!-- expect {"chain":"A","unmapped":[237,398],"minIdentity":0.9,"minAligned":332} -->
 
 ## A phosphorylated residue
 

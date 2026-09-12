@@ -11,11 +11,12 @@ vi.mock('@jbrowse/core/util', async importActual => {
   return { ...actual, getSession: () => ({ hovered: undefined, views: [] }) }
 })
 
-// an RCSB url makes the model ask PDBe for SIFTS
+// an RCSB url makes the model ask PDBe for SIFTS; an empty answer, so nothing
+// retries past the test
 beforeEach(() => {
   vi.stubGlobal(
     'fetch',
-    vi.fn(async () => new Response('not found', { status: 404 })),
+    vi.fn(async () => new Response('{}')),
   )
 })
 
@@ -209,9 +210,18 @@ test('a persisted mappedEntityId survives a reload alongside its alignment', () 
 // A receptor with a partner protein fused into one of its loops, as in 2RH1:
 // the alignment bridges the insert, and SIFTS says residues 5-8 are the
 // partner's
-test('residues SIFTS assigns to a fused partner leave the mapping, the stored alignment untouched', async () => {
+const FUSED_ALIGNMENT = {
+  consensus: '||||    ||||',
+  alns: [
+    { id: 'a', seq: 'MKAAQRSTWYVL' },
+    { id: 'b', seq: 'MKAAGGGGWYVL' },
+  ],
+}
+
+async function loadFusedReceptor(snapshot: { alignmentImported?: boolean }) {
   const segment = (start: number, end: number, unpStart: number) => ({
     entity_id: 1,
+    chain_id: 'A',
     start: { residue_number: start },
     end: { residue_number: end },
     unp_start: unpStart,
@@ -229,20 +239,14 @@ test('residues SIFTS assigns to a fused partner leave the mapping, the stored al
     'fetch',
     vi.fn(async () => new Response(JSON.stringify(sifts))),
   )
-  const stored = {
-    consensus: '||||    ||||',
-    alns: [
-      { id: 'a', seq: 'MKAAQRSTWYVL' },
-      { id: 'b', seq: 'MKAAGGGGWYVL' },
-    ],
-  }
   const parent = TestParent.create({
     structures: [
       {
         url: 'https://files.rcsb.org/download/9ZZZ.cif',
         userProvidedTranscriptSequence: 'MKAAQRSTWYVL',
-        pairwiseAlignment: stored,
+        pairwiseAlignment: FUSED_ALIGNMENT,
         mappedEntityId: '1',
+        ...snapshot,
       },
     ],
   })
@@ -258,10 +262,14 @@ test('residues SIFTS assigns to a fused partner leave the mapping, the stored al
     ],
   })
   expect(model.structureSeqToTranscriptSeqPosition?.[5]).toBe(5)
-
   await vi.waitFor(() => {
     expect(model.uniProtMappings).toBeDefined()
   })
+  return model
+}
+
+test('residues SIFTS assigns to a fused partner leave the mapping, the stored alignment untouched', async () => {
+  const model = await loadFusedReceptor({ alignmentImported: false })
   const s2t = model.structureSeqToTranscriptSeqPosition!
   expect([4, 5, 6, 7].map(p => s2t[p])).toEqual([
     undefined,
@@ -271,7 +279,18 @@ test('residues SIFTS assigns to a fused partner leave the mapping, the stored al
   ])
   expect(s2t[8]).toBe(8)
   expect(model.alignmentQuality?.aligned).toBe(8)
-  expect(model.pairwiseAlignment).toEqual(stored)
+  expect(model.pairwiseAlignment).toEqual(FUSED_ALIGNMENT)
+})
+
+// the manual import, and a spec or older session carrying its own alignment
+test('an imported alignment is used as given, fusion partner included', async () => {
+  const fromSpec = await loadFusedReceptor({})
+  expect(fromSpec.alignmentImported).toBe(true)
+  expect(fromSpec.structureSeqToTranscriptSeqPosition?.[5]).toBe(5)
+
+  const computed = await loadFusedReceptor({ alignmentImported: false })
+  computed.setAlignment(FUSED_ALIGNMENT, true)
+  expect(computed.structureSeqToTranscriptSeqPosition?.[5]).toBe(5)
 })
 
 test('initialResidues seeds the selection by author numbering once the mapped entity is known', () => {

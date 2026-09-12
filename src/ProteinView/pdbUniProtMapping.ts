@@ -14,11 +14,15 @@
 // position + 1 (see applyLociInteractivity.ts for the other place that boundary
 // is crossed).
 
+import { jsonfetch, timeout } from '../fetchUtils'
+
 /** One contiguous UniProt <-> structure correspondence for a single entity.
  * `unp*` are 1-based UniProt positions; `struct*` are 0-based inclusive
  * structure-sequence positions, this plugin's native coordinate. */
 export interface UniProtStructureSegment {
   entityId: string
+  /** author chain id, when the response names it */
+  chainId?: string
   unpStart: number
   unpEnd: number
   structStart: number
@@ -41,6 +45,24 @@ export type MapUniProtPosition = (uniprotPos: number) => number | undefined
 
 export function pdbeSiftsUrl(pdbId: string) {
   return `https://www.ebi.ac.uk/pdbe/api/mappings/uniprot/${pdbId.toLowerCase()}`
+}
+
+const SIFTS_RETRY_DELAYS_MS = [1000, 3000]
+
+/** SIFTS for an entry, retried twice: one failed request would otherwise
+ * leave a fusion construct mapped onto its partner for the whole session. */
+export async function fetchUniProtStructureMappings(pdbId: string) {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return parseUniProtStructureMappings(await jsonfetch(pdbeSiftsUrl(pdbId)))
+    } catch (e) {
+      const delay = SIFTS_RETRY_DELAYS_MS[attempt]
+      if (delay === undefined) {
+        throw e
+      }
+      await timeout(delay)
+    }
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -72,6 +94,9 @@ function parseSegment(mapping: unknown): UniProtStructureSegment | undefined {
     ? undefined
     : {
         entityId: String(entityId),
+        ...(typeof mapping.chain_id === 'string'
+          ? { chainId: mapping.chain_id }
+          : {}),
         unpStart,
         unpEnd,
         // SEQRES/label_seq_id is 1-based, structure positions are 0-based
@@ -118,6 +143,32 @@ function coveredResidues(segments: UniProtStructureSegment[]) {
   return segments.reduce((a, s) => a + (s.structEnd - s.structStart + 1), 0)
 }
 
+/** The entity a SIFTS segment is matched against: its mmCIF id and the author
+ * chains carrying it. */
+export interface SegmentEntity {
+  entityId: string
+  chains: readonly string[]
+}
+
+/**
+ * The segments of one accession that describe this entity. SIFTS numbers
+ * entities as the mmCIF does, and a PDB-format file loaded through Mol* numbers
+ * them per chain (1H26.pdb's chain C is entity 2, which in SIFTS is cyclin A),
+ * so a segment naming its chain is matched by chain.
+ */
+function segmentsForEntity(
+  mapping: UniProtStructureMapping,
+  entity: SegmentEntity,
+) {
+  return dedupeSegments(
+    mapping.segments.filter(s =>
+      s.chainId === undefined
+        ? s.entityId === entity.entityId
+        : entity.chains.includes(s.chainId),
+    ),
+  )
+}
+
 /**
  * Picks the UniProt entry that describes a given entity, with its segments
  * narrowed to that entity. Only the entity the plugin has mapped to the
@@ -128,16 +179,14 @@ function coveredResidues(segments: UniProtStructureSegment[]) {
  */
 export function chooseUniProtMappingForEntity(
   mappings: UniProtStructureMapping[],
-  entityId: string | undefined,
+  entity: SegmentEntity | undefined,
 ): UniProtStructureMapping | undefined {
-  if (entityId === undefined) {
+  if (entity === undefined) {
     return undefined
   }
   let best: UniProtStructureMapping | undefined
   for (const mapping of mappings) {
-    const segments = dedupeSegments(
-      mapping.segments.filter(s => s.entityId === entityId),
-    )
+    const segments = segmentsForEntity(mapping, entity)
     if (
       segments.length > 0 &&
       (!best || coveredResidues(segments) > coveredResidues(best.segments))
@@ -148,40 +197,57 @@ export function chooseUniProtMappingForEntity(
   return best
 }
 
+const OWN_PSEUDOCOUNT = 5
+const MIN_OWN_IDENTITY = 0.5
+
 /**
  * Mapped structure positions that SIFTS assigns to a protein other than the
  * transcript's, on a chain that fuses two. Local alignment bridges a fusion
  * boundary, and on every GPCR fusion construct checked it scattered receptor
  * residues onto the partner, 33 of them onto T4 lysozyme in 2RH1.
  *
- * The transcript's own accession is the one covering most mapped positions.
- * When none covers at least half, the SIFTS entity is taken not to be this
- * chain (a PDB-format file numbers its entities differently) and nothing is
- * unmapped. Residues SIFTS assigns to no accession, such as tags, stay mapped.
+ * `mapped` is each mapped structure position and whether its pair is
+ * identical. The transcript's own accession is the one whose covered positions
+ * are most often identical, plus a pseudocount, as the chain picker scores
+ * chains. A count of covered positions would not do: TP53's 11-residue peptide
+ * fused to CDK2 covers 11 positions against 224 chance hits on the kinase, and
+ * counting unmapped the peptide. Unless that accession reaches half identity
+ * the transcript is taken to be neither protein, and nothing is unmapped.
+ * Residues SIFTS assigns to no accession, such as tags, stay mapped.
  */
 export function fusionPartnerPositions(
   mappings: UniProtStructureMapping[],
-  entityId: string | undefined,
-  mappedPositions: readonly number[],
+  entity: SegmentEntity | undefined,
+  mapped: ReadonlyMap<number, boolean>,
 ) {
   const partners = new Set<number>()
-  const byAccession = mappings
-    .map(m => dedupeSegments(m.segments.filter(s => s.entityId === entityId)))
-    .filter(segments => segments.length > 0)
-  if (entityId === undefined || byAccession.length < 2) {
+  const byAccession = entity
+    ? mappings
+        .map(m => segmentsForEntity(m, entity))
+        .filter(segments => segments.length > 0)
+    : []
+  if (byAccession.length < 2) {
     return partners
   }
   const covers = (segments: UniProtStructureSegment[], pos: number) =>
     segments.some(s => pos >= s.structStart && pos <= s.structEnd)
-  const counts = byAccession.map(
-    segments => mappedPositions.filter(pos => covers(segments, pos)).length,
-  )
-  const ownCount = Math.max(...counts)
-  if (ownCount * 2 < mappedPositions.length) {
+  const identity = byAccession.map(segments => {
+    let covered = 0
+    let identical = 0
+    for (const [pos, same] of mapped) {
+      if (covers(segments, pos)) {
+        covered++
+        identical += same ? 1 : 0
+      }
+    }
+    return identical / (covered + OWN_PSEUDOCOUNT)
+  })
+  const ownIdentity = Math.max(...identity)
+  if (ownIdentity < MIN_OWN_IDENTITY) {
     return partners
   }
-  const own = byAccession[counts.indexOf(ownCount)]!
-  for (const pos of mappedPositions) {
+  const own = byAccession[identity.indexOf(ownIdentity)]!
+  for (const pos of mapped.keys()) {
     if (
       !covers(own, pos) &&
       byAccession.some(segments => segments !== own && covers(segments, pos))

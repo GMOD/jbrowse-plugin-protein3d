@@ -89,9 +89,11 @@ fusion and scatters 33 ICL3 residues onto lysozyme, so those codons hovered to a
 bacterial protein. SIFTS maps each segment to its own accession, so for an RCSB
 entry the model's `alignment` getter unmaps residues SIFTS gives another protein
 (`fusionPartnerPositions`); 351 such residues across 70 entries went to 0 with
-no correct residue lost. Read `alignment`, not the stored `pairwiseAlignment`,
-anywhere a column or a coordinate is computed: the two differ in length for a
-fusion.
+no correct residue lost. Which protein is the transcript's is decided by
+identity over the residues each covers, not by how many it covers: a count
+unmapped an 11-residue p53 peptide fused to CDK2 and kept 224 chance pairs. Read
+`alignment`, not the stored `pairwiseAlignment`, anywhere a column or a
+coordinate is computed: the two differ in length for a fusion.
 
 ## Coordinate conventions, the off-by-one source here
 

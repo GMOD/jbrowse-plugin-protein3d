@@ -207,13 +207,22 @@ picker and the manual-alignment import exist:
   85 residues on 3PBL. Sequence cannot fix it: BLAST's 11/1 gap costs do not
   help (361 residues against 351), and unmapping 10-column windows under 50%
   identity removes only 186 of the 351 while losing 9 correct residues. For an
-  RCSB entry the plugin asks SIFTS which protein each residue belongs to and
-  unmaps any aligned residue SIFTS assigns to a protein other than the one
-  covering most of the alignment (`fusionPartnerPositions`). It trusts SIFTS
-  only when that protein covers at least half the aligned residues, since a
-  PDB-format file numbers its entities differently. The stored alignment is left
-  as computed. Without SIFTS (AlphaFold, Foldseek, a user's file, PDBe
-  unreachable) the alignment is used as is.
+  RCSB entry the plugin asks SIFTS which protein each residue belongs to, takes
+  the transcript's own protein to be the one whose residues the alignment pairs
+  identically most often (plus a pseudocount of 5, as the chain picker scores
+  chains), and unmaps any aligned residue SIFTS assigns to another protein
+  (`fusionPartnerPositions`). Counting covered residues instead chose the wrong
+  protein for a short product on a long carrier: TP53's 11-residue peptide fused
+  to CDK2 covers 11 residues against 224 chance pairs on the kinase. Nothing is
+  unmapped unless the chosen protein reaches half identity. SIFTS segments are
+  matched by chain, because a PDB-format file numbers its entities differently.
+  On the 70 entries the 351 residues went to 0 with no correct residue lost. A
+  chimera of related proteins, such as 5AFH's α7/AChBP, keeps only the
+  transcript's own part mapped, although the AChBP part sits at equivalent
+  positions. An imported alignment, from the manual import or a spec, is used as
+  given, which is the way to map such a part. Without SIFTS (AlphaFold,
+  Foldseek, a user's file, PDBe unreachable after two retries) the alignment is
+  used as is.
 - **Products split across chains.** Insulin's A and B chains, or a viral
   polyprotein's cleavage products, each align to a separate stretch of one
   transcript. The picker maps the best of them and leaves the rest unmapped.

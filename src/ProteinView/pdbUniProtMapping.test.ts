@@ -90,6 +90,7 @@ test('parses segments into 0-based structure positions', () => {
   expect(mapping?.segments).toEqual([
     {
       entityId: '3',
+      chainId: 'A',
       unpStart: 94,
       unpEnd: 312,
       structStart: 0,
@@ -97,6 +98,7 @@ test('parses segments into 0-based structure positions', () => {
     },
     {
       entityId: '3',
+      chainId: 'B',
       unpStart: 94,
       unpEnd: 312,
       structStart: 0,
@@ -105,22 +107,43 @@ test('parses segments into 0-based structure positions', () => {
   ])
 })
 
+const P53_1TUP = { entityId: '3', chains: ['A', 'B', 'C'] }
+
 test('picks the accession for the mapped entity of a heteromer', () => {
   const mappings = parseUniProtStructureMappings(SIFTS_4HHB)
-  expect(chooseUniProtMappingForEntity(mappings, '1')?.accession).toBe('P69905')
-  expect(chooseUniProtMappingForEntity(mappings, '2')?.accession).toBe('P68871')
-  expect(chooseUniProtMappingForEntity(mappings, '3')).toBeUndefined()
+  const entity = (entityId: string, chains: string[]) => ({ entityId, chains })
+  expect(
+    chooseUniProtMappingForEntity(mappings, entity('1', ['A', 'C']))?.accession,
+  ).toBe('P69905')
+  expect(
+    chooseUniProtMappingForEntity(mappings, entity('2', ['B', 'D']))?.accession,
+  ).toBe('P68871')
+  expect(
+    chooseUniProtMappingForEntity(mappings, entity('3', ['E'])),
+  ).toBeUndefined()
   expect(chooseUniProtMappingForEntity(mappings, undefined)).toBeUndefined()
+})
+
+// Mol* numbers a PDB-format file's entities per chain: 4HHB.pdb's chain B can
+// be entity 3, which in SIFTS is nothing. The chain id still names it.
+test('matches segments by chain, not by the entity number a PDB file was given', () => {
+  const mappings = parseUniProtStructureMappings(SIFTS_4HHB)
+  expect(
+    chooseUniProtMappingForEntity(mappings, { entityId: '3', chains: ['B'] })
+      ?.accession,
+  ).toBe('P68871')
 })
 
 test('collapses the repeated chains of a homomer to one segment', () => {
   const mappings = parseUniProtStructureMappings(SIFTS_1TUP)
-  expect(chooseUniProtMappingForEntity(mappings, '3')?.segments).toHaveLength(1)
+  expect(
+    chooseUniProtMappingForEntity(mappings, P53_1TUP)?.segments,
+  ).toHaveLength(1)
 })
 
 test('maps p53 uniprot positions onto 1TUP structure positions', () => {
   const mappings = parseUniProtStructureMappings(SIFTS_1TUP)
-  const mapping = chooseUniProtMappingForEntity(mappings, '3')
+  const mapping = chooseUniProtMappingForEntity(mappings, P53_1TUP)
   const map = makeUniProtPositionMap(mapping!.segments)
 
   // UniProt 94 is the first modeled residue, i.e. structure position 0
@@ -221,26 +244,84 @@ const SEGMENTS_2RH1 = [
 ]
 const range = (start: number, end: number) =>
   Array.from({ length: end - start }, (_, i) => start + i)
+const CHIMERA = { entityId: '1', chains: ['A'] }
+
+/** Mapped positions, each identical to its transcript residue or not. */
+function pairs(identical: number[], different: number[] = []) {
+  return new Map([
+    ...identical.map(p => [p, true] as const),
+    ...different.map(p => [p, false] as const),
+  ])
+}
 
 test('unmaps the positions SIFTS gives the fusion partner, and nothing SIFTS leaves unassigned', () => {
   const icl3OnLysozyme = range(237, 270)
-  const mapped = [...range(0, 237), ...icl3OnLysozyme, ...range(398, 500)]
-  expect([...fusionPartnerPositions(SEGMENTS_2RH1, '1', mapped)]).toEqual(
+  const mapped = pairs([...range(0, 237), ...range(398, 500)], icl3OnLysozyme)
+  expect([...fusionPartnerPositions(SEGMENTS_2RH1, CHIMERA, mapped)]).toEqual(
     icl3OnLysozyme,
   )
 })
 
 test('a chain with one accession, or another entity, unmaps nothing', () => {
+  const mapped = pairs(range(0, 500))
   expect(
-    fusionPartnerPositions(SEGMENTS_2RH1.slice(0, 1), '1', range(0, 500)).size,
+    fusionPartnerPositions(SEGMENTS_2RH1.slice(0, 1), CHIMERA, mapped).size,
   ).toBe(0)
-  expect(fusionPartnerPositions(SEGMENTS_2RH1, '2', range(0, 500)).size).toBe(0)
+  expect(
+    fusionPartnerPositions(
+      SEGMENTS_2RH1,
+      { entityId: '2', chains: ['B'] },
+      mapped,
+    ).size,
+  ).toBe(0)
 })
 
-// A PDB-format file numbers entities its own way, so SIFTS' entity 1 may be
-// some other chain: when no accession covers half the mapped positions, trust
-// none of them
-test('unmaps nothing when no accession covers half the mapped positions', () => {
-  const mapped = [...range(200, 240), ...range(600, 700)]
-  expect(fusionPartnerPositions(SEGMENTS_2RH1, '1', mapped).size).toBe(0)
+// TP53's 11-residue peptide fused to CDK2: the alignment maps the 11, all
+// identical, and 224 chance pairs on the kinase. Counting covered positions
+// called CDK2 the transcript's protein and unmapped the peptide.
+test("a short product fused to a long partner keeps its residues, and loses the partner's", () => {
+  const cdk2 = {
+    accession: 'P24941',
+    segments: [
+      {
+        entityId: '1',
+        unpStart: 1,
+        unpEnd: 298,
+        structStart: 0,
+        structEnd: 297,
+      },
+    ],
+  }
+  const p53 = {
+    accession: 'P04637',
+    segments: [
+      {
+        entityId: '1',
+        unpStart: 379,
+        unpEnd: 389,
+        structStart: 310,
+        structEnd: 320,
+      },
+    ],
+  }
+  const peptide = range(310, 321)
+  const chance = range(40, 264)
+  const mapped = pairs(
+    [...peptide, ...chance.filter(p => p % 5 === 0)],
+    chance.filter(p => p % 5 !== 0),
+  )
+  const partners = fusionPartnerPositions([cdk2, p53], CHIMERA, mapped)
+  expect(peptide.some(p => partners.has(p))).toBe(false)
+  expect(partners.size).toBe(chance.length)
+})
+
+// A PDB-format file whose entity SIFTS describes some other chain, or a
+// transcript that is neither protein: no accession reaches half identity over
+// what it covers, so none is trusted
+test('unmaps nothing when no accession is half identical over what it covers', () => {
+  const mapped = pairs(
+    range(0, 500).filter(p => p % 4 === 0),
+    range(0, 500).filter(p => p % 4 !== 0),
+  )
+  expect(fusionPartnerPositions(SEGMENTS_2RH1, CHIMERA, mapped).size).toBe(0)
 })

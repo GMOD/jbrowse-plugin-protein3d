@@ -121,7 +121,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
     confidenceCells,
     hydrophobicityCells,
   } = model
-  const mappedEntityId = model.mappedEntity?.entityId
   const { classes } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
@@ -138,7 +137,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
     pdbId: model.pdbId,
     uniProtMappings: model.uniProtMappings,
     uniProtMappingsError: model.uniProtMappingsError,
-    mappedEntityId,
+    mappedEntity: model.mappedEntity,
   })
   const {
     data: featureData,

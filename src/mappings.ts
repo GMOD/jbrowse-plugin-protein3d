@@ -109,18 +109,33 @@ export function structureSeqVsTranscriptSeqMap(
   }
 }
 
-/** 0-based structure positions that sit opposite a transcript residue. */
-export function mappedStructurePositions(pa: PairwiseAlignment) {
-  return Object.keys(
-    structureSeqVsTranscriptSeqMap(pa).structureSeqToTranscriptSeqPosition,
-  ).map(Number)
+/** Each 0-based structure position opposite a transcript residue, and whether
+ * the two residues are identical. */
+export function mappedStructureIdentity(pa: PairwiseAlignment) {
+  const transcript = transcriptAlignedSeq(pa)
+  const structure = structureAlignedSeq(pa)
+  const mapped = new Map<number, boolean>()
+  for (let i = 0, j = 0; i < structure.length; i++) {
+    if (structure[i] !== '-') {
+      if (transcript[i] !== '-') {
+        mapped.set(
+          j,
+          transcript[i]!.toUpperCase() === structure[i]!.toUpperCase(),
+        )
+      }
+      j++
+    }
+  }
+  return mapped
 }
 
 /**
- * The alignment with each listed structure position taken out of its column:
- * the column splits into the transcript residue against a gap and a gap
- * against the structure residue, so both rows still spell their sequences and
- * that residue maps to nothing. Returns `pa` itself when nothing changes.
+ * The alignment with each listed structure position taken out of its column,
+ * so both rows still spell their sequences and those residues map to nothing.
+ * An unmapped region, including the gap columns inside it, becomes its
+ * transcript residues against gaps, then gaps against its structure residues,
+ * rather than alternating column by column. Returns `pa` itself when nothing
+ * changes.
  */
 export function unmapStructurePositions(
   pa: PairwiseAlignment,
@@ -131,16 +146,33 @@ export function unmapStructurePositions(
   const t: string[] = []
   const s: string[] = []
   const c: string[] = []
+  const runT: string[] = []
+  const runS: string[] = []
+  const flushRun = () => {
+    t.push(...runT, ...runS.map(() => '-'))
+    s.push(...runT.map(() => '-'), ...runS)
+    c.push(...runT.map(() => ' '), ...runS.map(() => ' '))
+    runT.length = 0
+    runS.length = 0
+  }
   let j = 0
   let changed = false
   for (let i = 0; i < structure.length; i++) {
     const inStructure = structure[i] !== '-'
-    if (inStructure && transcript[i] !== '-' && positions.has(j)) {
-      t.push(transcript[i]!, '-')
-      s.push('-', structure[i]!)
-      c.push(' ', ' ')
+    const inTranscript = transcript[i] !== '-'
+    if (inStructure && inTranscript && positions.has(j)) {
+      runT.push(transcript[i]!)
+      runS.push(structure[i]!)
       changed = true
+    } else if (runT.length > 0 && !(inStructure && inTranscript)) {
+      if (inTranscript) {
+        runT.push(transcript[i]!)
+      }
+      if (inStructure) {
+        runS.push(structure[i]!)
+      }
     } else {
+      flushRun()
       t.push(transcript[i]!)
       s.push(structure[i]!)
       c.push(pa.consensus[i] ?? ' ')
@@ -149,6 +181,7 @@ export function unmapStructurePositions(
       j++
     }
   }
+  flushRun()
   return changed
     ? {
         consensus: c.join(''),

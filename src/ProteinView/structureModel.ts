@@ -29,9 +29,8 @@ import {
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
 import {
+  fetchUniProtStructureMappings,
   fusionPartnerPositions,
-  parseUniProtStructureMappings,
-  pdbeSiftsUrl,
 } from './pdbUniProtMapping'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
@@ -51,12 +50,11 @@ import {
   structureDisplayLabel,
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import { jsonfetch } from '../fetchUtils'
 import {
   alignmentLength,
   codonGenomeSpan,
   genomeToTranscriptSeqMapping,
-  mappedStructurePositions,
+  mappedStructureIdentity,
   unmapStructurePositions,
 } from '../mappings'
 import {
@@ -153,6 +151,13 @@ const Structure = types
      * other would light chain A's residues with chain C's alignment.
      */
     mappedEntityId: types.maybe(types.string),
+    /**
+     * #property
+     * Whether `pairwiseAlignment` came from outside, pasted in the manual
+     * import or written into a spec, rather than computed here. An imported
+     * alignment is used exactly as given, fusion partners included.
+     */
+    alignmentImported: types.optional(types.boolean, false),
   })
   // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
   // concrete `url` at hydration and strip the shorthand keys (they are not
@@ -161,10 +166,14 @@ const Structure = types
   // URL format. An explicit url/data always wins; the shorthand resolves the
   // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
   // shorthand keys and an already-set url, so it passes through unchanged.
+  // A snapshot carrying an alignment but no alignmentImported predates the
+  // flag or was written by hand; either way the alignment is used as given.
   .preProcessSnapshot(
     ({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
       ...rest,
       url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
+      alignmentImported:
+        rest.alignmentImported ?? rest.pairwiseAlignment !== undefined,
     }),
   )
   .volatile(() => ({
@@ -367,8 +376,9 @@ const Structure = types
     /**
      * #action
      */
-    setAlignment(r?: PairwiseAlignment) {
+    setAlignment(r?: PairwiseAlignment, imported = false) {
       self.pairwiseAlignment = r
+      self.alignmentImported = imported
       self.alignmentSkipped = undefined
     },
     setAlignmentSkipped(reason?: string) {
@@ -447,20 +457,20 @@ const Structure = types
      * #getter
      * The alignment every map, highlight and the panel read: the stored one,
      * minus any residue SIFTS assigns to a protein fused to the transcript's
-     * (see fusionPartnerPositions). Until SIFTS answers, or without it, the
-     * stored alignment as is.
+     * (see fusionPartnerPositions). Until SIFTS answers, without it, or for
+     * an imported alignment, the stored alignment as is.
      */
     get alignment(): MaybePairwiseAlignment {
       const pa = self.pairwiseAlignment
-      if (!pa || !self.uniProtMappings) {
+      if (!pa || !self.uniProtMappings || self.alignmentImported) {
         return pa
       }
       return unmapStructurePositions(
         pa,
         fusionPartnerPositions(
           self.uniProtMappings,
-          this.mappedEntity?.entityId,
-          mappedStructurePositions(pa),
+          this.mappedEntity,
+          mappedStructureIdentity(pa),
         ),
       )
     },
@@ -987,10 +997,10 @@ const Structure = types
       }
       const { pdbId } = self
       if (pdbId) {
-        jsonfetch(pdbeSiftsUrl(pdbId)).then(
-          json => {
+        fetchUniProtStructureMappings(pdbId).then(
+          mappings => {
             if (isAlive(self)) {
-              self.setUniProtMappings(parseUniProtStructureMappings(json))
+              self.setUniProtMappings(mappings)
             }
           },
           (e: unknown) => {

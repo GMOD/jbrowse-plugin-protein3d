@@ -5,9 +5,10 @@
 // local build in place of the published plugin, so a mapping change can be
 // checked on the demos before release.
 //
-// Expectations, all optional:
+// Every link needs an expectation. Its fields, each optional:
 //   chain           author chain id the transcript maps to
 //   minIdentity     identical over aligned columns, at least
+//   minAligned      aligned columns, at least; catches unmapping too much
 //   unmapped        [start, end) 0-based structure positions that must not map
 //   residue         { auth, transcriptPos }: the residue with that author
 //                   number maps to that 0-based transcript position
@@ -43,7 +44,8 @@ function parseDemos(markdown) {
     if (link) {
       current = { name: link[1], url: link[2] }
       demos.push(current)
-    } else if (expect && current) {
+    }
+    if (expect && current) {
       current.expect = JSON.parse(expect[1])
     }
   }
@@ -160,7 +162,10 @@ function readStructure() {
   }
 }
 
-function problems(state, expect = {}) {
+function problems(state, expect) {
+  if (!expect) {
+    return ['no <!-- expect {...} --> for this link']
+  }
   const found = []
   if (state.seqLength !== state.seqIdsLength) {
     found.push(
@@ -177,6 +182,12 @@ function problems(state, expect = {}) {
     !(state.identity >= expect.minIdentity)
   ) {
     found.push(`identity ${state.identity} under ${expect.minIdentity}`)
+  }
+  if (
+    expect.minAligned !== undefined &&
+    !(state.aligned >= expect.minAligned)
+  ) {
+    found.push(`${state.aligned} aligned columns, under ${expect.minAligned}`)
   }
   if (expect.unmapped) {
     const [start, end] = expect.unmapped
@@ -221,6 +232,7 @@ for (const demo of demos) {
     await serveCandidateBundle(page)
   }
   let found
+  let state
   try {
     await page.goto(demo.url, {
       waitUntil: 'domcontentloaded',
@@ -230,7 +242,8 @@ for (const demo of demos) {
       timeout,
       polling: 500,
     })
-    found = problems(await handle.jsonValue(), demo.expect)
+    state = await handle.jsonValue()
+    found = problems(state, demo.expect)
   } catch (e) {
     const text = await page
       .evaluate(() =>
@@ -243,8 +256,11 @@ for (const demo of demos) {
   if (found.length > 0) {
     failed++
   }
+  const summary = state
+    ? ` (${state.aligned} aligned, ${Math.round((state.identity ?? 0) * 100)}% identity)`
+    : ''
   console.log(
-    `${found.length ? 'FAIL' : 'ok  '} ${demo.name}${found.length ? `\n     ${found.join('\n     ')}` : ''}`,
+    `${found.length ? 'FAIL' : 'ok  '} ${demo.name}${summary}${found.length ? `\n     ${found.join('\n     ')}` : ''}`,
   )
 }
 await browser.close()

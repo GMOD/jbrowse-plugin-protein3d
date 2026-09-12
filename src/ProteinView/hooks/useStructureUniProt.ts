@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import {
   type MapUniProtPosition,
+  type SegmentEntity,
   type UniProtStructureMapping,
   chooseUniProtMappingForEntity,
   identityUniProtPositionMap,
@@ -36,22 +37,22 @@ export default function useStructureUniProt({
   pdbId,
   uniProtMappings,
   uniProtMappingsError,
-  mappedEntityId,
+  mappedEntity,
 }: {
   uniprotId: string | undefined
   pdbId: string | undefined
   uniProtMappings: UniProtStructureMapping[] | undefined
   uniProtMappingsError: unknown
-  mappedEntityId: string | undefined
+  mappedEntity: SegmentEntity | undefined
 }): StructureUniProt {
   // Memoized because the mapper is a fresh closure each time it's built, and
   // consumers key their own layout memos on its identity.
   const siftsMapping = useMemo(
     () =>
       uniProtMappings
-        ? chooseUniProtMappingForEntity(uniProtMappings, mappedEntityId)
+        ? chooseUniProtMappingForEntity(uniProtMappings, mappedEntity)
         : undefined,
-    [uniProtMappings, mappedEntityId],
+    [uniProtMappings, mappedEntity],
   )
   const siftsPositionMap = useMemo(
     () =>

@@ -51,6 +51,24 @@ test('unmapStructurePositions splits a column so its residue maps to nothing', (
   expect(unmapStructurePositions(pa, new Set([9]))).toBe(pa)
 })
 
+// 2RH1's loop paired with lysozyme in short blocks between gaps; alternating
+// column by column it read as a zipper
+test('unmapStructurePositions sets an unmapped region, gaps inside it included, apart as one block', () => {
+  const pa: PairwiseAlignment = {
+    consensus: '|| |  ||',
+    alns: [
+      { id: 'a', seq: 'MKQR-SWY' },
+      { id: 'b', seq: 'MKGGG-WY' },
+    ],
+  }
+  const unmapped = unmapStructurePositions(pa, new Set([2, 3]))
+  expect(unmapped.alns.map(r => r.seq)).toEqual(['MKQRS---WY', 'MK---GGGWY'])
+  expect(structureSeqVsTranscriptSeqMap(unmapped)).toEqual({
+    structureSeqToTranscriptSeqPosition: { 0: 0, 1: 1, 5: 5, 6: 6 },
+    transcriptSeqToStructureSeqPosition: { 0: 0, 1: 1, 5: 5, 6: 6 },
+  })
+})
+
 // Two rows cut from a multiple alignment keep the columns only a third
 // sequence filled; one used to advance the structure position, shifting every
 // later residue.

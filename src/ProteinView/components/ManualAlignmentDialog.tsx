@@ -61,7 +61,7 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
         } else if (problem) {
           setParseError(problem)
         } else {
-          primaryStructure.setAlignment(parsed)
+          primaryStructure.setAlignment(parsed, true)
           handleClose()
         }
       } catch (e) {
