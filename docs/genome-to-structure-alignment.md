@@ -112,10 +112,22 @@ nothing passes.
 **Isoform ranking.** An isoform whose translation equals the structure's
 sequence is chosen outright. Any SEQRES lacking Met1 or carrying a tag, which is
 most experimental entries, never matches exactly, so among the rest the launch
-dialog ranks by identical residues against the structure, then length. Ranking
-by length alone chose the longest isoform every time, and a shorter isoform the
-structure was actually made from lost to one whose extra exon then aligned as a
-gap.
+dialog ranks by alignment score against the structure, then identical residues,
+then length. Ranking by length alone chose the longest isoform every time.
+Ranking by identical residues did no better where it mattered, because an
+isoform carrying an exon the structure lacks aligns every structure residue
+across a gap: on 1MH1, Rac1b and its 19-residue insert tie Rac1 at 182 identical
+and won on length. The gap penalty is what separates them. Measured 2026-09-12
+against SIFTS' isoform assignment for 55 structures, identical residues then
+length agreed 43 times and the score 47, with no case lost. The remaining 8 are
+exact score ties between isoforms that differ only outside the structure, where
+SIFTS names the canonical isoform and length picks the longest.
+
+The dialog has to rank against the right chain first. It compares with a chain
+some isoform translates to exactly, else the chain `chooseMappedEntity` picks
+for the longest isoform. Falling back to the first chain ranked p53's isoforms
+against CDK2 on 1H26, where p53β, which ends before the bound peptide, won on
+chance identities to the kinase.
 
 ## What alignment cannot decide
 

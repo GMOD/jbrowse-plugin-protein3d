@@ -18,9 +18,16 @@ vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
-vi.mock('../src/LaunchProteinView/utils/isoformRanking', () => ({
-  selectBestTranscript: vi.fn(),
-}))
+vi.mock(
+  '../src/LaunchProteinView/utils/isoformRanking',
+  async importOriginal => {
+    const actual = await importOriginal()
+    return {
+      ...actual,
+      selectBestTranscript: vi.fn(),
+    }
+  },
+)
 vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   const actual = await importOriginal()
   return {

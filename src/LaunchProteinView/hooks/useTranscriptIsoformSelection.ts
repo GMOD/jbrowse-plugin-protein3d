@@ -1,10 +1,9 @@
+import { useMemo } from 'react'
+
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useTranscriptSelection from './useTranscriptSelection'
-import {
-  getId,
-  getTranscriptFeatures,
-  pickStructureSequence,
-} from '../utils/util'
+import { pickStructureSequence } from '../utils/isoformRanking'
+import { getId, getTranscriptFeatures } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -20,7 +19,7 @@ export default function useTranscriptIsoformSelection({
 }: {
   feature: Feature
   view?: { assemblyNames?: string[] }
-  // every polymer chain of the structure, not just the first — see
+  // every protein chain of the structure, not just the first — see
   // pickStructureSequence
   structureSequences?: string[]
   resetKey?: string
@@ -30,9 +29,10 @@ export default function useTranscriptIsoformSelection({
     feature,
     view,
   })
-  const structureSequence = pickStructureSequence(
-    structureSequences,
-    isoformSequences,
+  // one alignment per chain, so not once per render
+  const structureSequence = useMemo(
+    () => pickStructureSequence(structureSequences, isoformSequences),
+    [structureSequences, isoformSequences],
   )
   const { userSelection, setUserSelection } = useTranscriptSelection({
     options: transcripts,

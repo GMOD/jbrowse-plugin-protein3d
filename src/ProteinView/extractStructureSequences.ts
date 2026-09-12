@@ -284,12 +284,14 @@ export function entityLabel(entity: Entity) {
   return `${chains} (${entity.seq.length} ${entity.nucleicAcid ? 'nt' : 'aa'})`
 }
 
-/** Back-compat helper for callers that only need the sequence strings (e.g. the
- * launch dialog's isoform matching). */
+/** The protein chains' sequences, for the launch dialog's isoform matching,
+ * which has no use for a DNA strand that happens to align. */
 export function extractStructureSequences(
   model: StructureModel,
 ): string[] | undefined {
-  return extractEntities(model)?.map(e => e.seq)
+  return extractEntities(model)
+    ?.filter(e => !e.nucleicAcid)
+    .map(e => e.seq)
 }
 
 /**

@@ -1,4 +1,8 @@
-import { alignmentTooLarge, runLocalAlignment } from './pairwiseAlignment'
+import {
+  alignmentTooLarge,
+  scoredAlignment,
+  selfScore,
+} from './pairwiseAlignment'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../mappings'
 
@@ -33,6 +37,8 @@ export interface ScoredAlignment {
   /** identical residues over the shorter sequence, the score that picks the
    * entity; see `explainedFraction` */
   explained: number
+  /** the alignment's BLOSUM62 score, gap penalties included */
+  score: number
 }
 
 /** A candidate entity: its sequence, and whether it is DNA/RNA, which is never
@@ -116,14 +122,16 @@ export function alignTranscriptToEntity(
       },
       matches: t.length,
       explained: explainedFraction(t.length, t.length, s.length),
+      score: selfScore(t),
     }
   }
-  const alignment = runLocalAlignment(t, s, algorithm)
+  const { alignment, score } = scoredAlignment(t, s, algorithm)
   const matches = countMatches(alignment)
   return {
     alignment,
     matches,
     explained: explainedFraction(matches, t.length, s.length),
+    score,
   }
 }
 

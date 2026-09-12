@@ -1,12 +1,15 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { describe, expect, test } from 'vitest'
 
-import { selectBestTranscript } from './isoformRanking'
+import { classifyIsoforms, selectBestTranscript } from './isoformRanking'
 import {
   CDK2_1H26_ENTITY0,
   HBA_TRANSCRIPT_P69905,
   HBB_BETA_4HHB_ENTITY1,
   HBB_TRANSCRIPT_P68871,
+  RAC1B_ISOFORM_B_P63000_2,
+  RAC1_1MH1_ENTITY1,
+  RAC1_ISOFORM_A_P63000_1,
 } from '../../ProteinView/__fixtures__/structureFixtures'
 
 describe('selectBestTranscript', () => {
@@ -160,6 +163,25 @@ describe('selectBestTranscript', () => {
       structureSequence: HBB_BETA_4HHB_ENTITY1,
     })
     expect(result?.id()).toBe('transcript-1')
+  })
+
+  // Rac1b's extra exon aligns as a gap, so it matches every 1MH1 residue Rac1
+  // does and ranking by identical residues then length chose it
+  test('with no exact match, an isoform carrying an exon the structure lacks loses on score', () => {
+    const isoformSequences = {
+      'transcript-1': { feature: transcript1, seq: RAC1B_ISOFORM_B_P63000_2 },
+      'transcript-2': { feature: transcript2, seq: RAC1_ISOFORM_A_P63000_1 },
+    }
+    const { nonMatches } = classifyIsoforms({
+      options: [transcript1, transcript2],
+      isoformSequences,
+      structureSequence: RAC1_1MH1_ENTITY1,
+    })
+    expect(nonMatches[0]!.identical).toBe(nonMatches[1]!.identical)
+    expect(nonMatches.map(r => r.feature.id())).toEqual([
+      'transcript-2',
+      'transcript-1',
+    ])
   })
 
   test('only considers transcripts with sequence data', () => {

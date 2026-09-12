@@ -383,21 +383,41 @@ function buildConsensus(alignedSeq1: string, alignedSeq2: string) {
   return chars.join('')
 }
 
-export function runLocalAlignment(
+/** The score of a sequence aligned to itself with no gaps. */
+export function selfScore(seq: string) {
+  let score = 0
+  for (const c of seq) {
+    score += getScore(c, c)
+  }
+  return score
+}
+
+export function scoredAlignment(
   seq1: string,
   seq2: string,
   algorithm: AlignmentAlgorithm,
-): PairwiseAlignment {
-  const { alignedSeq1, alignedSeq2 } =
+): { alignment: PairwiseAlignment; score: number } {
+  const { alignedSeq1, alignedSeq2, score } =
     algorithm === 'smith_waterman'
       ? smithWaterman(seq1, seq2)
       : needlemanWunsch(seq1, seq2)
 
   return {
-    consensus: buildConsensus(alignedSeq1, alignedSeq2),
-    alns: [
-      { id: 'a', seq: alignedSeq1 },
-      { id: 'b', seq: alignedSeq2 },
-    ],
+    alignment: {
+      consensus: buildConsensus(alignedSeq1, alignedSeq2),
+      alns: [
+        { id: 'a', seq: alignedSeq1 },
+        { id: 'b', seq: alignedSeq2 },
+      ],
+    },
+    score,
   }
+}
+
+export function runLocalAlignment(
+  seq1: string,
+  seq2: string,
+  algorithm: AlignmentAlgorithm,
+): PairwiseAlignment {
+  return scoredAlignment(seq1, seq2, algorithm).alignment
 }
