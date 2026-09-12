@@ -114,20 +114,47 @@ sequence is chosen outright. Any SEQRES lacking Met1 or carrying a tag, which is
 most experimental entries, never matches exactly, so among the rest the launch
 dialog ranks by alignment score against the structure, then identical residues,
 then length. Ranking by length alone chose the longest isoform every time.
-Ranking by identical residues did no better where it mattered, because an
-isoform carrying an exon the structure lacks aligns every structure residue
-across a gap: on 1MH1, Rac1b and its 19-residue insert tie Rac1 at 182 identical
-and won on length. The gap penalty is what separates them. Measured 2026-09-12
-against SIFTS' isoform assignment for 55 structures, identical residues then
-length agreed 43 times and the score 47, with no case lost. The remaining 8 are
-exact score ties between isoforms that differ only outside the structure, where
-SIFTS names the canonical isoform and length picks the longest.
+Ranking by identical residues still chose a longer isoform whenever the
+structure lacked one of its exons, because that isoform aligns every structure
+residue too, across a gap: on 1MH1, Rac1b and its 19-residue insert tie Rac1 at
+182 identical and won on length. The gap penalty is what separates them.
+Measured 2026-09-12 against SIFTS' isoform assignment for 55 structures,
+identical residues then length agreed 43 times and the score 47, with no case
+lost. The remaining 8 are exact score ties between isoforms that differ only
+outside the structure, where SIFTS names the canonical isoform and length picks
+the longest.
 
 The dialog has to rank against the right chain first. It compares with a chain
 some isoform translates to exactly, else the chain `chooseMappedEntity` picks
 for the longest isoform. Falling back to the first chain ranked p53's isoforms
 against CDK2 on 1H26, where p53β, which ends before the bound peptide, won on
 chance identities to the kinase.
+
+## Checked against SIFTS
+
+Measured 2026-09-12 on 70 RCSB entries: 112 pairings of an entry with a UniProt
+accession SIFTS maps into it, 63 of them with more than one protein chain to
+choose from. The UniProt sequence stood in for the transcript's translation, the
+entity sequences were the ones the plugin extracts, and the truth was SIFTS'
+residue-level mapping.
+
+- **Chain choice:** 112 of 112 agree.
+- **Residues:** 28,130 map to the position SIFTS gives and 113 do not. 76 of the
+  113 are 1UBQ on polyubiquitin, whose nine copies are identical, so SIFTS'
+  choice of copy and the plugin's are equally right. 34 are 5G53, where SIFTS
+  itself is wrong: it maps the structure's `KQLQKDKQVYRA` to Gαs 151 rather than
+  28, where that sequence is.
+- **Onto the wrong protein:** 351 residues map onto residues SIFTS assigns to a
+  fused partner, all in engineered constructs: β2AR, D3R, A2A, μOR and NTSR1
+  receptors fused to T4 lysozyme or BRIL, and a Gα chimera in 6OIJ. See chimeras
+  below.
+- **Unmapped:** 302 residues SIFTS maps sit on a second chain of the same
+  product (insulin's A chain in 4INS, nsp7 and nsp8 in 7BV2), which the plugin
+  does not map, since it maps one chain per transcript.
+
+Chain choice and residue agreement are an easy test: SIFTS is itself
+alignment-derived, and UniProt canonical is close to every SEQRES here. Real
+transcripts and isoforms make it harder, and that measurement has not been made.
 
 ## What alignment cannot decide
 
@@ -142,19 +169,37 @@ picker and the manual-alignment import exist:
   transcript; the picker takes the higher identity, which may be a coin flip for
   a recent duplication.
 - **Chimeras.** On 2RH1, the β2-adrenergic receptor fused to T4 lysozyme, the
-  local alignment bridges the fusion boundary and scatters about thirty ICL3
-  residues onto lysozyme.
+  local alignment bridges the fusion boundary and scatters 33 ICL3 residues onto
+  lysozyme. Every GPCR fusion construct in the SIFTS check does the same, up to
+  85 residues on 3PBL. BLAST's 11/1 gap costs do not help (361 residues against
+  351). Unmapping 10-column windows under 50% identity inside a 90%-identical
+  alignment removes 186 of the 351 and loses 9 correct residues.
+- **Products split across chains.** Insulin's A and B chains, or a viral
+  polyprotein's cleavage products, each align to a separate stretch of one
+  transcript. The picker maps the best of them and leaves the rest unmapped.
 - **Remote homologs.** A Foldseek hit or an ortholog's AlphaFold model maps
   equivalent positions, which is what the user asked for, but with the identity
   a homolog has. The header readout is the only indication.
 
-SIFTS resolves the first three for RCSB entries, because the depositors declared
+SIFTS resolves the first four for RCSB entries, because the depositors declared
 which UniProt range each segment is. The plugin reads SIFTS only after the chain
 is chosen and only for feature tracks; using its segments as the primary mapping
 for PDB entries, with alignment as the fallback for everything else, is the
 natural next step.
 
 ## Known limitations of the aligner itself
+
+- Gap costs of 10 and 0.5 are more lenient than any BLOSUM62 setting BLAST
+  supports, and past the point where chance local alignments stay short. Between
+  random sequences at background composition, Smith-Waterman maps about 60
+  columns at 200 × 200 and 1,900 at 3,200 × 3,200, against 27 and 62 at BLAST's
+  11/1 (2026-09-12). That is where the 58 chance identities with CDK2 above come
+  from; at 11/1 CDK2 gets 9. On structures of the transcript's own protein the
+  two settings map the same residues, and 10 of 14 real homolog pairs map
+  identically, so the difference is confined to divergent regions and chance
+  hits. Changing it means recalibrating the floors above, and the stepped floors
+  there are not monotone: 19 identical residues over 25 warn while 20 over 66 do
+  not.
 
 - The Needleman-Wunsch option charges end gaps, unlike EMBOSS needle's default,
   so a fragment against a full-length transcript pays for the unaligned termini.
