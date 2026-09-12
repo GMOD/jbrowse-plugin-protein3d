@@ -44,6 +44,19 @@ modeling-tool output usually has no SEQRES) and through `caCoordsToPdb`, which
 emits no SEQRES and survives only because it happens to number from 1. Source of
 truth is molstar's `mol-model-formats/structure/basic/sequence`.
 
+## Molstar: read `sequence.code`, never `sequence.label`
+
+`label` spells a residue that has no one-letter code by its component id (MSE,
+TPO, ACE) and an alternate site as `(S|P)`, so the string outgrows `seqId` and
+every later position addresses the wrong residue. Until 2026-09-12 the plugin
+read it: 12 of 122 entities in a 72-entry sample were shifted, among them 1H26's
+phospho-CDK2, 4ZZJ's peptide (`RHKALYLNLEF` for 7 residues) and 1GZM, whose
+N-terminal ACE moved the whole chain by two. Against SIFTS, disagreeing residues
+went from 113 to 1,145. No test saw it, because the fixtures are RCSB's
+one-letter sequences and the stubs handed `label` single letters.
+`extractEntities` now reads `code` and takes parent letters from
+`entity_poly.pdbx_seq_one_letter_code_can`, and matches RCSB's FASTA on all 122.
+
 ## Which chain is the gene's: identity over the shorter sequence, not matches
 
 `chooseMappedEntity` ranks a structure's protein chains by identical residues

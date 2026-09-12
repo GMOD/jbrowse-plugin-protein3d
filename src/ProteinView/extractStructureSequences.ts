@@ -52,11 +52,12 @@ interface StructureModel {
         subtype: Column<string>
         getEntityIndex(id: string): number
       }
+      sourceData?: { data: unknown }
       sequence: {
         sequences: readonly {
           entityId: string
           sequence: {
-            label: {
+            code: {
               toArray(): ArrayLike<string>
             }
             seqId: {
@@ -206,14 +207,64 @@ function isNucleicAcid(model: StructureModel, entityId: string) {
   return index >= 0 && NUCLEIC_ACID_SUBTYPES.has(entities.subtype.value(index))
 }
 
+/** The slice of molstar's MmcifFormat data read here; other formats have no
+ * `db` */
+interface MmcifSourceData {
+  db?: {
+    entity_poly?: {
+      entity_id: Column<string>
+      pdbx_seq_one_letter_code_can: Column<string>
+    }
+  }
+}
+
+function canonicalSequencesByEntity(model: StructureModel) {
+  const source = model.obj?.data.sourceData?.data as MmcifSourceData | undefined
+  const entityPoly = source?.db?.entity_poly
+  const byEntity = new Map<string, string>()
+  if (entityPoly) {
+    for (let i = 0; i < entityPoly.entity_id.rowCount; i++) {
+      byEntity.set(
+        entityPoly.entity_id.value(i),
+        entityPoly.pdbx_seq_one_letter_code_can.value(i).replaceAll(/\s/g, ''),
+      )
+    }
+  }
+  return byEntity
+}
+
+/**
+ * One letter per position, so `seq[pos]` and `seqIds[pos]` name the same
+ * residue. Molstar's `label` column is not that: it spells a residue with no
+ * one-letter code by its component id (MSE, TPO, ACE) and an alternate site as
+ * "(S|P)", which shifted every later position. `code` writes X for those; the
+ * mmCIF canonical sequence then supplies the parent residue (MSE is M) when it
+ * has one letter per position, which a chromophore spelled "TYG" does not.
+ */
+export function oneLetterSequence(
+  codes: ArrayLike<string>,
+  canonical: string | undefined,
+) {
+  const letters = Array.from(codes)
+  return letters
+    .map((c, i) =>
+      c === 'X' && canonical?.length === letters.length ? canonical[i]! : c,
+    )
+    .join('')
+}
+
 export function extractEntities(model: StructureModel): Entity[] | undefined {
   const chains = chainsByEntity(model)
   const authIds = authSeqIdsByEntity(model)
+  const canonical = canonicalSequencesByEntity(model)
   return model.obj?.data.sequence.sequences.map(s => {
     const seqIds = Array.from(s.sequence.seqId.toArray())
     return {
       entityId: s.entityId,
-      seq: Array.from(s.sequence.label.toArray()).join(''),
+      seq: oneLetterSequence(
+        s.sequence.code.toArray(),
+        canonical.get(s.entityId),
+      ),
       seqIds,
       chains: chains.get(s.entityId) ?? [],
       ...(isNucleicAcid(model, s.entityId) ? { nucleicAcid: true } : {}),

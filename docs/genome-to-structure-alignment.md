@@ -46,6 +46,12 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
    polymer entity's full sequence from molstar, SEQRES included, with the
    `label_seq_id` of every position carried alongside. See
    [residue numbering](residue-numbering.md) for why positions and ids differ.
+   The sequence has exactly one letter per position. Molstar's `label` column
+   does not: it spells a modified residue by its component id, so 4ZZJ's
+   7-residue peptide read `RHKALYLNLEF` and every later position was off. The
+   plugin reads `code` instead, and takes a modified residue's parent letter
+   (MSE is M) from the mmCIF canonical sequence. Alternate residues at one site
+   collapse to one position.
 3. **Choose the chain.** `chooseMappedEntity.ts` aligns the transcript to every
    distinct protein entity and keeps the one with the most identical residues
    over the shorter of the two sequences, plus a pseudocount of 5. Nucleic-acid
@@ -145,10 +151,9 @@ natural next step.
 - The dynamic-programming table is capped at 40 million cells. A transcript the
   size of titin (34,350 aa) cannot be aligned to any chain over about 1,160
   residues; the view reports this instead of aligning.
-- Molstar keeps micro-heterogeneity rows of `entity_poly_seq` as extra
-  positions, so an entity with alternate residues at one site has one more
-  position than distinct `label_seq_id`s, and SIFTS' residue numbers drift by
-  one after it.
+- A modified residue in a PDB-format file reads as `X`, since the format has no
+  canonical sequence to name its parent, so a selenomethionine scores as a
+  mismatch against the transcript's M. It still aligns through.
 - An ambiguous codon renders as `&`, scored as an unknown residue.
   Selenocysteine reaches the aligner as `*` on the transcript row and `U` on the
   structure row, a mismatch that aligns through.

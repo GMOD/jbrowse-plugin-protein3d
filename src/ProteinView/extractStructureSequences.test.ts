@@ -6,6 +6,7 @@ import {
   extractEntities,
   fillAuthSeqIds,
   makeLabelSeqIdIndex,
+  oneLetterSequence,
   rangeToLabelSeqIds,
   residueNumber,
   residueRangeToPositions,
@@ -18,13 +19,17 @@ import {
 function model(
   entities: {
     entityId: string
-    seq: string
+    /** molstar's `code` column, one entry per position */
+    seq: string | string[]
     seqIds: number[]
     subtype?: string
+    /** entity_poly.pdbx_seq_one_letter_code_can */
+    canonical?: string
   }[],
   observed?: { entityId: string; labelSeqId: number; authSeqId: number }[],
 ) {
   const entityIds = entities.map(e => e.entityId)
+  const withCanonical = entities.filter(e => e.canonical !== undefined)
   return {
     obj: {
       data: {
@@ -35,11 +40,27 @@ function model(
           },
           getEntityIndex: (id: string) => entityIds.indexOf(id),
         },
+        sourceData: {
+          data: {
+            db: {
+              entity_poly: {
+                entity_id: {
+                  rowCount: withCanonical.length,
+                  value: (row: number) => withCanonical[row]!.entityId,
+                },
+                pdbx_seq_one_letter_code_can: {
+                  rowCount: withCanonical.length,
+                  value: (row: number) => withCanonical[row]!.canonical!,
+                },
+              },
+            },
+          },
+        },
         sequence: {
           sequences: entities.map(e => ({
             entityId: e.entityId,
             sequence: {
-              label: { toArray: () => Array.from(e.seq) },
+              code: { toArray: () => Array.from(e.seq) },
               seqId: { toArray: () => e.seqIds },
             },
           })),
@@ -126,6 +147,31 @@ test('extractEntities flags DNA and RNA entities and labels them in nt', () => {
   expect(protein.nucleicAcid).toBeUndefined()
   expect(entityLabel(dna)).toBe('Entity 1 (5 nt)')
   expect(entityLabel(protein)).toBe('Entity 3 (3 aa)')
+})
+
+// 4ZZJ's p53 peptide carries acetyl-lysine (ALY) and norleucine (NLE). Read
+// from molstar's `label` column it was "RHKALYLNLEF", 11 letters for 7
+// residues, so every position after K3 addressed a residue further along.
+test('a modified residue takes one position, spelled by its parent when the mmCIF names one', () => {
+  const [peptide] = extractEntities(
+    model([
+      {
+        entityId: '2',
+        seq: ['R', 'H', 'K', 'X', 'L', 'X', 'F'],
+        seqIds: [1, 2, 3, 4, 5, 6, 7],
+        canonical: 'RHKKL\nLF',
+      },
+    ]),
+  )!
+  expect(peptide.seq).toBe('RHKKLLF')
+  expect(peptide.seq).toHaveLength(peptide.seqIds.length)
+})
+
+test('without a usable canonical sequence a modified residue stays X', () => {
+  // PDB format carries no entity_poly, and GFP's chromophore is three parent
+  // letters for one position
+  expect(oneLetterSequence(['M', 'X', 'K'], undefined)).toBe('MXK')
+  expect(oneLetterSequence(['S', 'X', 'V'], 'STYGV')).toBe('SXV')
 })
 
 test('fillAuthSeqIds: an unobserved N-terminus takes the first observed offset', () => {
