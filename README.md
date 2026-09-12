@@ -29,6 +29,13 @@ Source and details in [harness/](harness/).
 Example at
 https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=share-aZOIjR_qs4&password=NT4sa
 
+## Demos
+
+[Structures that are easy to map wrong](docs/demos.md), each one link away: a
+peptide bound to a larger partner, a protein bound to DNA, a receptor with
+another protein fused into it, a phosphorylated residue, and a mitochondrial
+protein.
+
 ## Publication
 
 If you find this tool useful please cite our work

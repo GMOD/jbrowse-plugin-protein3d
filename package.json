@@ -25,6 +25,7 @@
     "test:docs": "node scripts/test-docs.mjs",
     "host-compat": "node scripts/host-compat-probe.mjs",
     "host-compat:candidate": "node scripts/host-compat-probe.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js --versions v4.0.0,v4.3.0,latest,main --floor v4.0.0 --json host-compat.json",
+    "check-demos": "node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js",
     "clean": "rimraf dist",
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
     "fetch-molstar-css": "node scripts/fetch-molstar-css.mjs",
