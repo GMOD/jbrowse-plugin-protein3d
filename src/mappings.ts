@@ -89,18 +89,17 @@ export function structureSeqVsTranscriptSeqMap(
   const transcriptSeqToStructureSeqPosition: Record<number, number> = {}
 
   for (let i = 0; i < structureSeq.length; i++) {
-    const c1 = structureSeq[i]
-    const c2 = transcriptSeq[i]
-
-    if (c2 === '-') {
-      j++
-    } else if (c1 === '-') {
-      k++
-    } else {
+    const inStructure = structureSeq[i] !== '-'
+    const inTranscript = transcriptSeq[i] !== '-'
+    if (inStructure && inTranscript) {
       structureSeqToTranscriptSeqPosition[j] = k
       transcriptSeqToStructureSeqPosition[k] = j
-      k++
+    }
+    if (inStructure) {
       j++
+    }
+    if (inTranscript) {
+      k++
     }
   }
 

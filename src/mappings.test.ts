@@ -32,6 +32,23 @@ test('pairwiseAlignmentSequenceProblem: rows must spell the mapped sequences', (
   )
 })
 
+// Two rows cut from a multiple alignment keep the columns only a third
+// sequence filled; one used to advance the structure position, shifting every
+// later residue.
+test('structureSeqVsTranscriptSeqMap skips a column that is a gap in both rows', () => {
+  const pa: PairwiseAlignment = {
+    consensus: '',
+    alns: [
+      { id: 'a', seq: 'AC-D-E' },
+      { id: 'b', seq: 'AC--YE' },
+    ],
+  }
+  expect(structureSeqVsTranscriptSeqMap(pa)).toEqual({
+    structureSeqToTranscriptSeqPosition: { 0: 0, 1: 1, 3: 3 },
+    transcriptSeqToStructureSeqPosition: { 0: 0, 1: 1, 3: 3 },
+  })
+})
+
 test('structureSeqVsTranscriptSeqMap snapshot', () => {
   const ret = structureSeqVsTranscriptSeqMap(pairwiseAlignment)
   expect(ret).toMatchSnapshot()
