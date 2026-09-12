@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { calculateProteinSequence } from '../src/LaunchProteinView/utils/calculateProteinSequence'
+import { SimpleFeature } from '@jbrowse/core/util'
+
+import {
+  calculateProteinSequence,
+  getProteinSequence,
+} from '../src/LaunchProteinView/utils/calculateProteinSequence'
 import {
   getGeneticCode,
   parseTranslTable,
@@ -160,5 +165,54 @@ describe('calculateProteinSequence', () => {
         sequence,
       }),
     ).toBe('M&')
+  })
+})
+
+// GENCODE's chrM CDS lines carry no transl_table, so MT-CO1 read its TGA
+// tryptophans as stops until the assembly's { chrM: 2 } was consulted
+describe('getProteinSequence genetic code', () => {
+  const transcript = (cdsAttributes: Record<string, unknown> = {}) =>
+    new SimpleFeature({
+      uniqueId: 't1',
+      refName: 'chrM',
+      start: 100,
+      end: 112,
+      strand: 1,
+      type: 'transcript',
+      subfeatures: [
+        {
+          uniqueId: 'c1',
+          refName: 'chrM',
+          start: 100,
+          end: 112,
+          strand: 1,
+          type: 'CDS',
+          phase: 0,
+          ...cdsAttributes,
+        },
+      ],
+    })
+
+  it('falls back to the assembly code when the feature declares none', () => {
+    expect(
+      getProteinSequence({ feature: transcript(), seq: 'ATGGCTTGATAA' }),
+    ).toBe('MA**')
+    expect(
+      getProteinSequence({
+        feature: transcript(),
+        seq: 'ATGGCTTGATAA',
+        assemblyGeneticCodeId: 2,
+      }),
+    ).toBe('MAW*')
+  })
+
+  it("prefers the feature's own transl_table", () => {
+    expect(
+      getProteinSequence({
+        feature: transcript({ transl_table: '1' }),
+        seq: 'ATGGCTTGATAA',
+        assemblyGeneticCodeId: 2,
+      }),
+    ).toBe('MA**')
   })
 })

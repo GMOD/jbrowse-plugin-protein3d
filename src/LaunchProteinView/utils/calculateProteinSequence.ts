@@ -64,12 +64,16 @@ function dedupe(list: Feat[]) {
   )
 }
 
-function getProteinSequence({
+export function getProteinSequence({
   feature,
   seq,
+  assemblyGeneticCodeId,
 }: {
   seq: string
   feature: Feature
+  /** the assembly's code for the feature's contig, `{ chrM: 2 }` in hub
+   * configs; a transl_table on the feature wins */
+  assemblyGeneticCodeId?: number
 }) {
   const featureStart = feature.get('start')
   const strand = feature.get('strand')
@@ -86,15 +90,17 @@ function getProteinSequence({
       .filter(f => f.type === 'CDS'),
   )
 
-  // a mitochondrial gene declares e.g. transl_table=2, so it translates with
-  // NCBI table 2 rather than the standard code. GFF3 usually carries the
-  // attribute on the CDS rather than the transcript, so check both.
+  // RefSeq declares transl_table=2 on a mitochondrial CDS, usually on the CDS
+  // rather than the transcript. GENCODE and UCSC declare nothing, so without
+  // the assembly's code all 13 human mitochondrial proteins read TGA as a stop
+  // and ATA as I.
   const cdsSubfeature = subfeatures.find(
     (f: Feature) => f.get('type')?.toLowerCase() === 'cds',
   )
   const geneticCodeId =
     parseTranslTable(feature.get('transl_table')) ??
-    parseTranslTable(cdsSubfeature?.get('transl_table'))
+    parseTranslTable(cdsSubfeature?.get('transl_table')) ??
+    assemblyGeneticCodeId
 
   return calculateProteinSequence({
     cds: strand === -1 ? revlist(cds, seq.length) : cds,
@@ -138,5 +144,19 @@ export async function fetchProteinSeq({
 
   const [feat] = feats as Feature[]
   const seq = feat?.get('seq') as string | undefined
-  return seq ? getProteinSequence({ seq, feature }) : undefined
+  return seq
+    ? getProteinSequence({
+        seq,
+        feature,
+        assemblyGeneticCodeId: assemblyGeneticCode(assembly, refName),
+      })
+    : undefined
+}
+
+// v5 hosts only; a v4 assembly has neither the method nor the config slot
+function assemblyGeneticCode(assembly: object, refName: string) {
+  const { getGeneticCodeId } = assembly as {
+    getGeneticCodeId?: (refName: string) => number
+  }
+  return getGeneticCodeId?.call(assembly, refName)
 }

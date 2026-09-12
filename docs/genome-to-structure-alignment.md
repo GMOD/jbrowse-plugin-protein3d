@@ -35,13 +35,15 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
 ## What the pipeline does
 
 1. **Translate.** `calculateProteinSequence.ts` stitches the CDS subfeatures and
-   translates with the NCBI table the feature's `transl_table` names. GFF3
-   `phase` on the first CDS sets the frame; a 5' partial codon becomes a leading
-   `&`, so residue 0 of the translation is the same partial codon that
-   `g2p_mapper` assigns protein position 0. Core's bigGenePred adapter derives
-   `phase` from UCSC `exonFrames`, so hub tracks carry it too. Only the terminal
-   stop is stripped: an interior stop occupies a codon position, and deleting it
-   would shift every later residue off its codon.
+   translates with the NCBI table the feature's `transl_table` names, else the
+   one the assembly's `geneticCodes` names for the contig (`{ chrM: 2 }` in the
+   hub configs; v5 hosts only), else the standard code. GFF3 `phase` on the
+   first CDS sets the frame; a 5' partial codon becomes a leading `&`, so
+   residue 0 of the translation is the same partial codon that `g2p_mapper`
+   assigns protein position 0. Core's bigGenePred adapter derives `phase` from
+   UCSC `exonFrames`, so hub tracks carry it too. Only the terminal stop is
+   stripped: an interior stop occupies a codon position, and deleting it would
+   shift every later residue off its codon.
 2. **Read the structure's sequence.** `extractStructureSequences.ts` takes each
    polymer entity's full sequence from molstar, SEQRES included, with the
    `label_seq_id` of every position carried alongside. See
@@ -153,8 +155,37 @@ residue-level mapping.
   does not map, since it maps one chain per transcript.
 
 Chain choice and residue agreement are an easy test: SIFTS is itself
-alignment-derived, and UniProt canonical is close to every SEQRES here. Real
-transcripts and isoforms make it harder, and that measurement has not been made.
+alignment-derived, and UniProt canonical is close to every SEQRES here. The
+translation step it skips is checked separately below.
+
+## Checked against GENCODE's translations
+
+The SIFTS check starts from a protein sequence, so it says nothing about the
+step before: turning a GFF3 transcript into a protein and each residue back into
+genome bases. Measured 2026-09-12 on 6,015 GENCODE v44 protein-coding
+transcripts (every one on chr21, chr22, chrY and chrM, the selenoproteins, and
+3% of genes elsewhere). Features came from JBrowse's own `Gff3Feature` over
+gff-nostream, bases from the hosted hg38 FASTA, and the plugin translated them
+exactly as a launch does. The reference was GENCODE's published
+`pc_translations.fa`.
+
+- **Translation:** 5,998 match. Of those, 4,871 match letter for letter. The
+  rest differ only in notation: a partial codon at either end written `&` where
+  GENCODE writes `X` or nothing, selenocysteine as `*` where GENCODE writes `U`,
+  and a non-ATG start (CTG read as L where GENCODE writes M).
+- **Codon to genome:** for all 2,589,369 complete codons, the bases `g2p_mapper`
+  assigns to a residue translate to that residue, and each of those bases maps
+  back to it.
+- **Real differences, 17:** all 13 mitochondrial proteins, because GENCODE's
+  chrM CDS lines carry no `transl_table` and the plugin translated them with the
+  standard code, so TGA read as a stop and ATA as I. Using the assembly's code
+  fixes 12; MT-ND2 still starts with I, the non-ATG start again. Three are
+  stop-codon readthrough (MPZ, AQP4, VEGFA), where GENCODE writes `X` at the
+  read-through stop. GPX4-207 ends on a selenocysteine, which the plugin strips
+  as a terminal stop.
+
+Every remaining difference is one substituted residue or one at an end of the
+protein, so none moves a later position.
 
 ## What alignment cannot decide
 
