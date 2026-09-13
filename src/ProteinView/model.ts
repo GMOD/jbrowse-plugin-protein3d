@@ -3,7 +3,7 @@ import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, types } from '@jbrowse/mobx-state-tree'
 import SettingsIcon from '@mui/icons-material/Settings'
 import Visibility from '@mui/icons-material/Visibility'
-import { autorun, reaction } from 'mobx'
+import { autorun } from 'mobx'
 
 import {
   COLOR_SCHEMES,
@@ -14,11 +14,11 @@ import {
 import { makeLociChannel } from './lociChannel'
 import { showLoading } from './showLoading'
 import {
-  PERSISTED_SETTINGS,
+  type PersistedSetting,
   type PersistedSettings,
   readStoredSettings,
+  storeSetting,
   withStoredSettings,
-  writeStoredSettings,
 } from './storedSettings'
 import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
@@ -171,36 +171,6 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setShowHighlight(arg: boolean) {
-        self.showHighlight = arg
-      },
-      /**
-       * #action
-       */
-      setShowProteinTracks(arg: boolean) {
-        self.showProteinTracks = arg
-      },
-      /**
-       * #action
-       */
-      setCompactTracks(arg: boolean) {
-        self.compactTracks = arg
-      },
-      /**
-       * #action
-       */
-      setZoomToBaseLevel(arg: boolean) {
-        self.zoomToBaseLevel = arg
-      },
-      /**
-       * #action
-       */
-      setAutoScrollAlignment(arg: boolean) {
-        self.autoScrollAlignment = arg
-      },
-      /**
-       * #action
-       */
       setAlignmentAlgorithm(algorithm: AlignmentAlgorithm) {
         self.alignmentAlgorithm = algorithm
       },
@@ -246,24 +216,20 @@ function stateModelFactory() {
       },
     }))
     .actions(self => ({
+      /**
+       * #action
+       * A menu toggle, remembered for views opened later. Only a toggle
+       * persists: a spec's value or the view revealing a partial alignment is
+       * not the reader's preference.
+       */
+      toggleSetting(key: PersistedSetting) {
+        const value = !self[key]
+        self[key] = value
+        storeSetting(key, value)
+      },
+    }))
+    .actions(self => ({
       afterAttach() {
-        // Persist on user change only. reaction (unlike autorun) skips the
-        // initial value, so launching a declaratively-configured view never
-        // overwrites the stored preference — only a menu toggle does.
-        addDisposer(
-          self,
-          reaction(
-            () => PERSISTED_SETTINGS.map(key => self[key]),
-            () => {
-              const settings: PersistedSettings = {}
-              for (const key of PERSISTED_SETTINGS) {
-                settings[key] = self[key]
-              }
-              writeStoredSettings(settings)
-            },
-          ),
-        )
-
         // Apply the chosen color theme whenever it changes or once a structure
         // finishes loading (structureSequences is set after its molstar
         // representation is built, so the theme has something to recolor).
@@ -317,36 +283,23 @@ function stateModelFactory() {
        * header's settings menu offer the same toggles under the same names.
        */
       get displayToggles() {
-        return [
-          {
-            label: 'Show alignment',
-            checked: self.showAlignment,
-            toggle: () => {
-              self.setShowAlignment(!self.showAlignment)
-            },
+        return (
+          [
+            ['showAlignment', 'Show alignment'],
+            ['showProteinTracks', 'Show feature tracks'],
+            ['compactTracks', 'Compact tracks'],
+            [
+              'autoScrollAlignment',
+              'Auto-scroll alignment to hovered position',
+            ],
+          ] as const
+        ).map(([key, label]) => ({
+          label,
+          checked: self[key],
+          toggle: () => {
+            self.toggleSetting(key)
           },
-          {
-            label: 'Show feature tracks',
-            checked: self.showProteinTracks,
-            toggle: () => {
-              self.setShowProteinTracks(!self.showProteinTracks)
-            },
-          },
-          {
-            label: 'Compact tracks',
-            checked: self.compactTracks,
-            toggle: () => {
-              self.setCompactTracks(!self.compactTracks)
-            },
-          },
-          {
-            label: 'Auto-scroll alignment to hovered position',
-            checked: self.autoScrollAlignment,
-            toggle: () => {
-              self.setAutoScrollAlignment(!self.autoScrollAlignment)
-            },
-          },
-        ]
+        }))
       },
     }))
     .views(self => ({
@@ -385,7 +338,7 @@ function stateModelFactory() {
                 type: 'checkbox',
                 checked: self.showHighlight,
                 onClick: () => {
-                  self.setShowHighlight(!self.showHighlight)
+                  self.toggleSetting('showHighlight')
                 },
               },
               {
@@ -420,7 +373,7 @@ function stateModelFactory() {
                 type: 'checkbox',
                 checked: self.zoomToBaseLevel,
                 onClick: () => {
-                  self.setZoomToBaseLevel(!self.zoomToBaseLevel)
+                  self.toggleSetting('zoomToBaseLevel')
                 },
               },
             ],

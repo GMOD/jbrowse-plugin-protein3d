@@ -11,9 +11,9 @@ export const PERSISTED_SETTINGS = [
   'compactTracks',
 ] as const
 
-export type PersistedSettings = Partial<
-  Record<(typeof PERSISTED_SETTINGS)[number], boolean>
->
+export type PersistedSetting = (typeof PERSISTED_SETTINGS)[number]
+
+export type PersistedSettings = Partial<Record<PersistedSetting, boolean>>
 
 /**
  * A stored preference fills in only what the snapshot leaves unsaid. Comparing
@@ -42,6 +42,10 @@ export function readStoredSettings() {
   return readStoredJson(SETTINGS_KEY) as PersistedSettings | undefined
 }
 
-export function writeStoredSettings(settings: PersistedSettings) {
-  writeStorage(SETTINGS_KEY, JSON.stringify(settings))
+/** Remembers one choice, leaving the other stored settings as they were. */
+export function storeSetting(key: PersistedSetting, value: boolean) {
+  writeStorage(
+    SETTINGS_KEY,
+    JSON.stringify({ ...readStoredSettings(), [key]: value }),
+  )
 }
