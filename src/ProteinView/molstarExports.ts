@@ -8,6 +8,7 @@ export {
   StructureSelection,
 } from 'molstar/lib/mol-model/structure'
 export { tmAlign } from 'molstar/lib/mol-model/structure/structure/util/tm-align'
+export { MmcifFormat } from 'molstar/lib/mol-model-formats/structure/mmcif'
 export { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 export { PluginConfig } from 'molstar/lib/mol-plugin/config'
 export { PluginContext } from 'molstar/lib/mol-plugin/context'

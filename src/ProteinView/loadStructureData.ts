@@ -2,6 +2,7 @@ import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
 import { extractPerResidueConfidence } from './extractPerResidueConfidence'
 import { extractEntities } from './extractStructureSequences'
+import loadMolstar from './loadMolstar'
 
 import type { EntityConfidence } from './extractPerResidueConfidence'
 import type { Entity } from './extractStructureSequences'
@@ -37,9 +38,18 @@ export async function loadStructureData({
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
       : { model: undefined, structure: undefined }
+  // An experimental entry's B-factors are not confidence: read as pLDDT they
+  // invert, drawing a well-ordered residue as "very low".
+  const { MmcifFormat } = await loadMolstar()
+  const source = model?.obj?.data.sourceData
+  const experimental =
+    !!source &&
+    MmcifFormat.is(source) &&
+    source.data.db.exptl.method.rowCount > 0
   return {
     entities: model ? extractEntities(model) : undefined,
-    confidence: model ? extractPerResidueConfidence(model) : undefined,
+    confidence:
+      model && !experimental ? extractPerResidueConfidence(model) : undefined,
     molstarStructure,
   }
 }
