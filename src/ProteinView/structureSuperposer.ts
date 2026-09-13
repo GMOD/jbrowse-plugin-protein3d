@@ -11,6 +11,10 @@ type StructureInstance = Instance<typeof StructureModel>
 export type StructureSuperposerHost = IAnyStateTreeNode & {
   readonly molstarPluginContext: PluginContext | undefined
   readonly structures: StructureInstance[]
+  /** How many loaded structures the last superposition covered; observable,
+   * so the camera framing can wait for the reset that ends a superposition. */
+  readonly superposedCount: number
+  setSuperposedCount: (count: number) => void
   setError: (error: unknown) => void
 }
 
@@ -35,20 +39,20 @@ export type StructureSuperposerHost = IAnyStateTreeNode & {
  */
 export function makeStructureSuperposer(host: StructureSuperposerHost) {
   let superposing = false
-  let superposedCount = 0
   let superposedPlugin: PluginContext | undefined
 
   function run() {
     const { molstarPluginContext: plugin, structures } = host
     const loadedCount = structures.filter(s => s.loadedToMolstar).length
     if (plugin !== superposedPlugin) {
-      superposedCount = 0
+      superposedPlugin = plugin
+      host.setSuperposedCount(0)
     }
     if (
       plugin &&
       !superposing &&
       loadedCount >= 2 &&
-      loadedCount !== superposedCount
+      loadedCount !== host.superposedCount
     ) {
       superposing = true
       superposeStructures(plugin)
@@ -60,9 +64,13 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
         })
         .finally(() => {
           superposing = false
-          superposedCount = loadedCount
-          superposedPlugin = plugin
-          run()
+          if (isAlive(host)) {
+            // a run into a plugin swapped away mid-flight covered nothing
+            if (host.molstarPluginContext === plugin) {
+              host.setSuperposedCount(loadedCount)
+            }
+            run()
+          }
         })
     }
   }

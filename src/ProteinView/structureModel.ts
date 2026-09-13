@@ -756,6 +756,17 @@ const Structure = types
 
     /**
      * #getter
+     * Whether a spec seeded the selection, which is what the camera frames.
+     */
+    get seededSelection() {
+      return !!(
+        self.initialSelection ??
+        self.initialResidues ??
+        self.initialTranscriptResidues
+      )
+    },
+    /**
+     * #getter
      * The residues the molstar 'highlight' (hover) channel should light.
      */
     get hoverLabelSeqIds() {

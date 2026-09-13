@@ -23,11 +23,15 @@ const TestHost = types
   .model('TestHost', { structures: types.array(TestStructure) })
   .volatile(() => ({
     molstarPluginContext: undefined as object | undefined,
+    superposedCount: 0,
     errors: [] as unknown[],
   }))
   .actions(self => ({
     setPlugin(p?: object) {
       self.molstarPluginContext = p
+    },
+    setSuperposedCount(n: number) {
+      self.superposedCount = n
     },
     setError(e: unknown) {
       self.errors.push(e)

@@ -11,6 +11,7 @@ import {
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
+import { makeSelectionFramer } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
 import { defaultDisplayName } from './proteinViewSpec'
 import { showLoading } from './showLoading'
@@ -151,6 +152,11 @@ function stateModelFactory() {
        * #volatile
        */
       showAddStructureDialog: false,
+      /**
+       * #volatile
+       * how many loaded structures the last TM-align superposition covered
+       */
+      superposedCount: 0,
     }))
 
     .actions(self => ({
@@ -219,6 +225,9 @@ function stateModelFactory() {
       setShowAddStructureDialog(val: boolean) {
         self.showAddStructureDialog = val
       },
+      setSuperposedCount(count: number) {
+        self.superposedCount = count
+      },
       /**
        * #action
        * Adds a structure at runtime (e.g. the Add-structure dialog). Takes the
@@ -275,6 +284,10 @@ function stateModelFactory() {
         // one. Keeping this reactive means adding a structure only pushes it and
         // lets the loader load it; see makeStructureSuperposer.
         addDisposer(self, autorun(makeStructureSuperposer(self)))
+
+        // Frame a declared selection once everything is loaded and superposed;
+        // see makeSelectionFramer.
+        addDisposer(self, autorun(makeSelectionFramer(self)))
 
         addDisposer(self, autorun(makeLociChannel(self, 'select')))
         addDisposer(self, autorun(makeLociChannel(self, 'highlight')))
