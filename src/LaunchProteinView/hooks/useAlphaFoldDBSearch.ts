@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+
 import useAlphaFoldData from './useAlphaFoldData'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
 import useUniProtIdLookup from './useUniProtIdLookup'
@@ -23,6 +25,12 @@ export default function useAlphaFoldDBSearch({
     model,
     noModel,
   } = useAlphaFoldData({ uniprotId, feature, view })
+  // a stable array, or the isoform picker realigns on every render
+  const modelSequence = model?.sequence
+  const structureSequences = useMemo(
+    () => (modelSequence ? [modelSequence] : undefined),
+    [modelSequence],
+  )
 
   const {
     transcripts: transcriptOptions,
@@ -37,7 +45,7 @@ export default function useAlphaFoldDBSearch({
   } = useTranscriptIsoformSelection({
     feature,
     view,
-    structureSequences: model ? [model.sequence] : undefined,
+    structureSequences,
     resetKey: model?.url,
   })
 

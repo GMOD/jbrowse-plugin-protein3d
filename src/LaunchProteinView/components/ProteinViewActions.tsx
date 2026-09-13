@@ -73,9 +73,9 @@ export default function ProteinViewActions({
     selectedTranscript,
     url,
   })
-  // Disable launch while loading — SWR's keepPreviousData would otherwise let
-  // a user click Launch on stale results (wrong UniProt ID) during a refetch.
-  const canLaunch = !isLoading && missingReasons.length === 0
+  // Loading or errored, SWR's keepPreviousData can still hold the previous
+  // accession's structure, which Launch would open under the new name.
+  const canLaunch = !isLoading && !error && missingReasons.length === 0
   // Suppress the derived reasons while loading or while a real upstream error
   // is displayed above via <ErrorMessage> — a duplicate hint would mislead.
   const showMissingReasons = !isLoading && !error && missingReasons.length > 0

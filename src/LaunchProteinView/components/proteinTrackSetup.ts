@@ -204,8 +204,11 @@ export async function addAllProteinTracks({
     uniprotId,
     confidenceUrl,
   })
-  addAlphaMissenseTrack({
-    session,
-    uniprotId,
-  })
+  // AlphaFold DB publishes substitution scores for canonical entries only
+  if (!uniprotId.includes('-')) {
+    addAlphaMissenseTrack({
+      session,
+      uniprotId,
+    })
+  }
 }

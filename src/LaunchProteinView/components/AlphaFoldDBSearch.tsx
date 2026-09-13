@@ -170,7 +170,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
       <DialogActions>
         <ProteinViewActions
           handleClose={handleClose}
-          uniprotId={state.uniprotId}
+          uniprotId={state.modelAccession ?? state.uniprotId}
           userSelectedProteinSequence={state.userSelectedProteinSequence}
           selectedTranscript={state.selectedTranscript}
           url={state.url}
