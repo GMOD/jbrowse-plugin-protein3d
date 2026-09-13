@@ -427,6 +427,10 @@ passes a transcript reduced to a single CDS, so the same click yields a 40aa
 transcript there and a 190aa one on v3. The suite asserts the mapping is
 consistent with whatever transcript arrived rather than pinning a length.
 
+For a check the suite does not make, such as what a protein-browser session does
+on jbrowse.org, [docs/live-checks.md](docs/live-checks.md) has the recipe for
+serving `dist/` to a hosted release and reading the model back.
+
 #### Screenshots
 
 The E2E suites write reference PNGs under `test-screenshots/`. A failing run's

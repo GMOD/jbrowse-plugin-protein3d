@@ -284,6 +284,25 @@ theorizing, then `rm -rf` and recreate to reproduce. `curl -sI` the zip url to
 date what CI got; it has flipped mid-run. The **released-host legs are the ones
 that mean a user is affected**.
 
+## What a unit test can and cannot instantiate
+
+`model.ts` will not instantiate under vitest: `@mui/icons-material` needs
+`@emotion/styled`, which the plugin leaves to the host. Test the pure pieces
+instead, each built as a factory over a narrow host interface
+(`structureLoader`, `structureSuperposer`, `lociChannel`, `frameSelection`,
+`connectedHover`, `storedSettings`), and hand them observables or a small MST
+stand-in. `structureModel` does instantiate inside a `types.array` under a stub
+parent (`structureModel.test.ts`), with real Mol\* structures from
+`test_data/molstarStructure.ts` rather than cast fakes.
+
+Some conclusions those tests cannot reach, so they are not worth re-deriving:
+Mol\* model ids survive superposition (`TransformStructureConformation` builds
+units with `applyOperator`, which keeps `unit.model`, and symmetry assemblies do
+the same); AlphaFold's `/api/sequence/summary` nests hits under
+`structures[].summary` and its first p53 hit is another species, which is why
+the sequence-search mode was deleted in favour of Foldseek. For what a session
+does on a hosted release, see `docs/live-checks.md`.
+
 ## `pnpm build` fails locally for a day after each `@jbrowse` release
 
 pnpm's **minimumReleaseAge** is 1440 minutes globally (see
