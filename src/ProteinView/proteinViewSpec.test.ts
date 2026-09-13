@@ -7,7 +7,6 @@ test('emits a flat top-level snapshot with view props alongside structures', () 
     displayName: 'Protein view',
     height: 500,
     zoomToBaseLevel: false,
-    connectedMsaViewId: 'msa-1',
     structures: [
       {
         url: 'https://example.com/AF-P04637.cif',
@@ -22,7 +21,6 @@ test('emits a flat top-level snapshot with view props alongside structures', () 
     displayName: 'Protein view',
     height: 500,
     zoomToBaseLevel: false,
-    connectedMsaViewId: 'msa-1',
   })
   expect(snap.structures[0]).toMatchObject({
     url: 'https://example.com/AF-P04637.cif',

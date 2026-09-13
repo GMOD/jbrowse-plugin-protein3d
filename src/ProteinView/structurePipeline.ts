@@ -59,15 +59,17 @@ interface StructureSelector {
   readonly obj?: { data: Structure }
 }
 
-function presetStructure(
+function presetStructures(
   preset:
     | { structure: StructureSelector }
     | { structures?: StructureSelector[] }
     | undefined,
-): Structure | undefined {
-  const selector =
-    preset && 'structure' in preset ? preset.structure : preset?.structures?.[0]
-  return selector?.obj?.data
+): Structure[] {
+  const selectors =
+    preset && 'structure' in preset
+      ? [preset.structure]
+      : (preset?.structures ?? [])
+  return selectors.flatMap(s => (s.obj ? [s.obj.data] : []))
 }
 
 export async function applyStructurePreset({
@@ -89,5 +91,11 @@ export async function applyStructurePreset({
       representationPresetParams: options?.representationParams,
     },
   )
-  return { model, structure: presetStructure(preset) }
+  const structures = presetStructures(preset)
+  return {
+    model,
+    structure: structures[0],
+    // every model of an ensemble, so a hover on model 2 is still this load's
+    modelIds: structures.flatMap(s => s.models.map(m => m.id)),
+  }
 }

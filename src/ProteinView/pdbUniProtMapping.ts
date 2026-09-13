@@ -54,7 +54,12 @@ const SIFTS_RETRY_DELAYS_MS = [1000, 3000]
 export async function fetchUniProtStructureMappings(pdbId: string) {
   for (let attempt = 0; ; attempt++) {
     try {
-      return parseUniProtStructureMappings(await jsonfetch(pdbeSiftsUrl(pdbId)))
+      // bounded, since the view reports itself loading until SIFTS answers
+      return parseUniProtStructureMappings(
+        await jsonfetch(pdbeSiftsUrl(pdbId), {
+          signal: AbortSignal.timeout(20_000),
+        }),
+      )
     } catch (e) {
       const delay = SIFTS_RETRY_DELAYS_MS[attempt]
       if (delay === undefined) {

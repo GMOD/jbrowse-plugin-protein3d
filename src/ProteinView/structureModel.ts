@@ -237,6 +237,12 @@ const Structure = types
     molstarStructure: undefined as MolstarStructure | undefined,
     /**
      * #volatile
+     * Ids of every Mol* model that load produced, all of an ensemble's models
+     * included; see interactionPosition.
+     */
+    molstarModelIds: new Array<string>(),
+    /**
+     * #volatile
      * Range of alignment positions to highlight (e.g., when hovering a protein feature)
      */
     alignmentHoverRange: undefined as
@@ -279,6 +285,7 @@ const Structure = types
       self.entities = data.entities
       self.structureConfidence = data.confidence
       self.molstarStructure = data.molstarStructure
+      self.molstarModelIds = data.modelIds ?? new Array<string>()
     },
     /**
      * #action
@@ -320,6 +327,7 @@ const Structure = types
       if (!val) {
         // the handle belongs to the plugin we were unloaded from
         self.molstarStructure = undefined
+        self.molstarModelIds = new Array<string>()
       }
     },
   }))
@@ -707,10 +715,7 @@ const Structure = types
      * a PDB numbered from its author residues maps to the right residue.
      */
     interactionPosition(info: MolstarLocationInfo) {
-      const ours = self.molstarStructure?.units.some(
-        u => u.model.id === info.modelId,
-      )
-      return ours &&
+      return self.molstarModelIds.includes(info.modelId) &&
         interactionMatchesMappedEntity(
           info.entityId,
           this.coordinateMapper ? this.mappedEntity?.entityId : undefined,

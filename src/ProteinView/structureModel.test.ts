@@ -382,8 +382,17 @@ test('a Mol* interaction on another structure of the view names no position here
   const [human, mouse] = parent.structures
   const humanStructure = await parseStructure([chain])
   const mouseStructure = await parseStructure([chain])
-  human!.setStructureData({ entities, molstarStructure: humanStructure })
-  mouse!.setStructureData({ entities, molstarStructure: mouseStructure })
+  // the human entry as an NMR ensemble: a hover on its second model is its own
+  human!.setStructureData({
+    entities,
+    molstarStructure: humanStructure,
+    modelIds: [humanStructure.model.id, 'human-model-2'],
+  })
+  mouse!.setStructureData({
+    entities,
+    molstarStructure: mouseStructure,
+    modelIds: [mouseStructure.model.id],
+  })
 
   const hover = (s: typeof humanStructure) => ({
     labelSeqId: 3,
@@ -393,6 +402,12 @@ test('a Mol* interaction on another structure of the view names no position here
     modelId: s.model.id,
   })
   expect(human!.interactionPosition(hover(humanStructure))).toBe(2)
+  expect(
+    human!.interactionPosition({
+      ...hover(humanStructure),
+      modelId: 'human-model-2',
+    }),
+  ).toBe(2)
   expect(human!.interactionPosition(hover(mouseStructure))).toBeUndefined()
   // the unmapped ortholog still answers its own hovers, and only those
   expect(mouse!.interactionPosition(hover(mouseStructure))).toBe(2)

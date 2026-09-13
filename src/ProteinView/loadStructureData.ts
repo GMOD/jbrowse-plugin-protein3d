@@ -18,6 +18,9 @@ export interface StructureData {
    * bind to the right geometry — concurrent loads finish in arbitrary order, so
    * a position in `hierarchy.current.structures` identifies nothing stable. */
   molstarStructure?: Structure
+  /** Ids of every Mol* model this load created, which is how an interaction
+   * on the shared plugin is told apart from one on another structure. */
+  modelIds?: string[]
 }
 
 /**
@@ -33,23 +36,29 @@ export async function loadStructureData({
   structure: { data?: string; url?: string }
   plugin: PluginContext
 }): Promise<StructureData> {
-  const { model, structure: molstarStructure } = structure.data
+  const {
+    model,
+    structure: molstarStructure,
+    modelIds,
+  } = structure.data
     ? await addStructureFromData({ data: structure.data, plugin })
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
-      : { model: undefined, structure: undefined }
+      : { model: undefined, structure: undefined, modelIds: [] }
   // An experimental entry's B-factors are not confidence: read as pLDDT they
   // invert, drawing a well-ordered residue as "very low".
   const { MmcifFormat } = await loadMolstar()
   const source = model?.obj?.data.sourceData
-  const experimental =
-    !!source &&
-    MmcifFormat.is(source) &&
-    source.data.db.exptl.method.rowCount > 0
+  const methods =
+    source && MmcifFormat.is(source)
+      ? Array.from(source.data.db.exptl.method.toArray())
+      : []
+  const experimental = methods.some(m => m !== 'THEORETICAL MODEL')
   return {
     entities: model ? extractEntities(model) : undefined,
     confidence:
       model && !experimental ? extractPerResidueConfidence(model) : undefined,
     molstarStructure,
+    modelIds,
   }
 }
