@@ -108,25 +108,25 @@ function extractTargetId(target: string) {
   return target.split(' ')[0]!
 }
 
+/** The accession of an AlphaFold model id or url, with its isoform suffix:
+ * `AF-P16442-F1-model_v6` gives P16442, `AF-P04637-2-F1-model_v6` P04637-2. */
 export function getUniprotIdFromAlphaFoldTarget(target: string) {
-  // Handles both "AF-P16442-F1-model_v6" and full URLs like
-  // "https://alphafold.ebi.ac.uk/files/AF-P16442-F1-model_v6.cif"
-  const match = /AF-([A-Z0-9]+)-F\d+/.exec(extractTargetId(target))
+  const match = /AF-([A-Z0-9]+(?:-\d+)?)-F\d+/.exec(extractTargetId(target))
   return match?.[1]
 }
 
+// Foldseek names a pdb100 hit by the assembly file and chain it searched,
+// `8f2h-assembly1.cif.gz_A`; the entry id is the first four characters.
 export function getStructureUrlFromTarget(target: string, db: string) {
   const targetId = extractTargetId(target)
   if (targetId.startsWith('AF-')) {
     return `https://alphafold.ebi.ac.uk/files/${targetId}.cif`
   }
-  if (db === 'pdb100') {
-    const pdbId = targetId.split('_')[0]!
-    if (pdbId.length === 4) {
-      return getPdbStructureUrl(pdbId)
-    }
-  }
-  return undefined
+  const pdbId =
+    db === 'pdb100'
+      ? /^([1-9][a-z0-9]{3})(?:[-_.]|$)/i.exec(targetId)?.[1]
+      : undefined
+  return pdbId ? getPdbStructureUrl(pdbId) : undefined
 }
 
 export function getConfidenceUrlFromTarget(target: string) {

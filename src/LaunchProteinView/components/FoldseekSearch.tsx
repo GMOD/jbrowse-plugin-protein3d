@@ -188,7 +188,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
             view={view}
             feature={feature}
             selectedTranscript={selectedTranscript}
-            userProvidedTranscriptSequence={sequence}
+            userProvidedTranscriptSequence={selectedIsoformData?.seq}
             onClose={handleClose}
           />
         ) : null}

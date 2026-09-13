@@ -100,12 +100,15 @@ export default function useFoldseekSearch() {
     }
   }
 
+  // the aborted operation's own finally skips these, so reset clears them
   const reset = () => {
     abortRef.current?.abort()
     setResults(undefined)
     setPredictData(undefined)
     setError(undefined)
     setStatusMessage('')
+    setIsLoading(false)
+    setIsPredicting(false)
   }
 
   return {

@@ -4,9 +4,36 @@ import {
   getAlphaFoldStructureUrl,
   getPdbIdFromUrl,
   getPdbStructureUrl,
+  getStructureUrlFromTarget,
+  getUniprotIdFromAlphaFoldTarget,
   resolveStructureUrl,
   structureDisplayLabel,
 } from './structureUrls'
+
+// target names as a live Foldseek search for p53 returned them
+test('a Foldseek pdb100 hit opens its RCSB entry, not a CA trace', () => {
+  expect(getStructureUrlFromTarget('8f2h-assembly1.cif.gz_A', 'pdb100')).toBe(
+    getPdbStructureUrl('8f2h'),
+  )
+  expect(getStructureUrlFromTarget('1tup_A', 'pdb100')).toBe(
+    getPdbStructureUrl('1tup'),
+  )
+  expect(
+    getStructureUrlFromTarget('AF-P04637-F1-model_v6 Cellular tumor', 'afdb'),
+  ).toBe('https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif')
+  expect(getStructureUrlFromTarget('MGYP000123_A', 'mgnify')).toBeUndefined()
+})
+
+test('an AlphaFold isoform model keeps its isoform in the accession', () => {
+  expect(getUniprotIdFromAlphaFoldTarget('AF-P04637-2-F1-model_v6')).toBe(
+    'P04637-2',
+  )
+  expect(
+    getUniprotIdFromAlphaFoldTarget(
+      'https://alphafold.ebi.ac.uk/files/AF-P16442-F1-model_v6.cif',
+    ),
+  ).toBe('P16442')
+})
 
 test('recognizes pdb archive urls', () => {
   expect(getPdbIdFromUrl(getPdbStructureUrl('1TUP'))).toBe('1tup')
