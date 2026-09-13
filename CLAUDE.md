@@ -95,6 +95,36 @@ unmapped an 11-residue p53 peptide fused to CDK2 and kept 224 chance pairs. Read
 `alignment`, not the stored `pairwiseAlignment`, anywhere a column or a
 coordinate is computed: the two differ in length for a fusion.
 
+## An MSA reaches a structure through the genome, never by column
+
+msaview and this plugin share one coordinate: the genome. A structure hover
+reaches msaview as `hoverGenomeHighlights`, and an MSA hover reaches a structure
+as msaview's `connectedHoverHighlights`, the codon under the hovered column,
+mapped genome → transcript → structure (`src/ProteinView/connectedHover.ts`).
+They pair by sharing a `connectedViewId`, with no id naming each other.
+
+Until 2026-09-13 a bridge matched the structure's sequence to an alignment row
+and, where none matched, used the column number as a residue index. That is
+every Pfam seed and every PDB fragment: in the protein browser's TP53 seed
+session, hovering R248 painted a second codon 400 bp away. Don't reintroduce a
+column-number path.
+
+## Everything on one Mol\* plugin hears everything
+
+Every structure of a view subscribes to the same plugin's interactions, and
+AlphaFold models are all entity 1, so entity id cannot tell two superposed
+models apart: hovering mouse residue 100 used to light human residue 100 and its
+codon. `interactionPosition` checks the Mol\* model id against every model the
+load created (an NMR ensemble has twenty). Mol\*'s select and highlight channels
+are plugin-wide too, so `makeLociChannel` sets them for all structures at once;
+set per structure, the clear before each one wiped the others' selection.
+
+`protein-view-ready` and JBrowse's `showLoading` read one per-structure
+`loading` getter: loaded into Mol\*, aligned, and SIFTS answered for a PDB
+entry. The marker used to read only the alignment, which is not pending before a
+structure has a sequence, so it flipped 3–6 s before the structure loaded, and
+the e2e's multi-structure leg passed only because of that.
+
 ## Coordinate conventions, the off-by-one source here
 
 - `pxToBp(...).coord` (hover) is **1-based** display; subtract 1 for a 0-based
