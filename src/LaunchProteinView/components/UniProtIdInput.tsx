@@ -11,9 +11,13 @@ import {
 
 import ExternalLink from '../../components/ExternalLink'
 
-import type { SequenceSearchType } from '../hooks/useAlphaFoldSequenceSearch'
+export type LookupMode = 'auto' | 'manual' | 'feature'
 
-export type LookupMode = 'auto' | 'manual' | 'feature' | 'sequence'
+const LOOKUP_MODES: readonly LookupMode[] = ['auto', 'manual', 'feature']
+
+function isLookupMode(value: string): value is LookupMode {
+  return LOOKUP_MODES.some(mode => mode === value)
+}
 
 interface UniProtIdInputProps {
   lookupMode: LookupMode
@@ -21,9 +25,6 @@ interface UniProtIdInputProps {
   manualUniprotId: string
   onManualUniprotIdChange: (id: string) => void
   featureUniprotId?: string
-  hasProteinSequence?: boolean
-  sequenceSearchType?: SequenceSearchType
-  onSequenceSearchTypeChange?: (type: SequenceSearchType) => void
   endContent?: React.ReactNode
 }
 
@@ -33,9 +34,6 @@ export default function UniProtIdInput({
   manualUniprotId,
   onManualUniprotIdChange,
   featureUniprotId,
-  hasProteinSequence,
-  sequenceSearchType,
-  onSequenceSearchTypeChange,
   endContent,
 }: UniProtIdInputProps) {
   return (
@@ -46,7 +44,9 @@ export default function UniProtIdInput({
             row
             value={lookupMode}
             onChange={event => {
-              onLookupModeChange(event.target.value as LookupMode)
+              if (isLookupMode(event.target.value)) {
+                onLookupModeChange(event.target.value)
+              }
             }}
           >
             {featureUniprotId && (
@@ -66,13 +66,6 @@ export default function UniProtIdInput({
               control={<Radio />}
               label="Enter manually"
             />
-            {hasProteinSequence && (
-              <FormControlLabel
-                value="sequence"
-                control={<Radio />}
-                label="Search sequence against AlphaFoldDB API"
-              />
-            )}
           </RadioGroup>
         </FormControl>
         {endContent}
@@ -92,38 +85,6 @@ export default function UniProtIdInput({
           />
         </div>
       )}
-
-      {lookupMode === 'sequence' &&
-        sequenceSearchType &&
-        onSequenceSearchTypeChange && (
-          <div>
-            <FormControl component="fieldset">
-              <RadioGroup
-                row
-                value={sequenceSearchType}
-                onChange={event => {
-                  onSequenceSearchTypeChange(
-                    event.target.value as SequenceSearchType,
-                  )
-                }}
-              >
-                <FormControlLabel
-                  value="md5"
-                  control={<Radio />}
-                  label="Exact match"
-                />
-                <FormControlLabel
-                  value="sequence"
-                  control={<Radio />}
-                  label="Fuzzy match"
-                />
-              </RadioGroup>
-            </FormControl>
-            <Typography variant="body2" color="text.secondary">
-              May not find the canonical UniProt entry.
-            </Typography>
-          </div>
-        )}
 
       {lookupMode === 'manual' && !manualUniprotId && (
         <Typography variant="body2" color="text.secondary">

@@ -15,8 +15,7 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 /**
  * Which UniProt entry a feature is, by the dialog's lookup modes: the
  * feature's own attribute, the ID-mapping search over its recognised ids and
- * gene name, a typed accession, or none (sequence mode, where the structure
- * search itself names the entry). Shared by every tab that starts from an
+ * gene name, or a typed accession. Shared by every tab that starts from an
  * accession so they agree on what the gene is.
  */
 export default function useUniProtIdLookup({
@@ -58,7 +57,6 @@ export default function useUniProtIdLookup({
 
   const effectiveLookupMode =
     lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
-  const isSequenceMode = effectiveLookupMode === 'sequence'
   const isAutoMode = effectiveLookupMode === 'auto'
 
   const {
@@ -78,15 +76,20 @@ export default function useUniProtIdLookup({
   // pollute the SWR cache with partial-ID 404s.
   const debouncedManualUniprotId = useDebouncedValue(manualUniprotId, 400)
 
+  // a row picked from an earlier search (another taxon, another identifier)
+  // stops counting once the table no longer lists it
+  const pickedUniprotId = uniprotEntries.some(
+    e => e.accession === selectedUniprotId,
+  )
+    ? selectedUniprotId
+    : undefined
   const autoUniprotId = uniprotEntries[0]?.accession
   const uniprotId =
     effectiveLookupMode === 'feature'
       ? featureUniprotId
       : isAutoMode
-        ? (selectedUniprotId ?? autoUniprotId)
-        : effectiveLookupMode === 'manual'
-          ? debouncedManualUniprotId
-          : undefined
+        ? (pickedUniprotId ?? autoUniprotId)
+        : debouncedManualUniprotId
 
   return {
     lookupMode: effectiveLookupMode,
@@ -99,9 +102,8 @@ export default function useUniProtIdLookup({
     effectiveTaxonId: effectiveTaxonId ?? 9606,
     selectedQueryId,
     setSelectedQueryId,
-    selectedUniprotId,
     setSelectedUniprotId,
-    selectedTableAccession: selectedUniprotId ?? autoUniprotId,
+    selectedTableAccession: pickedUniprotId ?? autoUniprotId,
     uniprotEntries,
     isLookupLoading,
     lookupError,
@@ -110,7 +112,6 @@ export default function useUniProtIdLookup({
     recognizedIds: geneIds.recognizedIds,
     geneName: geneIds.geneName,
     isAutoMode,
-    isSequenceMode,
     showIdentifierSelector:
       isAutoMode && (geneIds.recognizedIds.length > 0 || !!geneIds.geneName),
     searchDescription: getSearchDescription({

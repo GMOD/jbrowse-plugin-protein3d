@@ -5,38 +5,21 @@ import { Typography } from '@mui/material'
 import IsoformSequencesToggle from './IsoformSequencesToggle'
 import ExternalLink from '../../components/ExternalLink'
 import { uniprotEntryUrl } from '../utils/structureUrls'
-import { getTranscriptDisplayName } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
-import type { Feature } from '@jbrowse/core/util'
-
-function NotFound({ uniprotId }: { uniprotId: string }) {
-  return (
-    <Typography>
-      No structure found for this UniProtID in AlphaFoldDB{' '}
-      <ExternalLink
-        href={`https://alphafold.ebi.ac.uk/search/text/${uniprotId}`}
-      >
-        (search for results)
-      </ExternalLink>
-    </Typography>
-  )
-}
 
 export default function AlphaFoldDBSearchStatus({
   uniprotId,
-  selectedTranscript,
   structureSequence,
   isoformSequences,
   url,
 }: {
-  uniprotId?: string
-  selectedTranscript?: Feature
-  structureSequence?: string
+  uniprotId: string
+  structureSequence: string
   isoformSequences: IsoformSequences
   url?: string
 }) {
-  return uniprotId ? (
+  return (
     <>
       <div>
         <Typography>
@@ -49,23 +32,11 @@ export default function AlphaFoldDBSearchStatus({
           AlphaFoldDB link: <ExternalLink href={url}>{url}</ExternalLink>
         </Typography>
       </div>
-      {structureSequence ? (
-        <IsoformSequencesToggle
-          structureSequence={structureSequence}
-          structureName={uniprotId}
-          isoformSequences={isoformSequences}
-        />
-      ) : (
-        <NotFound uniprotId={uniprotId} />
-      )}
+      <IsoformSequencesToggle
+        structureSequence={structureSequence}
+        structureName={uniprotId}
+        isoformSequences={isoformSequences}
+      />
     </>
-  ) : (
-    <Typography>
-      Searching{' '}
-      {selectedTranscript
-        ? getTranscriptDisplayName(selectedTranscript)
-        : 'transcript'}{' '}
-      for UniProt ID
-    </Typography>
   )
 }

@@ -4,7 +4,6 @@ import { renderHook } from '@testing-library/react'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
 // Import other necessary hooks and utilities from their respective paths
 import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
-import useAlphaFoldSequenceSearch from '../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch'
 import useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsoformProteinSequences'
 import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
 import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
@@ -14,7 +13,6 @@ import * as util from '../src/LaunchProteinView/utils/util' // Import all utilit
 
 // Use vi.mock for Vitest
 vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
-vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldSequenceSearch')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
@@ -40,7 +38,6 @@ vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
 
 // Import the mocked functions after mocking
 const mockUseAlphaFoldData = vi.mocked(useAlphaFoldData)
-const mockUseAlphaFoldSequenceSearch = vi.mocked(useAlphaFoldSequenceSearch)
 const mockUseIsoformProteinSequences = vi.mocked(useIsoformProteinSequences)
 const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
 const mockGetSearchDescription = vi.mocked(getSearchDescription)
@@ -67,14 +64,6 @@ describe('useAlphaFoldDBSearch', () => {
       url: null,
       confidenceUrl: null,
       structureSequences: undefined,
-    })
-    mockUseAlphaFoldSequenceSearch.mockReturnValue({
-      uniprotId: null,
-      cifUrl: null,
-      plddtDocUrl: null,
-      structureSequence: null,
-      isLoading: false,
-      error: null,
     })
     mockUseIsoformProteinSequences.mockReturnValue({
       isoformSequences: {},

@@ -1,12 +1,8 @@
-import { useState } from 'react'
-
 import useAlphaFoldData from './useAlphaFoldData'
-import useAlphaFoldSequenceSearch from './useAlphaFoldSequenceSearch'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
 import useUniProtIdLookup from './useUniProtIdLookup'
 import { stripStopCodon } from '../utils/util'
 
-import type { SequenceSearchType } from './useAlphaFoldSequenceSearch'
 import type { Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -18,90 +14,48 @@ export default function useAlphaFoldDBSearch({
   view: LinearGenomeViewModel
 }) {
   const lookup = useUniProtIdLookup({ feature, view })
-  const { uniprotId, isSequenceMode, isAutoMode, isLookupLoading } = lookup
-  const [sequenceSearchType, setSequenceSearchType] =
-    useState<SequenceSearchType>('md5')
+  const { uniprotId, isAutoMode, isLookupLoading } = lookup
 
   const {
     isLoading: isAlphaFoldLoading,
     isValidating: isAlphaFoldValidating,
     error: alphaFoldError,
-    url: alphaFoldUrl,
-    confidenceUrl: alphaFoldConfidenceUrl,
-    structureSequences: alphaFoldStructureSequences,
+    url,
+    confidenceUrl,
+    structureSequences,
   } = useAlphaFoldData({ uniprotId })
 
   const {
     transcripts: transcriptOptions,
     isoformSequences,
-    structureSequence: alphaFoldStructureSequence,
+    structureSequence,
     isLoading: isIsoformLoading,
     error: isoformError,
-    selectedTranscriptId: effectiveTranscriptId,
+    selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
     selectedIsoform: userSelectedProteinSequence,
   } = useTranscriptIsoformSelection({
     feature,
     view,
-    structureSequences: alphaFoldStructureSequences,
+    structureSequences,
     resetKey: uniprotId,
   })
-
-  const {
-    uniprotId: seqSearchUniprotId,
-    cifUrl: seqSearchUrl,
-    plddtDocUrl: seqSearchConfidenceUrl,
-    structureSequence: seqSearchStructureSequence,
-    isLoading: isSequenceSearchLoading,
-    isValidating: isSequenceSearchValidating,
-    error: sequenceSearchError,
-  } = useAlphaFoldSequenceSearch({
-    sequence: userSelectedProteinSequence?.seq,
-    searchType: sequenceSearchType,
-    enabled: isSequenceMode,
-  })
-
-  // Merge alphafold / sequence-search results
-  const finalUrl = isSequenceMode ? seqSearchUrl : alphaFoldUrl
-  const finalConfidenceUrl = isSequenceMode
-    ? seqSearchConfidenceUrl
-    : alphaFoldConfidenceUrl
-  const finalStructureSequence = isSequenceMode
-    ? seqSearchStructureSequence
-    : alphaFoldStructureSequence
-  const finalUniprotId = isSequenceMode ? seqSearchUniprotId : uniprotId
-
-  // While a structure fetch is in flight, finalStructureSequence may still be
-  // the previous selection's sequence (keepPreviousData). Comparing that stale
-  // sequence to the freshly-selected transcript would give a wrong match, so
-  // the match is treated as unknown until the fetch settles.
-  const isStructureValidating = isSequenceMode
-    ? isSequenceSearchValidating
-    : isAlphaFoldValidating
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
-    !isSequenceMode && isAlphaFoldLoading && 'Fetching AlphaFold structure URL',
-    isSequenceMode &&
-      isSequenceSearchLoading &&
-      'Searching AlphaFoldDB by sequence',
-  ].filter((s): s is string => !!s)
+    isAlphaFoldLoading && 'Fetching AlphaFold structure URL',
+  ].filter(s => typeof s === 'string')
   const isLoading = loadingStatuses.length > 0
 
-  // Only show errors once all loading is done — the synchronous
-  // effectiveLookupMode and autoTranscriptId computations prevent the
-  // one-frame gaps that previously caused brief error flashes
-  const rawError =
-    isoformError ?? lookup.lookupError ?? alphaFoldError ?? sequenceSearchError
+  // errors wait for loading to finish, so a lookup in flight doesn't flash one
+  const rawError = isoformError ?? lookup.lookupError ?? alphaFoldError
   const error = isLoading ? undefined : rawError
 
   return {
     ...lookup,
-    sequenceSearchType,
-    setSequenceSearchType,
-    userSelection: effectiveTranscriptId,
+    userSelection,
     setUserSelection,
 
     transcriptOptions,
@@ -109,25 +63,20 @@ export default function useAlphaFoldDBSearch({
     isoformSequences,
     userSelectedProteinSequence,
 
-    uniprotId: finalUniprotId,
-    url: finalUrl,
-    confidenceUrl: finalConfidenceUrl,
-    structureSequence: finalStructureSequence,
+    url,
+    confidenceUrl,
+    structureSequence,
 
     error,
     loadingStatuses,
-    isSequenceSearchLoading,
 
-    showStructureSelectors:
-      !!isoformSequences &&
-      !!selectedTranscript &&
-      (isSequenceMode || !!(finalStructureSequence && finalUniprotId)),
+    // While the structure is refetched, structureSequence is still the previous
+    // selection's (keepPreviousData), so a match is unknown until it settles.
     sequencesMatch:
-      !isStructureValidating &&
+      !isAlphaFoldValidating &&
       userSelectedProteinSequence?.seq &&
-      finalStructureSequence
-        ? stripStopCodon(userSelectedProteinSequence.seq) ===
-          finalStructureSequence
+      structureSequence
+        ? stripStopCodon(userSelectedProteinSequence.seq) === structureSequence
         : undefined,
 
     showUniprotResults:
@@ -139,9 +88,6 @@ export default function useAlphaFoldDBSearch({
       isAutoMode &&
       !isLookupLoading &&
       lookup.uniprotEntries.length === 0,
-    showSequenceSearchStatus: isSequenceMode,
-    showAlphaFoldDBSearchStatus:
-      !!finalStructureSequence && !!finalUniprotId && !isSequenceMode,
     isLoading,
   }
 }

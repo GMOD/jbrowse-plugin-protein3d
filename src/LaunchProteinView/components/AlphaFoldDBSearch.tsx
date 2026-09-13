@@ -13,7 +13,6 @@ import { makeStyles } from 'tss-react/mui'
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
 import IdentifierSelector from './IdentifierSelector'
 import ProteinViewActions from './ProteinViewActions'
-import SequenceSearchStatus from './SequenceSearchStatus'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtIdInput from './UniProtIdInput'
 import UniProtResultsTable from './UniProtResultsTable'
@@ -78,9 +77,6 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           manualUniprotId={state.manualUniprotId}
           onManualUniprotIdChange={state.setManualUniprotId}
           featureUniprotId={state.featureUniprotId}
-          hasProteinSequence={!!state.userSelectedProteinSequence?.seq}
-          sequenceSearchType={state.sequenceSearchType}
-          onSequenceSearchTypeChange={state.setSequenceSearchType}
           endContent={
             state.showIdentifierSelector ? (
               <div className={classes.endRow}>
@@ -137,12 +133,14 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
             No UniProt entries found for {state.searchDescriptionOr}. Try a
             different identifier above, or search{' '}
             <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
-            directly and use "Enter manually" above, or use "Search sequence
-            against AlphaFoldDB API" if available.
+            directly and use "Enter manually" above.
           </Typography>
         )}
 
-        {state.showStructureSelectors && state.isoformSequences ? (
+        {state.isoformSequences &&
+        state.selectedTranscript &&
+        state.structureSequence &&
+        state.uniprotId ? (
           <>
             <div className={classes.selectorsRow}>
               <TranscriptSelector
@@ -154,24 +152,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 isoformSequences={state.isoformSequences}
               />
             </div>
-            {state.showSequenceSearchStatus && (
-              <SequenceSearchStatus
-                isLoading={state.isSequenceSearchLoading}
-                uniprotId={state.uniprotId}
-                url={state.url}
-                hasProteinSequence={!!state.userSelectedProteinSequence?.seq}
-                sequenceSearchType={state.sequenceSearchType}
-              />
-            )}
-            {state.showAlphaFoldDBSearchStatus && (
-              <AlphaFoldDBSearchStatus
-                uniprotId={state.uniprotId}
-                selectedTranscript={state.selectedTranscript}
-                structureSequence={state.structureSequence}
-                isoformSequences={state.isoformSequences}
-                url={state.url}
-              />
-            )}
+            <AlphaFoldDBSearchStatus
+              uniprotId={state.uniprotId}
+              structureSequence={state.structureSequence}
+              isoformSequences={state.isoformSequences}
+              url={state.url}
+            />
           </>
         ) : null}
       </DialogContent>
