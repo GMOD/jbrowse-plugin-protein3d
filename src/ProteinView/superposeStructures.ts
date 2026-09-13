@@ -1,7 +1,6 @@
 import loadMolstar from './loadMolstar'
 
 import type { Mat4 } from 'molstar/lib/mol-math/linear-algebra'
-import type { StructureElement } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { StateObjectRef } from 'molstar/lib/mol-state'
 
@@ -25,48 +24,44 @@ export async function superposeStructures(plugin: PluginContext) {
 
   const { query } = StructureSelectionQueries.trace
 
-  const locis = structures.map(s => {
+  // each trace loci stays paired with the cell it came from, so a structure
+  // that yields no loci cannot shift the transform onto its neighbour
+  const traces = structures.flatMap(s => {
     const structure = s.cell.obj?.data
     if (!structure) {
-      return undefined
+      return []
     }
     const parent = plugin.helpers.substructureParent.get(structure)
     if (!parent) {
-      return undefined
+      return []
     }
     const rootStructure = plugin.state.data.selectQ(q =>
       q.byValue(parent).rootOfType(PluginStateObject.Molecule.Structure),
     )[0]?.obj?.data
     if (!rootStructure) {
-      return undefined
+      return []
     }
     const loci = StructureSelection.toLociWithSourceUnits(
       query(new QueryContext(structure)),
     )
-    return StructureElement.Loci.remap(loci, rootStructure)
+    return [
+      { cell: s.cell, loci: StructureElement.Loci.remap(loci, rootStructure) },
+    ]
   })
 
-  const validLocis = locis.filter(
-    (l): l is StructureElement.Loci => l !== undefined,
-  )
-  if (validLocis.length < 2) {
+  const pivot = traces[0]
+  if (!pivot || traces.length < 2) {
     return
   }
 
-  const pivot = plugin.managers.structure.hierarchy.findStructure(
-    validLocis[0]?.structure,
-  )
-  const coordinateSystem = pivot?.transform?.cell.obj?.data.coordinateSystem
+  const coordinateSystem = plugin.managers.structure.hierarchy.findStructure(
+    pivot.loci.structure,
+  )?.transform?.cell.obj?.data.coordinateSystem
 
-  for (let i = 1; i < validLocis.length; i++) {
-    const result = tmAlign(validLocis[0]!, validLocis[i]!)
+  for (const { cell, loci } of traces.slice(1)) {
+    const result = tmAlign(pivot.loci, loci)
     const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = result
-    await applyTransform(
-      plugin,
-      structures[i]!.cell,
-      bTransform,
-      coordinateSystem,
-    )
+    await applyTransform(plugin, cell, bTransform, coordinateSystem)
     plugin.log.info(
       `TM-align: TM-score=${tmScoreA.toFixed(4)}/${tmScoreB.toFixed(4)}, RMSD=${rmsd.toFixed(2)} Å, aligned ${alignedLength} residues.`,
     )

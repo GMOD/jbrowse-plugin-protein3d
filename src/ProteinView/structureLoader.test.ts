@@ -157,3 +157,23 @@ test('reports load errors and leaves the structure unloaded', async () => {
   expect(host.errors).toContain(err)
   expect(structure.loadedToMolstar).toBe(false)
 })
+
+test('a load that fails because its plugin was swapped away retries into the current one', async () => {
+  const pluginA = { id: 'A' }
+  const pluginB = { id: 'B' }
+  let rejectFirst: (e: unknown) => void = () => {}
+  mockLoad
+    .mockImplementationOnce(() => new Promise((_, rej) => (rejectFirst = rej)))
+    .mockResolvedValueOnce({ entities: [entity('B')] })
+
+  const { host, load, structure } = setup(pluginA)
+  load()
+  host.setPlugin(pluginB)
+  rejectFirst(new Error('plugin disposed'))
+  await tick()
+
+  expect(host.errors).toEqual([])
+  expect(structure.loadedToMolstar).toBe(true)
+  expect(structure.entities).toEqual([entity('B')])
+  expect(mockLoad).toHaveBeenCalledTimes(2)
+})

@@ -54,7 +54,15 @@ export function makeStructureLoader(host: StructureLoaderHost) {
       })
       .catch((e: unknown) => {
         loadingStructures.delete(structure)
-        if (isAlive(host)) {
+        if (!isAlive(host) || !isAlive(structure)) {
+          return
+        }
+        const current = host.molstarPluginContext
+        if (current && current !== plugin) {
+          // a plugin torn down mid-load rejects too; the structure belongs in
+          // the current one, not in an error
+          loadInto(structure, current)
+        } else {
           host.setError(e)
           console.error(e)
         }
