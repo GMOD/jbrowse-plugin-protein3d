@@ -865,6 +865,20 @@ const Structure = types
     },
     /**
      * #getter
+     * Still changing what it shows: not yet in Mol*, aligning, or waiting on
+     * the SIFTS answer that unmaps a fusion partner and places UniProt tracks.
+     */
+    get loading() {
+      return (
+        !self.loadedToMolstar ||
+        this.alignmentPending ||
+        (!!this.pdbId &&
+          self.uniProtMappings === undefined &&
+          self.uniProtMappingsError === undefined)
+      )
+    },
+    /**
+     * #getter
      * Identity and coverage of the pairwise alignment, for the header readout
      * and the low-similarity warning. See alignmentQuality.ts.
      */

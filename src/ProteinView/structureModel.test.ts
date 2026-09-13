@@ -332,6 +332,38 @@ test('initialResidues seeds the selection by author numbering once the mapped en
   expect(model.clickedStructureRange).toBeUndefined()
 })
 
+test('a structure is loading until it is in Mol*, aligned, and SIFTS has answered for a PDB entry', async () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        url: 'https://example.org/model.cif',
+        userProvidedTranscriptSequence: 'MKAA',
+      },
+      { pdbId: '1TUP', userProvidedTranscriptSequence: 'MKAA' },
+    ],
+  })
+  const [model, entry] = parent.structures
+  // nothing downloaded yet, so no sequence and no pending alignment either
+  expect(model!.alignmentPending).toBe(false)
+  expect(model!.loading).toBe(true)
+
+  const entities = [
+    { entityId: '1', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['A'] },
+  ]
+  for (const s of [model!, entry!]) {
+    s.setStructureData({ entities })
+    s.setLoadedToMolstar(true)
+  }
+  expect(model!.pairwiseAlignment).toBeDefined()
+  expect(model!.loading).toBe(false)
+  expect(entry!.loading).toBe(true)
+
+  await vi.waitFor(() => {
+    expect(entry!.uniProtMappings).toBeDefined()
+  })
+  expect(entry!.loading).toBe(false)
+})
+
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
     structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],

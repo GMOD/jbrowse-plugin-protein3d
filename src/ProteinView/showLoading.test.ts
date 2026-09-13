@@ -2,8 +2,8 @@ import { expect, test } from 'vitest'
 
 import { showLoading } from './showLoading'
 
-const pending = { loadedToMolstar: false }
-const loaded = { loadedToMolstar: true }
+const pending = { loading: true }
+const settled = { loading: false }
 
 test('an empty view is not loading', () => {
   expect(
@@ -11,10 +11,10 @@ test('an empty view is not loading', () => {
   ).toBe(false)
 })
 
-test('a structure not yet in Molstar is loading, and loaded is not', () => {
+test('a view is loading while any structure is', () => {
   const base = { minimized: false, error: undefined }
-  expect(showLoading({ ...base, structures: [loaded, pending] })).toBe(true)
-  expect(showLoading({ ...base, structures: [loaded, loaded] })).toBe(false)
+  expect(showLoading({ ...base, structures: [settled, pending] })).toBe(true)
+  expect(showLoading({ ...base, structures: [settled, settled] })).toBe(false)
 })
 
 test('a minimized or errored view is not waiting on anything', () => {

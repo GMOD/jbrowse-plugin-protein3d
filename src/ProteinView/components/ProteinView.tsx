@@ -69,13 +69,12 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
   parentRef?: React.RefObject<HTMLDivElement | null>
   loading?: boolean
 }) {
-  const { width, height, structures } = model
+  const { width, height } = model
 
-  // Capture/automation signal: the structure has finished loading and no
-  // pairwise alignment is still pending, so the view is painted in its settled
-  // state. Lets screenshot/e2e tooling wait deterministically instead of
-  // guessing a fixed settle time.
-  const ready = !loading && structures.every(s => !s.alignmentPending)
+  // For screenshot and e2e tooling. It used to read only the alignment, which
+  // is not pending before a structure has any sequence, so it said ready
+  // while the download was still running.
+  const ready = !loading && !model.showLoading
 
   return (
     <div
