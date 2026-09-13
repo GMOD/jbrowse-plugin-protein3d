@@ -698,6 +698,27 @@ const Structure = types
     },
 
     /**
+     * #method
+     * The 0-based position a Mol* hover or click names on this structure, or
+     * undefined when it landed on another structure of the view, on a chain
+     * other than the mapped one, or on a residue the entity lacks. The
+     * position comes from the entity's own label_seq_ids rather than `- 1`, so
+     * a PDB numbered from its author residues maps to the right residue.
+     */
+    interactionPosition(info: MolstarLocationInfo) {
+      const ours = self.molstarStructure?.units.some(
+        u => u.model.id === info.modelId,
+      )
+      return ours &&
+        interactionMatchesMappedEntity(
+          info.entityId,
+          this.coordinateMapper ? this.mappedEntity?.entityId : undefined,
+        )
+        ? this.labelSeqIdIndex.get(info.labelSeqId)
+        : undefined
+    },
+
+    /**
      * #getter
      * The residues the molstar 'select' channel should light, as label_seq_ids:
      * a clicked/declarative domain range takes priority, else the whole
@@ -1167,31 +1188,13 @@ const Structure = types
         }),
       )
 
-      // Only the transcript's mapped entity drives genome navigation; a hover or
-      // click on any other chain is dropped (see interactionMatchesMappedEntity).
-      // Pass the mapped entity only once a mapping exists, so a standalone
-      // structure with no transcript stays fully interactive.
-      // Also the single point where molstar's label_seq_id becomes a structure
-      // position: resolved through the entity's own ids rather than `- 1`, so a
-      // PDB numbered from its author residues maps to the right residue.
       const forMappedEntity = (info?: MolstarLocationInfo) => {
-        if (
-          !info ||
-          !interactionMatchesMappedEntity(
-            info.entityId,
-            self.coordinateMapper ? self.mappedEntity?.entityId : undefined,
-          )
-        ) {
-          return undefined
-        }
-        const structureSeqPos = self.labelSeqIdIndex.get(info.labelSeqId)
+        const structureSeqPos = info && self.interactionPosition(info)
         return structureSeqPos === undefined
           ? undefined
           : { ...info, structureSeqPos }
       }
 
-      // Click only acts on positive matches; clicks that didn't land on the
-      // mapped entity are ignored.
       addInteractionListener('click', info => {
         const hit = forMappedEntity(info)
         if (hit) {

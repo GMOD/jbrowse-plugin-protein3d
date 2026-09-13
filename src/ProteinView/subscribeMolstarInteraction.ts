@@ -19,6 +19,10 @@ export interface MolstarLocationInfo {
   /** mmCIF label_entity_id of the hovered residue. Lets the model reject
    * interactions on chains that aren't the transcript's mapped entity. */
   entityId: string
+  /** Id of the Mol* model the residue belongs to. Every structure in a view
+   * hears every interaction on the shared plugin, and AlphaFold models are all
+   * entity 1, so this is what says which structure was hovered. */
+  modelId: string
 }
 
 function extractLocationInfo(
@@ -33,6 +37,7 @@ function extractLocationInfo(
     code: molstar.StructureProperties.atom.label_comp_id(location),
     chain: molstar.StructureProperties.chain.auth_asym_id(location),
     entityId: molstar.StructureProperties.entity.id(location),
+    modelId: location.unit.model.id,
   }
 }
 
