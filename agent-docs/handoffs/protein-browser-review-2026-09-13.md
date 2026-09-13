@@ -1,10 +1,10 @@
 ---
 name: protein-browser-review-2026-09-13
 description:
-  protein3d reviewed against the jb2hubs protein browser. Sixteen commits landed
-  and pushed, not published; open are the browser-facing features (select by
-  transcript residue, frame the selection, several ranges, view titles),
-  launch-dialog items, and demos.
+  protein3d reviewed against the jb2hubs protein browser. Twenty commits landed,
+  not published; the transcript-residue seed, camera framing, default titles and
+  spec settings are in. Open are several ranges at once, launch-dialog items,
+  and demos.
 ---
 
 # protein3d against the protein browser: where things stand after 2026-09-13
@@ -66,37 +66,41 @@ five), and both e2e legs locally. CI on `9992ac4` failed two jobs:
   so it was flake. If it recurs, look for a request that never settles during
   the three-structure spec launch.
 
+## Done since, 2026-09-13 afternoon (four commits, landed, not published)
+
+- **Select by transcript residue**: `initialTranscriptResidues`, resolved
+  through the alignment once the structure settles and clamped to the modeled
+  residues (`transcriptRangeToStructureRange`). Verified live on `main`: 248 on
+  AF-P04637 + 1TUP lands at position 247; 1–120 on 1TUP alone clamps to
+  positions 0–27 (author 94–120). The page can now send the domain map's own
+  numbering and drop `siftsNumbering.ts`; it stays approximate only where the
+  translation is not the canonical sequence the map counts on.
+- **Frame the selection in 3D**: `frameSelection.ts` focuses the camera on the
+  seeded residues once every structure has settled and superposed, once per
+  plugin, seeds only. On 1TUP alone the radius went 59 → 31 (R248 on all three
+  chains); on AF + 1TUP, 97 → 10 after the superposition's reset. The first cut
+  marked the plugin framed before the seed had resolved, because SIFTS settles
+  the structure and resolves the seed in one change; `bd509cb` fixes that.
+- **Title a snapshot-launched view**: the view's `preProcessSnapshot` fills
+  `displayName` from the transcript and structure labels (`defaultDisplayName`);
+  the extension point's hand-built name is gone, the dialog's `formatViewName`
+  stays since it knows the gene name.
+- **The spec launch passes settings through**, and a structure inside
+  `structures[]` keeps its own `feature`, sequence and `connectedViewId`.
+- Of the traced-not-reproduced list: `superposeStructures` pairs each loci with
+  its cell; the loader's `.catch` retries into a swapped plugin; DEVELOPERS.md
+  says "shorter of transcript and chain" and lists `sideBySide`.
+
 ## Open, in the order worth doing
 
-1. **Select by transcript residue.** Add `initialTranscriptResidues` (1-based
-   inclusive on `userProvidedTranscriptSequence`), resolved through
-   `coordinateMapper` once the alignment exists, clamped to the mapped residues
-   inside the range. It is exact for any structure the transcript aligns to, so
-   the page can delete `siftsNumbering.ts` and most of its "approximate"
-   captions. It stays approximate only where the translation is not UniProt's
-   canonical sequence, which the page's map uses.
-2. **Frame the selection in 3D.** A session "opened on R248" shows the whole
-   fold with R248 out of sight (TP53 on AF-P04637 at 1600×1000). Use
-   `plugin.managers.camera.focusLoci(residueLoci(...))`, which reuses
-   `applyLociInteractivity.ts`. Run it for a declarative seed only, and after
-   `superposeStructures`, whose `PluginCommands.Camera.Reset` would undo it.
-   agent-docs/todo.md asks for the same thing as `focusResidue`.
-3. **Several ranges at once.** An interface focus lights 30–370 on TP53 because
+1. **Several ranges at once.** An interface focus lights 30–370 on TP53 because
    `clickedStructureRange` is one range. `selectLabelSeqIds` is already a list,
    and msaview already reads `clickGenomeHighlights` as one. What changes is
-   `clickAlignmentRange` and one genome region per run.
-4. **Title a snapshot-launched view.** Every protein-browser session shows
-   "Untitled view". The page can fix its own sessions today by setting
-   `displayName` in `proteinSession.ts`, since that works on every released
-   plugin. The plugin fix is a `preProcessSnapshot` default from the feature
-   name and `structureDisplayLabel`, which would also collapse the two
-   hand-built names in `LaunchProteinViewExtensionPoint/index.ts` and
-   `launchViewUtils.ts`.
-5. **The spec launch drops settings.** `LaunchView-ProteinView` does not pass
-   `showAlignment`, `showProteinTracks`, `compactTracks`, `colorScheme` or
-   `autoScrollAlignment` through, and a per-structure `feature` or sequence
-   inside `structures[]` is replaced by the top-level one.
-6. **Demos.**
+   `clickAlignmentRange` (read by `ProteinAlignment.tsx` and `SplitString.tsx`),
+   `FeatureBar.tsx`, and one genome region per run. Not done on 2026-09-13
+   because the page has no way to send several ranges yet, so it needs a spec
+   shape (`initialTranscriptResidues: [...]`) agreed with the page first.
+2. **Demos.**
    - `docs/demos.md` has no superposition (AF P04637 + mouse P02340), no
      author-numbered residue (`initialResidues` 248 on 1TUP), and no NMR
      ensemble (2L14, twenty models).
@@ -105,7 +109,7 @@ five), and both e2e legs locally. CI on `9992ac4` failed two jobs:
      `main` would open the session directly.
    - The README example is an opaque share link rather than a spec a reader can
      see into.
-7. **Launch dialog.**
+3. **Launch dialog.**
    - The URL and PDB-id fields fetch on every keystroke (`StructureSourcePicker`
      → `UserProvidedStructure`).
    - The dialog ignores which isoform was right-clicked.
@@ -117,18 +121,16 @@ five), and both e2e legs locally. CI on `9992ac4` failed two jobs:
 
 ### Reported by review, traced but not reproduced
 
-- `structureLoader.ts`'s `.catch` does not retry into a swapped plugin, as its
-  `.then` does, so a load failing across a remount stays failed.
 - A spec-supplied `pairwiseAlignment` is never validated and skips entity
   choice, so `mappedEntity` falls back to entity 1 (a DNA strand in 1TUP).
 - `initialResidues` spanning a numbering jump selects the insert:
   `residueRangeToPositions` returns one span from first match to last, so a
   range across 2RH1's receptor loop would include the T4 lysozyme between.
+  `initialTranscriptResidues` has the same shape (min..max of the mapped
+  positions), which a fusion's unmapped partner keeps out of only because those
+  positions no longer map.
 - A click in the Mol\* canvas cannot clear a declared selection, and a click on
   one structure leaves another's selection lit.
-- `superposeStructures` indexes `validLocis[i]` but moves `structures[i]`.
-- DEVELOPERS.md still says chains score over the chain's length, and omits
-  `sideBySide` from the launch table.
 - The feature-track label column truncates to "Doma…", "Bind…" at 45 px (visible
   in any PDB-entry screenshot).
 
@@ -175,5 +177,11 @@ short enough to rebuild:
 - **Worktree e2e.** `npx jbrowse` does not resolve in a worktree; use
   `npx -y @jbrowse/cli create .test-jbrowse-nightly --nightly`.
 
-Items 1 and 2 make the page's "opens on…" sessions do what the card says, and
-item 4's page-side half is a one-line fix that needs no release.
+- **A camera check reads late.** Under swiftshader Mol\*'s 250 ms focus
+  animation takes about five seconds, so a camera radius read a few seconds
+  after `protein-view-ready` is mid-flight. Poll `canvas3d.camera.state.radius`
+  until it stops moving, or patch `managers.camera.focusLoci` to log the call.
+
+Once this ships, the page's "opens on…" sessions should send
+`initialTranscriptResidues` in the map's own numbering instead of translating
+through SIFTS.
