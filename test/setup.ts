@@ -523,9 +523,11 @@ export async function openSessionSpec(page: Page, spec: object) {
 // screenshot rather than the WebGL buffer so it does not depend on molstar
 // preserving its drawing buffer.
 async function molstarInk(page: Page): Promise<number> {
-  // Clipped to the viewport: the viewer usually runs off the bottom of the page,
-  // and pixels outside the viewport come back blank.
+  // Scrolled into view and clipped to the viewport: alignment panels above the
+  // viewer push it below the fold, and pixels outside the viewport come back
+  // blank.
   const clip = await page.$eval('[class*="msp-plugin"] canvas', el => {
+    el.scrollIntoView({ block: 'nearest' })
     const { x, y, width, height } = el.getBoundingClientRect()
     return {
       x,
