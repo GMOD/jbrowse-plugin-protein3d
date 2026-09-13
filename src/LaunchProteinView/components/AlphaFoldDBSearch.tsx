@@ -70,6 +70,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
     <>
       <DialogContent className={classes.dialogContent}>
         {state.error ? <ErrorMessage error={state.error} /> : null}
+        {state.noModel ? (
+          <Typography>
+            AlphaFold DB has no model for {state.uniprotId}. The PDB and
+            Foldseek tabs may have a structure.
+          </Typography>
+        ) : null}
 
         <UniProtIdInput
           lookupMode={state.lookupMode}
@@ -153,7 +159,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
               />
             </div>
             <AlphaFoldDBSearchStatus
-              uniprotId={state.uniprotId}
+              uniprotId={state.modelAccession ?? state.uniprotId}
               structureSequence={state.structureSequence}
               isoformSequences={state.isoformSequences}
               url={state.url}

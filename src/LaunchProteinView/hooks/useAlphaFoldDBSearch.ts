@@ -20,10 +20,9 @@ export default function useAlphaFoldDBSearch({
     isLoading: isAlphaFoldLoading,
     isValidating: isAlphaFoldValidating,
     error: alphaFoldError,
-    url,
-    confidenceUrl,
-    structureSequences,
-  } = useAlphaFoldData({ uniprotId })
+    model,
+    noModel,
+  } = useAlphaFoldData({ uniprotId, feature, view })
 
   const {
     transcripts: transcriptOptions,
@@ -38,14 +37,14 @@ export default function useAlphaFoldDBSearch({
   } = useTranscriptIsoformSelection({
     feature,
     view,
-    structureSequences,
-    resetKey: uniprotId,
+    structureSequences: model ? [model.sequence] : undefined,
+    resetKey: model?.url,
   })
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
-    isAlphaFoldLoading && 'Fetching AlphaFold structure URL',
+    isAlphaFoldLoading && 'Asking AlphaFold DB for models',
   ].filter(s => typeof s === 'string')
   const isLoading = loadingStatuses.length > 0
 
@@ -63,9 +62,11 @@ export default function useAlphaFoldDBSearch({
     isoformSequences,
     userSelectedProteinSequence,
 
-    url,
-    confidenceUrl,
+    url: model?.url,
+    confidenceUrl: model?.confidenceUrl,
+    modelAccession: model?.accession,
     structureSequence,
+    noModel,
 
     error,
     loadingStatuses,

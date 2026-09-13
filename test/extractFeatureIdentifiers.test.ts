@@ -56,14 +56,11 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Setup common mocks
     mockUseAlphaFoldData.mockReturnValue({
-      predictions: null,
       isLoading: false,
-      error: null,
-      selectedEntryIndex: 0,
-      setSelectedEntryIndex: vi.fn(),
-      url: null,
-      confidenceUrl: null,
-      structureSequences: undefined,
+      isValidating: false,
+      error: undefined,
+      model: undefined,
+      noModel: false,
     })
     mockUseIsoformProteinSequences.mockReturnValue({
       isoformSequences: {},
@@ -186,10 +183,11 @@ describe('useAlphaFoldDBSearch', () => {
       error: null,
     })
     mockUseAlphaFoldData.mockReturnValue({
-      // every chain of the structure; pickStructureSequence narrows it to the
-      // one an isoform translates to before selectBestTranscript sees it
-      structureSequences: [mockStructureSequence],
-      // ... other properties
+      isLoading: false,
+      isValidating: false,
+      error: undefined,
+      model: { accession: 'P1', url: 'u', sequence: mockStructureSequence },
+      noModel: false,
     })
 
     // Mock selectBestTranscript to return a predictable value
