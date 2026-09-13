@@ -1,3 +1,60 @@
+## [0.11.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.0...v0.11.1) (2026-09-13)
+
+### Bug Fixes
+
+- Score chains by identity over the shorter sequence ([f6405ff](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f6405ff3cff20e8fd94cca86807f09d7e3dccd21))
+- Refuse an alignment whose rows are not the mapped sequences ([a3e2f04](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a3e2f04bf118d5d720453a1b89abb0b030521946))
+- A short but near-perfect peptide alignment is not low similarity ([0a62f85](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0a62f851e08d3f8a9667e4f68fc05ddfe43c41b1))
+- One letter per residue, so modified residues stop shifting positions ([08d5b7d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/08d5b7d8be81272e7d117424ef80e3524227727e))
+- Rank isoforms by alignment score against the chain the view will map ([762563b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/762563bc8d0076af9f73f52d48640f297436d558))
+- A column that is a gap in both rows maps nothing ([9066508](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/906650810a267f515f33e95bb6167d2dba91d63e))
+- Translate with the assembly's genetic code when the CDS names none ([2955c55](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2955c55530c4294004e5ba8b0f409027418417e2))
+- Unmap residues SIFTS assigns to a fused partner protein ([0a0c7c1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0a0c7c13f2717f300f2d0a0223c3e0e8ea9d0b5d))
+- Choose the transcript's protein in a fusion by identity, and leave imported alignments alone ([ff03d67](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff03d6739b5438641c3344f0aa4959035e2e0fa3))
+- Say ready once every structure is loaded, aligned and SIFTS-mapped ([3fa2e33](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3fa2e3301d4fc27278f11a3ba0f463086dcc071c))
+- A Mol* hover or click acts only on the structure it landed on ([e94cb9e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e94cb9e246b88cb98ce1ebdb552d4f1299b2f52c))
+- Set Mol*'s selection and highlight for all structures at once ([49cc0dd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/49cc0ddf7ca7ec4881ff3e61137ea324cabf4f99))
+- Link an MSA hover to the structure through its codon, not its column ([137bb13](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/137bb136c77b7980c0f87b2eee9ac7b0f471427f))
+- Store only the setting a menu toggle changed ([019a2d7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/019a2d74684046e2a94e224a5c558409fa9b5514))
+- No pLDDT track for an experimental entry ([746d992](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/746d992b6fcedf17ca9c0cc3f0a9059235a6bcee))
+- Drop the AlphaFold sequence search, which never found a structure ([d73debc](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d73debc18eed3d9aa66de536fce32264bc96e74a))
+- Open a PDB hit as its entry, and map the launch through the transcript ([b374667](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b374667a045737e6fd2016de1862e6a0ac3c8f55))
+- Three regressions a review found in the AlphaFold model lookup ([e0bc736](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e0bc736a9537306597fb92fea9f7e00f71e3ae4d))
+- The rest of a review's findings on the interaction and loading fixes ([a599c5c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a599c5cd359ee748ac7f91e08455b0b9d9b4d59a))
+- Superpose the cell each trace came from, retry a load into a swapped plugin ([c95a1d9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c95a1d94f009a3bf1012a7a1802ab25efda6b390))
+- Count a plugin as framed only once the seed has resolved ([bd509cb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bd509cb1c02ec2905dd430bfc7e1542b8a7631cb))
+
+### Chores
+
+- Drop the connectedMsaViewId the view no longer has ([bbe306c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bbe306cf0ff24907040c5abeabc0ff9420ac7846))
+- Let typos read MT-ND2 as a gene, not a misspelling of AND ([6eb81c4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6eb81c4449f8f155d5d85ba27b72e8b74488234d))
+
+### Documentation
+
+- A selected residue is never framed ([6317aad](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6317aad3e0ae62d920da7e9518c6c644ce19c653))
+- The on-the-fly alignment method, its precedent and its limits ([96f8222](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/96f82224f30630ea675d1739db3d067f663cc26d))
+- Check the method against SIFTS, and record the gap-cost and chimera measurements ([4bffde4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4bffde4ba7607e2d03d80f734a4069abf73a3265))
+- Demos of the structures that are easy to map wrong, checked by script ([34cf4b9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/34cf4b9f97a6851f848b4efe59a2c3eddfe4c36a))
+- Keep the history of three fixes in their commits, not the comments ([ec38b62](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ec38b627e2e560ade5deb850834febdea931868e))
+- The MSA and shared-plugin seams, and what protein-view-ready means ([9992ac4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9992ac47d90ad6d6ea8dc87a71a3ac958abbcac0))
+- Protein3d against the protein browser, after 2026-09-13 ([47e5a6a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/47e5a6a2afd9440ff5b0b46ec6c9ea141cae20f8))
+- What the 2026-09-13 afternoon landed, and what is still open ([f381f0e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f381f0efac6f2fdc0af88f4f31747c3e6d879af5))
+- Close the protein-browser handoff, filing what was left ([3682dba](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3682dba92fc48862e5ad30fd5883794d27c748d9))
+
+### Features
+
+- Report alignment quality, and say when nothing could be aligned ([7f4991f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7f4991f6978866286f554ba6556aac1393d86cf0))
+- Rank non-matching isoforms by alignment to the structure ([da16ff1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/da16ff1acd507cc0e76979e922a3e1aed21b8e79))
+- Ask AlphaFold DB which models exist instead of guessing the url ([0fadaba](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0fadabac261f0e7276263a6a32d401b154a3584f))
+- Select by transcript residue, pass spec settings through, title a spec-launched view ([8ffa625](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8ffa6254c96ac02c66bfda293113f8934c591166))
+- Frame a declared selection in the 3D canvas ([ce76a65](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ce76a65294889d5d15cd746e9cf876b1a9effa3c))
+
+### Tests
+
+- Refresh the hotspot reference screenshot, which still showed 1YCR's false low-similarity warning ([68ee43b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/68ee43b1008335f16050ea76b7626bdfe3ad5bd2))
+- Parse real Mol* structures instead of casting fakes ([57bb219](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/57bb219fe51917a2ca62b90348ab84118202bfb6))
+- Scroll the viewer into view before reading its ink ([c827c15](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c827c1590759b8d40c0a6fc57f9003225bef1db5))
+
 ## [0.11.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.10.0...v0.11.0) (2026-09-05)
 
 ### Bug Fixes
