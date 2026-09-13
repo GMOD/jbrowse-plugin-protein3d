@@ -2,10 +2,10 @@ import { types } from '@jbrowse/mobx-state-tree'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import Structure from './structureModel'
+import { parseStructure } from '../test_data/molstarStructure'
 
 import type { AlignmentAlgorithm } from './types'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
-import type { Structure as MolstarStructure } from 'molstar/lib/mol-model/structure'
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
@@ -368,7 +368,7 @@ test('a structure is loading until it is in Mol*, aligned, and SIFTS has answere
 // Two AlphaFold models superposed in one view: both are entity 1 and both hear
 // every hover on the shared plugin. Measured on TP53 with mouse P02340 before
 // this: hovering mouse residue 100 lit human residue 100 and its chr17 codon.
-test('a Mol* interaction on another structure of the view names no position here', () => {
+test('a Mol* interaction on another structure of the view names no position here', async () => {
   const parent = TestParent.create({
     structures: [
       { userProvidedTranscriptSequence: 'MKAA', pairwiseAlignment },
@@ -378,32 +378,25 @@ test('a Mol* interaction on another structure of the view names no position here
   const entities = [
     { entityId: '1', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['A'] },
   ]
+  const chain = { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }
   const [human, mouse] = parent.structures
-  for (const [s, modelId] of [
-    [human!, 'human-model'],
-    [mouse!, 'mouse-model'],
-  ] as const) {
-    s.setStructureData({
-      entities,
-      molstarStructure: {
-        units: [{ model: { id: modelId } }],
-      } as unknown as MolstarStructure,
-    })
-  }
-  const hover = { labelSeqId: 3, code: 'ALA', chain: 'A', entityId: '1' }
-  expect(human!.interactionPosition({ ...hover, modelId: 'human-model' })).toBe(
-    2,
-  )
-  expect(
-    human!.interactionPosition({ ...hover, modelId: 'mouse-model' }),
-  ).toBeUndefined()
+  const humanStructure = await parseStructure([chain])
+  const mouseStructure = await parseStructure([chain])
+  human!.setStructureData({ entities, molstarStructure: humanStructure })
+  mouse!.setStructureData({ entities, molstarStructure: mouseStructure })
+
+  const hover = (s: typeof humanStructure) => ({
+    labelSeqId: 3,
+    code: 'ALA',
+    chain: 'A',
+    entityId: '1',
+    modelId: s.model.id,
+  })
+  expect(human!.interactionPosition(hover(humanStructure))).toBe(2)
+  expect(human!.interactionPosition(hover(mouseStructure))).toBeUndefined()
   // the unmapped ortholog still answers its own hovers, and only those
-  expect(mouse!.interactionPosition({ ...hover, modelId: 'mouse-model' })).toBe(
-    2,
-  )
-  expect(
-    mouse!.interactionPosition({ ...hover, modelId: 'human-model' }),
-  ).toBeUndefined()
+  expect(mouse!.interactionPosition(hover(mouseStructure))).toBe(2)
+  expect(mouse!.interactionPosition(hover(humanStructure))).toBeUndefined()
 })
 
 test('label names the structure by id so stacked panels can be told apart', () => {

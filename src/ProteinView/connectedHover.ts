@@ -39,7 +39,7 @@ export function connectedHoverTranscriptPos({
   genomeViewReady,
 }: {
   hovered: unknown
-  views: SessionView[]
+  views: MsaViewLike[]
   mapping: { g2p: Record<number, number>; refName: string } | undefined
   connectedViewId: string | undefined
   genomeViewReady: boolean
@@ -51,7 +51,7 @@ export function connectedHoverTranscriptPos({
     return { transcriptPos: fromGenome, source: 'genome' }
   }
   const codon = connectedViewId
-    ? (views as MsaViewLike[]).find(
+    ? views.find(
         v => v.type === 'MsaView' && v.connectedViewId === connectedViewId,
       )?.connectedHoverHighlights?.[0]
     : undefined

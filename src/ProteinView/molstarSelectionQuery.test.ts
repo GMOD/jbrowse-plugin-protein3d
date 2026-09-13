@@ -1,79 +1,38 @@
 import { OrderedSet } from 'molstar/lib/mol-data/int'
-import { CIF } from 'molstar/lib/mol-io/reader/cif'
 import {
-  Structure,
   StructureElement,
   StructureProperties as SP,
   StructureSelection,
 } from 'molstar/lib/mol-model/structure'
-import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif'
 import { Script } from 'molstar/lib/mol-script/script'
-import { Task } from 'molstar/lib/mol-task'
 import { beforeAll, expect, test } from 'vitest'
 
 import { residueLoci } from './applyLociInteractivity'
+import { parseStructure } from '../test_data/molstarStructure'
+
+import type { Structure } from 'molstar/lib/mol-model/structure'
 
 // residueLoci's query is the thing that paints every highlight and every
 // selection, and it fails silently: a MolScript expression molstar doesn't
 // understand selects nothing rather than throwing, so the 3D view just stops
-// lighting up. Nothing else in the suite exercises it — the e2e test renders a
-// structure but never selects — so this runs the exact expression against a
-// real parsed Structure, offline.
+// lighting up. This runs it against a real parsed Structure, offline.
 //
 // Two properties are pinned: the set membership test resolves the residues it
 // is given, and the entity filter confines them. The second is what stops a
 // residue number lighting up on an unrelated chain of a complex.
 
-// Two polymer entities, each instantiated by two chains, overlapping residue
-// numbering (both start at label_seq_id 1) — the shape that makes the entity
-// filter observable.
-function atom(
-  id: number,
-  comp: string,
-  asym: string,
-  entity: string,
-  seq: number,
-) {
-  return `ATOM ${id} C CA ${comp} ${asym} ${entity} ${seq} ${id}.0 0.0 0.0 ${seq} ${asym}`
-}
-const MMCIF = `data_TEST
-loop_
-_atom_site.group_PDB
-_atom_site.id
-_atom_site.type_symbol
-_atom_site.label_atom_id
-_atom_site.label_comp_id
-_atom_site.label_asym_id
-_atom_site.label_entity_id
-_atom_site.label_seq_id
-_atom_site.Cartn_x
-_atom_site.Cartn_y
-_atom_site.Cartn_z
-_atom_site.auth_seq_id
-_atom_site.auth_asym_id
-${[
-  ...['A', 'B'].flatMap(asym =>
-    ['SER', 'VAL', 'LYS', 'THR'].map((c, i) => [c, asym, '1', i + 1] as const),
-  ),
-  ...['C', 'D'].flatMap(asym =>
-    ['GLY', 'ALA', 'PRO', 'PHE'].map((c, i) => [c, asym, '2', i + 1] as const),
-  ),
-]
-  .map(([comp, asym, entity, seq], i) => atom(i + 1, comp, asym, entity, seq))
-  .join('\n')}
-`
-
 let structure: Structure
 
+// Two polymer entities, each instantiated by two chains, overlapping residue
+// numbering (both start at label_seq_id 1): the shape that makes the entity
+// filter observable.
 beforeAll(async () => {
-  const parsed = await CIF.parseText(MMCIF).run()
-  if (parsed.isError) {
-    throw new Error(parsed.message)
-  }
-  const trajectory = await trajectoryFromMmCIF(parsed.result.blocks[0]!).run()
-  structure = Structure.ofModel(
-    await Task.resolveInContext(trajectory.getFrameAtIndex(0)),
-  )
+  structure = await parseStructure([
+    { asym: 'A', entity: '1', residues: ['SER', 'VAL', 'LYS', 'THR'] },
+    { asym: 'B', entity: '1', residues: ['SER', 'VAL', 'LYS', 'THR'] },
+    { asym: 'C', entity: '2', residues: ['GLY', 'ALA', 'PRO', 'PHE'] },
+    { asym: 'D', entity: '2', residues: ['GLY', 'ALA', 'PRO', 'PHE'] },
+  ])
 })
 
 /** What setMolstarLoci's query resolves the residues to. */

@@ -1,7 +1,7 @@
 import { setMolstarLoci } from './applyLociInteractivity'
 
+import type { LociMarks } from './applyLociInteractivity'
 import type { Structure } from 'molstar/lib/mol-model/structure'
-import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 interface ChannelStructure {
   readonly molstarStructure: Structure | undefined
@@ -11,20 +11,17 @@ interface ChannelStructure {
 }
 
 export interface LociChannelHost {
-  readonly molstarPluginContext: PluginContext | undefined
+  readonly molstarPluginContext:
+    { managers: { interactivity: LociMarks } } | undefined
   readonly structures: readonly ChannelStructure[]
 }
 
 /**
- * Builds the body of the autorun that keeps one Mol* interactivity channel
- * lit on what every structure of the view wants: the click/declarative
- * selection for `select`, the hover for `highlight`. A declarative
- * initialSelection lights the structure the same way a click does because both
- * only set the model state this reads.
- *
- * One autorun per view rather than per structure, because the channel is
- * plugin-wide (see setMolstarLoci). Its observable reads all happen before
- * setMolstarLoci's first await, so MobX tracks every one of them.
+ * Builds the body of the autorun that keeps one Mol* interactivity channel lit
+ * on what every structure of the view wants: the click or declarative
+ * selection for `select`, the hover for `highlight`. One autorun per view,
+ * because the channel is plugin-wide (see setMolstarLoci). Every observable
+ * read happens before setMolstarLoci's first await, so MobX tracks them all.
  */
 export function makeLociChannel(
   host: LociChannelHost,
@@ -45,7 +42,11 @@ export function makeLociChannel(
         : [],
     )
     if (plugin) {
-      setMolstarLoci({ plugin, channel, targets }).catch((e: unknown) => {
+      setMolstarLoci({
+        interactivity: plugin.managers.interactivity,
+        channel,
+        targets,
+      }).catch((e: unknown) => {
         console.error(e)
       })
     }

@@ -2,10 +2,22 @@ import loadMolstar from './loadMolstar'
 
 import type {
   Structure,
+  StructureElement,
   StructureSelection,
 } from 'molstar/lib/mol-model/structure'
-import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { Script } from 'molstar/lib/mol-script/script'
+
+/** The part of a plugin's `managers.interactivity` that lights residues. */
+export interface LociMarks {
+  lociHighlights: {
+    clearHighlights(): void
+    highlight(current: { loci: StructureElement.Loci }): void
+  }
+  lociSelects: {
+    deselectAll(): void
+    select(current: { loci: StructureElement.Loci }): void
+  }
+}
 
 /** Residues of one structure, addressed by Mol*'s own `label_seq_id`. */
 export interface ResidueTarget {
@@ -64,11 +76,11 @@ export function residueLoci(
  * marking, so when two calls overlap the later one's residues are what stay lit.
  */
 export async function setMolstarLoci({
-  plugin,
+  interactivity,
   channel,
   targets,
 }: {
-  plugin: PluginContext
+  interactivity: LociMarks
   channel: 'highlight' | 'select'
   targets: ResidueTarget[]
 }) {
@@ -76,7 +88,7 @@ export async function setMolstarLoci({
   const locis = targets
     .filter(t => t.labelSeqIds.length > 0)
     .map(t => residueLoci(molstar, t))
-  const { lociHighlights, lociSelects } = plugin.managers.interactivity
+  const { lociHighlights, lociSelects } = interactivity
   if (channel === 'highlight') {
     lociHighlights.clearHighlights()
     for (const loci of locis) {

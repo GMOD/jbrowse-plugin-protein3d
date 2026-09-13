@@ -2,78 +2,76 @@ import { autorun, observable, runInAction } from 'mobx'
 import { expect, test, vi } from 'vitest'
 
 import { makeLociChannel } from './lociChannel'
+import { parseStructure } from '../test_data/molstarStructure'
 
-import type { Structure } from 'molstar/lib/mol-model/structure'
-import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { LociMarks } from './applyLociInteractivity'
+import type {
+  Structure,
+  StructureElement,
+} from 'molstar/lib/mol-model/structure'
 
-// Each loci is tagged with the structure and residues it was built for, so the
-// test reads back what the plugin was told to light.
-vi.mock('./loadMolstar', () => ({
-  default: async () => ({
-    Script: {
-      getStructureSelection: (_query: unknown, structure: { name: string }) =>
-        structure.name,
-    },
-    StructureSelection: { toLociWithSourceUnits: (name: string) => name },
-  }),
-}))
+vi.mock('./loadMolstar', async () => {
+  const { StructureSelection } = await import('molstar/lib/mol-model/structure')
+  const { Script } = await import('molstar/lib/mol-script/script')
+  return { default: async () => ({ Script, StructureSelection }) }
+})
 
-function fakePlugin() {
-  const lit: string[] = []
-  const plugin = {
-    managers: {
-      interactivity: {
-        lociSelects: {
-          deselectAll: () => {
-            lit.length = 0
-          },
-          select: ({ loci }: { loci: string }) => {
-            lit.push(loci)
-          },
-        },
-        lociHighlights: {
-          clearHighlights: () => {
-            lit.length = 0
-          },
-          highlight: ({ loci }: { loci: string }) => {
-            lit.push(loci)
-          },
-        },
+// what the plugin was left lighting, as the structures the loci belong to
+function recordingPlugin() {
+  const lit: Structure[] = []
+  const mark = ({ loci }: { loci: StructureElement.Loci }) => {
+    lit.push(loci.structure)
+  }
+  const interactivity: LociMarks = {
+    lociSelects: {
+      deselectAll: () => {
+        lit.length = 0
       },
+      select: mark,
     },
-  } as unknown as PluginContext
-  return { plugin, lit }
+    lociHighlights: {
+      clearHighlights: () => {
+        lit.length = 0
+      },
+      highlight: mark,
+    },
+  }
+  return { plugin: { managers: { interactivity } }, lit }
 }
 
-function structure(name: string, selectLabelSeqIds: number[] = []) {
+async function structure(selectLabelSeqIds: number[] = []) {
+  const molstarStructure = await parseStructure([
+    { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] },
+  ])
+  const hoverLabelSeqIds: number[] = []
   return observable({
-    molstarStructure: { name } as unknown as Structure,
+    molstarStructure,
     mappedEntity: { entityId: '1' },
     selectLabelSeqIds,
-    hoverLabelSeqIds: [] as number[],
+    hoverLabelSeqIds,
   })
 }
 
-// The shape of a TP53 session opened on R248 with a mouse model superposed:
-// the second structure selects nothing, and used to deselect the first's R248
-// as it loaded.
+// A TP53 session opened on R248 with a mouse model superposed: the second
+// structure selects nothing, and used to deselect the first's R248 as it
+// loaded.
 test('a structure selecting nothing leaves another structure selection lit', async () => {
-  const { plugin, lit } = fakePlugin()
-  const human = structure('human', [248])
-  const host = observable({
-    molstarPluginContext: plugin,
-    structures: [human],
-  })
+  const { plugin, lit } = recordingPlugin()
+  const human = await structure([2])
+  const mouse = await structure()
+  const host = observable({ molstarPluginContext: plugin, structures: [human] })
   const dispose = autorun(makeLociChannel(host, 'select'))
   await vi.waitFor(() => {
-    expect(lit).toEqual(['human'])
+    expect(lit).toHaveLength(1)
   })
+  expect(lit[0]).toBe(human.molstarStructure)
 
   runInAction(() => {
-    host.structures.push(structure('mouse'))
+    host.structures.push(mouse)
   })
   await new Promise(r => setTimeout(r, 0))
-  expect(lit).toEqual(['human'])
+  expect(lit).toHaveLength(1)
+  expect(lit[0]).toBe(human.molstarStructure)
 
   runInAction(() => {
     human.selectLabelSeqIds = []
@@ -85,9 +83,9 @@ test('a structure selecting nothing leaves another structure selection lit', asy
 })
 
 test('when updates overlap, the later one is what stays lit', async () => {
-  const { plugin, lit } = fakePlugin()
-  const human = structure('human', [1])
-  const mouse = structure('mouse')
+  const { plugin, lit } = recordingPlugin()
+  const human = await structure([1])
+  const mouse = await structure()
   const host = observable({
     molstarPluginContext: plugin,
     structures: [human, mouse],
@@ -98,6 +96,7 @@ test('when updates overlap, the later one is what stays lit', async () => {
     mouse.selectLabelSeqIds = [2]
   })
   await new Promise(r => setTimeout(r, 0))
-  expect(lit).toEqual(['mouse'])
+  expect(lit).toHaveLength(1)
+  expect(lit[0]).toBe(mouse.molstarStructure)
   dispose()
 })
