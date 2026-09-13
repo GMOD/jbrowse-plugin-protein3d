@@ -39,7 +39,8 @@ export function makeSelectionFramer(host: SelectionFramerHost) {
     if (!plugin || plugin === framedPlugin || !settled) {
       return
     }
-    framedPlugin = plugin
+    // a seed resolved by the same change that settles the structure may land
+    // after this run, so the plugin counts as framed only once it has targets
     const targets = structures.flatMap(s =>
       s.seededSelection && s.molstarStructure && s.selectLabelSeqIds.length
         ? [
@@ -54,6 +55,7 @@ export function makeSelectionFramer(host: SelectionFramerHost) {
     if (targets.length === 0) {
       return
     }
+    framedPlugin = plugin
     loadMolstar()
       .then(molstar => {
         if (host.molstarPluginContext === plugin) {

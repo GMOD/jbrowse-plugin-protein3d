@@ -78,6 +78,31 @@ test('frames a seeded selection once every structure has settled and superposed'
   dispose()
 })
 
+// on a PDB entry the SIFTS answer both settles the structure and lets the
+// transcript-residue seed resolve, and the framer can run between the two
+test('a seed that resolves after the structure settles is still framed', async () => {
+  const { plugin, focused } = recordingPlugin()
+  const only = await structure(true)
+  const host = observable({
+    molstarPluginContext: plugin,
+    structures: [only],
+    superposedCount: 0,
+  })
+  const dispose = autorun(makeSelectionFramer(host))
+  runInAction(() => {
+    only.loading = false
+  })
+  await tick()
+  expect(focused).toHaveLength(0)
+  runInAction(() => {
+    only.selectLabelSeqIds = [2]
+  })
+  await vi.waitFor(() => {
+    expect(focused).toHaveLength(1)
+  })
+  dispose()
+})
+
 test('a clicked selection with no seed leaves the camera alone', async () => {
   const { plugin, focused } = recordingPlugin()
   const only = await structure(false, [2])
