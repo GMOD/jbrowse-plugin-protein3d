@@ -230,7 +230,6 @@ const result = await page.evaluate(async () => {
     type: 'ProteinView',
     isFloating: true,
     alignmentAlgorithm: 'needleman_wunsch',
-    connectedMsaViewId: undefined,
     structures: [
       {
         url: 'https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v6.cif',
