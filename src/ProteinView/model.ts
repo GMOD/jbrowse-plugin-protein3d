@@ -11,6 +11,7 @@ import {
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
+import { makeLociChannel } from './lociChannel'
 import { showLoading } from './showLoading'
 import {
   PERSISTED_SETTINGS,
@@ -306,6 +307,9 @@ function stateModelFactory() {
         // one. Keeping this reactive means adding a structure only pushes it and
         // lets the loader load it; see makeStructureSuperposer.
         addDisposer(self, autorun(makeStructureSuperposer(self)))
+
+        addDisposer(self, autorun(makeLociChannel(self, 'select')))
+        addDisposer(self, autorun(makeLociChannel(self, 'highlight')))
       },
     }))
     .views(self => ({

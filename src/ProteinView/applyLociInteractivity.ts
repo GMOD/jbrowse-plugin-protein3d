@@ -1,67 +1,90 @@
 import loadMolstar from './loadMolstar'
 
-import type { Structure } from 'molstar/lib/mol-model/structure'
+import type {
+  Structure,
+  StructureSelection,
+} from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { Script } from 'molstar/lib/mol-script/script'
+
+/** Residues of one structure, addressed by Mol*'s own `label_seq_id`. */
+export interface ResidueTarget {
+  structure: Structure
+  /** Confines the residues to this mmCIF entity, so a residue number doesn't
+   * light up on a binding partner or the other half of a homodimer. */
+  entityId?: string
+  labelSeqIds: number[]
+}
+
+/**
+ * The loci for a set of residues. Taking label_seq_ids rather than the
+ * plugin's 0-based positions keeps that conversion in one place (see
+ * Entity.seqIds) instead of assuming `pos + 1`, which mis-paints a PDB file
+ * whose residues don't start at 1.
+ */
+export function residueLoci(
+  molstar: {
+    Script: typeof Script
+    StructureSelection: typeof StructureSelection
+  },
+  { structure, entityId, labelSeqIds }: ResidueTarget,
+) {
+  const sel = molstar.Script.getStructureSelection(
+    Q =>
+      Q.struct.generator.atomGroups({
+        ...(entityId
+          ? {
+              'chain-test': Q.core.rel.eq([
+                Q.struct.atomProperty.macromolecular.label_entity_id(),
+                entityId,
+              ]),
+            }
+          : {}),
+        // one set membership test rather than a chain of ORs, which for a
+        // whole-alignment selection was one comparison per residue
+        'residue-test': Q.core.set.has([
+          Q.core.type.set([...new Set(labelSeqIds)]),
+          Q.struct.atomProperty.macromolecular.label_seq_id(),
+        ]),
+        'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
+      }),
+    structure,
+  )
+  return molstar.StructureSelection.toLociWithSourceUnits(sel)
+}
 
 /**
  * Reconcile one interactivity channel (hover-`highlight` or click-`select`) to
- * a set of residues, addressed by molstar's own `label_seq_id`.
+ * the residues every structure of a view wants lit. The channel is plugin-wide,
+ * so it has to be set for all structures at once: set per structure, the
+ * clear before each one wiped the others, and a TP53 session opened on R248
+ * lost the selection as soon as a superposed ortholog loaded.
  *
- * Taking ids rather than the plugin's 0-based structure positions keeps the
- * conversion in one place (see Entity.seqIds) instead of assuming `pos + 1`,
- * which silently mis-paints PDB files whose residues don't start at 1. Passing
- * an empty/undefined list clears the channel, so callers describe the target
- * state declaratively rather than juggling clear/apply calls.
+ * The loci are built before the clear, and nothing awaits between clearing and
+ * marking, so when two calls overlap the later one's residues are what stay lit.
  */
 export async function setMolstarLoci({
-  structure,
   plugin,
   channel,
-  labelSeqIds,
-  entityId,
+  targets,
 }: {
-  structure: Structure
   plugin: PluginContext
   channel: 'highlight' | 'select'
-  labelSeqIds: number[] | undefined
-  /** Confine the loci to this mmCIF entity so a residue number doesn't light up
-   * on unrelated chains (binding partners, the other half of a homodimer). */
-  entityId?: string
+  targets: ResidueTarget[]
 }) {
+  const molstar = await loadMolstar()
+  const locis = targets
+    .filter(t => t.labelSeqIds.length > 0)
+    .map(t => residueLoci(molstar, t))
   const { lociHighlights, lociSelects } = plugin.managers.interactivity
   if (channel === 'highlight') {
     lociHighlights.clearHighlights()
+    for (const loci of locis) {
+      lociHighlights.highlight({ loci })
+    }
   } else {
     lociSelects.deselectAll()
-  }
-
-  if (labelSeqIds?.length) {
-    const { StructureSelection, Script } = await loadMolstar()
-    const sel = Script.getStructureSelection(
-      Q =>
-        Q.struct.generator.atomGroups({
-          ...(entityId
-            ? {
-                'chain-test': Q.core.rel.eq([
-                  Q.struct.atomProperty.macromolecular.label_entity_id(),
-                  entityId,
-                ]),
-              }
-            : {}),
-          // one set membership test rather than a chain of ORs, which for a
-          // whole-alignment selection was one comparison per residue
-          'residue-test': Q.core.set.has([
-            Q.core.type.set([...new Set(labelSeqIds)]),
-            Q.struct.atomProperty.macromolecular.label_seq_id(),
-          ]),
-          'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
-        }),
-      structure,
-    )
-    const loci = StructureSelection.toLociWithSourceUnits(sel)
-    if (channel === 'highlight') {
-      lociHighlights.highlight({ loci })
-    } else {
+    for (const loci of locis) {
       lociSelects.select({ loci })
     }
   }

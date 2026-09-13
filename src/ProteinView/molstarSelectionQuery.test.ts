@@ -11,7 +11,9 @@ import { Script } from 'molstar/lib/mol-script/script'
 import { Task } from 'molstar/lib/mol-task'
 import { beforeAll, expect, test } from 'vitest'
 
-// setMolstarLoci's query is the thing that paints every highlight and every
+import { residueLoci } from './applyLociInteractivity'
+
+// residueLoci's query is the thing that paints every highlight and every
 // selection, and it fails silently: a MolScript expression molstar doesn't
 // understand selects nothing rather than throwing, so the 3D view just stops
 // lighting up. Nothing else in the suite exercises it — the e2e test renders a
@@ -74,28 +76,12 @@ beforeAll(async () => {
   )
 })
 
-/** The exact expression setMolstarLoci builds, reported as what it resolved. */
+/** What setMolstarLoci's query resolves the residues to. */
 function select(labelSeqIds: number[], entityId?: string) {
-  const sel = Script.getStructureSelection(
-    Q =>
-      Q.struct.generator.atomGroups({
-        ...(entityId
-          ? {
-              'chain-test': Q.core.rel.eq([
-                Q.struct.atomProperty.macromolecular.label_entity_id(),
-                entityId,
-              ]),
-            }
-          : {}),
-        'residue-test': Q.core.set.has([
-          Q.core.type.set([...new Set(labelSeqIds)]),
-          Q.struct.atomProperty.macromolecular.label_seq_id(),
-        ]),
-        'group-by': Q.struct.atomProperty.macromolecular.residueKey(),
-      }),
-    structure,
+  const loci = residueLoci(
+    { Script, StructureSelection },
+    { structure, entityId, labelSeqIds },
   )
-  const loci = StructureSelection.toLociWithSourceUnits(sel)
   const chains = new Set<string>()
   const entities = new Set<string>()
   const residues = new Set<string>()

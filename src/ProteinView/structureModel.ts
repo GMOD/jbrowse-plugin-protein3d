@@ -9,7 +9,6 @@ import {
 import { autorun, when } from 'mobx'
 
 import { alignmentQuality } from './alignmentQuality'
-import { setMolstarLoci } from './applyLociInteractivity'
 import {
   alignTranscriptToEntity,
   chooseMappedEntity,
@@ -1213,36 +1212,6 @@ const Structure = types
       addInteractionListener('hover', info => {
         self.setHoveredPosition(forMappedEntity(info))
       })
-
-      // Drive molstar's two interactivity channels reactively from a single
-      // source of truth each (selectLabelSeqIds / hoverLabelSeqIds). Deriving
-      // the selection here — rather than applying a clicked range imperatively
-      // from the feature bar — lets a declarative `initialSelection` seed light
-      // the 3D structure the same way a click does, with no race.
-      const driveChannel = (
-        channel: 'highlight' | 'select',
-        getLabelSeqIds: () => number[],
-      ) => {
-        addDisposer(
-          self,
-          autorun(async () => {
-            const { molstarStructure, molstarPluginContext } = self
-            const labelSeqIds = getLabelSeqIds()
-            if (molstarStructure && molstarPluginContext) {
-              await setMolstarLoci({
-                structure: molstarStructure,
-                plugin: molstarPluginContext,
-                channel,
-                entityId: self.mappedEntity?.entityId,
-                labelSeqIds,
-              })
-            }
-          }),
-        )
-      }
-
-      driveChannel('select', () => self.selectLabelSeqIds)
-      driveChannel('highlight', () => self.hoverLabelSeqIds)
     },
   }))
 
