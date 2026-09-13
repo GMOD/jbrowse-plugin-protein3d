@@ -14,6 +14,7 @@ import {
   chooseMappedEntity,
   interactionMatchesMappedEntity,
 } from './chooseMappedEntity'
+import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   COMPACT_TRACK_GAP,
   COMPACT_TRACK_HEIGHT,
@@ -28,6 +29,14 @@ import {
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
 import {
+  entityLabel,
+  makeLabelSeqIdIndex,
+  rangeToLabelSeqIds,
+  residueNumber,
+  residueRangeToPositions,
+  toLabelSeqIds,
+} from './extractStructureSequences'
+import {
   fetchUniProtStructureMappings,
   fusionPartnerPositions,
 } from './pdbUniProtMapping'
@@ -41,7 +50,6 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction, {
   type MolstarLocationInfo,
 } from './subscribeMolstarInteraction'
-import { genomeHoverToTranscriptPos } from './util'
 import {
   getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
@@ -56,14 +64,6 @@ import {
   mappedStructureIdentity,
   unmapStructurePositions,
 } from '../mappings'
-import {
-  entityLabel,
-  makeLabelSeqIdIndex,
-  rangeToLabelSeqIds,
-  residueNumber,
-  residueRangeToPositions,
-  toLabelSeqIds,
-} from './extractStructureSequences'
 
 import type { Entity } from './extractStructureSequences'
 import type { EntityConfidence, StructureData } from './loadStructureData'
@@ -186,16 +186,17 @@ const Structure = types
 
     /**
      * #volatile
-     * The 'genome' source is set when the hover originated from the
-     * connected LinearGenomeView; hoverGenomeHighlights ignores it to avoid
-     * echoing a codon-width highlight back onto the same genome view.
+     * Where the hover came from: the 3D structure (or this view's alignment
+     * panel), the connected genome view, or a connected MSA view.
+     * hoverGenomeHighlights draws only the first, since the other two mark
+     * their own pointer on the genome.
      */
     hoverPosition: undefined as
       | {
           structureSeqPos?: number
           code?: string
           chain?: string
-          source: 'structure' | 'genome'
+          source: 'structure' | 'genome' | 'msa'
         }
       | undefined,
     /**
@@ -362,15 +363,16 @@ const Structure = types
     },
     /**
      * #action
-     * Records a hover that originated from the connected LinearGenomeView.
-     * Drives the 3D structure / feature-track highlight, but is excluded
-     * from hoverGenomeHighlights so it doesn't echo back onto that same view.
+     * Records a hover from the connected genome view or alignment. Drives the
+     * 3D structure and feature-track highlight, but is excluded from
+     * hoverGenomeHighlights: that view already marks its own pointer.
      */
-    setGenomeHoveredPosition(structureSeqPos?: number) {
+    setConnectedHoveredPosition(
+      structureSeqPos?: number,
+      source: 'genome' | 'msa' = 'genome',
+    ) {
       self.hoverPosition =
-        structureSeqPos === undefined
-          ? undefined
-          : { structureSeqPos, source: 'genome' }
+        structureSeqPos === undefined ? undefined : { structureSeqPos, source }
     },
     /**
      * #action
@@ -797,12 +799,13 @@ const Structure = types
 
     /**
      * #getter
-     * Genome regions to highlight in the LGV from the current hover. Excludes
-     * hovers that originated from the genome view itself, so hovering the LGV
-     * doesn't echo a codon-width highlight back onto that same view.
+     * Genome regions to highlight in the LGV from the current hover, for a
+     * hover in this view only: the genome view and a connected MSA already
+     * mark their own pointer there, and echoing it doubles the band.
      */
     get hoverGenomeHighlights(): IRegion[] {
-      return self.hoverPosition?.source === 'genome'
+      const source = self.hoverPosition?.source
+      return source === 'genome' || source === 'msa'
         ? []
         : this.structureRangeToGenomeHighlight(this.hoverHighlightRange)
     },
@@ -1161,28 +1164,22 @@ const Structure = types
       addDisposer(
         self,
         autorun(() => {
-          const { hovered } = getSession(self)
-          const {
-            transcriptSeqToStructureSeqPosition,
-            genomeToTranscriptSeqMapping,
-            connectedView,
-          } = self
-          // genomeHoverToTranscriptPos gates on the transcript's refName: the
-          // session hover is global, so without it a hover on an unrelated
-          // chromosome at a numerically overlapping coordinate lit up a residue
-          // here (the 1D protein highlight already gated on it, so the two
-          // directions disagreed).
-          const transcriptPos = connectedView?.initialized
-            ? genomeHoverToTranscriptPos(hovered, genomeToTranscriptSeqMapping)
-            : undefined
-          if (transcriptPos !== undefined) {
-            self.setGenomeHoveredPosition(
-              transcriptSeqToStructureSeqPosition?.[transcriptPos],
+          const { hovered, views } = getSession(self)
+          const hover = connectedHoverTranscriptPos({
+            hovered,
+            views,
+            mapping: self.genomeToTranscriptSeqMapping,
+            connectedViewId: self.connectedViewId,
+            genomeViewReady: !!self.connectedView?.initialized,
+          })
+          if (hover) {
+            self.setConnectedHoveredPosition(
+              self.transcriptSeqToStructureSeqPosition?.[hover.transcriptPos],
+              hover.source,
             )
-          } else if (self.hoverPosition?.source === 'genome') {
-            // Only clear a hover this autorun owns — a hover sourced from the
-            // 3D structure is cleared by molstar's own leave event.
-            self.setGenomeHoveredPosition(undefined)
+          } else if (self.hoverPosition?.source !== 'structure') {
+            // a hover from the 3D structure is cleared by Mol*'s leave event
+            self.setConnectedHoveredPosition(undefined)
           }
         }),
       )

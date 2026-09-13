@@ -14,16 +14,20 @@ const HeaderStructureInfo = observer(function HeaderStructureInfo({
 }) {
   const { structures } = model
   // With several structures open a hover lights the same residue on each, so
-  // every readout is prefixed with the structure it describes. A genome hover
-  // that reaches one structure but not another says so, since a crystal that
-  // lacks the residue is the point of showing several.
-  const genomeHover = structures.some(
+  // every readout is prefixed with the structure it describes. A genome or MSA
+  // hover that reaches one mapped structure but not another says so, since a
+  // crystal that lacks the residue is the point of showing several; a
+  // structure with no transcript could never have answered.
+  const connectedHover = structures.some(
     (s: JBrowsePluginProteinStructureModel) =>
-      s.hoverPosition?.source === 'genome',
+      s.hoverPosition && s.hoverPosition.source !== 'structure',
   )
   const readouts = structures.map(
     (s: JBrowsePluginProteinStructureModel) =>
-      s.hoverString || (genomeHover ? 'not in structure' : ''),
+      s.hoverString ||
+      (connectedHover && s.genomeToTranscriptSeqMapping
+        ? 'not in structure'
+        : ''),
   )
   const hoverText = structures
     .map((s: JBrowsePluginProteinStructureModel, i) =>

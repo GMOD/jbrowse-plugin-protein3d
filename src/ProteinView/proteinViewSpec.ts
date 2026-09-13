@@ -53,7 +53,6 @@ export interface ProteinViewSpec {
   autoScrollAlignment?: boolean
   colorScheme?: ProteinColorScheme
   alignmentAlgorithm?: AlignmentAlgorithm
-  connectedMsaViewId?: string
 }
 
 /**

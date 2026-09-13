@@ -9,9 +9,7 @@ import type { AbstractSessionModel } from '@jbrowse/core/util'
  */
 export interface HighlightSourceProteinView {
   id: string
-  connectedMsaViewId?: string
   structures: JBrowsePluginProteinStructureModel[]
-  primaryStructure?: JBrowsePluginProteinStructureModel
 }
 
 export function getProteinViews(
@@ -20,19 +18,6 @@ export function getProteinViews(
   return session.views.filter(
     v => v.type === 'ProteinView',
   ) as unknown as HighlightSourceProteinView[]
-}
-
-/**
- * NOTE: assumes a single ProteinView. Unlike the genome-highlight bridge (which
- * pairs by the declared `connectedViewId`, see getStructuresConnectedTo), a
- * second ProteinView's MSA hover sync is skipped — pairing an MSA to one of
- * several protein views has no reliable rule when the protein view declares
- * neither a connectedMsaViewId nor a connectedViewId.
- */
-export function getProteinView(
-  session: AbstractSessionModel,
-): HighlightSourceProteinView | undefined {
-  return getProteinViews(session)[0]
 }
 
 interface ConnectableStructure {

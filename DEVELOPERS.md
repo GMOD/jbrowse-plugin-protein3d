@@ -25,7 +25,6 @@ every field is a plain top-level property that MST restores natively:
   "type": "ProteinView",
   "height": 500,
   "zoomToBaseLevel": false,
-  "connectedMsaViewId": "msa-1", // optional MSA hover-sync link
   "structures": [
     {
       "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
@@ -38,11 +37,13 @@ every field is a plain top-level property that MST restores natively:
 }
 ```
 
-Cross-view wiring is by declared id (`connectedViewId`, `connectedMsaViewId`)
-and a shared `feature`, so no imperative wiring code is needed. The typed spec
-and its snapshot builder live in `src/ProteinView/proteinViewSpec.ts`
-(`ProteinViewSpec` / `proteinViewSnapshot`) — every launch path funnels through
-that one builder so they can't drift into different property subsets.
+Cross-view wiring is by declared id (`connectedViewId`) and a shared `feature`,
+so no imperative wiring code is needed. An MsaView connected to the same genome
+view links to the structure with no id of its own: a hover in either lights the
+other through the codon it maps to. The typed spec and its snapshot builder live
+in `src/ProteinView/proteinViewSpec.ts` (`ProteinViewSpec` /
+`proteinViewSnapshot`) — every launch path funnels through that one builder so
+they can't drift into different property subsets.
 
 #### Structure shorthand: `uniprotId` / `pdbId`
 

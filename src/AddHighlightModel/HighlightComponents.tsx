@@ -9,7 +9,6 @@ import {
   ProteinToGenomeClickHighlight,
   ProteinToGenomeHoverHighlight,
 } from './ProteinToGenomeHighlight'
-import ProteinToMsaHoverSync from './ProteinToMsaHoverSync'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -25,7 +24,6 @@ const HighlightComponents = observer(function Highlight({
       <Protein1DToGenomeHoverHighlight model={model} />
       <GenomeTo1DProteinHoverHighlight model={model} />
       <GenomeMouseoverHighlight model={model} />
-      <ProteinToMsaHoverSync model={model} />
     </>
   )
 })

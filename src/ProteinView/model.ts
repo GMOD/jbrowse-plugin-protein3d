@@ -113,12 +113,6 @@ function stateModelFactory() {
           ),
           DEFAULT_ALIGNMENT_ALGORITHM,
         ),
-
-        /**
-         * #property
-         * ID of connected MSA view for hover synchronization
-         */
-        connectedMsaViewId: types.maybe(types.string),
       }),
     )
     .preProcessSnapshot(
@@ -240,12 +234,6 @@ function stateModelFactory() {
        */
       setShowAddStructureDialog(val: boolean) {
         self.showAddStructureDialog = val
-      },
-      /**
-       * #action
-       */
-      setConnectedMsaViewId(id?: string) {
-        self.connectedMsaViewId = id
       },
       /**
        * #action

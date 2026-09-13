@@ -58,18 +58,15 @@ export function launch3DProteinView({
   userProvidedTranscriptSequence,
   alignmentAlgorithm,
   displayName,
-  connectedMsaViewId,
   sideBySide,
 }: LaunchViewParams &
   Launch3DExtraParams & {
-    connectedMsaViewId?: string
     // explicit override; when undefined the launch-dialog localStorage
     // preference decides (left genome | right protein)
     sideBySide?: boolean
   }) {
   const snap = proteinViewSnapshot({
     alignmentAlgorithm,
-    connectedMsaViewId,
     displayName:
       displayName ??
       formatViewName('Protein view', feature, selectedTranscript, uniprotId),
