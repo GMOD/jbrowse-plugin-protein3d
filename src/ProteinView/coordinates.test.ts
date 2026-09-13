@@ -5,6 +5,7 @@ import {
   makeCoordinateMapper,
   structurePos,
   transcriptPos,
+  transcriptRangeToStructureRange,
 } from './coordinates'
 
 import type { PairwiseAlignment } from '../mappings'
@@ -66,5 +67,24 @@ test('maps match the underlying mappings functions', () => {
     2: 2,
     3: 3,
     5: 4,
+  })
+})
+
+test('a transcript residue range clamps to the structure residues it aligns to', () => {
+  const m = makeCoordinateMapper(PA)
+  // transcript residues 1-5 (M K L V A): V has no structure residue, so the
+  // range ends at A, and D (unaligned in the transcript) sits inside it
+  expect(transcriptRangeToStructureRange(m, { start: 1, end: 5 })).toEqual({
+    start: 0,
+    end: 5,
+  })
+  // residue 4 alone (V) aligns to nothing
+  expect(transcriptRangeToStructureRange(m, { start: 4, end: 4 })).toBe(
+    undefined,
+  )
+  // a range past the transcript's end clamps to what exists
+  expect(transcriptRangeToStructureRange(m, { start: 5, end: 40 })).toEqual({
+    start: 4,
+    end: 5,
   })
 })

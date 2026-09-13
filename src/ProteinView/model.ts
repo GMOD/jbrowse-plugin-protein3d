@@ -12,6 +12,7 @@ import {
   applyColorTheme,
 } from './applyColorTheme'
 import { makeLociChannel } from './lociChannel'
+import { defaultDisplayName } from './proteinViewSpec'
 import { showLoading } from './showLoading'
 import {
   type PersistedSetting,
@@ -116,8 +117,21 @@ function stateModelFactory() {
       }),
     )
     .preProcessSnapshot(
-      (snapshot: PersistedSettings & Record<string, unknown>) =>
-        withStoredSettings(snapshot, readStoredSettings()),
+      (
+        snapshot: PersistedSettings & {
+          displayName?: string
+          structures?: ProteinStructureSpec[]
+        } & Record<string, unknown>,
+      ) =>
+        withStoredSettings(
+          {
+            ...snapshot,
+            displayName:
+              snapshot.displayName ??
+              defaultDisplayName(snapshot.structures ?? []),
+          },
+          readStoredSettings(),
+        ),
     )
     .volatile(() => ({
       /**

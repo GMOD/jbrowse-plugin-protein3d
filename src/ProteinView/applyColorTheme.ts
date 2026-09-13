@@ -22,6 +22,11 @@ export type ProteinColorScheme = (typeof COLOR_SCHEMES)[number]['value']
 
 export const COLOR_SCHEME_VALUES = COLOR_SCHEMES.map(s => s.value)
 
+/** An untrusted scheme name (a URL session-spec param) into the union. */
+export function coerceColorScheme(value: string): ProteinColorScheme {
+  return COLOR_SCHEME_VALUES.find(v => v === value) ?? 'default'
+}
+
 export async function applyColorTheme({
   plugin,
   colorScheme,

@@ -478,3 +478,35 @@ test('hoverString uses the author number and drops the transcript residue when t
   expect(model.residueNumber(1)).toBe(4)
   expect(model.hoverString).toBe('4, Structure: K')
 })
+
+test('initialTranscriptResidues seeds the selection through the alignment once the structure settles', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        url: 'https://example.org/model.cif',
+        userProvidedTranscriptSequence: 'MKLVA',
+        initialTranscriptResidues: { start: 3, end: 5 },
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  // a fragment missing the first residue and the V, numbered from 94
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'KLA',
+        seqIds: [1, 2, 3],
+        authSeqIds: [94, 95, 96],
+        chains: ['A'],
+      },
+    ],
+  })
+  expect(model.alignment).toBeDefined()
+  expect(model.clickedStructureRange).toBeUndefined()
+  model.setLoadedToMolstar(true)
+  // L and A are positions 1 and 2; the V between them is not modeled
+  expect(model.clickedStructureRange).toEqual({ start: 1, end: 3 })
+  model.setClickedStructureRange(undefined)
+  expect(model.clickedStructureRange).toBeUndefined()
+})

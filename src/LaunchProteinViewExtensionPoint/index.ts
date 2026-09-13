@@ -4,10 +4,8 @@ import {
   resolveShortLaunch,
 } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
-import {
-  resolveStructureUrl,
-  structureDisplayLabel,
-} from '../LaunchProteinView/utils/structureUrls'
+import { resolveStructureUrl } from '../LaunchProteinView/utils/structureUrls'
+import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
@@ -28,7 +26,12 @@ interface LaunchStructure {
   pdbId?: string
   initialSelection?: { start: number; end: number }
   initialResidues?: { start: number; end: number }
+  initialTranscriptResidues?: { start: number; end: number }
   mappedEntityId?: string
+  // per-structure mapping, overriding the launch-wide one below
+  userProvidedTranscriptSequence?: string
+  feature?: SimpleFeatureSerialized
+  connectedViewId?: string
 }
 
 export default function LaunchProteinViewExtensionPointF(
@@ -67,10 +70,15 @@ export default function LaunchProteinViewExtensionPointF(
       connectedViewId?: string
       connectedView?: ConnectedViewSpec
       alignmentAlgorithm?: string
+      colorScheme?: string
       displayName?: string
       height?: number
       showControls?: boolean
       showHighlight?: boolean
+      showAlignment?: boolean
+      showProteinTracks?: boolean
+      compactTracks?: boolean
+      autoScrollAlignment?: boolean
       zoomToBaseLevel?: boolean
       // when this launch creates its own connected genome view, place the
       // protein view side-by-side (left genome | right protein). Explicit
@@ -82,6 +90,8 @@ export default function LaunchProteinViewExtensionPointF(
       initialSelection?: { start: number; end: number }
       // the same, by inclusive author residue numbers (R248 is 248-248)
       initialResidues?: { start: number; end: number }
+      // the same, by 1-based inclusive residues of the transcript's translation
+      initialTranscriptResidues?: { start: number; end: number }
     }) => {
       const {
         session,
@@ -94,18 +104,33 @@ export default function LaunchProteinViewExtensionPointF(
         connectedViewId,
         connectedView,
         alignmentAlgorithm,
+        colorScheme,
         displayName,
         height,
         showControls,
         showHighlight,
+        showAlignment,
+        showProteinTracks,
+        compactTracks,
+        autoScrollAlignment,
         zoomToBaseLevel,
         sideBySide,
         initialSelection,
         initialResidues,
+        initialTranscriptResidues,
       } = args
       const requested: LaunchStructure[] = args.structures?.length
         ? args.structures
-        : [{ url, uniprotId, pdbId, initialSelection, initialResidues }]
+        : [
+            {
+              url,
+              uniprotId,
+              pdbId,
+              initialSelection,
+              initialResidues,
+              initialTranscriptResidues,
+            },
+          ]
       const urls = requested.map(s => resolveStructureUrl(s))
       const primary = requested[0]!
       const primaryUrl = urls[0]
@@ -160,37 +185,36 @@ export default function LaunchProteinViewExtensionPointF(
         data: s.data,
         initialSelection: s.initialSelection,
         initialResidues: s.initialResidues,
+        initialTranscriptResidues: s.initialTranscriptResidues,
         mappedEntityId: s.mappedEntityId,
         userProvidedTranscriptSequence:
+          s.userProvidedTranscriptSequence ??
           resolved?.userProvidedTranscriptSequence ??
           userProvidedTranscriptSequence,
-        feature: resolved?.feature ?? feature,
-        connectedViewId: resolvedConnectedViewId,
+        feature: s.feature ?? resolved?.feature ?? feature,
+        connectedViewId: s.connectedViewId ?? resolvedConnectedViewId,
       }))
 
-      const featureName = resolved?.feature.name ?? feature?.name
-      const transcriptName =
-        typeof featureName === 'string' ? featureName : transcriptId
       const proteinView = session.addView(
         'ProteinView',
         proteinViewSnapshot({
-          // a URL param is untrusted text; the model property is an enumeration
+          // a URL param is untrusted text; the model properties are enumerations
           alignmentAlgorithm:
             alignmentAlgorithm === undefined
               ? undefined
               : coerceAlignmentAlgorithm(alignmentAlgorithm),
-          displayName:
-            displayName ??
-            [
-              'Protein view',
-              transcriptName,
-              ...structures.map(structureDisplayLabel),
-            ]
-              .filter(s => !!s)
-              .join(' - '),
+          colorScheme:
+            colorScheme === undefined
+              ? undefined
+              : coerceColorScheme(colorScheme),
+          displayName,
           height,
           showControls,
           showHighlight,
+          showAlignment,
+          showProteinTracks,
+          compactTracks,
+          autoScrollAlignment,
           zoomToBaseLevel,
           structures,
         }),

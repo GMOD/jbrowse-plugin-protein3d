@@ -68,17 +68,28 @@ selected or sent to Mol\*.
 
 ## Naming a residue in a session spec
 
-A spec can seed the selection two ways, per structure:
+A spec can seed the selection three ways, per structure:
 
 ```json
+{ "pdbId": "1TUP", "initialTranscriptResidues": { "start": 248, "end": 248 } }
 { "pdbId": "1TUP", "initialResidues": { "start": 248, "end": 248 } }
 { "pdbId": "1TUP", "initialSelection": { "start": 154, "end": 155 } }
 ```
 
-`initialResidues` is inclusive author numbering, the way a site is cited.
-`initialSelection` is the 0-based half-open position range, for callers that
-already computed one. Both light the same residue: magenta in Mol\*, a band on
-the connected genome view, a box in the alignment.
+`initialTranscriptResidues` is 1-based inclusive numbering of the transcript's
+own translation, the numbering a UniProt feature or a domain map counts in. It
+resolves through the pairwise alignment, so it lands on the right residues of
+any structure the transcript aligns to, whatever the file calls them, and it
+clamps to the residues the structure models: a domain running past a fragment's
+end selects what the fragment holds. It waits for the structure to settle
+(loaded, aligned, SIFTS answered), because for a fusion the alignment changes
+once SIFTS unmaps the partner. `initialResidues` is inclusive author numbering,
+the way a site is cited, which for 1TUP happens to agree with UniProt but for
+haemoglobin's mature-numbered chains is off by one. `initialSelection` is the
+0-based half-open position range, for callers that already computed one. All
+three light the same residue: magenta in Mol\*, a band on the connected genome
+view, a box in the alignment. The view then frames the selection in the 3D
+canvas once every structure has loaded and superposed.
 
 `initialResidues` cannot be resolved when the snapshot is read, because the
 numbering lives in the file. The structure model waits (a MobX `when`) until the

@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { proteinViewSnapshot } from './proteinViewSpec'
+import { defaultDisplayName, proteinViewSnapshot } from './proteinViewSpec'
 
 test('emits a flat top-level snapshot with view props alongside structures', () => {
   const snap = proteinViewSnapshot({
@@ -43,4 +43,26 @@ test('passes per-structure feature and initialSelection through unchanged', () =
   })
   expect(snap.structures[0]!.feature).toBe(feature)
   expect(snap.structures[0]!.initialSelection).toEqual({ start: 3, end: 7 })
+})
+
+test('a view with no name is titled by its transcript and structures', () => {
+  expect(
+    defaultDisplayName([
+      {
+        pdbId: '1tup',
+        feature: {
+          uniqueId: 'tx',
+          refName: 'chr17',
+          start: 0,
+          end: 9,
+          name: 'TP53',
+        },
+      },
+      { uniprotId: 'P02340' },
+    ]),
+  ).toBe('Protein view - TP53 - 1TUP - AlphaFold P02340')
+  expect(defaultDisplayName([{ data: 'ATOM' }])).toBe(
+    'Protein view - Uploaded structure',
+  )
+  expect(defaultDisplayName([])).toBe('Protein view')
 })

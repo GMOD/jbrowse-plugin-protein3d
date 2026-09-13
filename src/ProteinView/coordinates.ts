@@ -92,3 +92,28 @@ export function makeCoordinateMapper(
     },
   }
 }
+
+/**
+ * The 0-based half-open structure-position range covering an inclusive range
+ * of 1-based transcript residues, the numbering a UniProt feature or a domain
+ * map uses. Residues the structure lacks are skipped, so a range that runs
+ * past a fragment's end clamps to the last modeled residue; undefined when none
+ * of the range aligns to the structure.
+ */
+export function transcriptRangeToStructureRange(
+  mapper: CoordinateMapper,
+  range: { start: number; end: number },
+) {
+  let first: number | undefined
+  let last: number | undefined
+  for (let residue = range.start; residue <= range.end; residue++) {
+    const pos = mapper.transcriptToStructure(transcriptPos(residue - 1))
+    if (pos !== undefined) {
+      first = first === undefined ? pos : Math.min(first, pos)
+      last = last === undefined ? pos : Math.max(last, pos)
+    }
+  }
+  return first === undefined || last === undefined
+    ? undefined
+    : { start: first, end: last + 1 }
+}

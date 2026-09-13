@@ -26,6 +26,7 @@ import {
   alignmentCol,
   makeCoordinateMapper,
   structurePos,
+  transcriptRangeToStructureRange,
 } from './coordinates'
 import { looksLikePlddt } from './extractPerResidueConfidence'
 import {
@@ -141,6 +142,17 @@ const Structure = types
      * where the construct starts.
      */
     initialResidues: types.frozen<{ start: number; end: number } | undefined>(),
+    /**
+     * #property
+     * The seed named by 1-based inclusive residues of the transcript's own
+     * translation, the numbering a UniProt feature or a domain map counts in.
+     * Resolved through the alignment once it exists, so it lands on the right
+     * residues of any structure the transcript aligns to, whatever the file's
+     * numbering, and clamps to the residues the structure models.
+     */
+    initialTranscriptResidues: types.frozen<
+      { start: number; end: number } | undefined
+    >(),
     /**
      * #property
      * mmCIF entity the transcript maps to. Chosen by alignment when the
@@ -1056,7 +1068,7 @@ const Structure = types
       // and the transcript's entity is chosen: before that, mappedEntity falls
       // back to entities[0], which in 1TUP is a DNA strand. Fires once, so a
       // user clearing the selection afterwards is not overruled.
-      const { initialResidues } = self
+      const { initialResidues, initialTranscriptResidues } = self
       if (initialResidues) {
         addDisposer(
           self,
@@ -1068,6 +1080,24 @@ const Structure = types
             () => {
               self.setClickedStructureRange(
                 residueRangeToPositions(self.mappedEntity, initialResidues),
+              )
+            },
+          ),
+        )
+      }
+      // The transcript-numbered seed needs the alignment, which for a fusion
+      // is also waiting on SIFTS, so it fires once the structure has settled.
+      if (initialTranscriptResidues) {
+        addDisposer(
+          self,
+          when(
+            () => !!self.coordinateMapper && !self.loading,
+            () => {
+              self.setClickedStructureRange(
+                transcriptRangeToStructureRange(
+                  self.coordinateMapper!,
+                  initialTranscriptResidues,
+                ),
               )
             },
           ),

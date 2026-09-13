@@ -64,12 +64,13 @@ genome↔protein connection (feature/sequence) — for that use the extension
 point's `uniprotId` + `transcriptId` short form below.
 
 A structure with several polymer chains maps the transcript to the protein chain
-it explains the largest share of (identical residues over the chain's length, so
-a short peptide beats the long partner it is bound to); DNA and RNA chains are
-never candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …)
-overrides that choice in a snapshot and is what the alignment panel's **Mapped
-chain** picker writes, so a saved session restores the chain the user chose
-along with the alignment computed against it.
+with the most identical residues over the shorter of transcript and chain, so a
+short peptide beats the long partner it is bound to and a fusion construct still
+wins on the chain that holds the whole transcript; DNA and RNA chains are never
+candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …) overrides
+that choice in a snapshot and is what the alignment panel's **Mapped chain**
+picker writes, so a saved session restores the chain the user chose along with
+the alignment computed against it.
 
 Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
 localStorage) only fill settings the snapshot does not name, so an explicitly
@@ -131,12 +132,19 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 | `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                      |
 | `connectedView`                  | No       | LGV init (`loc`/`assembly`/`tracks`) to create + connect a new LinearGenomeView   |
 | `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back        |
-| `displayName`                    | No       | Custom view display name                                                          |
+| `colorScheme`                    | No       | A scheme from the view's **Color scheme** menu, e.g. 'plddt-confidence'           |
+| `displayName`                    | No       | View name; defaults to the transcript and structure labels                        |
 | `height`                         | No       | View height in pixels (default: 650)                                              |
 | `showControls`                   | No       | Show Mol\* controls panel                                                         |
 | `showHighlight`                  | No       | Show alignment highlight on structure                                             |
+| `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                 |
+| `showProteinTracks`              | No       | Show the feature tracks (default: true)                                           |
+| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true)                         |
+| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue                                       |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
-| `initialResidues`                | No       | `{ start, end }` author residue numbers, inclusive, selected on load (R248 → 248) |
+| `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view               |
+| `initialTranscriptResidues`      | No       | `{ start, end }` 1-based inclusive residues of the transcript, selected on load   |
+| `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)     |
 | `initialSelection`               | No       | The same as a 0-based half-open position range, for callers that already have it  |
 
 \* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
@@ -261,10 +269,12 @@ target config.
 `structures` opens one view holding several structures, superposed with TM-align
 and each mapped to the same transcript, which is what the view's **Add
 structure...** dialog builds by hand. Each entry takes `url`, `uniprotId` or
-`pdbId`, and may carry its own `initialResidues` (or `initialSelection`) and
-`mappedEntityId`. The top-level `url`/`uniprotId`/`pdbId` is the one-structure
-shorthand for it. See [docs/residue-numbering.md](docs/residue-numbering.md) for
-how a residue number in a spec becomes a position in the file.
+`pdbId`, and may carry its own `initialTranscriptResidues`, `initialResidues` or
+`initialSelection`, a `mappedEntityId`, and a `feature` and
+`userProvidedTranscriptSequence` of its own where the launch-wide ones do not
+apply. The top-level `url`/`uniprotId`/`pdbId` is the one-structure shorthand
+for it. See [docs/residue-numbering.md](docs/residue-numbering.md) for how a
+residue number in a spec becomes a position in the file.
 
 ```
 https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
