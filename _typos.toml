@@ -9,6 +9,8 @@ extend-ignore-re = ["\\(\\[[0-9a-f]{7,40}\\]\\(https://[^)]+\\)\\)"]
 # amino acid three-letter codes
 THR = "THR"
 SER = "SER"
+# the mitochondrial NADH dehydrogenase genes, MT-ND1..6
+ND = "ND"
 # BLOSUM62 substitution matrix; PN = a Mol* plugin spec field; Superposer is
 # Mol*'s own term for structure superposition; "mis" appears in mismatch-related
 # identifiers; unparseable is the spelling used throughout this repo
