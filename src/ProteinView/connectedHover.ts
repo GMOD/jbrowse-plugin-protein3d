@@ -18,18 +18,12 @@ interface MsaViewLike extends SessionView {
 /**
  * The transcript residue a pointer elsewhere in the session is on: the genome
  * view's hover first, else the hovered column of an alignment connected to the
- * same genome view. msaview pairs with a structure by that shared genome view
- * too, so the link holds in both directions without either view naming the
- * other.
+ * same genome view, which is how msaview pairs with a structure too.
  *
  * The alignment is read as the codon msaview maps its column to, never as a
- * column number. The genome is the one coordinate the two plugins share, so
- * this holds for any alignment whose query row is linked to the transcript: a
- * Pfam seed row cut to one domain, or a structure covering a fragment. The
- * column-number bridge this replaced assumed the structure's sequence was an
- * alignment row, and where none matched it took the column for a residue
- * index: hovering R248 in a TP53 session with PF00870's seed lit a second codon
- * 400 bp away.
+ * column number: the genome is the one coordinate the two plugins share, so
+ * this holds for any alignment whose query row is linked to the transcript,
+ * such as a Pfam seed row cut to one domain.
  */
 export function connectedHoverTranscriptPos({
   hovered,

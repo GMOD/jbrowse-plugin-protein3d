@@ -71,9 +71,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
 }) {
   const { width, height } = model
 
-  // For screenshot and e2e tooling. It used to read only the alignment, which
-  // is not pending before a structure has any sequence, so it said ready
-  // while the download was still running.
+  // for screenshot and e2e tooling: Mol* is up and every structure has settled
   const ready = !loading && !model.showLoading
 
   return (

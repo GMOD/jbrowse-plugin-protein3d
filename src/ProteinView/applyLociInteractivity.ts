@@ -68,12 +68,9 @@ export function residueLoci(
 /**
  * Reconcile one interactivity channel (hover-`highlight` or click-`select`) to
  * the residues every structure of a view wants lit. The channel is plugin-wide,
- * so it has to be set for all structures at once: set per structure, the
- * clear before each one wiped the others, and a TP53 session opened on R248
- * lost the selection as soon as a superposed ortholog loaded.
- *
- * The loci are built before the clear, and nothing awaits between clearing and
- * marking, so when two calls overlap the later one's residues are what stay lit.
+ * so a call covers all structures at once; clearing per structure wipes the
+ * others. Nothing awaits between clearing and marking, so when two calls
+ * overlap the later one's residues are what stay lit.
  */
 export async function setMolstarLoci({
   interactivity,
