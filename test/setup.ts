@@ -5,9 +5,8 @@ import path from 'node:path'
 import { PNG } from 'pngjs'
 import { launch } from 'puppeteer'
 
-import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
-
 import { isBrowserConsoleNoise } from './browserConsole'
+import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
 
 import type { Browser, Page } from 'puppeteer'
 
@@ -199,7 +198,7 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
         str,
       )
       if (match) {
-        const actualPort = Number.parseInt(match[1], 10)
+        const actualPort = Number.parseInt(match[1]!, 10)
         if (actualPort !== JBROWSE_PORT) {
           clearTimeout(timeout)
           proc.kill()
@@ -297,8 +296,13 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
     }
   })
 
-  page.on('pageerror', err => {
-    complain(`[browser page error] ${err.message}`)
+  // puppeteer types this `unknown`, and it is: reading `.message` off whatever
+  // arrives would silently report `undefined` for a non-Error throw, in the one
+  // handler that exists to catch the worst thing the page can do.
+  page.on('pageerror', (err: unknown) => {
+    complain(
+      `[browser page error] ${err instanceof Error ? err.message : String(err)}`,
+    )
   })
 
   // Third-party beacons fail in a sandboxed run and say nothing about the
@@ -384,7 +388,7 @@ async function readMenuItems(page: Page, timeout = 2000): Promise<string[]> {
   let items: string[] = []
   while (Date.now() < deadline && items.length === 0) {
     items = await page.$$eval('[role="menuitem"]', els =>
-      els.map(el => el.textContent ?? ''),
+      els.map(el => el.textContent),
     )
     if (items.length === 0) {
       await new Promise(r => setTimeout(r, 200))
@@ -448,7 +452,7 @@ export async function openFeatureContextMenu(page: Page): Promise<string[]> {
 
 export async function clickTab(page: Page, label: string): Promise<void> {
   for (const tab of await page.$$('[role="tab"]')) {
-    const text = await tab.evaluate(el => el.textContent ?? '')
+    const text = await tab.evaluate(el => el.textContent)
     if (text.includes(label)) {
       await tab.click()
       return
@@ -459,7 +463,7 @@ export async function clickTab(page: Page, label: string): Promise<void> {
 
 export async function clickMenuItem(page: Page, label: string): Promise<void> {
   for (const item of await page.$$('[role="menuitem"]')) {
-    const text = await item.evaluate(el => el.textContent ?? '')
+    const text = await item.evaluate(el => el.textContent)
     if (text.includes(label)) {
       await item.click()
       return

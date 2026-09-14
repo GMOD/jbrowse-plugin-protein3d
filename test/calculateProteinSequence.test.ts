@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'vitest'
-
 import { SimpleFeature } from '@jbrowse/core/util'
+import { describe, expect, it } from 'vitest'
 
 import {
   calculateProteinSequence,

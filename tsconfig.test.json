@@ -1,0 +1,18 @@
+{
+  // The e2e harness drives every host gate, and `tsconfig.json` type-checked
+  // none of it: its `include` is `src` and its `exclude` drops `*.test.ts`.
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "noEmit": true
+  },
+  "include": ["test"],
+  "exclude": [
+    "**/dist/",
+    // Unit tests that happen to live under test/. They share the type errors
+    // every src/**/*.test.ts has, since nothing has ever checked those either;
+    // that backlog is its own cleanup, not this one's.
+    "test/calculateProteinSequence.test.ts",
+    "test/extractFeatureIdentifiers.test.ts"
+  ]
+}

@@ -1,4 +1,5 @@
 import path from 'node:path'
+
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import {
@@ -247,7 +248,7 @@ describe('Protein3d Plugin E2E', () => {
         residueNumber: s.residueNumber?.(154),
         rulerLabels: [...panel.querySelectorAll('span')]
           .map(el => el.textContent)
-          .filter(t => /^\d+$/.test(t ?? '')),
+          .filter(t => /^\d+$/.test(t)),
       }
     })
     expect(hotspot.clickedStructureRange).toEqual({ start: 154, end: 155 })

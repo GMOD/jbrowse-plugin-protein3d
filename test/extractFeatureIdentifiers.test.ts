@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { SimpleFeature } from '@jbrowse/core/util'
 import { renderHook } from '@testing-library/react'
+
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
 // Import other necessary hooks and utilities from their respective paths
 import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
@@ -76,7 +77,7 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Mock feature data that extractFeatureIdentifiers will process
     // This mock will be overridden in specific tests
-    ;(mockExtractFeatureIdentifiers as vi.Mock).mockImplementation(f => ({
+    mockExtractFeatureIdentifiers.mockImplementation(() => ({
       recognizedIds: [],
       geneName: null,
       geneId: null,
@@ -84,8 +85,8 @@ describe('useAlphaFoldDBSearch', () => {
     }))
 
     // Mocking getTranscriptFeatures to return an empty array by default
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue([])
-    ;(mockGetId as vi.Mock).mockImplementation(f => f?.id() || '')
+    mockGetTranscriptFeatures.mockReturnValue([])
+    mockGetId.mockImplementation(f => f?.id() || '')
 
     // Create a mock feature and view
     mockFeature = new SimpleFeature({
@@ -100,7 +101,7 @@ describe('useAlphaFoldDBSearch', () => {
 
   it('should initialize selectedQueryId to "auto" even when recognized IDs are available', () => {
     // Mock extractFeatureIdentifiers to return recognized IDs
-    ;(mockExtractFeatureIdentifiers as vi.Mock).mockReturnValue({
+    mockExtractFeatureIdentifiers.mockReturnValue({
       recognizedIds: ['ENSG1', 'HGNC:12345'],
       geneName: 'SHH',
       geneId: 'SHH',
@@ -118,7 +119,7 @@ describe('useAlphaFoldDBSearch', () => {
 
   it('should initialize selectedQueryId to "auto" if no recognized IDs are available but geneName is present', () => {
     // Mock extractFeatureIdentifiers to return only geneName
-    ;(mockExtractFeatureIdentifiers as vi.Mock).mockReturnValue({
+    mockExtractFeatureIdentifiers.mockReturnValue({
       recognizedIds: [],
       geneName: 'SHH',
       geneId: 'SHH',
@@ -135,7 +136,7 @@ describe('useAlphaFoldDBSearch', () => {
 
   it('should initialize selectedQueryId to "auto" if no recognized IDs or geneName are available', () => {
     // Mock extractFeatureIdentifiers to return empty
-    ;(mockExtractFeatureIdentifiers as vi.Mock).mockReturnValue({
+    mockExtractFeatureIdentifiers.mockReturnValue({
       recognizedIds: [],
       geneName: null,
       geneId: null,
@@ -174,9 +175,7 @@ describe('useAlphaFoldDBSearch', () => {
     const mockStructureSequence = 'MALS....' // Matches transcript2 after stripping stop codon
 
     // Mock dependencies needed for autoTranscriptId computation
-    ;(mockGetTranscriptFeatures as vi.Mock).mockReturnValue(
-      mockTranscriptOptions,
-    )
+    mockGetTranscriptFeatures.mockReturnValue(mockTranscriptOptions)
     mockUseIsoformProteinSequences.mockReturnValue({
       isoformSequences: mockIsoformSequences,
       isLoading: false,
@@ -192,7 +191,7 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Mock selectBestTranscript to return a predictable value
     const mockSelectedTranscriptId = 'transcript2'
-    ;(mockSelectBestTranscript as vi.Mock).mockReturnValue({
+    mockSelectBestTranscript.mockReturnValue({
       id: () => mockSelectedTranscriptId,
     })
 
