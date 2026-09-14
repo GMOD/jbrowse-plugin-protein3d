@@ -303,6 +303,22 @@ the same); AlphaFold's `/api/sequence/summary` nests hits under
 the sequence-search mode was deleted in favour of Foldseek. For what a session
 does on a hosted release, see `docs/live-checks.md`.
 
+## The tests print nothing unless they fail
+
+`vitest.config.mts` sets `silent: 'passed-only'`, so a green `pnpm test` is the
+summary and nothing else, and a red one replays every log the failing file
+produced, the browser console among them. Much of that output is not ours to
+delete: molstar logs a token before throwing on a bad parse, mobx prints
+whatever a reaction raises, and the error-path tests exercise handlers whose job
+is to `console.error`. When you add a `console.log` to debug a test that passes,
+`pnpm vitest run --silent=false` brings it back.
+
+A child process writing to an inherited fd is the one thing that knob cannot
+hold — it reaches the terminal without passing through vitest at all.
+`setupJBrowse` pipes esbuild's output for that reason and replays it only when
+the build fails; anything else that spawns a process during a test needs the
+same treatment.
+
 ## `pnpm build` fails locally for a day after each `@jbrowse` release
 
 pnpm's **minimumReleaseAge** is 1440 minutes globally (see
