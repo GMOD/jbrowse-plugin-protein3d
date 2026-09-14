@@ -20,6 +20,21 @@ test('genomeHoverToTranscriptPos ignores a hover on another refName', () => {
   ).toBeUndefined()
 })
 
+// The two sides name the chromosome independently: the view reports the
+// assembly's canonical name, the mapping the feature's, out of the file. Every
+// fixture above spells them the same, which is why nothing caught this until an
+// e2e hovered a real jbrowse.org hg38 session and saw `1` meet `chr17`'s twin.
+test('genomeHoverToTranscriptPos resolves aliases before comparing refNames', () => {
+  const canonical = (r: string) => r.replace(/^chr/, '')
+  expect(
+    genomeHoverToTranscriptPos(hoveredAt('17', 1000), mapping, canonical),
+  ).toBe(4)
+  // and still refuses a genuinely different chromosome
+  expect(
+    genomeHoverToTranscriptPos(hoveredAt('1', 1000), mapping, canonical),
+  ).toBeUndefined()
+})
+
 test('genomeHoverToTranscriptPos returns undefined off the CDS', () => {
   expect(
     genomeHoverToTranscriptPos(hoveredAt('chr17', 1001), mapping),

@@ -14,6 +14,7 @@ import {
   createJBrowsePage,
   flushScreenshots,
   getProteinViewState,
+  hoverGenomeUntilStructureResponds,
   launchBrowser,
   openFeatureContextMenu,
   openSessionSpec,
@@ -143,6 +144,37 @@ describe('Protein3d Plugin E2E', () => {
     expect(state.transcriptLength).toBeGreaterThan(0)
     expect(pageComplaintsSince()).toEqual([])
   }, 240_000)
+
+  // The plugin's reason to exist, and until now tested on no host at all: a
+  // pointer on the genome lighting the residue it codes for. Both halves run
+  // over host API that fails silently — `session.hovered.hoverPosition` going
+  // in, the codon span coming back out — so a rename or a change of coordinate
+  // base stops the feature working without throwing anything.
+  //
+  // Asserted as a round trip rather than against a fixed coordinate: the codon
+  // the structure maps back to has to contain the base the pointer is on. In
+  // goes g2p, out comes p2gCodon, so agreeing means the two are inverses on
+  // real data rather than in a stub.
+  it('maps a genome hover onto the residue, and that residue back onto the codon', async () => {
+    const hover = await hoverGenomeUntilStructureResponds(page)
+    expect(hover.structureSeqPos).toBeGreaterThanOrEqual(0)
+
+    const locus = /^(.+):(\d+)-(\d+)$/.exec(hover.hoverGenomeLocus)
+    expect(locus).not.toBeNull()
+    const [, refName, start, end] = locus!
+    // Deliberately not compared to hover.refName. The two name the chromosome
+    // differently on purpose — the view reports the assembly's canonical `1`,
+    // the locus the feature's `chr1` out of the GFF — and both consumers of
+    // this string resolve aliases. That mismatch is exactly what the hover
+    // bridge itself got wrong, so the coordinates are what is asserted.
+    expect(refName).toBeTruthy()
+    // a locString is inclusive 1-based at both ends, and the hovered base is
+    // pxToBp's 1-based `coord`, so a codon spans exactly three
+    expect(Number(end) - Number(start)).toBe(2)
+    expect(hover.genomeCoord).toBeGreaterThanOrEqual(Number(start))
+    expect(hover.genomeCoord).toBeLessThanOrEqual(Number(end))
+    expect(pageComplaintsSince()).toEqual([])
+  }, 120_000)
 
   // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
   // the first row preselected, launched against the RCSB file. NRAS has

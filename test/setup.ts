@@ -27,11 +27,16 @@ const TEST_JBROWSE_DIR = path.join(
 // The structure and its genome<->protein mapping live on the session, so the
 // tests can assert on what was actually loaded rather than on DOM shape.
 interface ProteinViewStructure {
+  hoverPosition?: { structureSeqPos: number; source: string }
+  hoverGenomeLocus?: string
   structureSequences?: string[]
   pairwiseAlignment?: unknown
   userProvidedTranscriptSequence?: string
   feature?: { name?: string; id?: string }
-  genomeToTranscriptSeqMapping?: { g2p: Record<string, number> }
+  genomeToTranscriptSeqMapping?: {
+    g2p: Record<string, number>
+    refName: string
+  }
   mappedEntityId?: string
   url?: string
   clickedStructureRange?: { start: number; end: number }
@@ -47,6 +52,7 @@ declare global {
     JBrowseSession?: {
       views?: SessionView[]
       removeView?: (view: SessionView) => void
+      hovered?: { hoverPosition?: { coord: number; refName: string } }
     }
     JBrowsePluginProtein3d?: unknown
   }
@@ -407,8 +413,14 @@ async function readMenuItems(page: Page, timeout = 2000): Promise<string[]> {
 // which stopped landing on a 10px-tall glyph the moment the row moved by two
 // pixels, and reported it as "no context menu" -- a layout change wearing the
 // costume of a broken menu.
+// Scrolled into view first, and measured after. Once a protein view is open on
+// a host without side-by-side the two views stack, which puts the genome view
+// above the fold: the track reported `top:-113` on v4.3.0 and every mouse move
+// landed outside the window, reading as "the host has no features" rather than
+// "you are pointing off the screen".
 async function findFeature(page: Page) {
   const box = await page.$eval(TRACK_CONTAINER, el => {
+    el.scrollIntoView({ block: 'center' })
     const { left, right, top, bottom } = el.getBoundingClientRect()
     return { left, right, top, bottom }
   })
@@ -448,6 +460,80 @@ export async function openFeatureContextMenu(page: Page): Promise<string[]> {
     )
   }
   return items
+}
+
+// Hover the genome track until the structure answers, and report both ends of
+// the round trip.
+//
+// The bridge this drives is pure host API and fails silently when it moves:
+// `connectedHover` reads `session.hovered.hoverPosition.{coord, refName}`,
+// where `coord` is pxToBp's 1-based display number, and looks the base up in
+// the transcript's g2p map. A host that renames the field, or switches to the
+// 0-based `coord0` sibling, returns undefined here — no throw, no console line,
+// the residue simply stops lighting up. Nothing else in the suite touches it.
+//
+// Scanned rather than computed, because only coding bases are in g2p and the
+// point is not to rediscover where the CDS is on screen. One pixel at a time,
+// along a y the host itself reports a feature at: 570 coding bases in a 12 kb
+// window is under 5% of the width, so the earlier coarse sweep missed the CDS
+// entirely about one run in seven — a flaky test wearing the costume of a
+// broken bridge.
+export async function hoverGenomeUntilStructureResponds(page: Page): Promise<{
+  genomeCoord: number
+  refName: string
+  structureSeqPos: number
+  hoverGenomeLocus: string
+}> {
+  const { y } = await findFeature(page)
+  const box = await page.$eval(TRACK_CONTAINER, el => {
+    const { left, right } = el.getBoundingClientRect()
+    return { left, right }
+  })
+  // Read both ends every time, so a miss can say which half was silent rather
+  // than only that the pair never met.
+  const read = () =>
+    page.evaluate(() => {
+      const session = window.JBrowseSession
+      const structure = session?.views?.find(v => v.type === 'ProteinView')
+        ?.structures?.[0]
+      const mapping = structure?.genomeToTranscriptSeqMapping
+      const pos = session?.hovered?.hoverPosition
+      return {
+        hovered: pos,
+        structureHover: structure?.hoverPosition,
+        locus: structure?.hoverGenomeLocus,
+        mappingRefName: mapping?.refName,
+        // whether the base under the pointer is coding at all, refName aside:
+        // separates "never found the CDS" from "found it and nothing happened"
+        coding:
+          mapping && pos ? mapping.g2p[pos.coord - 1] !== undefined : false,
+      }
+    })
+
+  let last
+  let codingSeen = 0
+  for (let x = Math.ceil(box.left); x < box.right; x++) {
+    await page.mouse.move(x, y)
+    last = await read()
+    if (last.coding) {
+      codingSeen++
+    }
+    if (
+      last.structureHover?.source === 'genome' &&
+      last.hovered &&
+      last.locus
+    ) {
+      return {
+        genomeCoord: last.hovered.coord,
+        refName: last.hovered.refName,
+        structureSeqPos: last.structureHover.structureSeqPos,
+        hoverGenomeLocus: last.locus,
+      }
+    }
+  }
+  throw new Error(
+    `hovering the track never reached the structure. codingBasesHovered=${codingSeen} y=${y} last=${JSON.stringify(last)}`,
+  )
 }
 
 export async function clickTab(page: Page, label: string): Promise<void> {

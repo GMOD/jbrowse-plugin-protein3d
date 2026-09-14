@@ -31,15 +31,19 @@ export function connectedHoverTranscriptPos({
   mapping,
   connectedViewId,
   genomeViewReady,
+  canonical = r => r,
 }: {
   hovered: unknown
   views: MsaViewLike[]
   mapping: { g2p: Record<number, number>; refName: string } | undefined
   connectedViewId: string | undefined
   genomeViewReady: boolean
+  /** the assembly's refName resolver; both sources name the chromosome their
+   * own way, so every comparison here goes through it */
+  canonical?: (refName: string) => string
 }): { transcriptPos: number; source: 'genome' | 'msa' } | undefined {
   const fromGenome = genomeViewReady
-    ? genomeHoverToTranscriptPos(hovered, mapping)
+    ? genomeHoverToTranscriptPos(hovered, mapping, canonical)
     : undefined
   if (fromGenome !== undefined) {
     return { transcriptPos: fromGenome, source: 'genome' }
@@ -50,7 +54,7 @@ export function connectedHoverTranscriptPos({
       )?.connectedHoverHighlights?.[0]
     : undefined
   const fromMsa =
-    mapping && codon?.refName === mapping.refName
+    mapping && codon && canonical(codon.refName) === canonical(mapping.refName)
       ? mapping.g2p[codon.start]
       : undefined
   return fromMsa === undefined

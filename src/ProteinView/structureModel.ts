@@ -1210,13 +1210,17 @@ const Structure = types
       addDisposer(
         self,
         autorun(() => {
-          const { hovered, views } = getSession(self)
+          const { hovered, views, assemblyManager } = getSession(self)
+          const assembly = assemblyManager.get(
+            self.connectedView?.assemblyNames[0] ?? '',
+          )
           const hover = connectedHoverTranscriptPos({
             hovered,
             views,
             mapping: self.genomeToTranscriptSeqMapping,
             connectedViewId: self.connectedViewId,
             genomeViewReady: !!self.connectedView?.initialized,
+            canonical: r => assembly?.getCanonicalRefName(r) ?? r,
           })
           if (hover) {
             self.setConnectedHoveredPosition(
