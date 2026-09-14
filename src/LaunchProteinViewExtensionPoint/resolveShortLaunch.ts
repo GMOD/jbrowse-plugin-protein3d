@@ -128,11 +128,17 @@ export async function resolveShortLaunch({
     if (!trackConf) {
       continue
     }
-    const feats = (await session.rpcManager.call(sessionId, 'CoreGetFeatures', {
+    // a named object keeps sessionId, which v4 hosts read from the args
+    const args = {
       adapterConfig: readConfObject(trackConf, 'adapter'),
       sessionId,
       regions: [region],
-    })) as Feature[]
+    }
+    const feats = await session.rpcManager.call(
+      sessionId,
+      'CoreGetFeatures',
+      args,
+    )
     for (const feat of feats) {
       transcripts.push(...getTranscriptFeatures(feat))
     }

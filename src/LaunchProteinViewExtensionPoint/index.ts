@@ -15,6 +15,7 @@ import type {
   AbstractSessionModel,
   SimpleFeatureSerialized,
 } from '@jbrowse/core/util'
+import type { InitState } from '@jbrowse/plugin-linear-genome-view'
 
 // One structure of a launch: where it comes from, plus the per-structure
 // settings a spec may carry. The transcript mapping is shared across all of
@@ -46,14 +47,6 @@ export default function LaunchProteinViewExtensionPointF(
     // assumption that the result was ignored; it is not. The handler returns
     // its extendee at each exit now, like jbrowse-components' own
     // LaunchDotplotView does.
-    //
-    // The suppression stays, and is NOT about the return value: this builds
-    // against @jbrowse/core 4.3.0, whose signature is `(extendee: T, props) => T`
-    // with no `| Promise<T>` and no ExtensionPointRegistry, so an async handler
-    // cannot be typed against it at all. jbrowse-components has since widened
-    // that signature; drop the suppression when the core dependency is bumped
-    // past it, not before.
-    // @ts-expect-error
     async (args: {
       session: AbstractSessionModel
       url?: string
@@ -176,7 +169,9 @@ export default function LaunchProteinViewExtensionPointF(
         (connectedView
           ? session.addView('LinearGenomeView', {
               type: 'LinearGenomeView',
-              init: connectedView,
+              // a spec's connectedView is unvalidated json, so a missing
+              // assembly reaches the view and is reported there, as before
+              init: connectedView as InitState,
             }).id
           : undefined)
 

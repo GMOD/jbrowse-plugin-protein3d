@@ -3,7 +3,8 @@ import { addAllProteinTracks } from './proteinTrackSetup'
 import { formatViewName } from '../utils/launchViewUtils'
 
 import type { Protein1DLinkage } from '../../Protein1DLinkage'
-import type { Feature, SessionWithAddTracks } from '@jbrowse/core/util'
+import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
+import type { Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export async function launchProteinAnnotationView({
@@ -36,8 +37,10 @@ export async function launchProteinAnnotationView({
       ? { connectedViewId, feature: selectedTranscript.toJSON(), uniprotId }
       : undefined
 
-  const view = session.addView('LinearGenomeView', {
-    type: 'LinearGenomeView',
+  // a named object, because proteinLinkage comes from this plugin's own
+  // LinearGenomeView extension, which the launch snapshot type cannot see
+  const snapshot = {
+    type: 'LinearGenomeView' as const,
     displayName: formatViewName(
       'Protein annotations',
       feature,
@@ -45,7 +48,11 @@ export async function launchProteinAnnotationView({
       uniprotId,
     ),
     proteinLinkage,
-  }) as LinearGenomeViewModel
+  }
+  const view = session.addView(
+    'LinearGenomeView',
+    snapshot,
+  ) as LinearGenomeViewModel
 
   await view.navToLocString(uniprotId, uniprotId)
 }

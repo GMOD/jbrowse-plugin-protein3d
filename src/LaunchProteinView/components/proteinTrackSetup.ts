@@ -1,7 +1,7 @@
 import { myfetch } from '../../fetchUtils'
 import { uniprotGffUrl } from '../utils/structureUrls'
 
-import type { SessionWithAddTracks } from '@jbrowse/core/util'
+import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
 
 /**
  * Fetches UniProt GFF data and extracts unique feature types

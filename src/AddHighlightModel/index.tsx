@@ -7,8 +7,8 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export default function AddHighlightModelF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
+    // @ts-expect-error v4 hosts have no contributeToExtensionPoint
     'LinearGenomeView-TracksContainerComponent',
-    // @ts-expect-error
     (rest: React.ReactNode[], { model }: { model: LinearGenomeViewModel }) => {
       return [
         ...rest,

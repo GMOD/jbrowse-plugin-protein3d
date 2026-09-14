@@ -1,6 +1,6 @@
 import { uniprotFastaUrl } from '../utils/structureUrls'
 
-import type { SessionWithAddTracks } from '@jbrowse/core/util'
+import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
 
 /**
  * Sets up a temporary assembly for a protein sequence from UniProt

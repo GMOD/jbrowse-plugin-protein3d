@@ -5,6 +5,8 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import JBrowseReExports from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
 
+import floor from './scripts/host-reexports-floor.json' with { type: 'json' }
+
 const isWatch = process.argv.includes('--watch')
 const PORT = process.env.PORT ? +process.env.PORT : 9000
 
@@ -78,7 +80,27 @@ const umdLoadMolstarPlugin = {
   },
 }
 
-const globals = JBrowseReExports
+// A bundle runs on every host a config names, not just the core it builds
+// against, so the externals are only what the oldest supported host re-exports
+// too (host-reexports-floor.json). A path only a newer core lists is bundled,
+// as a deep path absent from ReExports already is.
+//
+// SvgIcon is on every host's list but its SHAPE differs: MUI 7 hosts (v4.0.0
+// through 4.3.0) serve the bare component, while @mui/icons-material 9 calls the
+// createSvgIcon that MUI 9 hangs off it. Externalized, the bundle throws while
+// evaluating and PluginLoader error-pages the whole app. msaview 2.7.0 shipped
+// exactly that; bundling it works on both generations.
+const SHAPE_VARIES_BY_HOST = new Set(['@mui/material/SvgIcon'])
+const hostFloor = new Set(floor.paths)
+const globals = JBrowseReExports.filter(
+  x => hostFloor.has(x) && !SHAPE_VARIES_BY_HOST.has(x),
+)
+const bundledForOldHosts = JBrowseReExports.filter(x => !hostFloor.has(x))
+if (bundledForOldHosts.length > 0) {
+  console.log(
+    `Bundling ${bundledForOldHosts.length} re-export(s) absent from @jbrowse/core@${floor.version}: ${bundledForOldHosts.join(', ')}`,
+  )
+}
 const externalsPlugin = globalExternals(createGlobalMap(globals))
 
 const molstarConfig = {

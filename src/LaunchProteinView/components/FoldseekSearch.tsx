@@ -147,8 +147,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
               }}
               placeholder={`MKTVRQERLKSIVRILERSKEPVSGAQLAEEL...`}
               disabled={isBusy}
-              InputProps={{
-                className: classes.sequenceInput,
+              slotProps={{
+                input: { className: classes.sequenceInput },
               }}
             />
           </>
@@ -163,9 +163,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
               multiline
               rows={4}
               value={di3Sequence}
-              InputProps={{
-                className: classes.sequenceInput,
-                readOnly: true,
+              slotProps={{
+                input: { className: classes.sequenceInput, readOnly: true },
               }}
             />
           </div>

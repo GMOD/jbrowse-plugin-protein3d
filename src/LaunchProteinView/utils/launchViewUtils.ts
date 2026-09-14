@@ -1,16 +1,12 @@
-import { isSessionWithAddTracks } from '@jbrowse/core/util'
-
+import { isSessionWithAddTracks } from './sessionWithAddTracks'
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
+import type { SessionWithAddTracks } from './sessionWithAddTracks'
 import type { AlignmentAlgorithm } from '../../ProteinView/types'
-import type {
-  AbstractSessionModel,
-  Feature,
-  SessionWithAddTracks,
-} from '@jbrowse/core/util'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 interface LaunchViewParams {

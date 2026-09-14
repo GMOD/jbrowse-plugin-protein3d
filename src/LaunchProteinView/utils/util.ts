@@ -67,6 +67,10 @@ export function getId(val?: Feature): string {
   return val === undefined ? '' : val.id()
 }
 
+function firstString(...vals: unknown[]) {
+  return vals.find((v): v is string => typeof v === 'string') ?? ''
+}
+
 export function getTranscriptDisplayName(val?: Feature): string {
   return val === undefined ? '' : (val.get('name') ?? val.get('id') ?? '')
 }
@@ -74,7 +78,7 @@ export function getTranscriptDisplayName(val?: Feature): string {
 export function getGeneDisplayName(val?: Feature): string {
   return val === undefined
     ? ''
-    : (val.get('gene_name') ?? val.get('name') ?? val.get('id') ?? '')
+    : firstString(val.get('gene_name'), val.get('name'), val.get('id'))
 }
 
 // Single source of truth for database IDs that UniProt can cross-reference.

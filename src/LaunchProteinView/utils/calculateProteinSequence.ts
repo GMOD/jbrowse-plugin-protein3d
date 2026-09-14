@@ -80,14 +80,14 @@ export function getProteinSequence({
   const subfeatures = feature.get('subfeatures') ?? []
   const cds = dedupe(
     subfeatures
+      .filter(sub => sub.get('type') === 'CDS')
       .toSorted((a, b) => a.get('start') - b.get('start'))
       .map(sub => ({
         start: sub.get('start') - featureStart,
         end: sub.get('end') - featureStart,
-        type: sub.get('type'),
+        type: 'CDS',
         phase: sub.get('phase'),
-      }))
-      .filter(f => f.type === 'CDS'),
+      })),
   )
 
   // RefSeq declares transl_table=2 on a mitochondrial CDS, usually on the CDS
@@ -129,20 +129,20 @@ export async function fetchProteinSeq({
     throw new Error('assembly not found')
   }
   const sessionId = 'getSequence'
-  const feats = await rpcManager.call(sessionId, 'CoreGetFeatures', {
+  // a named object keeps sessionId, which v4 hosts read from the args
+  const args = {
     adapterConfig: getConf(assembly, ['sequence', 'adapter']),
     sessionId,
     regions: [
       {
         start,
         end,
-        refName: assembly.getCanonicalRefName(refName),
-        assemblyName,
+        refName: assembly.getCanonicalRefName(refName) ?? refName,
+        assemblyName: assembly.name,
       },
     ],
-  })
-
-  const [feat] = feats as Feature[]
+  }
+  const [feat] = await rpcManager.call(sessionId, 'CoreGetFeatures', args)
   const seq = feat?.get('seq') as string | undefined
   return seq
     ? getProteinSequence({

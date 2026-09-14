@@ -1,6 +1,7 @@
 import { genomeToTranscriptSeqMapping as g2p, getCodonRanges } from 'g2p_mapper'
 
 import type { Feature } from '@jbrowse/core/util'
+import type { Feat } from 'g2p_mapper'
 export interface AlignmentRow {
   id: string
   seq: string
@@ -218,7 +219,7 @@ export function transcriptPositionToAlignmentMap(
 
 // see similar function in msaview plugin
 export function genomeToTranscriptSeqMapping(feature: Feature) {
-  return g2p(feature.toJSON())
+  return g2p(feature.toJSON() as Feat)
 }
 
 // Enclosing 0-based half-open [start, end) genome span for a codon. getCodonRanges
