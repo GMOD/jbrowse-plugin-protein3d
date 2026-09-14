@@ -115,7 +115,7 @@ jobs:
         run: npx puppeteer browsers install chrome
       - name: Build
         run: pnpm build
-      - name: Check host-bound imports against the oldest host
+      - name: Check host-bound imports against every supported host
         run: pnpm check-host-externals
       - name: Boot the built bundle on released hosts
         run: pnpm host-compat:candidate
