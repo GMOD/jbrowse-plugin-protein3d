@@ -95,6 +95,30 @@ unmapped an 11-residue p53 peptide fused to CDK2 and kept 224 chance pairs. Read
 `alignment`, not the stored `pairwiseAlignment`, anywhere a column or a
 coordinate is computed: the two differ in length for a fusion.
 
+## The two sides of a hover name the chromosome differently
+
+A genome hover arrives as `session.hovered.hoverPosition.refName`, which is the
+**assembly's canonical name** — `1` on jbrowse.org's hg38. The transcript's
+`g2p` map is keyed on the **feature's**, straight out of the annotation file —
+`chr1` in GENCODE. They match only when a config happens to pair files that
+agree, so any comparison between them goes through the assembly's
+`getCanonicalRefName`, as `proteinToGenomeMapping`, `AddHighlightModel`,
+`calculateProteinSequence` and `resolveShortLaunch` already did.
+
+`connectedHover` was the one path that compared them raw, and the gate it feeds
+is load-bearing (without it the same number on another chromosome matches a key
+and lights a residue for a different locus). So on every mismatched config —
+including the e2e's own — pointing at a codon lit nothing at all, with no throw
+and no console line. Measured 2026-09-14 by reverting the fix: 30 coding bases
+hovered, zero responses. No unit fixture could see it; every one of them spells
+both refNames the same way. The e2e leg that found it hovers a real session a
+pixel at a time and asserts the round trip, `g2p` in and `p2gCodon` out.
+
+Note this does **not** mean the two names should be made equal.
+`hoverGenomeLocus` and `hoverGenomeHighlights` still emit the feature's `chr1`,
+and both of their consumers resolve aliases; the e2e asserts coordinates rather
+than refName equality for that reason.
+
 ## An MSA reaches a structure through the genome, never by column
 
 msaview and this plugin share one coordinate: the genome. A structure hover
