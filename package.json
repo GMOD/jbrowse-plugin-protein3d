@@ -26,7 +26,7 @@
     "host-compat": "node scripts/host-compat-probe.mjs",
     "host-compat:candidate": "node scripts/host-compat-probe.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js --versions v4.0.0,v4.3.0,latest,main --floor v4.0.0 --json host-compat.json",
     "check-host-externals": "node scripts/check-host-externals.mjs",
-    "update-host-reexports-floor": "node scripts/update-host-reexports-floor.mjs",
+    "update-host-reexports": "node scripts/update-host-reexports.mjs",
     "check-demos": "node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js",
     "clean": "rimraf dist",
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",

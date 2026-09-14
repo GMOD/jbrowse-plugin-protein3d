@@ -6,15 +6,19 @@
 // `undefined` -- which throws while the bundle evaluates, or, for a component,
 // React error #130 the first time that code path renders.
 //
-// esbuild.mjs externalizes only the intersection of this build's @jbrowse/core
-// ReExports list with the oldest supported host's
-// (scripts/host-reexports-floor.json). This checks the built artifacts rather
-// than the intent: what actually binds to the host is what the output says. The
+// esbuild.mjs externalizes only paths EVERY supported host re-exports
+// (scripts/host-reexports.json). This checks the built artifacts rather than
+// the intent: what actually binds to the host is what the output says. The
 // molstar chunk goes through the same externals, so it is scanned too.
+//
+// Every host, not just the oldest, because the list moves both ways. A path
+// 4.0.0 re-exports and 5.0.0-beta.8 dropped is undefined on main just as surely
+// as a new path is undefined on 4.0.0, and only the boot on main would have
+// caught it -- and only if that module evaluates eagerly.
 import fs from 'node:fs'
 import path from 'node:path'
 
-import floor from './host-reexports-floor.json' with { type: 'json' }
+import hostReExports from './host-reexports.json' with { type: 'json' }
 
 const files = fs
   .readdirSync('dist')
@@ -40,18 +44,22 @@ for (const file of files) {
 // esbuild.mjs maps this one onto the host's older key on purpose
 bound.delete('mobx-state-tree')
 
-const floorPaths = new Set(floor.paths)
-const newer = [...bound].filter(x => !floorPaths.has(x))
-if (newer.length > 0) {
-  console.error(
-    `dist/ binds ${newer.length} path(s) that @jbrowse/core@${floor.version} does not re-export:`,
+const hostVersions = Object.keys(hostReExports.hosts)
+const missing = []
+for (const name of bound) {
+  const absentFrom = hostVersions.filter(
+    v => !hostReExports.hosts[v].includes(name),
   )
-  for (const name of newer) {
-    console.error(`  ${name}`)
+  if (absentFrom.length > 0) {
+    missing.push(`  ${name} -- not re-exported by ${absentFrom.join(', ')}`)
   }
-  console.error(
-    'Those are undefined on the oldest supported host. Bundle them instead.',
-  )
+}
+if (missing.length > 0) {
+  console.error(`dist/ binds ${missing.length} path(s) a supported host lacks:`)
+  for (const line of missing) {
+    console.error(line)
+  }
+  console.error('Those are undefined on that host. Bundle them instead.')
   process.exit(1)
 }
 if (bound.has('@mui/material/SvgIcon')) {
@@ -62,5 +70,5 @@ if (bound.has('@mui/material/SvgIcon')) {
 }
 
 console.log(
-  `${bound.size} host-bound import(s) across ${files.length} file(s), all re-exported by @jbrowse/core@${floor.version}`,
+  `${bound.size} host-bound import(s) across ${files.length} file(s), all re-exported by @jbrowse/core@${hostVersions.join(', ')}`,
 )

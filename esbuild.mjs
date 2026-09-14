@@ -5,7 +5,7 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import JBrowseReExports from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
 
-import floor from './scripts/host-reexports-floor.json' with { type: 'json' }
+import hostReExports from './scripts/host-reexports.json' with { type: 'json' }
 
 const isWatch = process.argv.includes('--watch')
 const PORT = process.env.PORT ? +process.env.PORT : 9000
@@ -81,9 +81,11 @@ const umdLoadMolstarPlugin = {
 }
 
 // A bundle runs on every host a config names, not just the core it builds
-// against, so the externals are only what the oldest supported host re-exports
-// too (host-reexports-floor.json). A path only a newer core lists is bundled,
-// as a deep path absent from ReExports already is.
+// against, so the externals are only what EVERY supported host re-exports
+// (host-reexports.json). The list moves both ways: a path only a newer core
+// lists is undefined on an old host, and a path an old core had and a new one
+// dropped is undefined on the new one. Either way it is bundled instead, as a
+// deep path absent from ReExports already is.
 //
 // SvgIcon is on every host's list but its SHAPE differs: MUI 7 hosts (v4.0.0
 // through 4.3.0) serve the bare component, while @mui/icons-material 9 calls the
@@ -91,14 +93,16 @@ const umdLoadMolstarPlugin = {
 // evaluating and PluginLoader error-pages the whole app. msaview 2.7.0 shipped
 // exactly that; bundling it works on both generations.
 const SHAPE_VARIES_BY_HOST = new Set(['@mui/material/SvgIcon'])
-const hostFloor = new Set(floor.paths)
+const hostVersions = Object.keys(hostReExports.hosts)
+const everyHost = hostVersions.map(v => new Set(hostReExports.hosts[v]))
+const onEveryHost = x => everyHost.every(s => s.has(x))
 const globals = JBrowseReExports.filter(
-  x => hostFloor.has(x) && !SHAPE_VARIES_BY_HOST.has(x),
+  x => onEveryHost(x) && !SHAPE_VARIES_BY_HOST.has(x),
 )
-const bundledForOldHosts = JBrowseReExports.filter(x => !hostFloor.has(x))
-if (bundledForOldHosts.length > 0) {
+const bundledForSomeHost = JBrowseReExports.filter(x => !onEveryHost(x))
+if (bundledForSomeHost.length > 0) {
   console.log(
-    `Bundling ${bundledForOldHosts.length} re-export(s) absent from @jbrowse/core@${floor.version}: ${bundledForOldHosts.join(', ')}`,
+    `Bundling ${bundledForSomeHost.length} re-export(s) missing from at least one of @jbrowse/core@${hostVersions.join(', ')}: ${bundledForSomeHost.join(', ')}`,
   )
 }
 const externalsPlugin = globalExternals(createGlobalMap(globals))
