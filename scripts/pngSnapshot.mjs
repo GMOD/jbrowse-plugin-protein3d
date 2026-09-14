@@ -68,12 +68,11 @@ export function saveStableScreenshot(
   const ratio = prev ? diffRatio(prev, next) : undefined
   const name = path.basename(filePath)
 
+  // A reference that held is the expected outcome and says nothing; one that
+  // moved is a change somebody has to look at, so only that gets a line.
   let written = true
   if (ratio !== undefined && ratio <= diffLimit) {
     written = false
-    console.log(
-      `screenshot ${name}: unchanged (${(ratio * 100).toFixed(2)}% diff), kept committed reference`,
-    )
   } else if (ratio === undefined) {
     fs.writeFileSync(filePath, next)
     console.log(`screenshot ${name}: written (new or resized)`)

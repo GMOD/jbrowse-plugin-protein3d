@@ -3,7 +3,7 @@ import { parsePDB } from 'molstar/lib/mol-io/reader/pdb/parser'
 import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif'
 import { trajectoryFromPDB } from 'molstar/lib/mol-model-formats/structure/pdb'
 import { Task } from 'molstar/lib/mol-task'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import {
   extractEntities,
@@ -148,7 +148,11 @@ test('mmCIF parsed as PDB yields no entities, and does not throw', async () => {
 })
 
 test('PDB parsed as mmCIF throws outright', async () => {
+  // molstar's CIF tokenizer logs the offending token before it throws
+  // (mol-io/reader/cif/text/parser.js), and the throw is what this asserts
+  const logged = vi.spyOn(console, 'log').mockImplementation(() => {})
   await expect(parseAsMmcif(caOnlyPdb(94))).rejects.toThrow()
+  logged.mockRestore()
 })
 
 test('each format parsed with its detected parser yields its entity', async () => {

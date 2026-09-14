@@ -323,19 +323,44 @@ the same); AlphaFold's `/api/sequence/summary` nests hits under
 the sequence-search mode was deleted in favour of Foldseek. For what a session
 does on a hosted release, see `docs/live-checks.md`.
 
-## The tests print nothing unless they fail
+## A quiet test run, because the console is asserted rather than ignored
 
-`vitest.config.mts` sets `silent: 'passed-only'`, so a green `pnpm test` is the
-summary and nothing else, and a red one replays every log the failing file
-produced, the browser console among them. Much of that output is not ours to
-delete: molstar logs a token before throwing on a bad parse, mobx prints
-whatever a reaction raises, and the error-path tests exercise handlers whose job
-is to `console.error`. When you add a `console.log` to debug a test that passes,
-`pnpm vitest run --silent=false` brings it back.
+`pnpm test` prints its summary and nothing else. Not because anything silences
+it — there is no `silent` setting and adding one would be a mistake — but
+because every line the suite used to emit is now either gone or expected by
+name. A stray `console.log` still shows up, which is the point.
 
-A child process writing to an inherited fd is the one thing that knob cannot
-hold — it reaches the terminal without passing through vitest at all.
-`setupJBrowse` pipes esbuild's output for that reason and replays it only when
+**The e2e fails on anything the page says at warn or error.**
+`pageComplaintsSince()` drains what the browser logged, and every leg asserts it
+empty. A console line is the only place several host incompatibilities have ever
+appeared: a bundle resolving a re-export the host dropped, a menu contribution
+throwing inside an ErrorBoundary, MUI 9's `createSvgIcon` missing from a v4
+host's `SvgIcon`. None of those reach tsc, eslint or a url check, and a suite
+that merely _prints_ them is betting that somebody reads the scrollback. Nobody
+does — a `silent: 'passed-only'` here hid the `init` deprecation below for
+exactly one afternoon before it was caught.
+
+Two lists in `test/setup.ts` say what the page is allowed to say:
+
+- `GPU_NOISE` tracks `products/jbrowse-capture/src/browser.ts` in
+  jbrowse-components, and keeps upstream's rule that a real GPU failure
+  (`context LOST`, `GL error`) is **not** noise. CI has no GPU, so swiftshader
+  narrates.
+- `KNOWN_DEBT` is one entry long and every entry needs an exit condition. Today
+  it holds v5's warning that `LinearGenomeView` "nests its settings under
+  `init`". v4.3.0's LGV has no other door — `init: types.frozen<InitState>()`
+  plus the autorun in its `afterAttach.ts` — so `addView` in
+  `LaunchProteinViewExtensionPoint` has to keep writing it. **The nesting and
+  the entry come out together with v4 support**, and until then every
+  declarative launch warns on a v5 host.
+
+Verify the gate still bites before trusting it: delete the `KNOWN_DEBT` entry
+and two legs fail, naming the message. One is the test config's own session, the
+other the view the plugin itself adds — which is how you can tell the
+deprecation reaches shipped code and not just the fixture.
+
+**A child process writing to an inherited fd bypasses all of it.**
+`setupJBrowse` pipes esbuild's output for that reason and prints it only when
 the build fails; anything else that spawns a process during a test needs the
 same treatment.
 

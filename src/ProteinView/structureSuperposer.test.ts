@@ -106,9 +106,12 @@ test('re-superposes after the plugin is swapped', async () => {
 
 test('reports superposition errors', async () => {
   const err = new Error('boom')
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   mockSuperpose.mockRejectedValue(err)
   const { host, run } = setup({}, 2)
   run()
   await tick()
   expect(host.errors).toContain(err)
+  expect(logged).toHaveBeenCalledWith(err)
+  logged.mockRestore()
 })

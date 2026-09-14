@@ -56,8 +56,6 @@ declare global {
  * Assumes `jbrowse create .test-jbrowse` was already run by the pretest script.
  */
 export function setupJBrowse() {
-  console.log('Setting up JBrowse test instance...')
-
   if (!fs.existsSync(TEST_JBROWSE_DIR)) {
     throw new Error(
       `JBrowse directory not found at ${TEST_JBROWSE_DIR}. ` +
@@ -65,22 +63,16 @@ export function setupJBrowse() {
     )
   }
 
-  console.log(`Testing against JBrowse version: ${TEST_JBROWSE_VERSION}`)
-
   // Build the plugin bundle (uses build:bundle to skip type checking for faster iteration)
   // Set SKIP_BUILD=1 to skip if dist already exists
   const distDir = path.join(process.cwd(), 'dist')
   const skipBuild =
     process.env.SKIP_BUILD === '1' || process.env.SKIP_BUILD === 'true'
 
-  if (skipBuild && fs.existsSync(distDir)) {
-    console.log('Skipping build (SKIP_BUILD is set and dist exists)')
-  } else {
-    console.log('Building plugin bundle...')
+  if (!skipBuild || !fs.existsSync(distDir)) {
     fs.rmSync(distDir, { recursive: true, force: true })
-    // Piped, not inherited: inherited output goes straight to the terminal,
-    // which is the one thing vitest cannot hold back for a passing run. What
-    // esbuild has to say only matters when it fails, so replay it then.
+    // Piped rather than inherited: a build that works has nothing to say, and
+    // its banner would be the loudest thing in a green run.
     try {
       execSync('npm run build:bundle', {
         cwd: process.cwd(),
@@ -95,7 +87,6 @@ export function setupJBrowse() {
   }
 
   // Copy the distconfig.json to JBrowse directory as config.json
-  console.log('Setting up config...')
   const testConfig = createTestConfig()
   fs.writeFileSync(
     path.join(TEST_JBROWSE_DIR, 'config.json'),
@@ -103,13 +94,10 @@ export function setupJBrowse() {
   )
 
   // Copy the plugin dist to JBrowse directory
-  console.log('Copying plugin...')
   const pluginDir = path.join(TEST_JBROWSE_DIR, 'plugin')
   fs.rmSync(pluginDir, { recursive: true, force: true })
   fs.mkdirSync(pluginDir, { recursive: true })
   fs.cpSync(distDir, pluginDir, { recursive: true })
-
-  console.log('JBrowse test instance ready!')
 }
 
 function createTestConfig() {
@@ -178,15 +166,12 @@ function killProcessOnPort(port: number): void {
     execSync(`lsof -ti:${port} | xargs -r kill -9 2>/dev/null || true`, {
       stdio: 'ignore',
     })
-    console.log(`Killed any existing process on port ${port}`)
   } catch {
     // Ignore errors - port might not be in use
   }
 }
 
 export async function startJBrowseServer(): Promise<ChildProcess> {
-  console.log(`Starting JBrowse server on port ${JBROWSE_PORT}...`)
-
   // Kill any existing process on the port
   killProcessOnPort(JBROWSE_PORT)
 
@@ -213,10 +198,6 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
       )
       if (match) {
         const actualPort = Number.parseInt(match[1], 10)
-        console.log(
-          `Server reported port: ${actualPort}, expected: ${JBROWSE_PORT}`,
-        )
-
         if (actualPort !== JBROWSE_PORT) {
           clearTimeout(timeout)
           proc.kill()
@@ -233,7 +214,6 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
 
         // Give server a moment to be fully ready, then resolve
         setTimeout(() => {
-          console.log('JBrowse server started!')
           resolve(proc)
         }, 500)
       }
@@ -288,33 +268,96 @@ export async function launchBrowser(headless = true): Promise<Browser> {
   })
 }
 
-// Uncaught exceptions seen in the page, so a test can assert the app never
-// error-paged. Reset per page.
-export const pageErrors: string[] = []
+// What the host is allowed to say. Everything else the page logs at warn or
+// error fails the test that was running, because a console line is the only
+// place several host incompatibilities have ever shown themselves: the bundle
+// that resolved a missing re-export, the menu contribution that threw inside an
+// ErrorBoundary, the MUI major whose SvgIcon had a different shape. None of
+// those reach tsc, eslint or a url check, and a run that merely prints them
+// relies on somebody reading the scrollback.
+//
+// The first group is upstream's own list, kept in step with
+// `products/jbrowse-capture/src/browser.ts` in jbrowse-components, and it
+// carries upstream's rule: a real GPU failure (`context LOST`, `GL error`) is
+// NOT noise. CI has no GPU, so swiftshader narrates.
+const GPU_NOISE = [
+  'favicon',
+  'GPU stall',
+  '[GPU] WebGPU not supported',
+  '[GPU] No compatible GPU adapter',
+  '[GPU] WebGPU initialization failed',
+  '[GPU] WebGL2 unavailable',
+  '[GPU] WebGPU device creation failed',
+  '[GPU] WebGL2 here is software-rendered',
+  'GroupMarkerNotSet',
+  'Automatic fallback to software WebGL',
+  'No available adapters',
+  'Failed to create WebGPU Context Provider',
+]
+
+// Warnings this plugin has read and owes a fix for. Each one is a debt with an
+// exit condition, not a decision to stop looking — delete the entry and the
+// gate starts failing on it again.
+const KNOWN_DEBT = [
+  // v5 unwraps v4's nested `init` and warns; v4.3.0's LinearGenomeView has no
+  // other way in (`init: types.frozen<InitState>()` plus the autorun in
+  // `afterAttach.ts` that reads it), so `addView` in
+  // LaunchProteinViewExtensionPoint has to keep writing it while a v4 host is
+  // supported. Drop the nesting there, and this entry, together with v4.
+  'nests its settings under "init"',
+]
+
+export function isBrowserConsoleNoise(text: string): boolean {
+  if (text.includes('[WebGL2Hal #')) {
+    return !text.includes('context LOST') && !text.includes('GL error')
+  }
+  return [...GPU_NOISE, ...KNOWN_DEBT].some(n => text.includes(n))
+}
+
+// Everything the page said that the list above does not excuse: uncaught
+// exceptions, console errors, console warnings.
+const pageComplaints: string[] = []
+
+function complain(text: string) {
+  if (!isBrowserConsoleNoise(text)) {
+    pageComplaints.push(text)
+  }
+}
+
+// Drains, so each test reports what it provoked rather than inheriting an
+// earlier test's complaint and failing six times over one cause.
+export function pageComplaintsSince(): string[] {
+  return pageComplaints.splice(0)
+}
 
 export async function createJBrowsePage(browser: Browser): Promise<Page> {
   const page = await browser.newPage()
   await page.setViewport({ width: 1280, height: 900 })
-  pageErrors.length = 0
+  pageComplaints.length = 0
 
   page.on('console', msg => {
-    console.log(`[browser ${msg.type()}] ${msg.text()}`)
+    if (msg.type() === 'error' || msg.type() === 'warn') {
+      complain(`[browser ${msg.type()}] ${msg.text()}`)
+    }
   })
 
   page.on('pageerror', err => {
-    console.log(`[browser page error] ${err.message}`)
-    pageErrors.push(err.message)
+    complain(`[browser page error] ${err.message}`)
   })
 
+  // Third-party beacons fail in a sandboxed run and say nothing about the
+  // plugin; a request the app itself made is a different matter.
   page.on('requestfailed', request => {
-    console.log(
-      `[request failed] ${request.url()}: ${request.failure()?.errorText}`,
-    )
+    const url = request.url()
+    if (url.startsWith(`http://localhost:${JBROWSE_PORT}/`)) {
+      complain(`[request failed] ${url}: ${request.failure()?.errorText}`)
+    }
   })
 
-  const jbrowseUrl = `http://localhost:${JBROWSE_PORT}/`
-  console.log(`Navigating to: ${jbrowseUrl}`)
-  await page.goto(jbrowseUrl, { waitUntil: 'networkidle2', timeout: 60_000 })
+  await page.goto(`http://localhost:${JBROWSE_PORT}/`, {
+    waitUntil: 'networkidle2',
+    timeout: 60_000,
+  })
 
   return page
 }
@@ -433,7 +476,6 @@ async function findFeature(page: Page) {
  */
 export async function openFeatureContextMenu(page: Page): Promise<string[]> {
   const { x, y, featureId } = await findFeature(page)
-  console.log(`feature ${featureId} at (${x.toFixed(0)}, ${y.toFixed(0)})`)
   await page.mouse.click(x, y, { button: 'right' })
   const items = await readMenuItems(page)
   if (items.length === 0) {

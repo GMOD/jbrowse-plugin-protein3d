@@ -16,7 +16,7 @@ import {
   launchBrowser,
   openFeatureContextMenu,
   openSessionSpec,
-  pageErrors,
+  pageComplaintsSince,
   setupJBrowse,
   startJBrowseServer,
   stopServer,
@@ -97,25 +97,26 @@ describe('Protein3d Plugin E2E', () => {
     expect(
       await page.evaluate(() => typeof window.JBrowsePluginProtein3d),
     ).toBe('object')
-    expect(pageErrors).toEqual([])
+    expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('01-jbrowse-loaded'))
   }, 30_000)
 
   it('renders gene features on the track', async () => {
     const painted = await page.$$(PAINTED_FEATURES)
     expect(painted.length).toBeGreaterThan(0)
+    expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('02-tracks-rendered'))
   }, 60_000)
 
   it('contributes Launch protein view to the feature context menu', async () => {
     const items = await openFeatureContextMenu(page)
-    console.log(`context menu: ${items.join(' | ')}`)
     expect(items).toContain('Launch protein view')
     // The host's own rows, asserted alongside ours because the plugin extends
     // the display's contextMenuItems and a throw in there costs the user the
     // whole menu. Checking only for our row would read that as a missing
     // feature, and the wipeout is the worse outcome of the two.
     expect(items).toContain('Open feature details')
+    expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('03-context-menu'))
   }, 60_000)
 
@@ -128,12 +129,10 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('05-dialog-ready'))
     await clickLaunch(page)
 
-    const ink = await waitForStructureRendered(page)
-    console.log(`molstar canvas ink: ${(ink * 100).toFixed(1)}%`)
+    await waitForStructureRendered(page)
     await captureScreenshot(page, screenshot('06-protein-view'))
 
     const state = await getProteinViewState(page)
-    console.log(`protein view state: ${JSON.stringify(state)}`)
     expect(state.structureCount).toBe(1)
     expect(state.structureSeqLength).toBe(STRUCTURE_RESIDUES)
     expect(state.transcriptName).toMatch(/^ENST\d+/)
@@ -141,7 +140,7 @@ describe('Protein3d Plugin E2E', () => {
     // every codon of the translated transcript maps onto the genome
     expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
     expect(state.transcriptLength).toBeGreaterThan(0)
-    expect(pageErrors).toEqual([])
+    expect(pageComplaintsSince()).toEqual([])
   }, 240_000)
 
   // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
@@ -177,12 +176,11 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('10-pdb-protein-view'))
 
     const state = await getProteinViewState(page)
-    console.log(`pdb search state: ${JSON.stringify(state.structures)}`)
     expect(state.structureCount).toBe(1)
     expect(state.structures[0]?.url).toMatch(/files\.rcsb\.org/)
     expect(state.hasAlignment).toBe(true)
     expect(state.structures[0]?.mappedEntityId).toBeDefined()
-    expect(pageErrors).toEqual([])
+    expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
   // The declarative multi-structure launch: an AlphaFold model, the p53 core
@@ -228,7 +226,6 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('07-multi-structure'))
 
     const state = await getProteinViewState(page)
-    console.log(`multi-structure state: ${JSON.stringify(state.structures)}`)
     expect(state.structures.map(s => s.hasAlignment)).toEqual([
       true,
       true,
@@ -253,11 +250,10 @@ describe('Protein3d Plugin E2E', () => {
           .filter(t => /^\d+$/.test(t ?? '')),
       }
     })
-    console.log(`hotspot: ${JSON.stringify(hotspot)}`)
     expect(hotspot.clickedStructureRange).toEqual({ start: 154, end: 155 })
     expect(hotspot.residueNumber).toBe(248)
     expect(hotspot.rulerLabels).toContain('250')
     await captureScreenshot(page, screenshot('08-hotspot-panel'))
-    expect(pageErrors).toEqual([])
+    expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })

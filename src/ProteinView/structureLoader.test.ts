@@ -150,12 +150,17 @@ test('unloading drops the handle so highlights never target a dead plugin', asyn
 
 test('reports load errors and leaves the structure unloaded', async () => {
   const err = new Error('boom')
+  // the handler logs as well as reporting, so expect the log rather than let
+  // it print: an unexpected console.error in this suite is worth noticing
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   mockLoad.mockRejectedValue(err)
   const { host, load, structure } = setup({})
   load()
   await tick()
   expect(host.errors).toContain(err)
   expect(structure.loadedToMolstar).toBe(false)
+  expect(logged).toHaveBeenCalledWith(err)
+  logged.mockRestore()
 })
 
 test('a load that fails because its plugin was swapped away retries into the current one', async () => {
