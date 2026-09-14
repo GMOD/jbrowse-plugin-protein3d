@@ -346,18 +346,26 @@ Two lists in `test/setup.ts` say what the page is allowed to say:
   jbrowse-components, and keeps upstream's rule that a real GPU failure
   (`context LOST`, `GL error`) is **not** noise. CI has no GPU, so swiftshader
   narrates.
-- `KNOWN_DEBT` is one entry long and every entry needs an exit condition. Today
-  it holds v5's warning that `LinearGenomeView` "nests its settings under
-  `init`". v4.3.0's LGV has no other door — `init: types.frozen<InitState>()`
-  plus the autorun in its `afterAttach.ts` — so `addView` in
-  `LaunchProteinViewExtensionPoint` has to keep writing it. **The nesting and
-  the entry come out together with v4 support**, and until then every
-  declarative launch warns on a v5 host.
+- `KNOWN_DEBT` holds two entries and every entry needs an exit condition. One is
+  v5's warning that `LinearGenomeView` "nests its settings under `init`":
+  v4.3.0's LGV has no other door — `init: types.frozen<InitState>()` plus the
+  autorun in its `afterAttach.ts` — so `addView` in
+  `LaunchProteinViewExtensionPoint` has to keep writing it, and until v4 goes
+  every declarative launch warns on a v5 host.
 
-Verify the gate still bites before trusting it: delete the `KNOWN_DEBT` entry
-and two legs fail, naming the message. One is the test config's own session, the
-other the view the plugin itself adds — which is how you can tell the
-deprecation reaches shipped code and not just the fixture.
+An entry can be scoped to the hosts it is true of, and the second one has to be.
+`sideBySide.ts` warns that the session "supports workspaces but not
+setPendingMove" on every release through v4.3.0, where that is a known
+limitation nobody is wiring up — but the identical sentence on `main` would mean
+the session API moved out from under the plugin, which is a break. Excusing it
+everywhere deletes the alarm it exists to raise, so `expectedOn` narrows it to
+`V4_ERA`. The rules live in `test/browserConsole.ts` with unit tests beside
+them, because a mis-scoped entry fails open and in silence.
+
+Verify the gate still bites before trusting it: delete the `init` entry and two
+legs fail, naming the message. One is the test config's own session, the other
+the view the plugin itself adds — which is how you can tell the deprecation
+reaches shipped code and not just the fixture.
 
 **A child process writing to an inherited fd bypasses all of it.**
 `setupJBrowse` pipes esbuild's output for that reason and prints it only when
