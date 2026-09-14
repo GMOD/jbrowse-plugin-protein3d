@@ -130,6 +130,18 @@ function addAlphaFoldConfidenceTrack({
         },
       },
       assemblyNames: [uniprotId],
+      displays: [
+        {
+          type: 'LinearWiggleDisplay',
+          displayId: `${uniprotId}-AlphaFold-confidence-LinearWiggleDisplay`,
+          // pLDDT 50 is AlphaFold's own line between low and very low
+          // confidence: residues above it in AlphaFold's blue, below in its
+          // orange
+          bicolorPivot: 50,
+          posColor: '#0053d6',
+          negColor: '#ff7d45',
+        },
+      ],
     })
   }
 }
@@ -160,14 +172,11 @@ function addAlphaMissenseTrack({
         type: 'MultiLinearWiggleDisplay',
         displayId: `${uniprotId}-AlphaMissense-scores-MultiLinearWiggleDisplay`,
         defaultRendering: 'multirowdensity',
-        renderers: {
-          MultiDensityRenderer: {
-            type: 'MultiDensityRenderer',
-            bicolorPivotValue: 0.5,
-            posColor: 'red',
-            negColor: 'blue',
-          },
-        },
+        // AlphaMissense's own reading: likely pathogenic red, likely benign
+        // blue, fading to white at the midpoint of its 0-1 score
+        bicolorPivot: 0.5,
+        posColor: '#d7191c',
+        negColor: '#2c7bb6',
       },
     ],
   })
