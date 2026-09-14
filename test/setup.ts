@@ -78,11 +78,20 @@ export function setupJBrowse() {
   } else {
     console.log('Building plugin bundle...')
     fs.rmSync(distDir, { recursive: true, force: true })
-    execSync('npm run build:bundle', {
-      cwd: process.cwd(),
-      stdio: 'inherit',
-      timeout: 120_000,
-    })
+    // Piped, not inherited: inherited output goes straight to the terminal,
+    // which is the one thing vitest cannot hold back for a passing run. What
+    // esbuild has to say only matters when it fails, so replay it then.
+    try {
+      execSync('npm run build:bundle', {
+        cwd: process.cwd(),
+        stdio: 'pipe',
+        timeout: 120_000,
+      })
+    } catch (e) {
+      const { stdout, stderr } = e as { stdout?: Buffer; stderr?: Buffer }
+      console.error(`${stdout ?? ''}${stderr ?? ''}`)
+      throw e
+    }
   }
 
   // Copy the distconfig.json to JBrowse directory as config.json

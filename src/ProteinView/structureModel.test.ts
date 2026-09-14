@@ -73,7 +73,15 @@ test('hydrates from a minimal { url } snapshot (userProvidedTranscriptSequence o
 })
 
 test('hydrates every declarative per-structure field from a snapshot', () => {
-  const feature = { uniqueId: 'tx1', refName: 'chr1', start: 0, end: 9 }
+  // strand included because the connected-hover autorun maps this feature
+  // through g2p_mapper, which rejects a strandless one
+  const feature = {
+    uniqueId: 'tx1',
+    refName: 'chr1',
+    start: 0,
+    end: 9,
+    strand: 1,
+  }
   const parent = TestParent.create({
     structures: [
       {
