@@ -355,17 +355,34 @@ Two lists in `test/setup.ts` say what the page is allowed to say:
 
 An entry can be scoped to the hosts it is true of, and the second one has to be.
 `sideBySide.ts` warns that the session "supports workspaces but not
-setPendingMove" on every release through v4.3.0, where that is a known
-limitation nobody is wiring up — but the identical sentence on `main` would mean
-the session API moved out from under the plugin, which is a break. Excusing it
-everywhere deletes the alarm it exists to raise, so `expectedOn` narrows it to
-`V4_ERA`. The rules live in `test/browserConsole.ts` with unit tests beside
-them, because a mis-scoped entry fails open and in silence.
+setPendingMove" on every released host, where that is a known limitation nobody
+is wiring up — but the identical sentence on `main` would mean the session API
+moved out from under the plugin, which is a break. Excusing it everywhere
+deletes the alarm it exists to raise, so its `expectedOn` is every host but
+`main`. The rules live in `scripts/browserConsole.mjs`, shared with
+`host-compat`, with unit tests beside them, because a mis-scoped entry fails
+open and in silence.
 
 Verify the gate still bites before trusting it: delete the `init` entry and two
 legs fail, naming the message. One is the test config's own session, the other
 the view the plugin itself adds — which is how you can tell the deprecation
 reaches shipped code and not just the fixture.
+
+**`host-compat` gates on the same rules, and arming that found its own bug.**
+The probe launched Chrome with `--use-gl=swiftshader` and no
+`--enable-unsafe-swiftshader`, which is worse than no flag at all: Chrome
+deprecated the automatic fallback, so Mol\* got no WebGL context on any host.
+Every run printed `Error: Could not create a WebGL rendering context` and a
+`reprCount` TypeError behind it, and every run still said `ok` — `viewReady`
+reads the plugin's `loading` getter, which is about load and alignment, not
+paint. Measured 2026-09-13 across v4.0.0/v4.3.0/latest/main; the probe now uses
+the e2e's plain `--no-sandbox --disable-setuid-sandbox` and all four are clean.
+No separate "did it render" assertion is needed, because a missing context is a
+console error and a console error is now a failure.
+
+That measurement also confirms the scoping from the other side: the side-by-side
+warning appears on v4.0.0, v4.3.0 and `latest` and not on `main`, and the `init`
+deprecation appears only on `main`.
 
 **A child process writing to an inherited fd bypasses all of it.**
 `setupJBrowse` pipes esbuild's output for that reason and prints it only when

@@ -5,7 +5,7 @@ import path from 'node:path'
 import { PNG } from 'pngjs'
 import { launch } from 'puppeteer'
 
-import { isBrowserConsoleNoise } from './browserConsole'
+import { isBrowserConsoleNoise } from '../scripts/browserConsole.mjs'
 import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
 
 import type { Browser, Page } from 'puppeteer'

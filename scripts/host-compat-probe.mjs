@@ -4,7 +4,7 @@
 // host version, whether the session boots, the UMD global is defined, the view
 // type registered, a declarative ProteinView launch reaches its settled state,
 // and right-clicking a gene still opens a feature context menu carrying both
-// the plugin's row and the host's own.
+// the plugin's row and the host's own, with nothing unexpected on its console.
 //
 // jbrowse.org/code/jb2/<vX.Y.Z>/ hosts every release, so the matrix needs no
 // `jbrowse create` per version.
@@ -30,6 +30,8 @@ import path from 'node:path'
 import { parseArgs } from 'node:util'
 
 import puppeteer from 'puppeteer'
+
+import { isBrowserConsoleNoise } from './browserConsole.mjs'
 
 const DEFAULT_VERSIONS = [
   'v2.15.0',
@@ -243,16 +245,28 @@ async function probeOne(browser, version) {
     await serveCandidateBundle(page)
   }
   const consoleErrors = []
+  // Warnings too, and filtered through the same rules the e2e uses. The e2e
+  // covers one `jbrowse create` install; these are the hosted releases a
+  // publish actually reaches, and until now a console line here was a footnote
+  // printed only once the host had already failed some other way.
+  const consoleComplaints = []
+  const heard = (type, text) => {
+    const line = `[${type}] ${text.slice(0, 200)}`
+    consoleErrors.push(line)
+    if (!isBrowserConsoleNoise(text, version)) {
+      consoleComplaints.push(line)
+    }
+  }
   page.on('console', m => {
-    if (m.type() === 'error') {
-      consoleErrors.push(m.text().slice(0, 200))
+    if (m.type() === 'error' || m.type() === 'warn') {
+      heard(m.type(), m.text())
     }
   })
   page.on('pageerror', e => {
-    consoleErrors.push(`pageerror: ${String(e).slice(0, 200)}`)
+    heard('pageerror', String(e))
   })
 
-  const result = { version, consoleErrors }
+  const result = { version, consoleErrors, consoleComplaints }
   try {
     await page.goto(url(version, true), {
       waitUntil: 'domcontentloaded',
@@ -315,9 +329,13 @@ async function probeOne(browser, version) {
   return result
 }
 
+// `--use-gl=swiftshader` alone is not enough: Chrome deprecated the automatic
+// fallback, so without `--enable-unsafe-swiftshader` Mol* gets no WebGL at all
+// and the probe measured a session whose 3D viewer never had a context. See
+// docs/live-checks.md.
 const browser = await puppeteer.launch({
   headless: true,
-  args: ['--no-sandbox', '--use-gl=swiftshader'],
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
   defaultViewport: { width: 1400, height: 900 },
 })
 
@@ -366,7 +384,9 @@ function failure(r) {
             : !r.contextMenu.hostRows
               ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
               : r.contextMenu.ours
-                ? undefined
+                ? r.consoleComplaints.length > 0
+                  ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
+                  : undefined
                 : 'no "Launch protein view" row in the feature context menu'
 }
 
@@ -385,7 +405,9 @@ for (const [i, version] of versions.entries()) {
   const r = await probeWithRetry(version)
   results.push(r)
   const bad = failure(r)
-  const verdict = bad ? bad : 'ok (view settled, feature context menu intact)'
+  const verdict = bad
+    ? bad
+    : 'ok (view settled, feature context menu intact, console clean)'
   const gated = floorIndex !== -1 && i >= floorIndex
   console.log(
     `${version.padEnd(10)} ${verdict}${bad && !gated ? ' (below floor, not gated)' : ''}`,

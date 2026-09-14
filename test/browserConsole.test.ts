@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { isBrowserConsoleNoise } from './browserConsole'
+import { isBrowserConsoleNoise } from '../scripts/browserConsole.mjs'
 
 const SIDE_BY_SIDE =
   'jbrowse-plugin-protein3d: this session supports workspaces but not setPendingMove, so the side-by-side launch was skipped'
@@ -33,8 +33,12 @@ test('a real GPU failure is not noise even inside the WebGL2Hal prefix', () => {
 
 // The entry that made scoping worth having: a known v4 limitation, and an alarm
 // anywhere newer. Excusing it everywhere would delete the alarm it exists for.
-test('the side-by-side warning is expected on v4 and a break on main', () => {
-  expect(isBrowserConsoleNoise(SIDE_BY_SIDE, 'v4.3.0')).toBe(true)
+test('the side-by-side warning is expected on every release and a break on main', () => {
+  for (const host of ['v4.0.0', 'v4.3.0', 'latest']) {
+    expect(isBrowserConsoleNoise(SIDE_BY_SIDE, host)).toBe(true)
+  }
+  // main is the only host carrying session.setPendingMove, so there the same
+  // sentence means the API moved out from under the plugin
   expect(isBrowserConsoleNoise(SIDE_BY_SIDE, 'main')).toBe(false)
   expect(isBrowserConsoleNoise(SIDE_BY_SIDE, 'nightly')).toBe(false)
 })

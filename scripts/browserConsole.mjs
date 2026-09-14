@@ -25,15 +25,18 @@ const GPU_NOISE = [
   'Failed to create WebGPU Context Provider',
 ]
 
-// Hosts that predate main's `session.setPendingMove`.
-const V4_ERA = new Set(['v3.7.0', 'v4.0.4', 'v4.3.0'])
-
 // Warnings this plugin has read and owes a fix for. Each is a debt with an exit
 // condition, not a decision to stop looking — delete an entry and the gate
 // starts failing on it again. `expectedOn` scopes one to the hosts where it
 // means what the comment says, because the same sentence can be a known
 // limitation on one host and an alarm on another.
-const KNOWN_DEBT: { needle: string; expectedOn?: Set<string> }[] = [
+// `session.setPendingMove` landed on main and has not shipped in a release, so
+// every released host through `latest` still places views through
+// @jbrowse/app-core. Measured 2026-08-17, re-measured 2026-09-13.
+const preSetPendingMove = host => host !== 'main' && host !== 'nightly'
+
+/** @type {{ needle: string, expectedOn?: (host: string) => boolean }[]} */
+const KNOWN_DEBT = [
   {
     // v5 unwraps v4's nested `init` and warns; v4.3.0's LinearGenomeView has no
     // other way in (`init: types.frozen<InitState>()` plus the autorun in
@@ -51,18 +54,23 @@ const KNOWN_DEBT: { needle: string; expectedOn?: Set<string> }[] = [
     // under the plugin, which is a break, so it is excused only where it is
     // expected. See CLAUDE.md, "Host compatibility".
     needle: 'supports workspaces but not setPendingMove',
-    expectedOn: V4_ERA,
+    expectedOn: preSetPendingMove,
   },
 ]
 
-export function isBrowserConsoleNoise(text: string, host: string): boolean {
+/**
+ * @param {string} text
+ * @param {string} host version label under test, e.g. `v4.3.0` or `main`
+ * @returns {boolean}
+ */
+export function isBrowserConsoleNoise(text, host) {
   if (text.includes('[WebGL2Hal #')) {
     return !text.includes('context LOST') && !text.includes('GL error')
   }
   return (
     GPU_NOISE.some(n => text.includes(n)) ||
     KNOWN_DEBT.some(
-      d => text.includes(d.needle) && (!d.expectedOn || d.expectedOn.has(host)),
+      d => text.includes(d.needle) && (!d.expectedOn || d.expectedOn(host)),
     )
   )
 }
