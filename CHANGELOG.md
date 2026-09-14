@@ -1,3 +1,29 @@
+## [0.11.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.1...v0.11.2) (2026-09-14)
+
+### Bug Fixes
+
+- Resolve refName aliases before a genome hover reaches the structure ([07212a5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/07212a5900a677254c5173e73c9d8789e2a3c0e8))
+- Put the AlphaMissense and pLDDT colours on the display, where v5 reads them ([e42a448](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e42a448f122cbd5d18bbb2d0b855a1ff45276ed3))
+
+### Chores
+
+- Build against @jbrowse/core 5.0.0-beta.8 and MUI 9 without breaking v4 hosts ([62ec07a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/62ec07adcf31b1262c59f6d3a480ab3ba26c7e7b))
+- Externalize only what every supported host re-exports, not just the oldest ([2c914ab](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2c914ab7ee1e6a29c3c0cea872950838f3f42ba8))
+- The externals check is no longer floor-only ([a2769b4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a2769b46735e5da65664978587e55d7472b4f37e))
+
+### Documentation
+
+- Record why a passing run prints nothing ([4491a05](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4491a051764eca36ccc7fe1ad8fb9d213a611047))
+- Why a genome hover has to canonicalize the refName ([0994d4f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0994d4f5c9b2e89f6f607a0ce01fc7b679037ef6))
+
+### Tests
+
+- Hold console output back unless a test fails ([4d701ac](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4d701acb06c29330423c8b4b66470da05687784f))
+- Fail the e2e on what the page says, instead of silencing it ([b5fc317](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b5fc317d7bb3e9200cba793f3511173547c7f226))
+- Scope an excused warning to the hosts it is true of ([4d85a18](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4d85a18ca7f2885a6c448ccaadd56fff23c8a383))
+- Typecheck and lint the e2e harness, which neither covered ([d87a906](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d87a906e9e31948eba3525e43cbf22573679d948))
+- Fail the publish gate on what the hosted release says ([972ee75](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/972ee7511527afbd3c3a217433b06752c2ea7316))
+
 ## [0.11.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.0...v0.11.1) (2026-09-13)
 
 ### Bug Fixes
