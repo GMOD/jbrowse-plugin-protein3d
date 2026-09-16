@@ -340,14 +340,14 @@ that mean a user is affected**.
 
 ## What a unit test can and cannot instantiate
 
-`model.ts` would not instantiate under vitest because `@mui/icons-material`
-needs `@emotion/styled`, which was not installed. The SvgIcon bundling installs
-it now, so that reason may be gone; nobody has re-checked. Test the pure pieces
-instead, each built as a factory over a narrow host interface
-(`structureLoader`, `structureSuperposer`, `lociChannel`, `frameSelection`,
-`connectedHover`, `storedSettings`), and hand them observables or a small MST
-stand-in. `structureModel` does instantiate inside a `types.array` under a stub
-parent (`structureModel.test.ts`), with real Mol\* structures from
+`model.ts` instantiates under vitest since the SvgIcon bundling installed
+`@emotion/styled` (`model.test.ts` creates a view with `getSession` mocked). It
+still needs a mocked session, so test the pure pieces first, each built as a
+factory over a narrow host interface (`structureLoader`,
+`structureSuperposer`, `lociChannel`, `frameSelection`, `connectedHover`,
+`attachStructureInteractions`, `storedSettings`), and hand them observables or
+a small MST stand-in. `structureModel` instantiates inside a `types.array`
+under a stub parent (`structureModel.test.ts`), with real Mol\* structures from
 `test_data/molstarStructure.ts` rather than cast fakes.
 
 Some conclusions those tests cannot reach, so they are not worth re-deriving:
