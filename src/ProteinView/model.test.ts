@@ -3,7 +3,9 @@ import { expect, test, vi } from 'vitest'
 import stateModelFactory from './model'
 import { removeMolstarStructure } from './removeStructure'
 
+import type { StructureRemovalHost } from './removeStructure'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
+import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
@@ -11,6 +13,11 @@ vi.mock('@jbrowse/core/util', async importActual => {
 })
 
 const ProteinView = stateModelFactory()
+
+// One cast, where a stand-in stands in for the whole Mol* plugin: the view only
+// reaches the structure hierarchy through removeMolstarStructure.
+const asPluginContext = (stub: StructureRemovalHost) =>
+  stub as unknown as PluginContext
 
 function makeView() {
   return ProteinView.create({
@@ -33,6 +40,29 @@ test('removing a structure leaves the others as they were', () => {
   })
   // the pivot a superposition aligned against is gone, so the rest re-align
   expect(view.superposedCount).toBe(0)
+})
+
+// The removal settles after the action has returned, so reporting its failure
+// by writing to `self` throws inside MST where nothing catches it.
+test('a removal that fails reports through the error action', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const view = makeView()
+  view.setMolstarPluginContext(
+    asPluginContext({
+      managers: {
+        structure: {
+          hierarchy: {
+            findStructure: () => ({ kind: 'structure' }),
+            remove: () => Promise.reject(new Error('plugin disposed')),
+          },
+        },
+      },
+    }),
+  )
+  view.removeStructure(view.structures[0]!)
+  await new Promise(resolve => setTimeout(resolve, 0))
+  expect(view.error).toEqual(new Error('plugin disposed'))
+  logged.mockRestore()
 })
 
 // Removing the structure node alone would leave the download, trajectory and
