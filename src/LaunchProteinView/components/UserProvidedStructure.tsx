@@ -62,19 +62,18 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const { runLaunch, launchError } = useSafeLaunch(handleClose)
 
   const activeFile = choice === 'file' ? file : undefined
-  // Typing a url is a fast-changing value behind a download and a molstar
-  // parse, so the fetch waits for the field to settle rather than running once
-  // per keystroke against a dozen truncated urls.
-  const activeURL = useDebouncedValue(
-    choice === 'file' ? '' : structureURL,
-    600,
-  )
+  const activeURL = choice === 'file' ? '' : structureURL
+  // Only the sequence read is debounced: typing a url is a fast-changing value
+  // behind a download and a molstar parse. The launch reads the field itself,
+  // so clicking inside the window opens what the user typed rather than the
+  // url as it stood 600 ms ago.
+  const debouncedURL = useDebouncedValue(activeURL, 600)
 
   const {
     sequences: structureSequences,
     isLoading: isStructureLoading,
     error: fileError,
-  } = useStructureFileSequence({ file: activeFile, url: activeURL })
+  } = useStructureFileSequence({ file: activeFile, url: debouncedURL })
 
   const {
     transcripts: options,
