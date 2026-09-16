@@ -69,6 +69,9 @@ const TestHost = types
     setPlugin(p: object) {
       self.molstarPluginContext = p
     },
+    removeFirstStructure() {
+      self.structures.remove(self.structures[0]!)
+    },
   }))
 
 type TestHostInstance = Instance<typeof TestHost>
@@ -103,6 +106,30 @@ function setupAlphaFold(
   return {
     load: makeStructureLoader(asLoaderHost(host), fetchModels),
     structure: host.structures[0]!,
+  }
+}
+
+// A Mol* stand-in that records what a load's clean-up removed from it
+function recordingPlugin() {
+  const removed: unknown[] = []
+  return {
+    removed,
+    plugin: {
+      managers: {
+        structure: {
+          hierarchy: {
+            findStructure: (structure: unknown) =>
+              structure === undefined
+                ? undefined
+                : { kind: 'structure', model: { trajectory: structure } },
+            remove: (refs: unknown[]) => {
+              removed.push(...refs)
+              return undefined
+            },
+          },
+        },
+      },
+    },
   }
 }
 
@@ -307,4 +334,26 @@ test('a structure that already has a url never asks AlphaFold DB', async () => {
   await tick()
   expect(fetchModels).not.toHaveBeenCalled()
   expect(structure.url).toBe('https://e.com/mine.cif')
+})
+
+// A structure removed while its file was still downloading has no
+// molstarStructure for removeStructure to take out, and the load that lands
+// afterwards still puts a trajectory in Mol*. Left there it stays on the canvas
+// and joins the next superposition as a structure the view does not know about.
+test('a structure removed mid-load takes its trajectory out of Mol* when it lands', async () => {
+  const structureHandle = molstarStructure('ghost')
+  let resolveLoad: (v: StructureData) => void = () => {}
+  mockLoad.mockImplementationOnce(() => new Promise(res => (resolveLoad = res)))
+  const { removed, plugin } = recordingPlugin()
+
+  const host = TestHost.create({ structures: [{ url: 'a.cif' }] })
+  host.setPlugin(plugin)
+  const load = makeStructureLoader(asLoaderHost(host))
+  load()
+
+  host.removeFirstStructure()
+  resolveLoad({ molstarStructure: structureHandle })
+  await tick()
+
+  expect(removed).toEqual([structureHandle])
 })

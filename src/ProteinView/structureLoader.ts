@@ -1,6 +1,7 @@
 import { isAlive } from '@jbrowse/mobx-state-tree'
 
 import { loadStructureData } from './loadStructureData'
+import { removeMolstarStructure } from './removeStructure'
 import {
   fetchAlphaFoldModels,
   pickAlphaFoldModel,
@@ -102,9 +103,21 @@ export function makeStructureLoader(
           )
     loaded
       .then(data => {
-        const current = isAlive(structure)
-          ? host.molstarPluginContext
-          : undefined
+        if (!isAlive(structure)) {
+          // Removed while it was loading. The load still put a trajectory in
+          // Mol*, and no model owns it any more, so it would stay on the
+          // canvas and join the next superposition as a structure the view
+          // does not know it has.
+          loadingStructures.delete(structure)
+          removeMolstarStructure({
+            plugin,
+            molstarStructure: data.molstarStructure,
+          }).catch((e: unknown) => {
+            console.error(e)
+          })
+          return
+        }
+        const current = host.molstarPluginContext
         if (current === plugin) {
           structure.setStructureData(data)
           structure.setLoadedToMolstar(true)
