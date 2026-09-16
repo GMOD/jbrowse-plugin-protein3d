@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { ListItemText, Menu, MenuItem } from '@mui/material'
+import { Checkbox, Divider, ListItemText, Menu, MenuItem } from '@mui/material'
 
 interface LaunchOption {
   // also the suffix of the row's data-testid, so a test or a screenshot spec
@@ -17,10 +17,14 @@ export default function LaunchOptionsMenu({
   anchorEl,
   onClose,
   options,
+  sideBySide,
+  onSideBySideChange,
 }: {
   anchorEl: HTMLElement | null
   onClose: () => void
   options: LaunchOption[]
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
 }) {
   return (
     <Menu
@@ -38,6 +42,21 @@ export default function LaunchOptionsMenu({
           <ListItemText primary={opt.title} secondary={opt.description} />
         </MenuItem>
       ))}
+      <Divider />
+      {/* How the launch places the view, beside the launches themselves: it is
+          a choice about this launch, and behind a gear icon nobody found it. */}
+      <MenuItem
+        data-testid="protein-launch-side-by-side"
+        onClick={() => {
+          onSideBySideChange(!sideBySide)
+        }}
+      >
+        <Checkbox checked={sideBySide} size="small" />
+        <ListItemText
+          primary="Open side by side"
+          secondary="Place the protein view right of the genome view instead of below it"
+        />
+      </MenuItem>
     </Menu>
   )
 }

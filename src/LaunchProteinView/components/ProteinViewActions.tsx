@@ -2,17 +2,9 @@ import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
-import SettingsIcon from '@mui/icons-material/Settings'
-import {
-  Button,
-  ButtonGroup,
-  IconButton,
-  Tooltip,
-  Typography,
-} from '@mui/material'
+import { Button, ButtonGroup, Typography } from '@mui/material'
 
 import LaunchOptionsMenu from './LaunchOptionsMenu'
-import LaunchSettingsDialog from './LaunchSettingsDialog'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import { getLaunchMissingReasons } from '../utils/launchHelpers'
@@ -21,8 +13,8 @@ import {
   getConditionalProteinLaunches,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
+import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 
-import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -36,8 +28,6 @@ interface ProteinViewActionsProps {
   feature: Feature
   view: LinearGenomeViewModel
   session: AbstractSessionModel
-  alignmentAlgorithm: AlignmentAlgorithm
-  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
   sequencesMatch?: boolean
   isLoading?: boolean
   /**
@@ -58,14 +48,12 @@ export default function ProteinViewActions({
   feature,
   view,
   session,
-  alignmentAlgorithm,
-  onAlignmentAlgorithmChange,
   sequencesMatch,
   isLoading,
   error,
 }: ProteinViewActionsProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
 
   const missingReasons = getLaunchMissingReasons({
     uniprotId,
@@ -94,7 +82,7 @@ export default function ProteinViewActions({
     uniprotId,
     url,
     userProvidedTranscriptSequence: userSelectedProteinSequence?.seq,
-    alignmentAlgorithm,
+    sideBySide,
   }
 
   const handleLaunch3DView = runLaunch(() => {
@@ -134,23 +122,7 @@ export default function ProteinViewActions({
   return (
     <>
       {launchError ? <ErrorMessage error={launchError} /> : null}
-      {sequencesMatch === false ? (
-        <SequenceMismatchNotice
-          alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
-        />
-      ) : null}
-      <Tooltip title="Launch settings">
-        <IconButton
-          size="small"
-          aria-label="Launch settings"
-          onClick={() => {
-            setSettingsOpen(true)
-          }}
-        >
-          <SettingsIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {sequencesMatch === false ? <SequenceMismatchNotice /> : null}
       <Button
         variant="contained"
         color="secondary"
@@ -162,9 +134,15 @@ export default function ProteinViewActions({
         Cancel
       </Button>
       {showMissingReasons ? (
-        <Typography variant="body2" color="error" sx={{ mr: 2 }}>
-          {missingReasons.join('. ')}
-        </Typography>
+        // one line each: four reasons run together read as one sentence about
+        // the last of them
+        <div style={{ marginRight: 16 }}>
+          {missingReasons.map(reason => (
+            <Typography key={reason} variant="body2" color="error">
+              {reason}
+            </Typography>
+          ))}
+        </div>
       ) : null}
       <ButtonGroup variant="contained" color="primary" size="small">
         {/* Tagged rather than found by its "Launch" label: the dialog is not
@@ -192,11 +170,10 @@ export default function ProteinViewActions({
         anchorEl={menuAnchor}
         onClose={closeMenu}
         options={launchOptions}
-      />
-      <LaunchSettingsDialog
-        open={settingsOpen}
-        onClose={() => {
-          setSettingsOpen(false)
+        sideBySide={sideBySide}
+        onSideBySideChange={value => {
+          setSideBySide(value)
+          setLaunchSideBySide(value)
         }}
       />
     </>
