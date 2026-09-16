@@ -264,6 +264,8 @@ test('with no transcript match the canonical model wins over an isoform', async 
   expect(structure.url).toBe(alphaFoldModel('P04637', '').url)
 })
 
+// An unreachable API has said nothing about the accession, so the spelled
+// filename is still worth trying.
 test('a failed prediction API falls back to the canonical filename', async () => {
   mockLoad.mockResolvedValue({})
   const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
@@ -273,6 +275,25 @@ test('a failed prediction API falls back to the canonical filename', async () =>
   await tick()
   expect(structure.url).toBe(getAlphaFoldStructureUrl('P04637'))
   expect(structure.loadedToMolstar).toBe(true)
+})
+
+// An API that answers with no models has: spelling a filename anyway turns
+// "AlphaFold has not folded this protein" into a 404 to diagnose.
+test('an accession AlphaFold has no model for is reported, not guessed at', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  mockLoad.mockResolvedValue({})
+  const { load, structure } = setupAlphaFold({ uniprotId: 'P99999' }, () =>
+    Promise.resolve([]),
+  )
+  load()
+  await tick()
+  expect(structure.url).toBeUndefined()
+  expect(structure.loadedToMolstar).toBe(false)
+  expect(structure.loadError).toEqual(
+    new Error('AlphaFold DB has no model for P99999'),
+  )
+  expect(mockLoad).not.toHaveBeenCalled()
+  logged.mockRestore()
 })
 
 test('a structure that already has a url never asks AlphaFold DB', async () => {

@@ -59,23 +59,34 @@ export function makeStructureLoader(
    * protein folded past the length cap has no F1 fragment, and the model
    * version moves, so a hardcoded name 404s. The transcript's own translation
    * goes to the picker, so an isoform AlphaFold folded exactly maps as an
-   * identity. A failed API leaves the guessed canonical filename, which is what
-   * this opened before it asked at all.
+   * identity.
+   *
+   * The two ways that can come back empty are not the same answer. An
+   * unreachable API says nothing about the accession, so the spelled canonical
+   * filename is worth a try — it is what this opened before it asked at all.
+   * An API that answers with no models has told us there is nothing to open,
+   * and spelling a filename anyway just turns that into a 404 the reader has
+   * to diagnose.
    */
   async function resolveAlphaFoldUrl(
     structure: StructureInstance,
     uniprotId: string,
   ) {
-    const picked = await fetchModels(uniprotId).then(
-      models =>
-        pickAlphaFoldModel(models, {
-          transcript: { seq: structure.userProvidedTranscriptSequence },
-        }),
-      () => undefined,
-    )
-    if (isAlive(structure)) {
-      structure.setUrl(picked?.url ?? getAlphaFoldStructureUrl(uniprotId))
+    const models = await fetchModels(uniprotId).catch(() => undefined)
+    if (!isAlive(structure)) {
+      return
     }
+    if (models === undefined) {
+      structure.setUrl(getAlphaFoldStructureUrl(uniprotId))
+      return
+    }
+    const picked = pickAlphaFoldModel(models, {
+      transcript: { seq: structure.userProvidedTranscriptSequence },
+    })
+    if (!picked) {
+      throw new Error(`AlphaFold DB has no model for ${uniprotId}`)
+    }
+    structure.setUrl(picked.url)
   }
 
   function loadInto(structure: StructureInstance, plugin: PluginContext) {
