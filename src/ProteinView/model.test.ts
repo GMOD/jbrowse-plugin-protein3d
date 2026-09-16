@@ -129,7 +129,7 @@ test('a behavior toggle changes this view and is not remembered', () => {
 test('a failed structure reports on its own line and stops being pending', () => {
   const view = makeView()
   const [first, second] = view.structures
-  first!.setLoadError(new Error('HTTP 404 fetching a.cif'))
+  first!.setError(new Error('HTTP 404 fetching a.cif'))
 
   expect(first!.statusMessage).toBe('HTTP 404 fetching a.cif')
   expect(first!.loading).toBe(false)

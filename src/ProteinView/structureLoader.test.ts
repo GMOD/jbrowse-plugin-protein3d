@@ -39,14 +39,14 @@ const TestStructure = types
     entities: undefined as Entity[] | undefined,
     molstarStructure: undefined as Structure | undefined,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    loadError: undefined as unknown,
+    error: undefined as unknown,
   }))
   .actions(self => ({
     setUrl(url: string) {
       self.url = url
     },
-    setLoadError(e: unknown) {
-      self.loadError = e
+    setError(e: unknown) {
+      self.error = e
     },
     setStructureData(d: StructureData) {
       self.entities = d.entities
@@ -230,7 +230,7 @@ test('reports a load error on the structure that failed, not the view', async ()
   const { load, structure } = setup({})
   load()
   await tick()
-  expect(structure.loadError).toBe(err)
+  expect(structure.error).toBe(err)
   expect(structure.loadedToMolstar).toBe(false)
   expect(logged).toHaveBeenCalledWith(err)
   logged.mockRestore()
@@ -250,7 +250,7 @@ test('a load that fails because its plugin was swapped away retries into the cur
   rejectFirst(new Error('plugin disposed'))
   await tick()
 
-  expect(structure.loadError).toBeUndefined()
+  expect(structure.error).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(true)
   expect(structure.entities).toEqual([entity('B')])
   expect(mockLoad).toHaveBeenCalledTimes(2)
@@ -316,7 +316,7 @@ test('an accession AlphaFold has no model for is reported, not guessed at', asyn
   await tick()
   expect(structure.url).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(false)
-  expect(structure.loadError).toEqual(
+  expect(structure.error).toEqual(
     new Error('AlphaFold DB has no model for P99999'),
   )
   expect(mockLoad).not.toHaveBeenCalled()

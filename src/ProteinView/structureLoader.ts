@@ -140,7 +140,7 @@ export function makeStructureLoader(
         } else {
           // the structure carries its own failure: a view-wide "Failed to
           // fetch" names neither which structure nor what it was fetching
-          structure.setLoadError(e)
+          structure.setError(e)
           console.error(e)
         }
       })

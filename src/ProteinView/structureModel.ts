@@ -307,9 +307,12 @@ const Structure = types
      * Why this structure could not be shown: a failed download, an unparseable
      * file, an alignment that threw. Per structure rather than a view-wide
      * banner, because with several open "Failed to fetch" names none of them.
+     * Named `error` because that is what reads it from outside: jb2hubs'
+     * `scripts/checkProteinLaunches.ts` asks each structure of a live session
+     * whether it failed.
      */
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    loadError: undefined as unknown,
+    error: undefined as unknown,
   }))
   .actions(self => ({
     /**
@@ -323,8 +326,8 @@ const Structure = types
     /**
      * #action
      */
-    setLoadError(error: unknown) {
-      self.loadError = error
+    setError(error: unknown) {
+      self.error = error
     },
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
@@ -932,9 +935,12 @@ const Structure = types
      * the SIFTS answer that unmaps a fusion partner and places UniProt tracks.
      */
     get loading() {
-      if (self.loadError !== undefined) {
-        // a structure that failed is finished, not pending: the ready marker
-        // and JBrowse's showLoading both read this
+      if (self.error !== undefined) {
+        // A structure that failed is finished, not pending: without this the
+        // ready marker never appears and every wait runs to its timeout.
+        // Settled is not the same as shown, so anything gating on
+        // `protein-view-ready` has to read `error` alongside it — a view whose
+        // every structure failed is as ready as it will ever be.
         return false
       }
       return (
@@ -978,7 +984,7 @@ const Structure = types
      * banner that names neither which structure nor what it was doing.
      */
     get statusMessage() {
-      const error = self.loadError
+      const { error } = self
       return error === undefined ? self.alignmentSkipped : errorMessage(error)
     },
     /**
@@ -1039,7 +1045,13 @@ const Structure = types
     },
   }))
   .actions(self => ({
-    setError(e: unknown) {
+    /**
+     * #action
+     * Report on the view's dismissable banner rather than on this structure:
+     * a navigation or a chain choice the user asked for and that failed, as
+     * opposed to a structure that cannot be shown at all.
+     */
+    setViewError(e: unknown) {
       self.parentView.setError(e)
     },
     /**
@@ -1217,7 +1229,7 @@ const Structure = types
             self.setAlignment(selection.alignment)
           } catch (e) {
             console.error(e)
-            self.setLoadError(e)
+            self.setError(e)
           }
         }),
       )

@@ -21,7 +21,7 @@ export type StructureInteractionHost = IAnyStateTreeNode &
       code?: string
     }) => void
     setSelectedFeatureId: (uniqueId?: string) => void
-    setError: (e: unknown) => void
+    setViewError: (e: unknown) => void
   }
 
 /**
@@ -91,7 +91,7 @@ export function attachStructureInteractions(host: StructureInteractionHost) {
         structureSeqPos: hit.structureSeqPos,
       }).catch((e: unknown) => {
         console.error(e)
-        host.setError(e)
+        host.setViewError(e)
       })
     }
   })
