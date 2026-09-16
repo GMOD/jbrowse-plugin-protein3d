@@ -46,7 +46,12 @@ console.log(
 const TMP = `${DIR}.new`
 fs.rmSync(TMP, { recursive: true, force: true })
 try {
-  execFileSync('npx', ['jbrowse', 'create', TMP, '--nightly'], {
+  // `npx jbrowse` resolves a package *named* jbrowse, which exists on npm and
+  // carries no such binary, so this only ever worked where a global install had
+  // already put `jbrowse` on PATH — as CI does. From a fresh checkout it failed
+  // with "could not determine executable to run" and no nightly at all. Name
+  // the package that owns the binary, as msaview's pretest does.
+  execFileSync('npx', ['-y', '@jbrowse/cli', 'create', TMP, '--nightly'], {
     stdio: 'inherit',
     timeout: 600_000,
   })
