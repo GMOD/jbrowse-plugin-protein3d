@@ -37,9 +37,11 @@ const StructureRow = observer(function StructureRow({
   const { label, alignmentQuality: quality, statusMessage } = structure
   const coveredRange = quality ? describeCoveredRange(quality) : undefined
   return (
+    // data-label rather than data-structure: that one names the alignment
+    // panel, and a selector matching both finds whichever the DOM has first
     <div
       data-testid="structure-row"
-      data-structure={label}
+      data-label={label}
       style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24 }}
     >
       <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
