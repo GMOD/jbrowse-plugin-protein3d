@@ -1,19 +1,27 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  DialogActions,
+  DialogContent,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
+import PartialFailureNotice from './PartialFailureNotice'
 import PdbResultsTable from './PdbResultsTable'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
 import UniProtResultsTable from './UniProtResultsTable'
 import ExternalLink from '../../components/ExternalLink'
+import useDebouncedValue from '../hooks/useDebouncedValue'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
-import useStructureFileSequence from '../hooks/useStructureFileSequence'
+import usePdbEntryMolecules from '../hooks/usePdbEntryMolecules'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
+import { isPdbId } from '../services/pdbeBestStructures'
 import { getPdbStructureUrl, uniprotEntryUrl } from '../utils/structureUrls'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -44,12 +52,16 @@ const PdbSearch = observer(function PdbSearch({
   view,
   handleClose,
   lookup,
+  sideBySide,
+  onSideBySideChange,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
   lookup: UniProtIdLookup
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
   const { uniprotId, isAutoMode, isLookupLoading } = lookup
@@ -60,23 +72,35 @@ const PdbSearch = observer(function PdbSearch({
   } = usePdbBestStructures(uniprotId)
   const [userPdbId, setUserPdbId] = useState<string>()
 
-  const selectedPdbId =
-    userPdbId && entries?.some(e => e.pdbId === userPdbId)
+  // A typed id reaches entries PDBe's SIFTS listing never offers: a structure
+  // of a complex filed under a partner, anything a paper names. Debounced, so
+  // the three characters on the way to four are not three fetches.
+  const [typedPdbId, setTypedPdbId] = useState('')
+  const trimmedTypedPdbId = typedPdbId.trim()
+  const debouncedTypedPdbId = useDebouncedValue(trimmedTypedPdbId, 400)
+  const typedPdbIdInvalid =
+    trimmedTypedPdbId !== '' && !isPdbId(trimmedTypedPdbId)
+
+  const selectedPdbId = isPdbId(debouncedTypedPdbId)
+    ? debouncedTypedPdbId.toLowerCase()
+    : userPdbId && entries?.some(e => e.pdbId === userPdbId)
       ? userPdbId
       : entries?.[0]?.pdbId
   const structureUrl = selectedPdbId
     ? getPdbStructureUrl(selectedPdbId)
     : undefined
 
-  // The chosen entry's own residues, so the isoform picker can say which
-  // transcript matches it — the same annotation the AlphaFold tab shows. Its
-  // failure is not fatal: the launch reads the file again, and until then the
-  // picker just goes unannotated.
-  const {
-    sequences: structureSequences,
-    isLoading: isStructureLoading,
-    error: structureError,
-  } = useStructureFileSequence({ url: structureUrl })
+  // The chosen entry's residues, so the isoform picker can say which transcript
+  // matches it — the same annotation the AlphaFold tab shows. It is a label and
+  // nothing more: Launch never waits on it, and its failure costs the label
+  // rather than the launch, which reads the structure file itself.
+  //
+  // While another entry's answer is in flight keepPreviousData still holds the
+  // last one, so isValidating withholds it rather than labelling these rows
+  // with the previous entry's chains.
+  const { sequences, isValidating: isMoleculesValidating } =
+    usePdbEntryMolecules(selectedPdbId)
+  const structureSequences = isMoleculesValidating ? undefined : sequences
 
   const {
     transcripts,
@@ -100,7 +124,6 @@ const PdbSearch = observer(function PdbSearch({
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isPdbLoading && 'Listing PDB entries from PDBe',
-    isStructureLoading && 'Reading residues from the selected PDB entry',
   ].filter((s): s is string => !!s)
   const isLoading = loadingStatuses.length > 0
   const error = isLoading
@@ -118,11 +141,7 @@ const PdbSearch = observer(function PdbSearch({
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
 
-        {isoformPartialFailure ? (
-          <Typography variant="body2" color="warning.main">
-            {isoformPartialFailure}
-          </Typography>
-        ) : null}
+        <PartialFailureNotice message={isoformPartialFailure} />
 
         {isAutoMode && lookup.uniprotEntries.length > 0 ? (
           <>
@@ -148,6 +167,24 @@ const PdbSearch = observer(function PdbSearch({
           </Typography>
         ) : null}
 
+        <TextField
+          size="small"
+          label="PDB ID"
+          placeholder="e.g. 1TUP"
+          helperText={
+            typedPdbIdInvalid
+              ? 'A PDB ID is four characters beginning with a digit'
+              : 'Overrides the selection below'
+          }
+          error={typedPdbIdInvalid}
+          value={typedPdbId}
+          onChange={event => {
+            setTypedPdbId(event.target.value)
+          }}
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ width: 240 }}
+        />
+
         {uniprotId && entries && !isPdbLoading ? (
           entries.length > 0 ? (
             <PdbResultsTable
@@ -164,13 +201,6 @@ const PdbSearch = observer(function PdbSearch({
               . The AlphaFoldDB tab has a predicted one.
             </Typography>
           )
-        ) : null}
-
-        {structureError && !isStructureLoading ? (
-          <Typography variant="caption" color="textSecondary">
-            Could not read residues from {selectedPdbId?.toUpperCase()}, so the
-            isoform list is unannotated. The launch reads the file again.
-          </Typography>
         ) : null}
 
         {isoformSequences && selectedTranscript ? (
@@ -194,6 +224,8 @@ const PdbSearch = observer(function PdbSearch({
           feature={feature}
           view={view}
           session={session}
+          sideBySide={sideBySide}
+          onSideBySideChange={onSideBySideChange}
           isLoading={isLoading}
           error={error}
         />

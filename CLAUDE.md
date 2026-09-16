@@ -39,7 +39,7 @@ decides whether that identity holds:
   from author residue 94 reports seqIds 94.., and an unobserved loop leaves a
   hole — so the offset is not even constant.
 
-The second case reaches users through the "Open file manually" tab (trimmed or
+The second case reaches users through the "File or URL" tab (trimmed or
 modeling-tool output usually has no SEQRES) and through `caCoordsToPdb`, which
 emits no SEQRES and survives only because it happens to number from 1. Source of
 truth is molstar's `mol-model-formats/structure/basic/sequence`.

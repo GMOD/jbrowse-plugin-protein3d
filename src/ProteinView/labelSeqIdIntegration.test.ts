@@ -20,7 +20,7 @@ import { structureFormatFromContent } from './structureFormat'
 // file with no SEQRES has neither, so molstar falls back to
 // StructureSequence.fromHierarchy and reads label_seq_id off the observed
 // residues' author numbering. Users open exactly those files via the
-// "Open file manually" tab. This pins molstar's actual behavior, so if a future
+// "File or URL" tab. This pins molstar's actual behavior, so if a future
 // molstar release starts renumbering, this test says so rather than the
 // highlights quietly drifting.
 

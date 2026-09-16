@@ -70,10 +70,14 @@ async function searchUniProt(
  * paralogs. Without a taxon the query runs across every species, so a mouse
  * assembly whose tracks carry no taxId lists mouse beside human instead of
  * silently answering with the human entry.
+ *
+ * The symbol is quoted because a bare one containing `:` — an HLA allele, a
+ * name straight out of an annotation file — reads as another field to
+ * UniProt's parser, which answers 400.
  */
 export function buildGeneNameQuery(geneName: string, organismId?: number) {
   return [
-    `gene_exact:${geneName}`,
+    `gene_exact:"${geneName.replaceAll('"', '\\"')}"`,
     organismId ? `organism_id:${organismId}` : undefined,
     'reviewed:true',
   ]
@@ -160,14 +164,19 @@ export async function searchUniProtEntries({
   ])
 
   let entries = deduplicateEntries(xrefResults.flatMap(r => r.entries))
-  if (geneResult && !entries.some(e => e.isReviewed)) {
-    entries = deduplicateEntries([...entries, ...geneResult.entries])
+  // The gene-name answer is consulted only where no xref found a reviewed
+  // entry. Counting it otherwise reported "failed for 1 of 2 identifiers" over
+  // a gene that had in fact resolved, off a query nothing was waiting for.
+  const consultedGeneResult =
+    geneResult && !entries.some(e => e.isReviewed) ? geneResult : undefined
+  if (consultedGeneResult) {
+    entries = deduplicateEntries([...entries, ...consultedGeneResult.entries])
   }
 
-  const attemptedCount = idsToSearch.size + (geneName ? 1 : 0)
+  const attemptedCount = idsToSearch.size + (consultedGeneResult ? 1 : 0)
   const failedCount =
     xrefResults.filter(r => r.error !== undefined).length +
-    (geneResult?.error === undefined ? 0 : 1)
+    (consultedGeneResult?.error === undefined ? 0 : 1)
 
   // Every attempt failing is a network problem, not an empty result. Throwing
   // it stops consumers reporting "No UniProt ID found" over a dead connection.
@@ -177,7 +186,8 @@ export async function searchUniProtEntries({
     attemptedCount === failedCount
   ) {
     throw (
-      geneResult?.error ?? xrefResults.find(r => r.error !== undefined)?.error
+      consultedGeneResult?.error ??
+      xrefResults.find(r => r.error !== undefined)?.error
     )
   }
 

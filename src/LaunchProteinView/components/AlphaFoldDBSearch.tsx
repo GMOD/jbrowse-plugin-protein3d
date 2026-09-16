@@ -6,6 +6,7 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
+import PartialFailureNotice from './PartialFailureNotice'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
@@ -41,12 +42,16 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   view,
   handleClose,
   lookup,
+  sideBySide,
+  onSideBySideChange,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
   lookup: UniProtIdLookup
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
 
@@ -69,11 +74,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
 
-        {state.isoformPartialFailure ? (
-          <Typography variant="body2" color="warning.main">
-            {state.isoformPartialFailure}
-          </Typography>
-        ) : null}
+        <PartialFailureNotice message={state.isoformPartialFailure} />
 
         {state.showUniprotResults && (
           <>
@@ -138,6 +139,8 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           feature={feature}
           view={view}
           session={session}
+          sideBySide={sideBySide}
+          onSideBySideChange={onSideBySideChange}
           sequencesMatch={state.sequencesMatch}
           isLoading={state.isLoading}
           error={state.error}

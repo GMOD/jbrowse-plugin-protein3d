@@ -4,6 +4,7 @@ import { TextField, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 import IdentifierSelector from './IdentifierSelector'
+import PartialFailureNotice from './PartialFailureNotice'
 import UniProtIdInput from './UniProtIdInput'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -48,7 +49,12 @@ export default function UniProtLookupControls({
               <TextField
                 size="small"
                 label="NCBI taxon id"
-                helperText="Narrows the gene-name search to one species"
+                error={lookup.taxonIdError}
+                helperText={
+                  lookup.taxonIdError
+                    ? 'Not a taxon id; searching every species'
+                    : 'Narrows the gene-name search to one species'
+                }
                 value={lookup.taxonId}
                 onChange={event => {
                   lookup.setTaxonId(event.target.value)
@@ -75,11 +81,7 @@ export default function UniProtLookupControls({
         </Typography>
       ) : null}
 
-      {lookup.lookupPartialFailure ? (
-        <Typography variant="body2" color="warning.main">
-          {lookup.lookupPartialFailure}
-        </Typography>
-      ) : null}
+      <PartialFailureNotice message={lookup.lookupPartialFailure} />
     </>
   )
 }

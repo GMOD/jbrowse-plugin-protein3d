@@ -30,17 +30,27 @@ function queryOf(url: string) {
 
 afterEach(() => {
   vi.unstubAllGlobals()
+  vi.restoreAllMocks()
 })
 
 describe('buildGeneNameQuery', () => {
   it('matches the symbol exactly rather than its synonyms', () => {
     expect(buildGeneNameQuery('Sox2', 10090)).toBe(
-      'gene_exact:Sox2 AND organism_id:10090 AND reviewed:true',
+      'gene_exact:"Sox2" AND organism_id:10090 AND reviewed:true',
+    )
+  })
+
+  it('quotes a symbol whose colon would read as another field', () => {
+    // unquoted, UniProt's parser answers 400 for this one
+    expect(buildGeneNameQuery('HLA-A:01')).toBe(
+      'gene_exact:"HLA-A:01" AND reviewed:true',
     )
   })
 
   it('drops the organism filter when no taxon is known', () => {
-    expect(buildGeneNameQuery('Sox2')).toBe('gene_exact:Sox2 AND reviewed:true')
+    expect(buildGeneNameQuery('Sox2')).toBe(
+      'gene_exact:"Sox2" AND reviewed:true',
+    )
   })
 })
 
@@ -54,7 +64,7 @@ describe('searchUniProtEntries', () => {
     const { entries } = await searchUniProtEntries({ geneName: 'Sox2' })
 
     expect(calls).toHaveLength(1)
-    expect(queryOf(calls[0]!)).toBe('gene_exact:Sox2 AND reviewed:true')
+    expect(queryOf(calls[0]!)).toBe('gene_exact:"Sox2" AND reviewed:true')
     expect(entries.map(e => e.accession)).toEqual(['P48432'])
   })
 
@@ -90,6 +100,7 @@ describe('searchUniProtEntries', () => {
   })
 
   it('counts the sources that failed so a partial outage can be reported', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
     stubUniProt(url => ({
       ok: !queryOf(url).startsWith('xref:'),
       results: [reviewedEntry('P04637', 'Homo sapiens')],
@@ -100,12 +111,35 @@ describe('searchUniProtEntries', () => {
       geneName: 'TP53',
     })
 
+    // the gene-name answer was consulted, the xref having found nothing
     expect(result.attemptedCount).toBe(2)
     expect(result.failedCount).toBe(1)
     expect(result.entries.map(e => e.accession)).toEqual(['P04637'])
+    expect(logged.mock.calls[0]?.[0]).toBe(
+      'xref search failed for ENST00000123:',
+    )
+  })
+
+  it('does not count a gene-name failure nothing was waiting for', async () => {
+    const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+    stubUniProt(url => ({
+      ok: queryOf(url).startsWith('xref:'),
+      results: [reviewedEntry('P04637', 'Homo sapiens')],
+    }))
+
+    const result = await searchUniProtEntries({
+      recognizedIds: ['ENST00000123'],
+      geneName: 'TP53',
+    })
+
+    // the xref resolved a reviewed entry, so the gene-name answer went unread
+    expect(result.attemptedCount).toBe(1)
+    expect(result.failedCount).toBe(0)
+    expect(logged.mock.calls[0]?.[0]).toBe('gene name search failed for TP53:')
   })
 
   it('throws when every source failed rather than reporting no entries', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
     stubUniProt(() => ({ ok: false }))
     await expect(
       searchUniProtEntries({ recognizedIds: ['ENST00000123'] }),

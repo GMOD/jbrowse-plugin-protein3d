@@ -1,4 +1,10 @@
-import { abortError, jsonfetch, timeout } from '../../fetchUtils'
+import {
+  abortError,
+  httpError,
+  jsonfetch,
+  rawfetch,
+  timeout,
+} from '../../fetchUtils'
 
 export const FOLDSEEK_DATABASES = [
   { id: 'pdb100', label: 'PDB (100% redundancy)' },
@@ -78,14 +84,10 @@ export async function predict3Di({
     .toUpperCase()
     .replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '') // Keep only valid amino acids
 
-  const response = await fetch(
-    `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`,
-    { signal },
-  )
+  const url = `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`
+  const response = await rawfetch(url, { signal })
   if (!response.ok) {
-    throw new Error(
-      `3Di prediction failed: ${response.status} ${await response.text()}`,
-    )
+    throw await httpError(response, url)
   }
   const di3Sequence = await response.text()
   // Remove any quotes, slashes, or whitespace from the response
@@ -117,7 +119,8 @@ export async function submitFoldseekSearch({
     params.append('database[]', db)
   }
 
-  const response = await fetch('https://search.foldseek.com/api/ticket', {
+  const url = 'https://search.foldseek.com/api/ticket'
+  const response = await rawfetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -125,15 +128,14 @@ export async function submitFoldseekSearch({
     body: params,
     signal,
   })
-
-  // Read the body as text first so a non-JSON error page (e.g. a gateway/500
-  // HTML response) surfaces the real status instead of an opaque JSON
-  // SyntaxError that hides it.
-  const text = await response.text()
   if (!response.ok) {
-    throw new Error(`Foldseek submission failed: ${response.status} ${text}`)
+    throw await httpError(response, url)
   }
 
+  // Read the body as text rather than response.json() so a non-JSON error page
+  // (a gateway 500's HTML) surfaces as itself instead of an opaque
+  // SyntaxError.
+  const text = await response.text()
   return JSON.parse(text) as FoldseekTicketResponse
 }
 
@@ -148,7 +150,8 @@ async function pollFoldseekStatus({
   const params = new URLSearchParams()
   params.append('tickets[]', ticketId)
 
-  const response = await fetch('https://search.foldseek.com/api/tickets', {
+  const url = 'https://search.foldseek.com/api/tickets'
+  const response = await rawfetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
@@ -158,7 +161,7 @@ async function pollFoldseekStatus({
   })
 
   if (!response.ok) {
-    throw new Error(`Failed to poll ticket status: ${response.status}`)
+    throw await httpError(response, url)
   }
 
   const results = (await response.json()) as FoldseekTicketResponse[]

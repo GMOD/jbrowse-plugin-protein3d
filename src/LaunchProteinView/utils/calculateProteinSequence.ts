@@ -171,6 +171,7 @@ export async function fetchProteinSeq({
 
 export interface TranscriptTranslation {
   feature: Feature
+  /** absent for a transcript with no CDS to translate, or one that threw */
   seq?: string
   error?: unknown
 }
@@ -213,17 +214,19 @@ export async function translateTranscripts({
   }
   return transcripts.map(feature => {
     try {
-      return {
+      // An empty translation is a transcript with no CDS — a retained_intron
+      // or an lncRNA — not a zero-length protein. Reported as untranslated, it
+      // stays a disabled "(no data)" row; kept as '' it became a selectable
+      // "(0aa)" isoform the ranking could pick.
+      const protein = getProteinSequence({
+        seq: seq.slice(
+          feature.get('start') - spanStart,
+          feature.get('end') - spanStart,
+        ),
         feature,
-        seq: getProteinSequence({
-          seq: seq.slice(
-            feature.get('start') - spanStart,
-            feature.get('end') - spanStart,
-          ),
-          feature,
-          assemblyGeneticCodeId,
-        }),
-      }
+        assemblyGeneticCodeId,
+      })
+      return protein ? { feature, seq: protein } : { feature }
     } catch (e) {
       return { feature, error: e }
     }

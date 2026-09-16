@@ -55,12 +55,17 @@ export default function useUniProtIdLookup({
     ? extractTaxonId(getConf(assembly, ['sequence', 'metadata']))
     : undefined
 
-  const overrideTaxon = Number(taxonIdInput.trim())
+  // Debounced for the same reason the accession is: the value keys the SWR
+  // search, so typing 10090 unthrottled ran five searches, four of them for a
+  // taxon nobody meant.
+  const typedTaxon = useDebouncedValue(taxonIdInput.trim(), 400)
+  const overrideTaxon = Number(typedTaxon)
   const hasOverride =
-    taxonIdInput.trim() !== '' &&
-    Number.isFinite(overrideTaxon) &&
-    overrideTaxon > 0
+    typedTaxon !== '' && Number.isFinite(overrideTaxon) && overrideTaxon > 0
   const effectiveTaxonId = hasOverride ? overrideTaxon : assemblyTaxonId
+  // A value that parses to nothing used to fall back in silence while the
+  // organism line went on claiming the assembly's taxon was in effect.
+  const taxonIdError = typedTaxon !== '' && !hasOverride
   const [selectedQueryId, setSelectedQueryId] = useState('auto')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
 
@@ -119,7 +124,7 @@ export default function useUniProtIdLookup({
     setManualUniprotId,
     taxonId: taxonIdInput,
     setTaxonId: setTaxonIdInput,
-    effectiveTaxonId,
+    taxonIdError,
     organismDescription: describeOrganism(
       effectiveTaxonId,
       hasOverride ? 'user' : 'assembly',

@@ -34,9 +34,9 @@ describe('translateTranscripts', () => {
     expect(results.map(r => r.seq)).toEqual(['MK*', 'MC*'])
   })
 
-  it('reports the transcripts it could not translate without losing the rest', async () => {
-    const broken = new SimpleFeature({
-      uniqueId: 'broken',
+  it('leaves a transcript with no CDS untranslated rather than calling it 0aa', async () => {
+    const noncoding = new SimpleFeature({
+      uniqueId: 'noncoding',
       refName: 'chr1',
       start: 4,
       end: 13,
@@ -44,12 +44,13 @@ describe('translateTranscripts', () => {
       type: 'mRNA',
     })
     const results = await translateTranscripts({
-      transcripts: [transcript('a', 4, 13), broken],
+      transcripts: [transcript('a', 4, 13), noncoding],
       fetchSpan: async span => ({ seq: GENOME.slice(span.start, span.end) }),
     })
 
     expect(results[0]?.seq).toBe('MK*')
-    expect(results[1]?.seq).toBe('')
+    // '' would show as a selectable "(0aa)" isoform the ranking could pick
+    expect(results[1]?.seq).toBeUndefined()
   })
 
   it('leaves every transcript untranslated when the span comes back empty', async () => {
