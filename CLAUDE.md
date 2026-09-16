@@ -440,13 +440,23 @@ same treatment.
 
 ## `pnpm build` fails locally for a day after each `@jbrowse` release
 
-pnpm's **minimumReleaseAge** is 1440 minutes globally (see
-`minimumReleaseAgeExclude` in `pnpm-workspace.yaml` for the one pin that opts
-out), so for 24 hours after `@jbrowse/core` / `app-core` /
-`plugin-linear-genome-view` publish, `pnpm install --frozen-lockfile` says
+pnpm quarantines a release for **minimumReleaseAge** minutes, and nothing here
+sets it, so it is pnpm's own default of 1440 — measured 2026-09-16, the refusal
+named a cutoff exactly 24h back. For that day after `@jbrowse/core` / `app-core`
+/ `plugin-linear-genome-view` publish, `pnpm install --frozen-lockfile` says
 "Already up to date" and never materializes them — `node_modules/@jbrowse/` then
 holds `mobx-state-tree` alone and `tsc` cannot resolve the imports. CI has no
 such gating, so its build job works throughout.
+
+`pnpm-workspace.yaml`'s `minimumReleaseAgeExclude` is the only list that opts a
+package out. A `minimum-release-age-exclude` in `~/.config/pnpm/rc` reads like a
+global version of it and does nothing: `pnpm config get` returns undefined for
+that key in both spellings, which is why `@jbrowse/mobx-state-tree` and
+`p2s_mapper` each need a pin here despite the rc exempting `@jbrowse/*` and
+`@gmod/*`. Take the pin seriously — with `minimumReleaseAgeStrict` false, an
+install that meets a too-new **direct** dependency appends the pin itself rather
+than failing, so a `pnpm-workspace.yaml` that comes back dirty from an install
+is pnpm's doing, and committing it is the point.
 
 **Once the window passes, the local build works and is worth using.** Verified
 2026-08-25 against `@jbrowse/core` 4.3.0: `pnpm build`, `pnpm lint`,

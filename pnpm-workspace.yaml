@@ -5,3 +5,4 @@ allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - '@jbrowse/mobx-state-tree@5.8.7'
+  - p2s_mapper@1.0.0
