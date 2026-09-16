@@ -1,12 +1,9 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, types } from '@jbrowse/mobx-state-tree'
-import SettingsIcon from '@mui/icons-material/Settings'
-import Visibility from '@mui/icons-material/Visibility'
 import { autorun } from 'mobx'
 
 import {
-  COLOR_SCHEMES,
   COLOR_SCHEME_VALUES,
   type ProteinColorScheme,
   applyColorTheme,
@@ -37,6 +34,16 @@ import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+
+// What a click and a highlight do, as opposed to what the panel shows. Named
+// here rather than in storedSettings because these are deliberately not
+// remembered across views.
+const BEHAVIOR_SETTINGS = [
+  ['showHighlight', 'Pairwise alignment as green highlight'],
+  ['zoomToBaseLevel', 'Zoom to base level on click'],
+] as const
+
+type BehaviorSetting = (typeof BEHAVIOR_SETTINGS)[number][0]
 
 /**
  * #stateModel Protein3dViewPlugin
@@ -276,13 +283,20 @@ function stateModelFactory() {
       /**
        * #action
        * A menu toggle, remembered for views opened later. Only a toggle
-       * persists: a spec's value or the view revealing a partial alignment is
-       * not the reader's preference.
+       * persists: a spec's value is not the reader's preference.
        */
       toggleSetting(key: PersistedSetting) {
         const value = !self[key]
         self[key] = value
         storeSetting(key, value)
+      },
+      /**
+       * #action
+       * The same for a toggle that changes behavior, which stays with this
+       * view rather than following the reader to the next one.
+       */
+      toggleBehavior(key: BehaviorSetting) {
+        self[key] = !self[key]
       },
     }))
     .actions(self => ({
@@ -349,8 +363,9 @@ function stateModelFactory() {
       },
       /**
        * #getter
-       * The boolean display settings, in one list so the view menu and the
-       * header's settings menu offer the same toggles under the same names.
+       * What the header's Tune menu offers: the layout choices, remembered for
+       * views opened later. The view menu carries actions instead, so a reader
+       * looking for a toggle has one place to look.
        */
       get displayToggles() {
         return (
@@ -362,6 +377,7 @@ function stateModelFactory() {
               'autoScrollAlignment',
               'Auto-scroll alignment to hovered position',
             ],
+            ['showControls', 'Show Mol* controls'],
           ] as const
         ).map(([key, label]) => ({
           label,
@@ -371,43 +387,44 @@ function stateModelFactory() {
           },
         }))
       },
+      /**
+       * #getter
+       * Toggles that change what a click or a highlight does rather than what
+       * the panel looks like. Offered beside the display ones, not remembered:
+       * see storedSettings.
+       */
+      get behaviorToggles() {
+        return BEHAVIOR_SETTINGS.map(([key, label]) => ({
+          label,
+          checked: self[key],
+          toggle: () => {
+            self.toggleBehavior(key)
+          },
+        }))
+      },
     }))
     .views(self => ({
       menuItems() {
         return [
-          ...self.displayToggles.map(({ label, checked, toggle }) => ({
-            label,
-            icon: Visibility,
-            type: 'checkbox' as const,
-            checked,
-            onClick: toggle,
-          })),
-          {
-            label: 'Color scheme...',
-            subMenu: COLOR_SCHEMES.map(scheme => ({
-              label: scheme.label,
-              type: 'radio' as const,
-              checked: self.colorScheme === scheme.value,
-              onClick: () => {
-                self.setColorScheme(scheme.value)
-              },
-            })),
-          },
           {
             label: 'Add structure...',
             onClick: () => {
               self.setShowAddStructureDialog(true)
             },
           },
-          {
-            label: 'Remove structure',
-            subMenu: self.structures.map(structure => ({
-              label: structure.label,
-              onClick: () => {
-                self.removeStructure(structure)
-              },
-            })),
-          },
+          ...(self.structures.length > 0
+            ? [
+                {
+                  label: 'Remove structure',
+                  subMenu: self.structures.map(structure => ({
+                    label: structure.label,
+                    onClick: () => {
+                      self.removeStructure(structure)
+                    },
+                  })),
+                },
+              ]
+            : []),
           {
             label: 'Clear selection',
             onClick: () => {
@@ -415,53 +432,31 @@ function stateModelFactory() {
             },
           },
           {
-            label: 'Advanced...',
-            icon: SettingsIcon,
-            subMenu: [
-              {
-                label: 'Pairwise alignment as green highlight',
-                type: 'checkbox',
-                checked: self.showHighlight,
-                onClick: () => {
-                  self.toggleSetting('showHighlight')
-                },
-              },
-              {
-                label: 'Restore hidden feature tracks',
-                onClick: () => {
-                  for (const structure of self.structures) {
-                    structure.showAllFeatureTypes()
-                  }
-                },
-              },
-              {
-                label: 'Import manual alignment...',
-                onClick: () => {
-                  self.setShowManualAlignmentDialog(true)
-                },
-              },
-              {
-                label: 'Re-align structures (TM-align)',
-                onClick: () => {
-                  if (self.molstarPluginContext) {
-                    superposeStructures(self.molstarPluginContext).catch(
-                      (e: unknown) => {
-                        console.error(e)
-                        self.setError(e)
-                      },
-                    )
-                  }
-                },
-              },
-              {
-                label: 'Zoom to base level on click',
-                type: 'checkbox',
-                checked: self.zoomToBaseLevel,
-                onClick: () => {
-                  self.toggleSetting('zoomToBaseLevel')
-                },
-              },
-            ],
+            label: 'Import manual alignment...',
+            onClick: () => {
+              self.setShowManualAlignmentDialog(true)
+            },
+          },
+          {
+            label: 'Re-align structures (TM-align)',
+            onClick: () => {
+              if (self.molstarPluginContext) {
+                superposeStructures(self.molstarPluginContext).catch(
+                  (e: unknown) => {
+                    console.error(e)
+                    self.setError(e)
+                  },
+                )
+              }
+            },
+          },
+          {
+            label: 'Restore hidden feature tracks',
+            onClick: () => {
+              for (const structure of self.structures) {
+                structure.showAllFeatureTypes()
+              }
+            },
           },
         ]
       },

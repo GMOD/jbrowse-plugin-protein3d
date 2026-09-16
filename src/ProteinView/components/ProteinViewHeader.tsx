@@ -3,6 +3,7 @@ import React, { useState } from 'react'
 import { LoadingEllipses } from '@jbrowse/core/ui'
 import TuneIcon from '@mui/icons-material/Tune'
 import Checkbox from '@mui/material/Checkbox'
+import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
@@ -76,15 +77,15 @@ function ToggleMenuItem({
   )
 }
 
+// Every toggle the view has, in one menu. The view menu carries actions, so a
+// reader looking for a checkbox has one place to look rather than two lists
+// that used to hold overlapping copies of the same four.
 const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
-  const hasHiddenTracks = model.structures.some(
-    s => s.hiddenFeatureTypes.size > 0,
-  )
   return (
     <>
       <Tooltip title="Display settings">
@@ -112,18 +113,15 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
             onToggle={toggle.toggle}
           />
         ))}
-        {hasHiddenTracks ? (
-          <MenuItem
-            dense
-            onClick={() => {
-              for (const structure of model.structures) {
-                structure.showAllFeatureTypes()
-              }
-            }}
-          >
-            <ListItemText inset>Restore hidden feature tracks</ListItemText>
-          </MenuItem>
-        ) : null}
+        <Divider />
+        {model.behaviorToggles.map(toggle => (
+          <ToggleMenuItem
+            key={toggle.label}
+            checked={toggle.checked}
+            label={toggle.label}
+            onToggle={toggle.toggle}
+          />
+        ))}
       </Menu>
     </>
   )

@@ -5,8 +5,9 @@ const SETTINGS_KEY = 'proteinView-settings'
 export const PERSISTED_SETTINGS = [
   'showAlignment',
   'showProteinTracks',
-  'showHighlight',
+  'showControls',
   'zoomToBaseLevel',
+  'showHighlight',
   'autoScrollAlignment',
   'compactTracks',
 ] as const

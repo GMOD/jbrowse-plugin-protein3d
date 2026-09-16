@@ -60,6 +60,40 @@ test('a removal takes out the trajectory the structure came from', async () => {
   expect(removed).toEqual([trajectory])
 })
 
+// The view menu used to repeat the header's four toggles, the colour scheme and
+// a third copy of "restore hidden tracks", then bury the rest under "Advanced".
+test('the view menu carries actions and the Tune menu carries toggles', () => {
+  const view = makeView()
+  const labels = view.menuItems().map(item => item.label)
+  expect(labels).toEqual([
+    'Add structure...',
+    'Remove structure',
+    'Clear selection',
+    'Import manual alignment...',
+    'Re-align structures (TM-align)',
+    'Restore hidden feature tracks',
+  ])
+
+  const toggles = [...view.displayToggles, ...view.behaviorToggles].map(
+    t => t.label,
+  )
+  expect(toggles).toContain('Show Mol* controls')
+  expect(labels.some(label => toggles.includes(label))).toBe(false)
+})
+
+test('a behavior toggle changes this view and is not remembered', () => {
+  const view = makeView()
+  const stored: string[] = []
+  vi.stubGlobal('localStorage', {
+    getItem: () => null,
+    setItem: (k: string) => stored.push(k),
+  })
+  view.behaviorToggles[0]!.toggle()
+  expect(view.showHighlight).toBe(true)
+  expect(stored).toEqual([])
+  vi.unstubAllGlobals()
+})
+
 // A view-wide banner reading "Failed to fetch" names neither which structure
 // nor what it was fetching, and a structure stuck at loading never settles.
 test('a failed structure reports on its own line and stops being pending', () => {
