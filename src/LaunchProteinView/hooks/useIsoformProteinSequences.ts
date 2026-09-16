@@ -52,16 +52,18 @@ export default function useIsoformProteinSequences({
     },
   )
 
-  // A transcript that fails to translate is reported rather than dropped:
-  // silently listing 18 of 20 isoforms reads as a gene with 18 isoforms.
-  const failed = data ? data.total - data.translated : 0
+  // A transcript without a sequence is reported rather than dropped: silently
+  // listing 18 of 20 isoforms reads as a gene with 18 isoforms. It covers both
+  // a translation that threw and a transcript with no CDS to translate, which
+  // is why the wording does not claim a failure.
+  const missing = data ? data.total - data.translated : 0
   return {
     isLoading,
     isoformSequences: data?.sequences,
     error,
     partialFailure:
-      failed > 0 && data
-        ? `Could not translate ${failed} of ${data.total} transcripts`
+      missing > 0 && data
+        ? `${missing} of ${data.total} transcripts have no protein sequence`
         : undefined,
   }
 }
