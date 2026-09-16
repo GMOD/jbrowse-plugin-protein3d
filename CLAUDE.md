@@ -343,11 +343,11 @@ that mean a user is affected**.
 `model.ts` instantiates under vitest since the SvgIcon bundling installed
 `@emotion/styled` (`model.test.ts` creates a view with `getSession` mocked). It
 still needs a mocked session, so test the pure pieces first, each built as a
-factory over a narrow host interface (`structureLoader`,
-`structureSuperposer`, `lociChannel`, `frameSelection`, `connectedHover`,
-`attachStructureInteractions`, `storedSettings`), and hand them observables or
-a small MST stand-in. `structureModel` instantiates inside a `types.array`
-under a stub parent (`structureModel.test.ts`), with real Mol\* structures from
+factory over a narrow host interface (`structureLoader`, `structureSuperposer`,
+`lociChannel`, `frameSelection`, `connectedHover`,
+`attachStructureInteractions`, `storedSettings`), and hand them observables or a
+small MST stand-in. `structureModel` instantiates inside a `types.array` under a
+stub parent (`structureModel.test.ts`), with real Mol\* structures from
 `test_data/molstarStructure.ts` rather than cast fakes.
 
 Some conclusions those tests cannot reach, so they are not worth re-deriving:
