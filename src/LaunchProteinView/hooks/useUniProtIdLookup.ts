@@ -12,11 +12,22 @@ import type { LookupMode } from '../components/UniProtIdInput'
 import type { Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+export function describeOrganism(
+  taxonId: number | undefined,
+  source: 'user' | 'assembly',
+) {
+  return taxonId === undefined
+    ? 'Organism: unknown, showing all species; type an NCBI taxon id to narrow'
+    : `Organism: ${taxonId} (${source === 'user' ? 'typed above' : 'from assembly'})`
+}
+
+export type UniProtIdLookup = ReturnType<typeof useUniProtIdLookup>
+
 /**
  * Which UniProt entry a feature is, by the dialog's lookup modes: the
  * feature's own attribute, the ID-mapping search over its recognised ids and
- * gene name, or a typed accession. Shared by every tab that starts from an
- * accession so they agree on what the gene is.
+ * gene name, or a typed accession. The dialog holds one of these and hands it
+ * to every tab, so all of them run one search and agree on what the gene is.
  */
 export default function useUniProtIdLookup({
   feature,
@@ -31,10 +42,11 @@ export default function useUniProtIdLookup({
   const geneIds = extractFeatureIdentifiers(feature)
 
   // The gene-name UniProt search is ambiguous across species, so scope it to
-  // the assembly's organism. jb2hubs assemblies carry the NCBI taxon in the
-  // reference-sequence track metadata (UCSC: metadata.taxId, GenArk:
-  // metadata.ucsc.taxId). Falls back to human via searchUniProtEntries when
-  // absent; a user override (taxonIdInput) always wins.
+  // the assembly's organism where the assembly says what that is. jb2hubs
+  // assemblies carry the NCBI taxon in the reference-sequence track metadata
+  // (UCSC: metadata.taxId, GenArk: metadata.ucsc.taxId). With none the query
+  // runs unscoped and the organism column makes the choice visible; a user
+  // override (taxonIdInput) always wins.
   const assemblyName = view.assemblyNames[0]
   const assembly = assemblyName
     ? getSession(view).assemblyManager.get(assemblyName)
@@ -44,25 +56,34 @@ export default function useUniProtIdLookup({
     : undefined
 
   const overrideTaxon = Number(taxonIdInput.trim())
-  const effectiveTaxonId =
+  const hasOverride =
     taxonIdInput.trim() !== '' &&
     Number.isFinite(overrideTaxon) &&
     overrideTaxon > 0
-      ? overrideTaxon
-      : assemblyTaxonId
+  const effectiveTaxonId = hasOverride ? overrideTaxon : assemblyTaxonId
   const [selectedQueryId, setSelectedQueryId] = useState('auto')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
 
   const featureUniprotId = geneIds.uniprotId
+  const hasSearchableIdentifier =
+    geneIds.recognizedIds.length > 0 || !!geneIds.geneName
 
+  // Nothing to search and no accession on the feature: the auto mode has no
+  // query to run, so the dialog opens on the manual field instead of reporting
+  // an empty result for an empty query.
   const effectiveLookupMode =
-    lookupMode === 'auto' && featureUniprotId ? 'feature' : lookupMode
+    lookupMode === 'auto' && featureUniprotId
+      ? 'feature'
+      : lookupMode === 'auto' && !hasSearchableIdentifier
+        ? 'manual'
+        : lookupMode
   const isAutoMode = effectiveLookupMode === 'auto'
 
   const {
     entries: uniprotEntries,
     isLoading: isLookupLoading,
     error: lookupError,
+    partialFailure: lookupPartialFailure,
   } = useUniProtSearch({
     recognizedIds: geneIds.recognizedIds,
     geneId: geneIds.geneId,
@@ -98,8 +119,11 @@ export default function useUniProtIdLookup({
     setManualUniprotId,
     taxonId: taxonIdInput,
     setTaxonId: setTaxonIdInput,
-    // shown as the field placeholder so the user sees the organism in effect
-    effectiveTaxonId: effectiveTaxonId ?? 9606,
+    effectiveTaxonId,
+    organismDescription: describeOrganism(
+      effectiveTaxonId,
+      hasOverride ? 'user' : 'assembly',
+    ),
     selectedQueryId,
     setSelectedQueryId,
     setSelectedUniprotId,
@@ -107,13 +131,15 @@ export default function useUniProtIdLookup({
     uniprotEntries,
     isLookupLoading,
     lookupError,
+    lookupPartialFailure,
     uniprotId,
     featureUniprotId,
     recognizedIds: geneIds.recognizedIds,
     geneName: geneIds.geneName,
     isAutoMode,
-    showIdentifierSelector:
-      isAutoMode && (geneIds.recognizedIds.length > 0 || !!geneIds.geneName),
+    hasSearchableIdentifier,
+    nothingToSearch: !hasSearchableIdentifier && !featureUniprotId,
+    showIdentifierSelector: isAutoMode && hasSearchableIdentifier,
     searchDescription: getSearchDescription({
       selectedQueryId,
       recognizedIds: geneIds.recognizedIds,

@@ -65,12 +65,28 @@ async function searchUniProt(
   return data.results.map(mapApiResultToEntry)
 }
 
-interface SearchByXrefResult {
+/**
+ * `gene_exact` rather than `gene`, which also matches synonyms and returns
+ * paralogs. Without a taxon the query runs across every species, so a mouse
+ * assembly whose tracks carry no taxId lists mouse beside human instead of
+ * silently answering with the human entry.
+ */
+export function buildGeneNameQuery(geneName: string, organismId?: number) {
+  return [
+    `gene_exact:${geneName}`,
+    organismId ? `organism_id:${organismId}` : undefined,
+    'reviewed:true',
+  ]
+    .filter(s => s !== undefined)
+    .join(' AND ')
+}
+
+interface SearchAttempt {
   entries: UniProtEntry[]
   error: unknown
 }
 
-async function searchByXref(id: string): Promise<SearchByXrefResult> {
+async function searchByXref(id: string): Promise<SearchAttempt> {
   const query = buildUniProtXrefQuery(id)
   if (!query) {
     return { entries: [], error: undefined }
@@ -79,6 +95,22 @@ async function searchByXref(id: string): Promise<SearchByXrefResult> {
     return { entries: await searchUniProt(query), error: undefined }
   } catch (e) {
     console.error(`xref search failed for ${id}:`, e)
+    return { entries: [], error: e }
+  }
+}
+
+async function searchByGeneName(
+  geneName: string,
+  organismId?: number,
+): Promise<SearchAttempt> {
+  try {
+    const entries = await searchUniProt(
+      buildGeneNameQuery(geneName, organismId),
+      organismId ? 5 : 10,
+    )
+    return { entries, error: undefined }
+  } catch (e) {
+    console.error(`gene name search failed for ${geneName}:`, e)
     return { entries: [], error: e }
   }
 }
@@ -95,50 +127,65 @@ function deduplicateEntries(entries: UniProtEntry[]) {
   return result
 }
 
+export interface UniProtSearchResult {
+  entries: UniProtEntry[]
+  attemptedCount: number
+  failedCount: number
+}
+
 export async function searchUniProtEntries({
   recognizedIds = [],
   geneId,
   geneName,
-  organismId = 9606,
+  organismId,
 }: {
   recognizedIds?: string[]
   geneId?: string
   geneName?: string
+  /** NCBI taxon id; undefined searches every species */
   organismId?: number
-}) {
+}): Promise<UniProtSearchResult> {
   const idsToSearch = new Set(recognizedIds)
   const strippedGeneId = geneId ? stripTrailingVersion(geneId) : undefined
   if (strippedGeneId && isRecognizedDatabaseId(strippedGeneId)) {
     idsToSearch.add(strippedGeneId)
   }
 
-  const xrefResults = await Promise.all([...idsToSearch].map(searchByXref))
+  // The gene-name query runs alongside the xrefs rather than after them: it is
+  // only consulted when no xref found a reviewed entry, but waiting for that
+  // answer before starting it doubled the latency of the commonest case.
+  const [xrefResults, geneResult] = await Promise.all([
+    Promise.all([...idsToSearch].map(searchByXref)),
+    geneName ? searchByGeneName(geneName, organismId) : undefined,
+  ])
+
   let entries = deduplicateEntries(xrefResults.flatMap(r => r.entries))
-  const xrefErrors = xrefResults.filter(r => r.error !== undefined)
-
-  // Fallback: if no reviewed entries found, try gene name search
-  let geneNameError: unknown
-  if (!entries.some(e => e.isReviewed) && geneName) {
-    try {
-      const query = `gene:${geneName} AND organism_id:${organismId} AND reviewed:true`
-      const geneNameResults = await searchUniProt(query, 5)
-      entries = deduplicateEntries([...entries, ...geneNameResults])
-    } catch (e) {
-      console.error(`gene name search failed for ${geneName}:`, e)
-      geneNameError = e
-    }
+  if (geneResult && !entries.some(e => e.isReviewed)) {
+    entries = deduplicateEntries([...entries, ...geneResult.entries])
   }
 
-  // If we got no entries but every attempted lookup failed, surface the
-  // underlying error rather than silently returning []. Otherwise consumers
-  // see "No UniProt ID found" with no indication that the network failed.
-  if (entries.length === 0) {
-    const attempted = idsToSearch.size + (geneName ? 1 : 0)
-    const failed = xrefErrors.length + (geneNameError ? 1 : 0)
-    if (attempted > 0 && attempted === failed) {
-      throw (geneNameError ?? xrefErrors[0]?.error) as Error
-    }
+  const attemptedCount = idsToSearch.size + (geneName ? 1 : 0)
+  const failedCount =
+    xrefResults.filter(r => r.error !== undefined).length +
+    (geneResult?.error === undefined ? 0 : 1)
+
+  // Every attempt failing is a network problem, not an empty result. Throwing
+  // it stops consumers reporting "No UniProt ID found" over a dead connection.
+  if (
+    entries.length === 0 &&
+    attemptedCount > 0 &&
+    attemptedCount === failedCount
+  ) {
+    throw (
+      geneResult?.error ?? xrefResults.find(r => r.error !== undefined)?.error
+    )
   }
 
-  return entries.toSorted((a, b) => Number(b.isReviewed) - Number(a.isReviewed))
+  return {
+    entries: entries.toSorted(
+      (a, b) => Number(b.isReviewed) - Number(a.isReviewed),
+    ),
+    attemptedCount,
+    failedCount,
+  }
 }

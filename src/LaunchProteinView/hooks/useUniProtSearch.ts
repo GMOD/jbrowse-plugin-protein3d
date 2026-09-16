@@ -4,7 +4,16 @@ import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { searchUniProtEntries } from '../services/lookupMethods'
 import { isRecognizedDatabaseId } from '../utils/util'
 
-import type { UniProtEntry } from '../services/lookupMethods'
+import type { UniProtSearchResult } from '../services/lookupMethods'
+
+export function partialFailureNotice({
+  attemptedCount,
+  failedCount,
+}: UniProtSearchResult) {
+  return failedCount > 0 && failedCount < attemptedCount
+    ? `UniProt lookup failed for ${failedCount} of ${attemptedCount} identifiers`
+    : undefined
+}
 
 export default function useUniProtSearch({
   recognizedIds = [],
@@ -17,8 +26,7 @@ export default function useUniProtSearch({
   recognizedIds?: string[]
   geneId?: string
   geneName?: string
-  // NCBI taxon id scoping the gene-name fallback; undefined defers to the
-  // searchUniProtEntries default (human, 9606)
+  // NCBI taxon id scoping the gene-name query; undefined searches all species
   organismId?: number
   selectedQueryId?: string
   enabled?: boolean
@@ -40,7 +48,7 @@ export default function useUniProtSearch({
     idsToSearch.some(id => isRecognizedDatabaseId(id)) ||
     Boolean(geneNameToSearch)
 
-  const { data, error, isLoading } = useSWR<UniProtEntry[]>(
+  const { data, error, isLoading } = useSWR<UniProtSearchResult>(
     enabled && hasValidId
       ? [
           'uniprotSearch',
@@ -65,9 +73,10 @@ export default function useUniProtSearch({
   )
 
   return {
-    entries: data ?? [],
+    entries: data?.entries ?? [],
     isLoading,
     error,
     hasValidId,
+    partialFailure: data ? partialFailureNotice(data) : undefined,
   }
 }

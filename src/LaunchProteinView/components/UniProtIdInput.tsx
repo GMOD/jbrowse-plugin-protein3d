@@ -25,6 +25,8 @@ interface UniProtIdInputProps {
   manualUniprotId: string
   onManualUniprotIdChange: (id: string) => void
   featureUniprotId?: string
+  /** false hides the lookup radio: there is no identifier for it to run on */
+  hasSearchableIdentifier?: boolean
   endContent?: React.ReactNode
 }
 
@@ -34,6 +36,7 @@ export default function UniProtIdInput({
   manualUniprotId,
   onManualUniprotIdChange,
   featureUniprotId,
+  hasSearchableIdentifier = true,
   endContent,
 }: UniProtIdInputProps) {
   return (
@@ -56,11 +59,13 @@ export default function UniProtIdInput({
                 label={`From feature (${featureUniprotId})`}
               />
             )}
-            <FormControlLabel
-              value="auto"
-              control={<Radio />}
-              label="Auto-detect using UniProt ID mapping API"
-            />
+            {hasSearchableIdentifier && (
+              <FormControlLabel
+                value="auto"
+                control={<Radio />}
+                label="Look up from the feature's identifiers"
+              />
+            )}
             <FormControlLabel
               value="manual"
               control={<Radio />}
@@ -74,6 +79,7 @@ export default function UniProtIdInput({
       {lookupMode === 'manual' && (
         <div>
           <TextField
+            autoFocus
             label="UniProt ID"
             variant="outlined"
             placeholder="e.g. P68871"
