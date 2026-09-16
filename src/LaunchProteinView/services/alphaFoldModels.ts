@@ -1,8 +1,6 @@
 import { httpError, rawfetch } from '../../fetchUtils'
 import { stripStopCodon } from '../utils/util'
 
-import type { IsoformSequences } from '../utils/util'
-
 export interface AlphaFoldModel {
   /** UniProt accession, with an isoform suffix on an isoform model */
   accession: string
@@ -65,10 +63,13 @@ export async function fetchAlphaFoldModels(uniprotId: string) {
  * The model to open for a gene's transcripts: one folded from exactly a
  * transcript's translation, canonical first, so the view maps it as an
  * identity; else the canonical model; else the longest isoform model.
+ *
+ * Takes any record of sequences, since the structure loader knows one
+ * translation rather than a gene's isoforms.
  */
 export function pickAlphaFoldModel(
   models: AlphaFoldModel[],
-  isoformSequences: IsoformSequences | undefined,
+  isoformSequences: Record<string, { seq: string }> | undefined,
 ) {
   const translations = new Set(
     Object.values(isoformSequences ?? {}).map(v => stripStopCodon(v.seq)),

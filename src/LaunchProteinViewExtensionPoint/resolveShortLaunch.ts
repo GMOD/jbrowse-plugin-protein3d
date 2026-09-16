@@ -19,7 +19,6 @@ export interface ConnectedViewSpec {
 }
 
 export interface ResolvedShortLaunch {
-  url: string
   feature: SimpleFeatureSerialized
   userProvidedTranscriptSequence: string
 }
@@ -67,22 +66,19 @@ function transcriptMatches(transcript: Feature, transcriptId: string) {
 
 /**
  * Headless counterpart of the interactive AlphaFoldDBSearch → TranscriptSelector
- * flow. Given a `uniprotId`, a `transcriptId`, and a connected genome view spec,
- * it derives the three things a ProteinView structure needs: the AlphaFold
- * structure URL, the transcript `feature` (for the genome↔protein mapping), and
- * the translated protein sequence (for the alignment). Every failure throws with
- * a descriptive message so the caller can surface it — nothing degrades silently
- * to an unlinked structure.
+ * flow. Given a `transcriptId` and a connected genome view spec, it derives the
+ * two things a ProteinView structure needs beyond its file: the transcript
+ * `feature` (for the genome↔protein mapping) and the translated protein
+ * sequence (for the alignment). Every failure throws with a descriptive message
+ * so the caller can surface it — nothing degrades silently to an unlinked
+ * structure.
  */
 export async function resolveShortLaunch({
   session,
-  structureUrl,
   transcriptId,
   connectedView,
 }: {
   session: AbstractSessionModel
-  /** already resolved from the uniprotId/pdbId shorthand by the caller */
-  structureUrl: string
   transcriptId?: string
   connectedView?: ConnectedViewSpec
 }): Promise<ResolvedShortLaunch> {
@@ -167,7 +163,6 @@ export async function resolveShortLaunch({
   }
 
   return {
-    url: structureUrl,
     feature: transcript.toJSON(),
     userProvidedTranscriptSequence,
   }

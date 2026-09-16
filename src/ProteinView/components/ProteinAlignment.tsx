@@ -15,21 +15,17 @@ import {
 } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
+import TrackLegend from './TrackLegend'
 import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
-import {
-  LOW_IDENTITY_OVER_SHORTER,
-  SHORT_ALIGNMENT_IDENTITY,
-  SHORT_ALIGNMENT_RESIDUES,
-  describeAlignmentQuality,
-  isLowSimilarity,
-} from '../alignmentQuality'
+import { describeAlignmentQuality } from '../alignmentQuality'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
 import { hydrophobicityColor, plddtColor } from '../residueTracks'
+import { errorMessage } from '../util'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -145,7 +141,17 @@ const ProteinAlignment = observer(function ProteinAlignment({
     error: trackError,
   } = useProteinFeatureTrackData(model, uniprotId, mapUniProtPosition)
   const featureLoading = uniprotLoading || trackLoading
+  // Two different failures reach one gutter cell, and "Error" alone leaves the
+  // reader guessing whether the structure has no UniProt entry or the entry's
+  // features would not download.
   const featureError = uniprotError ?? trackError
+  const featureErrorMessage = featureError
+    ? `${
+        uniprotError
+          ? `Could not map ${label} to a UniProt entry through SIFTS`
+          : `Could not load UniProt features for ${uniprotId ?? label}`
+      }: ${errorMessage(featureError)}`
+    : undefined
 
   // Recenter only on a large jump — when the hovered column lands well outside
   // the viewport (e.g. hovering a distant residue in the 3D structure). A column
@@ -232,8 +238,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
             rows mean is in the help dialog. */}
         <Typography variant="subtitle2">
           {label}
-          {/* The alignment always produces something, so the readout is what
-              tells a chance hit on an unrelated chain from a real mapping. */}
+          {/* Identity and coverage live in the header, which stays visible when
+              this panel is hidden. What is left here is what only means
+              something inside the panel. */}
           {quality ? (
             <Typography
               variant="caption"
@@ -244,20 +251,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
               {describeAlignmentQuality(quality)}
               {showHighlight ? ', green is the aligned portion' : ''}
             </Typography>
-          ) : null}
-          {quality && isLowSimilarity(quality) ? (
-            <Tooltip
-              title={`Under ${Math.round(LOW_IDENTITY_OVER_SHORTER * 100)}% of the shorter sequence is identical (${Math.round(SHORT_ALIGNMENT_IDENTITY * 100)}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`}
-            >
-              <Typography
-                variant="caption"
-                color="error"
-                sx={{ ml: 1 }}
-                data-testid="alignment-low-similarity"
-              >
-                low similarity: mapped positions may not correspond
-              </Typography>
-            </Tooltip>
           ) : null}
         </Typography>
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
@@ -312,14 +305,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
           {showProteinTracks ? (
             featureLoading ? (
               <div className={classes.gutterStatus}>Loading...</div>
-            ) : featureError ? (
-              <Tooltip
-                title={
-                  featureError instanceof Error
-                    ? featureError.message
-                    : 'Error loading features'
-                }
-              >
+            ) : featureErrorMessage ? (
+              <Tooltip title={featureErrorMessage}>
                 <div className={classes.gutterError}>Error</div>
               </Tooltip>
             ) : featureData ? (
@@ -395,6 +382,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ) : null}
         </div>
       </div>
+      {showProteinTracks ? (
+        <TrackLegend
+          featureTypes={
+            featureData?.visibleGroups.map(group => group.type) ?? []
+          }
+          showConfidence={confidenceCells.length > 0}
+        />
+      ) : null}
     </div>
   )
 })

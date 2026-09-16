@@ -60,6 +60,38 @@ const DismissableError = observer(function DismissableError({
   ) : null
 })
 
+// Mol* being up says nothing about the structure: the fetch, the parse, the
+// alignment and the SIFTS lookup all run afterwards, and used to run behind an
+// empty grey canvas. Sits over the canvas rather than in it, and passes the
+// pointer through, so nothing it covers stops responding.
+const StructureLoadingOverlay = observer(function StructureLoadingOverlay({
+  model,
+}: {
+  model: JBrowsePluginProteinViewModel
+}) {
+  const { loadingMessages } = model
+  return loadingMessages.length > 0 ? (
+    <div
+      data-testid="protein-view-loading-overlay"
+      style={{
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        maxWidth: 'calc(100% - 16px)',
+        padding: '2px 8px',
+        borderRadius: 4,
+        background: 'rgba(255,255,255,0.85)',
+        color: '#000',
+        pointerEvents: 'none',
+      }}
+    >
+      {loadingMessages.map(message => (
+        <LoadingEllipses key={message} message={message} />
+      ))}
+    </div>
+  ) : null
+})
+
 const ProteinViewContainer = observer(function ProteinViewContainer({
   model,
   parentRef,
@@ -85,18 +117,22 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
       ) : (
         <ProteinViewHeader model={model} />
       )}
-      {/* Molstar mounts its own DOM inside here. Tagged so callers (and the
-          e2e suite) can find the viewer without reaching for molstar's internal
-          `msp-plugin` class names, which are not ours to depend on. */}
-      <div
-        ref={parentRef}
-        data-testid="protein-view-molstar"
-        style={{
-          position: 'relative',
-          width,
-          height,
-        }}
-      />
+      <div style={{ position: 'relative', width, height }}>
+        {/* Molstar mounts its own DOM inside here. Tagged so callers (and the
+            e2e suite) can find the viewer without reaching for molstar's
+            internal `msp-plugin` class names, which are not ours to depend
+            on. */}
+        <div
+          ref={parentRef}
+          data-testid="protein-view-molstar"
+          style={{
+            position: 'relative',
+            width,
+            height,
+          }}
+        />
+        <StructureLoadingOverlay model={model} />
+      </div>
       <ResizeHandle
         style={{ height: 4, background: 'grey' }}
         onDrag={delta => {

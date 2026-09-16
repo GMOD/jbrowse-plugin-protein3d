@@ -36,6 +36,19 @@ export function kyteDoolittleScores(seq: string): (number | undefined)[] {
  * color theme): very low (<=50) orange, low (<=70) yellow, confident (<=90)
  * light blue, very high (>90) blue.
  */
+/**
+ * The bins the palette below draws, for the legend: a track of four blues and
+ * oranges means nothing without the scale it encodes. Each names a score
+ * inside its band rather than a colour, so the legend cannot drift from the
+ * palette.
+ */
+export const PLDDT_BINS = [
+  { label: 'very high >90', score: 95 },
+  { label: 'confident 70-90', score: 80 },
+  { label: 'low 50-70', score: 60 },
+  { label: 'very low <50', score: 40 },
+]
+
 export function plddtColor(score: number): string {
   return score < 0
     ? '#cccccc'

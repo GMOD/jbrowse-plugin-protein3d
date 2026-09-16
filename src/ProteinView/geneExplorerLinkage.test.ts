@@ -88,7 +88,6 @@ const TestParent = types
     },
   }))
   .actions(() => ({
-    setShowAlignment(_: boolean) {},
     setError(_: unknown) {},
   }))
 

@@ -48,20 +48,25 @@ they can't drift into different property subsets.
 #### Structure shorthand: `uniprotId` / `pdbId`
 
 Instead of a full `url`, a structure may give a `uniprotId` (→ AlphaFold model)
-or `pdbId` (→ RCSB mmCIF); it's resolved to `url` at hydration when no
-`url`/`data` is set, so you don't have to know the file-URL format:
+or `pdbId` (→ RCSB mmCIF), so you don't have to know the file-URL format:
 
 ```jsonc
 { "type": "ProteinView", "structures": [{ "uniprotId": "P04637" }] }
 ```
 
-The shorthand keys are input-only (not stored — `uniprotId` stays derivable from
-the resolved url) and resolve the **canonical isoform only** (`AF-<id>-F1`).
-Per-isoform structures (UniProt/AlphaFold DB now publish these) are not yet
-addressable via this shorthand — pass an explicit `url` for a specific isoform.
-This snapshot shorthand only sets the structure; it does **not** build the
-genome↔protein connection (feature/sequence) — for that use the extension
-point's `uniprotId` + `transcriptId` short form below.
+`pdbId` resolves to `<pdbId>.cif` at hydration and is not stored. `uniprotId` is
+stored, and the structure loader asks AlphaFold DB's prediction API which of the
+accession's files to open, then fills in `url`. It picks the model folded from
+exactly the transcript's translation where one exists — so an isoform launch
+maps as an identity — else the canonical model, else the longest isoform. A
+spelled `AF-<id>-F1-model_v6.cif` is only the fallback for an unreachable API:
+dystrophin has fourteen isoform models and no F1 fragment, and the model version
+moves under every config already published.
+
+An explicit `url`/`data` always wins over both shorthands. This snapshot
+shorthand only sets the structure; it does **not** build the genome↔protein
+connection (feature/sequence) — for that use the extension point's `uniprotId` +
+`transcriptId` short form below.
 
 A structure with several polymer chains maps the transcript to the protein chain
 with the most identical residues over the shorter of transcript and chain, so a
@@ -150,7 +155,7 @@ https://jbrowse.org/jb2/docs/urlparams/#session-spec).
 \* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
 form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same
 precedence a `structures: [...]` snapshot uses, since both go through
-`resolveStructureUrl`.
+`resolveStructureUrl` and then the structure loader.
 
 ### URL example
 
@@ -215,8 +220,8 @@ to exercise specific paths.
 
 Given the short form + `transcriptId`, the plugin:
 
-- derives the structure URL from `uniprotId` (`AF-<uniprotId>-F1-model_v6.cif`)
-  or `pdbId` (`<pdbId>.cif` from RCSB),
+- derives the structure URL from `uniprotId` (whichever model AlphaFold DB's
+  prediction API names for the transcript) or `pdbId` (`<pdbId>.cif` from RCSB),
 - fetches features at `loc` from the `connectedView` `tracks` and picks the
   transcript whose id/name matches `transcriptId` (trailing version optional, so
   `NM_000546` matches `NM_000546.6`),

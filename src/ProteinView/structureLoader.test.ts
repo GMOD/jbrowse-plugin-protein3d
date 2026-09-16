@@ -3,10 +3,15 @@ import { beforeEach, expect, test, vi } from 'vitest'
 
 import { loadStructureData } from './loadStructureData'
 import { makeStructureLoader } from './structureLoader'
+import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 
 import type { Entity } from './extractStructureSequences'
 import type { StructureData } from './loadStructureData'
-import type { StructureLoaderHost } from './structureLoader'
+import type {
+  AlphaFoldModelFetcher,
+  StructureLoaderHost,
+} from './structureLoader'
+import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
 const entity = (seq: string): Entity => ({
@@ -23,13 +28,26 @@ const mockLoad = vi.mocked(loadStructureData)
 // Minimal stand-ins matching only the surface makeStructureLoader touches, so
 // the test exercises the loader's guard logic without molstar/structureModel.
 const TestStructure = types
-  .model('TestStructure', {})
+  .model('TestStructure', {
+    url: types.maybe(types.string),
+    data: types.maybe(types.string),
+    uniprotId: types.maybe(types.string),
+    userProvidedTranscriptSequence: types.optional(types.string, ''),
+  })
   .volatile(() => ({
     loadedToMolstar: false,
     entities: undefined as Entity[] | undefined,
     molstarStructure: undefined as Structure | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    loadError: undefined as unknown,
   }))
   .actions(self => ({
+    setUrl(url: string) {
+      self.url = url
+    },
+    setLoadError(e: unknown) {
+      self.loadError = e
+    },
     setStructureData(d: StructureData) {
       self.entities = d.entities
       self.molstarStructure = d.molstarStructure
@@ -46,25 +64,53 @@ const TestHost = types
   .model('TestHost', { structures: types.array(TestStructure) })
   .volatile(() => ({
     molstarPluginContext: undefined as object | undefined,
-    errors: [] as unknown[],
   }))
   .actions(self => ({
     setPlugin(p: object) {
       self.molstarPluginContext = p
     },
-    setError(e: unknown) {
-      self.errors.push(e)
-    },
   }))
+
+type TestHostInstance = Instance<typeof TestHost>
+
+// One cast, at the seam where the stand-in stands in for the real host
+const asLoaderHost = (host: TestHostInstance) =>
+  host as unknown as StructureLoaderHost
 
 function setup(plugin: object, count = 1) {
   const host = TestHost.create({
     structures: Array.from({ length: count }, () => ({})),
   })
   host.setPlugin(plugin)
-  const load = makeStructureLoader(host as unknown as StructureLoaderHost)
+  const load = makeStructureLoader(asLoaderHost(host))
   return { host, load, structure: host.structures[0]! }
 }
+
+function setupAlphaFold(
+  snapshot: { uniprotId?: string; url?: string; transcript?: string },
+  fetchModels: AlphaFoldModelFetcher,
+) {
+  const host = TestHost.create({
+    structures: [
+      {
+        uniprotId: snapshot.uniprotId,
+        url: snapshot.url,
+        userProvidedTranscriptSequence: snapshot.transcript ?? '',
+      },
+    ],
+  })
+  host.setPlugin({})
+  return {
+    load: makeStructureLoader(asLoaderHost(host), fetchModels),
+    structure: host.structures[0]!,
+  }
+}
+
+const alphaFoldModel = (accession: string, sequence: string) => ({
+  accession,
+  url: `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v6.cif`,
+  sequence,
+})
 
 const tick = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
@@ -148,16 +194,16 @@ test('unloading drops the handle so highlights never target a dead plugin', asyn
   expect(structure.molstarStructure).toBeUndefined()
 })
 
-test('reports load errors and leaves the structure unloaded', async () => {
+test('reports a load error on the structure that failed, not the view', async () => {
   const err = new Error('boom')
   // the handler logs as well as reporting, so expect the log rather than let
   // it print: an unexpected console.error in this suite is worth noticing
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   mockLoad.mockRejectedValue(err)
-  const { host, load, structure } = setup({})
+  const { load, structure } = setup({})
   load()
   await tick()
-  expect(host.errors).toContain(err)
+  expect(structure.loadError).toBe(err)
   expect(structure.loadedToMolstar).toBe(false)
   expect(logged).toHaveBeenCalledWith(err)
   logged.mockRestore()
@@ -177,8 +223,67 @@ test('a load that fails because its plugin was swapped away retries into the cur
   rejectFirst(new Error('plugin disposed'))
   await tick()
 
-  expect(host.errors).toEqual([])
+  expect(structure.loadError).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(true)
   expect(structure.entities).toEqual([entity('B')])
   expect(mockLoad).toHaveBeenCalledTimes(2)
+})
+
+// A `{ uniprotId }` structure has no file until AlphaFold DB names one: the
+// spelled AF-<acc>-F1-model_v6 404s for anything folded in fragments, and the
+// version moves under every config already published.
+test('a uniprotId structure opens the model AlphaFold DB names for the transcript', async () => {
+  mockLoad.mockResolvedValue({})
+  const fetchModels = vi.fn(() =>
+    Promise.resolve([
+      alphaFoldModel('P04637', 'MEEPQSDP'),
+      alphaFoldModel('P04637-2', 'MEEPQ'),
+    ]),
+  )
+  const { load, structure } = setupAlphaFold(
+    { uniprotId: 'P04637', transcript: 'MEEPQ*' },
+    fetchModels,
+  )
+  load()
+  await tick()
+  expect(fetchModels).toHaveBeenCalledWith('P04637')
+  expect(structure.url).toBe(alphaFoldModel('P04637-2', '').url)
+  expect(mockLoad).toHaveBeenCalledTimes(1)
+})
+
+test('with no transcript match the canonical model wins over an isoform', async () => {
+  mockLoad.mockResolvedValue({})
+  const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
+    Promise.resolve([
+      alphaFoldModel('P04637-2', 'MEEPQ'),
+      alphaFoldModel('P04637', 'MEEPQSDP'),
+    ]),
+  )
+  load()
+  await tick()
+  expect(structure.url).toBe(alphaFoldModel('P04637', '').url)
+})
+
+test('a failed prediction API falls back to the canonical filename', async () => {
+  mockLoad.mockResolvedValue({})
+  const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
+    Promise.reject(new Error('HTTP 503')),
+  )
+  load()
+  await tick()
+  expect(structure.url).toBe(getAlphaFoldStructureUrl('P04637'))
+  expect(structure.loadedToMolstar).toBe(true)
+})
+
+test('a structure that already has a url never asks AlphaFold DB', async () => {
+  mockLoad.mockResolvedValue({})
+  const fetchModels = vi.fn(() => Promise.resolve([]))
+  const { load, structure } = setupAlphaFold(
+    { uniprotId: 'P04637', url: 'https://e.com/mine.cif' },
+    fetchModels,
+  )
+  load()
+  await tick()
+  expect(fetchModels).not.toHaveBeenCalled()
+  expect(structure.url).toBe('https://e.com/mine.cif')
 })

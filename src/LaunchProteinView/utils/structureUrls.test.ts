@@ -67,7 +67,7 @@ test('ignores non-pdb urls', () => {
 
 test('resolveStructureUrl: an explicit url wins over any shorthand', () => {
   expect(
-    resolveStructureUrl({ url: 'https://e.com/x.cif', uniprotId: 'P04637' }),
+    resolveStructureUrl({ url: 'https://e.com/x.cif', pdbId: '1TUP' }),
   ).toBe('https://e.com/x.cif')
 })
 
@@ -78,22 +78,21 @@ test('resolveStructureUrl: inline data suppresses the shorthand', () => {
   ).toBeUndefined()
 })
 
-test('resolveStructureUrl: uniprotId resolves to the AlphaFold model', () => {
-  expect(resolveStructureUrl({ uniprotId: 'P04637' })).toBe(
-    getAlphaFoldStructureUrl('P04637'),
-  )
-})
-
 test('resolveStructureUrl: pdbId resolves to the RCSB mmCIF', () => {
   expect(resolveStructureUrl({ pdbId: '1TUP' })).toBe(
     getPdbStructureUrl('1TUP'),
   )
 })
 
-test('resolveStructureUrl: uniprotId takes precedence over pdbId', () => {
-  expect(resolveStructureUrl({ uniprotId: 'P04637', pdbId: '1TUP' })).toBe(
-    getAlphaFoldStructureUrl('P04637'),
-  )
+// An accession names whichever files AlphaFold DB holds for it, so the loader
+// asks the prediction API; a url spelled here would pin the F1 fragment of one
+// model version.
+test('resolveStructureUrl leaves a uniprotId for the loader to resolve', () => {
+  expect(resolveStructureUrl({ uniprotId: 'P04637' })).toBeUndefined()
+  // and an accession still outranks a pdbId, as the short launch form documents
+  expect(
+    resolveStructureUrl({ uniprotId: 'P04637', pdbId: '1TUP' }),
+  ).toBeUndefined()
 })
 
 test('resolveStructureUrl is idempotent over an already-resolved spec', () => {
@@ -116,5 +115,9 @@ test('structureDisplayLabel names a structure by its id, else its file', () => {
     structureDisplayLabel({ url: 'https://e.com/models/ranked_0.pdb?x=1' }),
   ).toBe('ranked_0.pdb')
   expect(structureDisplayLabel({ data: 'ATOM...' })).toBe('Uploaded structure')
+  // named before its file is known, so the header reads the same either way
+  expect(structureDisplayLabel({ uniprotId: 'P04637' })).toBe(
+    'AlphaFold P04637',
+  )
   expect(structureDisplayLabel({})).toBe('')
 })

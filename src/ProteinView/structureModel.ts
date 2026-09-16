@@ -9,6 +9,7 @@ import {
 import { autorun, when } from 'mobx'
 
 import { alignmentQuality } from './alignmentQuality'
+import { attachStructureInteractions } from './attachStructureInteractions'
 import {
   alignTranscriptToEntity,
   chooseMappedEntity,
@@ -44,13 +45,11 @@ import {
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
-  proteinRangeToGenomeMapping,
-  proteinToGenomeMapping,
+  structureRangeToGenomeRegions,
 } from './proteinToGenomeMapping'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
-import subscribeMolstarInteraction, {
-  type MolstarLocationInfo,
-} from './subscribeMolstarInteraction'
+import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
+import { errorMessage } from './util'
 import {
   getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
@@ -59,7 +58,6 @@ import {
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import {
-  alignmentLength,
   codonGenomeSpan,
   genomeToTranscriptSeqMapping,
   mappedStructureIdentity,
@@ -90,7 +88,6 @@ export interface ParentProteinView {
   compactTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
-  setShowAlignment: (f: boolean) => void
   setError: (e: unknown) => void
 }
 
@@ -104,6 +101,15 @@ const Structure = types
      * #property
      */
     data: types.maybe(types.string),
+    /**
+     * #property
+     * UniProt accession of the structure: the one a `{ uniprotId }` shorthand
+     * asked for, or the one an AlphaFold url names. With no url the structure
+     * loader asks AlphaFold DB which of the accession's models to open and
+     * fills in `url` — the files an accession has are the API's answer, not a
+     * filename this plugin can spell.
+     */
+    uniprotId: types.maybe(types.string),
     /**
      * #property
      */
@@ -170,23 +176,24 @@ const Structure = types
      */
     alignmentImported: types.optional(types.boolean, false),
   })
-  // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
-  // concrete `url` at hydration and strip the shorthand keys (they are not
-  // stored — uniprotId stays derivable from the url via the getter below), so a
-  // hand-authored snapshot loads without the caller knowing the AlphaFold/RCSB
-  // URL format. An explicit url/data always wins; the shorthand resolves the
-  // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
-  // shorthand keys and an already-set url, so it passes through unchanged.
+  // Shorthand: a `{ pdbId }` snapshot resolves to a concrete `url` at
+  // hydration, so a hand-authored snapshot loads without the caller knowing
+  // RCSB's URL format. A `{ uniprotId }` keeps the accession instead and the
+  // loader resolves the file. An explicit url/data always wins, and an
+  // AlphaFold url fills in the accession it names. Idempotent: a re-snapshot
+  // carries an already-set url, so it passes through unchanged.
   // A snapshot carrying an alignment but no alignmentImported predates the
   // flag or was written by hand; either way the alignment is used as given.
-  .preProcessSnapshot(
-    ({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
+  .preProcessSnapshot(({ pdbId, uniprotId, ...rest }: ProteinStructureSpec) => {
+    const url = resolveStructureUrl({ ...rest, uniprotId, pdbId })
+    return {
       ...rest,
-      url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
+      url,
+      uniprotId: url ? getUniprotIdFromAlphaFoldTarget(url) : uniprotId,
       alignmentImported:
         rest.alignmentImported ?? rest.pairwiseAlignment !== undefined,
-    }),
-  )
+    }
+  })
   .volatile(() => ({
     /**
      * #volatile
@@ -287,8 +294,30 @@ const Structure = types
      */
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     uniProtMappingsError: undefined as unknown,
+    /**
+     * #volatile
+     * Why this structure could not be shown: a failed download, an unparseable
+     * file, an alignment that threw. Per structure rather than a view-wide
+     * banner, because with several open "Failed to fetch" names none of them.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    loadError: undefined as unknown,
   }))
   .actions(self => ({
+    /**
+     * #action
+     * The file the accession's structure lives in, once the loader has asked
+     * AlphaFold DB for it. Stored, so a saved session reopens the same model.
+     */
+    setUrl(url: string) {
+      self.url = url
+    },
+    /**
+     * #action
+     */
+    setLoadError(error: unknown) {
+      self.loadError = error
+    },
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
       self.uniProtMappingsError = error
@@ -452,17 +481,6 @@ const Structure = types
      */
     get label() {
       return structureDisplayLabel(self)
-    },
-    /**
-     * #getter
-     * Extracts UniProt ID from AlphaFold URL if available
-     */
-    get uniprotId() {
-      const { url } = self
-      if (!url) {
-        return undefined
-      }
-      return getUniprotIdFromAlphaFoldTarget(url)
     },
     /**
      * #getter
@@ -799,30 +817,16 @@ const Structure = types
     structureRangeToGenomeHighlight(
       range: { start: number; end: number } | undefined,
     ): IRegion[] {
-      const assemblyName = self.connectedView?.assemblyNames[0]
-      const mapping = this.genomeToTranscriptSeqMapping
-      if (!range || !assemblyName || !mapping) {
-        return []
-      }
-      const model = {
-        genomeToTranscriptSeqMapping: mapping,
-        pairwiseAlignment: this.alignment,
-        structureSeqToTranscriptSeqPosition:
-          this.structureSeqToTranscriptSeqPosition,
-      }
-      const mapped =
-        range.end > range.start + 1
-          ? proteinRangeToGenomeMapping({
-              model,
-              structureSeqPos: range.start,
-              structureSeqEndPos: range.end,
-            })
-          : proteinToGenomeMapping({ model, structureSeqPos: range.start })
-      if (!mapped) {
-        return []
-      }
-      const [start, end] = mapped
-      return [{ assemblyName, refName: mapping.refName, start, end }]
+      return structureRangeToGenomeRegions({
+        range,
+        assemblyName: self.connectedView?.assemblyNames[0],
+        model: {
+          genomeToTranscriptSeqMapping: this.genomeToTranscriptSeqMapping,
+          pairwiseAlignment: this.alignment,
+          structureSeqToTranscriptSeqPosition:
+            this.structureSeqToTranscriptSeqPosition,
+        },
+      })
     },
 
     /**
@@ -920,6 +924,11 @@ const Structure = types
      * the SIFTS answer that unmaps a fusion partner and places UniProt tracks.
      */
     get loading() {
+      if (self.loadError !== undefined) {
+        // a structure that failed is finished, not pending: the ready marker
+        // and JBrowse's showLoading both read this
+        return false
+      }
       return (
         !self.loadedToMolstar ||
         this.alignmentPending ||
@@ -927,6 +936,42 @@ const Structure = types
           self.uniProtMappings === undefined &&
           self.uniProtMappingsError === undefined)
       )
+    },
+    /**
+     * #getter
+     * Which of those steps is running, named for the overlay on the canvas. A
+     * structure fetch, a parse, an alignment and a SIFTS lookup run for seconds
+     * behind what would otherwise be an empty grey rectangle.
+     */
+    get loadingMessage() {
+      if (!this.loading) {
+        return undefined
+      }
+      if (!self.loadedToMolstar) {
+        return self.url === undefined &&
+          self.data === undefined &&
+          self.uniprotId
+          ? `Resolving AlphaFold model for ${self.uniprotId}`
+          : `Loading ${this.label}`
+      }
+      if (this.alignmentPending) {
+        const name = self.feature?.name
+        return typeof name === 'string'
+          ? `Aligning ${this.label} to ${name}`
+          : `Aligning ${this.label}`
+      }
+      return `Mapping ${this.label} to UniProt`
+    },
+    /**
+     * #getter
+     * What went wrong with this structure, for the line beside its label in
+     * the header: a failed load, or a structure with no chain the transcript
+     * can be aligned to. One line per structure, rather than a view-wide
+     * banner that names neither which structure nor what it was doing.
+     */
+    get statusMessage() {
+      const error = self.loadError
+      return error === undefined ? self.alignmentSkipped : errorMessage(error)
     },
     /**
      * #getter
@@ -940,6 +985,10 @@ const Structure = types
 
     /**
      * #getter
+     * Whether the mapped chain spells the transcript's translation exactly.
+     * Nothing in this repo reads it; jb2hubs' `scripts/checkProteinLaunches.ts`
+     * does, off the live model, to assert a launch that should map as an
+     * identity did. It stays for that.
      */
     get exactMatch() {
       const r1 = stripStopCodon(self.userProvidedTranscriptSequence)
@@ -1115,44 +1164,6 @@ const Structure = types
         )
       }
 
-      // Re-subscribe to a molstar click/hover behavior whenever the plugin
-      // changes (view remount installs a fresh PluginContext). The previous
-      // subscription is torn down first so they don't accumulate across
-      // remounts, and a subscription that resolves after the context has already
-      // moved on is disposed immediately rather than left dangling.
-      const addInteractionListener = (
-        kind: 'click' | 'hover',
-        onUpdate: (info: MolstarLocationInfo | undefined) => void,
-      ) => {
-        let unsubscribe: (() => void) | undefined
-        addDisposer(self, () => {
-          unsubscribe?.()
-        })
-        addDisposer(
-          self,
-          autorun(async () => {
-            const { molstarPluginContext } = self
-            unsubscribe?.()
-            unsubscribe = undefined
-            if (molstarPluginContext) {
-              const dispose = await subscribeMolstarInteraction({
-                plugin: molstarPluginContext,
-                kind,
-                onUpdate,
-              })
-              if (
-                isAlive(self) &&
-                self.molstarPluginContext === molstarPluginContext
-              ) {
-                unsubscribe = dispose
-              } else {
-                dispose()
-              }
-            }
-          }),
-        )
-      }
-
       addDisposer(
         self,
         autorun(() => {
@@ -1192,17 +1203,13 @@ const Structure = types
                   } aa transcript`
                 : 'This structure has no protein chain to align the transcript to'
               self.setAlignmentSkipped(reason)
-              self.parentView.setError(new Error(reason))
               return
             }
             self.setMappedEntityId(entities[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
-            if (selection.matches < alignmentLength(selection.alignment)) {
-              self.parentView.setShowAlignment(true)
-            }
           } catch (e) {
             console.error(e)
-            self.parentView.setError(e)
+            self.setLoadError(e)
           }
         }),
       )
@@ -1234,31 +1241,7 @@ const Structure = types
         }),
       )
 
-      const forMappedEntity = (info?: MolstarLocationInfo) => {
-        const structureSeqPos = info && self.interactionPosition(info)
-        return structureSeqPos === undefined
-          ? undefined
-          : { ...info, structureSeqPos }
-      }
-
-      addInteractionListener('click', info => {
-        const hit = forMappedEntity(info)
-        if (hit) {
-          self.setHoveredPosition(hit)
-          self.setSelectedFeatureId(undefined)
-          clickProteinToGenome({
-            model: self,
-            structureSeqPos: hit.structureSeqPos,
-          }).catch((e: unknown) => {
-            console.error(e)
-            self.parentView.setError(e)
-          })
-        }
-      })
-
-      addInteractionListener('hover', info => {
-        self.setHoveredPosition(forMappedEntity(info))
-      })
+      attachStructureInteractions(self)
     },
   }))
 

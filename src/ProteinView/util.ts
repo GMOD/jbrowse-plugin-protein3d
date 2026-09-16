@@ -53,3 +53,12 @@ export function genomeHoverToTranscriptPos(
     ? mapping.g2p[coord - 1]
     : undefined
 }
+
+/** What a thrown value says, for a status line. A plain object stringifies to
+ * "[object Object]", which tells the reader nothing, so it is spelled out. */
+export function errorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+  return typeof error === 'string' ? error : JSON.stringify(error)
+}

@@ -3,6 +3,7 @@ import { getSession } from '@jbrowse/core/util'
 import { codonGenomeSpan } from '../mappings'
 
 import type { PairwiseAlignment } from '../mappings'
+import type { Region } from '@jbrowse/core/util/types'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -26,7 +27,7 @@ type NavigateToProteinPositionModel = IAnyStateTreeNode &
     connectedView: LinearGenomeViewModel | undefined
   }
 
-type ClickProteinToGenomeModel = NavigateToProteinPositionModel & {
+export type ClickProteinToGenomeModel = NavigateToProteinPositionModel & {
   zoomToBaseLevel: boolean
   setClickedStructureRange: (range?: { start: number; end: number }) => void
 }
@@ -91,6 +92,40 @@ export function proteinRangeToGenomeMapping({
     return [minStart, maxEnd] as const
   }
   return undefined
+}
+
+/**
+ * The genome region a structure-residue range covers, as the one-element list
+ * a JBrowse highlight takes. Pure: the caller supplies the assembly and the
+ * mapping, so the same conversion serves the hover band, the click band and a
+ * test with neither a session nor a connected view.
+ */
+export function structureRangeToGenomeRegions({
+  range,
+  assemblyName,
+  model,
+}: {
+  range: { start: number; end: number } | undefined
+  assemblyName: string | undefined
+  model: ProteinGenomeMappingModel
+}): Region[] {
+  const mapping = model.genomeToTranscriptSeqMapping
+  if (!range || !assemblyName || !mapping) {
+    return []
+  }
+  const mapped =
+    range.end > range.start + 1
+      ? proteinRangeToGenomeMapping({
+          model,
+          structureSeqPos: range.start,
+          structureSeqEndPos: range.end,
+        })
+      : proteinToGenomeMapping({ model, structureSeqPos: range.start })
+  if (!mapped) {
+    return []
+  }
+  const [start, end] = mapped
+  return [{ assemblyName, refName: mapping.refName, start, end }]
 }
 
 export async function navigateToProteinPosition({

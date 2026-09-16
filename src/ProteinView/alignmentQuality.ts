@@ -19,6 +19,11 @@ export interface AlignmentQuality {
   identityOverShorter: number
   /** aligned over the structure's length */
   structureCoverage: number
+  /** first and last transcript residue the alignment covers, 1-based
+   * inclusive; 0 when nothing aligned. A structure is usually a fragment, and
+   * which part of the protein it holds is the reader's first question. */
+  transcriptStart: number
+  transcriptEnd: number
 }
 
 /**
@@ -53,6 +58,8 @@ export function alignmentQuality(pa: PairwiseAlignment): AlignmentQuality {
   let identical = 0
   let transcriptLength = 0
   let structureLength = 0
+  let transcriptStart = 0
+  let transcriptEnd = 0
   for (let i = 0; i < alignmentLength(pa); i++) {
     const a = t[i]!
     const b = s[i]!
@@ -66,6 +73,8 @@ export function alignmentQuality(pa: PairwiseAlignment): AlignmentQuality {
     }
     if (ta && sb) {
       aligned++
+      transcriptStart = transcriptStart || transcriptLength
+      transcriptEnd = transcriptLength
       if (a.toUpperCase() === b.toUpperCase()) {
         identical++
       }
@@ -80,6 +89,8 @@ export function alignmentQuality(pa: PairwiseAlignment): AlignmentQuality {
     identity: aligned ? identical / aligned : 0,
     identityOverShorter: shorter ? identical / shorter : 0,
     structureCoverage: structureLength ? aligned / structureLength : 0,
+    transcriptStart,
+    transcriptEnd,
   }
 }
 
@@ -98,4 +109,24 @@ export function describeAlignmentQuality(q: AlignmentQuality) {
     return 'no residues aligned'
   }
   return `${Math.round(q.identity * 100)}% identity over ${q.aligned} of ${q.structureLength} structure residues`
+}
+
+/**
+ * The same counted from the transcript's side, for the always-visible header:
+ * how much of the gene's protein this structure speaks for is what decides
+ * whether a codon has a residue at all.
+ */
+export function describeTranscriptCoverage(q: AlignmentQuality) {
+  if (q.aligned === 0) {
+    return 'no residues aligned'
+  }
+  return `${Math.round(q.identity * 100)}% identity, ${q.aligned} of ${q.transcriptLength} transcript residues covered`
+}
+
+/** Which residues of the transcript a fragment holds, or undefined when it
+ * covers the whole translation. */
+export function describeCoveredRange(q: AlignmentQuality) {
+  return q.aligned === 0 || q.aligned === q.transcriptLength
+    ? undefined
+    : `covers transcript residues ${q.transcriptStart}–${q.transcriptEnd}`
 }
