@@ -85,8 +85,8 @@ const StructureLoadingOverlay = observer(function StructureLoadingOverlay({
         pointerEvents: 'none',
       }}
     >
-      {loadingMessages.map(message => (
-        <LoadingEllipses key={message} message={message} />
+      {loadingMessages.map(({ id, message }) => (
+        <LoadingEllipses key={id} message={message} />
       ))}
     </div>
   ) : null

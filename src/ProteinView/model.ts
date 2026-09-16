@@ -1,6 +1,6 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
-import { addDisposer, types } from '@jbrowse/mobx-state-tree'
+import { addDisposer, getPath, types } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
 
 import {
@@ -361,11 +361,17 @@ function stateModelFactory() {
       /**
        * #getter
        * What each still-settling structure is doing, for the canvas overlay.
+       * Each line carries its structure's path as an id: two copies of one
+       * entry say the same thing, and keying the overlay on the text alone
+       * made React complain about duplicate keys — which the e2e's console
+       * gate reads as a failure, rightly.
        */
       get loadingMessages() {
-        return self.structures
-          .map(s => s.loadingMessage)
-          .filter(m => m !== undefined)
+        return self.structures.flatMap(s =>
+          s.loadingMessage === undefined
+            ? []
+            : [{ id: getPath(s), message: s.loadingMessage }],
+        )
       },
       /**
        * #getter

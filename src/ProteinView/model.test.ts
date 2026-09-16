@@ -137,6 +137,19 @@ test('a failed structure reports on its own line and stops being pending', () =>
   expect(view.error).toBeUndefined()
 })
 
+// Two copies of one entry are a real thing to open, and their loading lines
+// read the same; keyed on the text, React logs a duplicate key, which the e2e
+// console gate fails on.
+test('two structures loading the same file get one overlay line each', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ pdbId: '1TUP' }, { pdbId: '1TUP' }],
+  })
+  const messages = view.loadingMessages
+  expect(messages.map(m => m.message)).toEqual(['Loading 1TUP', 'Loading 1TUP'])
+  expect(new Set(messages.map(m => m.id)).size).toBe(2)
+})
+
 test('clearing the selection puts every structure down', () => {
   const view = makeView()
   for (const structure of view.structures) {
