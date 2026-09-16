@@ -1,14 +1,14 @@
 import { SimpleFeature } from '@jbrowse/core/util'
+import {
+  getGeneticCode,
+  parseTranslTable,
+} from '@jbrowse/core/util/geneticCodes'
 import { describe, expect, it } from 'vitest'
 
 import {
   calculateProteinSequence,
   getProteinSequence,
 } from '../src/LaunchProteinView/utils/calculateProteinSequence'
-import {
-  getGeneticCode,
-  parseTranslTable,
-} from '../src/LaunchProteinView/utils/geneticCodes'
 
 // The table @jbrowse/core/util exported as `defaultCodonTable` up to 4.3.0,
 // pinned here so the vendored NCBI strings can't drift from what every released

@@ -1,8 +1,11 @@
 import { getConf } from '@jbrowse/core/configuration'
 import { revcom } from '@jbrowse/core/util'
 import { convertCodingSequenceToPeptides } from '@jbrowse/core/util/convertCodingSequenceToPeptides'
+import {
+  getGeneticCode,
+  parseTranslTable,
+} from '@jbrowse/core/util/geneticCodes'
 
-import { getGeneticCode, parseTranslTable } from './geneticCodes'
 import { isCDS } from '../codingFeature'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
