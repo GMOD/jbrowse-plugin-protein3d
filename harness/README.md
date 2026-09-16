@@ -21,8 +21,8 @@ regression alarm instead of a known bug.
 - **Real plugin end-to-end:** each example's **↗ JBrowse** link opens its gene
   in the live `webgl-poc` JBrowse build (`jbrowse.org/code/jb2/webgl-poc`) using
   the `config.json` served next to this page (`public/config.json`). Right-click
-  the gene → _Launch protein view_ → enter the PDB ID to watch the linked
-  genome↔structure mouseover in the actual plugin.
+  the gene → _Launch protein view_ → **PDB search** → enter the PDB ID to watch
+  the linked genome↔structure mouseover in the actual plugin.
 
   A structure can also be launched declaratively, without the dialog, via the
   `LaunchView-ProteinView` extension point — `pdbId` for an RCSB entry or

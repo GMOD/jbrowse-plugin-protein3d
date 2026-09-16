@@ -1,7 +1,12 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { DialogActions, DialogContent, Typography } from '@mui/material'
+import {
+  DialogActions,
+  DialogContent,
+  TextField,
+  Typography,
+} from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -11,9 +16,11 @@ import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
 import UniProtResultsTable from './UniProtResultsTable'
 import ExternalLink from '../../components/ExternalLink'
+import useDebouncedValue from '../hooks/useDebouncedValue'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
 import usePdbEntryMolecules from '../hooks/usePdbEntryMolecules'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
+import { isPdbId } from '../services/pdbeBestStructures'
 import { getPdbStructureUrl, uniprotEntryUrl } from '../utils/structureUrls'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -64,8 +71,18 @@ const PdbSearch = observer(function PdbSearch({
   } = usePdbBestStructures(uniprotId)
   const [userPdbId, setUserPdbId] = useState<string>()
 
-  const selectedPdbId =
-    userPdbId && entries?.some(e => e.pdbId === userPdbId)
+  // A typed id reaches entries PDBe's SIFTS listing never offers: a structure
+  // of a complex filed under a partner, anything a paper names. Debounced, so
+  // the three characters on the way to four are not three fetches.
+  const [typedPdbId, setTypedPdbId] = useState('')
+  const trimmedTypedPdbId = typedPdbId.trim()
+  const debouncedTypedPdbId = useDebouncedValue(trimmedTypedPdbId, 400)
+  const typedPdbIdInvalid =
+    trimmedTypedPdbId !== '' && !isPdbId(trimmedTypedPdbId)
+
+  const selectedPdbId = isPdbId(debouncedTypedPdbId)
+    ? debouncedTypedPdbId.toLowerCase()
+    : userPdbId && entries?.some(e => e.pdbId === userPdbId)
       ? userPdbId
       : entries?.[0]?.pdbId
   const structureUrl = selectedPdbId
@@ -152,6 +169,24 @@ const PdbSearch = observer(function PdbSearch({
             directly and use "Enter manually".
           </Typography>
         ) : null}
+
+        <TextField
+          size="small"
+          label="PDB ID"
+          placeholder="e.g. 1TUP"
+          helperText={
+            typedPdbIdInvalid
+              ? 'A PDB ID is four characters beginning with a digit'
+              : 'Overrides the selection below'
+          }
+          error={typedPdbIdInvalid}
+          value={typedPdbId}
+          onChange={event => {
+            setTypedPdbId(event.target.value)
+          }}
+          slotProps={{ inputLabel: { shrink: true } }}
+          sx={{ width: 240 }}
+        />
 
         {uniprotId && entries && !isPdbLoading ? (
           entries.length > 0 ? (

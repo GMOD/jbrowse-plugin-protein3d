@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { parseBestStructures } from './pdbeBestStructures'
+import { isPdbId, parseBestStructures } from './pdbeBestStructures'
 
 // Rows lifted from PDBe's response for P68871 (hemoglobin β) and P04637.
 const response = {
@@ -69,4 +69,17 @@ test('anything that is not a keyed list of rows parses to nothing', () => {
   expect(parseBestStructures(undefined)).toEqual([])
   expect(parseBestStructures({ P04637: 'nope' })).toEqual([])
   expect(parseBestStructures([])).toEqual([])
+})
+
+test('a PDB ID is four characters beginning with a digit', () => {
+  expect(isPdbId('1TUP')).toBe(true)
+  expect(isPdbId('6zio')).toBe(true)
+})
+
+test('a prefix on the way to a PDB ID is not one, so it never reaches a fetch', () => {
+  expect(isPdbId('1TU')).toBe(false)
+  expect(isPdbId('1TUPX')).toBe(false)
+  expect(isPdbId('0TUP')).toBe(false)
+  expect(isPdbId('ATUP')).toBe(false)
+  expect(isPdbId('')).toBe(false)
 })

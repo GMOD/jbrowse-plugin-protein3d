@@ -250,7 +250,7 @@ export default function App() {
         <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
           <strong>name</strong> = fast verdict here · <strong>↗ JBrowse</strong>{' '}
           = open the gene in the real plugin (webgl-poc), then right-click →
-          Launch protein view → enter the PDB ID.
+          Launch protein view → PDB search → enter the PDB ID.
         </div>
         {EXAMPLES.map(ex => (
           <div
@@ -309,7 +309,7 @@ export default function App() {
                 rel="noreferrer"
                 title={
                   ex.source === 'pdb'
-                    ? `Open ${ex.gene} in JBrowse → right-click → Launch protein view → PDB ID ${ex.structureId}`
+                    ? `Open ${ex.gene} in JBrowse → right-click → Launch protein view → PDB search → PDB ID ${ex.structureId}`
                     : `Open ${ex.gene} in JBrowse → right-click → Launch protein view (AlphaFold)`
                 }
                 style={{
