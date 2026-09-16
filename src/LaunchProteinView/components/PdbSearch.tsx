@@ -221,6 +221,7 @@ const PdbSearch = observer(function PdbSearch({
           userSelectedProteinSequence={selectedIsoform}
           selectedTranscript={selectedTranscript}
           url={structureUrl}
+          pdbId={selectedPdbId}
           feature={feature}
           view={view}
           session={session}
