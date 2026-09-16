@@ -32,12 +32,7 @@ export function kyteDoolittleScores(seq: string): (number | undefined)[] {
 }
 
 /**
- * AlphaFold pLDDT confidence palette (matches molstar's plddt-confidence
- * color theme): very low (<=50) orange, low (<=70) yellow, confident (<=90)
- * light blue, very high (>90) blue.
- */
-/**
- * The bins the palette below draws, for the legend: a track of four blues and
+ * The bands the pLDDT palette draws, for the legend: a track of four blues and
  * oranges means nothing without the scale it encodes. Each names a score
  * inside its band rather than a colour, so the legend cannot drift from the
  * palette.
@@ -49,6 +44,11 @@ export const PLDDT_BINS = [
   { label: 'very low <50', score: 40 },
 ]
 
+/**
+ * AlphaFold pLDDT confidence palette (matches molstar's plddt-confidence
+ * color theme): very low (<=50) orange, low (<=70) yellow, confident (<=90)
+ * light blue, very high (>90) blue.
+ */
 export function plddtColor(score: number): string {
   return score < 0
     ? '#cccccc'
