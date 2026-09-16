@@ -2,6 +2,7 @@ import { getContainingTrack, getSession } from '@jbrowse/core/util'
 import AddIcon from '@mui/icons-material/Add'
 
 import { extendPluggableStateModel } from '../extendStateModel'
+import { geneLikeRoot, isCodingFeature, isGeneLikeType } from './codingFeature'
 import LaunchProteinViewDialog from './components/LaunchProteinViewDialog'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
@@ -14,8 +15,6 @@ import type { IAnyModelType } from '@jbrowse/mobx-state-tree'
 function isDisplay(elt: { name: string }): elt is DisplayType {
   return elt.name === 'LinearBasicDisplay'
 }
-
-const PROTEIN_FEATURE_TYPES = ['gene', 'mRNA', 'transcript']
 
 interface HitItem {
   featureId: string
@@ -65,9 +64,15 @@ function canvasTarget(
       }
 }
 
+// The hit test only carries a type, so a canvas host learns whether the gene
+// codes for anything after the fetch; a legacy host has the whole feature and
+// can decline up front.
 function legacyTarget(feature: Feature): MenuTarget | undefined {
-  const type = feature.get('type')
-  return type === undefined ? undefined : { type, feature }
+  const root = geneLikeRoot(feature)
+  const type = root.get('type')
+  return type === undefined || !isCodingFeature(root)
+    ? undefined
+    : { type, feature: root }
 }
 
 function resolveTarget(self: DisplayModel): MenuTarget | undefined {
@@ -94,10 +99,15 @@ function launchProteinView(self: DisplayModel, target: MenuTarget) {
     target
       .fetchFeature()
       .then(feature => {
-        if (feature) {
-          openDialog(feature)
-        } else {
+        if (!feature) {
           session.notify('Could not load feature for protein view', 'warning')
+        } else if (!isCodingFeature(feature)) {
+          session.notify(
+            `${feature.get('name') ?? feature.get('id') ?? 'This feature'} has no coding sequence, so there is no protein to show`,
+            'info',
+          )
+        } else {
+          openDialog(feature)
         }
       })
       .catch((e: unknown) => {
@@ -119,7 +129,7 @@ function extendStateModel(stateModel: IAnyModelType) {
         const target = resolveTarget(self)
         return [
           ...superContextMenuItems.call(self),
-          ...(target && PROTEIN_FEATURE_TYPES.includes(target.type)
+          ...(target && isGeneLikeType(target.type)
             ? [
                 {
                   label: 'Launch protein view',
