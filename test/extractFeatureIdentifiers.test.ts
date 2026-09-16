@@ -357,3 +357,78 @@ describe('extractFeatureIdentifiers', () => {
     expect(identifiers.geneName).toBeUndefined()
   })
 })
+
+// The seam between a JBrowse Feature and p2s_mapper's isoform records: the
+// package ranks `{ id, seq }`, so these two are the only place the conversion
+// happens, and a dropped or reordered entry changes which isoform is chosen.
+describe('isoform records for p2s_mapper', () => {
+  let rankableIsoforms!: typeof util.rankableIsoforms
+  let isoformRecords!: typeof util.isoformRecords
+
+  beforeAll(async () => {
+    const actualUtil = await vi.importActual<typeof util>(
+      '../src/LaunchProteinView/utils/util',
+    )
+    rankableIsoforms = actualUtil.rankableIsoforms
+    isoformRecords = actualUtil.isoformRecords
+  })
+
+  const transcript = (id: string) =>
+    new SimpleFeature({
+      uniqueId: id,
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      type: 'mRNA',
+    })
+
+  const sequences = (entries: Record<string, string>) =>
+    Object.fromEntries(
+      Object.entries(entries).map(([id, seq]) => [
+        id,
+        { feature: transcript(id), seq },
+      ]),
+    )
+
+  it('keeps every listed transcript, in the order given', () => {
+    expect(
+      rankableIsoforms(
+        [transcript('t3'), transcript('t1'), transcript('t2')],
+        sequences({ t1: 'MAL', t2: 'MALS', t3: 'M' }),
+      ),
+    ).toEqual([
+      { id: 't3', seq: 'M' },
+      { id: 't1', seq: 'MAL' },
+      { id: 't2', seq: 'MALS' },
+    ])
+  })
+
+  it('leaves a transcript whose translation has not arrived without a sequence', () => {
+    expect(
+      rankableIsoforms([transcript('t1'), transcript('t2')], {
+        ...sequences({ t1: 'MAL' }),
+      }),
+    ).toEqual([
+      { id: 't1', seq: 'MAL' },
+      { id: 't2', seq: undefined },
+    ])
+  })
+
+  it('treats an empty translation as present but empty, not as absent', () => {
+    expect(rankableIsoforms([transcript('t1')], sequences({ t1: '' }))).toEqual(
+      [{ id: 't1', seq: '' }],
+    )
+  })
+
+  it('ranks nothing when there are no transcripts and no translations', () => {
+    expect(rankableIsoforms([], undefined)).toEqual([])
+    expect(isoformRecords(undefined)).toEqual([])
+  })
+
+  it('records only the translations that arrived, dropping the feature', () => {
+    expect(isoformRecords(sequences({ t2: 'MALS', t1: 'MAL' }))).toEqual([
+      { id: 't2', seq: 'MALS' },
+      { id: 't1', seq: 'MAL' },
+    ])
+  })
+})

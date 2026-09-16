@@ -70,7 +70,7 @@ Sketch (each step already exists in the interactive flow; this composes them):
    p2s_mapper's `uniProtSearch.ts` for the existing lookup.)
 2. **`feature` from the connected track** — once `connectedView` is created,
    fetch features at `loc` from the named gene track and pick the transcript by
-   `transcriptId`/name (reuse `selectBestTranscript.ts`). Needs the track
+   `transcriptId`/name (reuse p2s_mapper's `isoformRanking.ts`). Needs the track
    adapter and the view to be initialized, which is async and order-dependent.
 3. **sequence by translation** — `fetchProteinSeq` already does
    `waitForAssembly` → `CoreGetFeatures` on the sequence adapter →

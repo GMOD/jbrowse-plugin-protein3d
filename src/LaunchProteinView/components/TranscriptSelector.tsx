@@ -32,6 +32,9 @@ export default function TranscriptSelector({
 }) {
   const geneName = getGeneDisplayName(feature)
   const byId = new Map(isoforms.map(f => [f.id(), f]))
+  // A ranked isoform carries an id rather than the feature, so the name is a
+  // lookup, and a row with no name at all reads worse than a bare id.
+  const nameOf = (id: string) => getTranscriptDisplayName(byId.get(id)) || id
   const { matches, nonMatches, noData } = classifyIsoforms({
     isoforms: rankableIsoforms(isoforms, isoformSequences),
     structureSequence,
@@ -47,7 +50,7 @@ export default function TranscriptSelector({
       : ` (${identical}/${structureLength} structure residues identical)`,
   ) => (
     <MenuItem value={id} key={id}>
-      {geneName} - {getTranscriptDisplayName(byId.get(id))} ({length}aa){note}
+      {geneName} - {nameOf(id)} ({length}aa){note}
     </MenuItem>
   )
 
@@ -65,7 +68,7 @@ export default function TranscriptSelector({
       {nonMatches.map(m => renderOption(m))}
       {noData.map(id => (
         <MenuItem value={id} key={id} disabled>
-          {geneName} - {getTranscriptDisplayName(byId.get(id))} (no data)
+          {geneName} - {nameOf(id)} (no data)
         </MenuItem>
       ))}
     </TextField>

@@ -519,7 +519,8 @@ const Structure = types
     /**
      * #getter
      * All structure/transcript/alignment coordinate conversions, built once
-     * from the alignment (see coordinates.ts). Use its typed methods for point
+     * from the alignment (see p2s_mapper's coordinates.ts). Use its typed
+     * methods for point
      * conversions; the getters below expose the raw maps for whole-map
      * consumers.
      */
@@ -982,7 +983,7 @@ const Structure = types
     /**
      * #getter
      * Identity and coverage of the pairwise alignment, for the header readout
-     * and the low-similarity warning. See alignmentQuality.ts.
+     * and the low-similarity warning. See p2s_mapper's alignmentQuality.ts.
      */
     get alignmentQuality() {
       const { alignment } = this

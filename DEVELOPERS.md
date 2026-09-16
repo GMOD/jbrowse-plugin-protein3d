@@ -104,8 +104,8 @@ the structure's own residue numbering.
   numbering is offset — 1TUP's p53 chain starts at UniProt 94, 6VXX's spike has
   SEQRES 33 = UniProt 14. These are resolved from
   [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
-  `mappings/uniprot/{pdbId}` API (`pdbUniProtMapping.ts`,
-  `hooks/useStructureUniProt.ts`), which gives a per-segment correspondence.
+  `mappings/uniprot/{pdbId}` API (p2s_mapper's `pdbUniProtMapping.ts`, read here
+  by `hooks/useStructureUniProt.ts`), which gives a per-segment correspondence.
   Only the segments for the entity the plugin mapped to the transcript are used
   — a heteromer maps each chain to a different accession, so the wrong one would
   annotate the wrong protein. `residue_number` in that API is the 1-based
