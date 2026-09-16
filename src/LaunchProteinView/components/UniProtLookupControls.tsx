@@ -48,7 +48,12 @@ export default function UniProtLookupControls({
               <TextField
                 size="small"
                 label="NCBI taxon id"
-                helperText="Narrows the gene-name search to one species"
+                error={lookup.taxonIdError}
+                helperText={
+                  lookup.taxonIdError
+                    ? 'Not a taxon id; searching every species'
+                    : 'Narrows the gene-name search to one species'
+                }
                 value={lookup.taxonId}
                 onChange={event => {
                   lookup.setTaxonId(event.target.value)
