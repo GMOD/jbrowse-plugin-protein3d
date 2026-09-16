@@ -1,3 +1,4 @@
+import { httpError, rawfetch } from '../../fetchUtils'
 import { stripStopCodon } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
@@ -49,16 +50,13 @@ export function parseAlphaFoldModels(json: unknown): AlphaFoldModel[] {
  * folded answers 400 or 404, which is no models rather than an error.
  */
 export async function fetchAlphaFoldModels(uniprotId: string) {
-  const res = await fetch(
-    `https://alphafold.ebi.ac.uk/api/prediction/${encodeURIComponent(uniprotId)}`,
-  )
+  const url = `https://alphafold.ebi.ac.uk/api/prediction/${encodeURIComponent(uniprotId)}`
+  const res = await rawfetch(url)
   if (res.status === 400 || res.status === 404) {
     return []
   }
   if (!res.ok) {
-    throw new Error(
-      `HTTP ${res.status} asking AlphaFold DB for ${uniprotId}'s models`,
-    )
+    throw await httpError(res, url)
   }
   return parseAlphaFoldModels(await res.json())
 }
