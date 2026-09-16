@@ -11,6 +11,7 @@ import PdbSearch from './PdbSearch'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
 import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
+import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -31,6 +32,13 @@ export default function LaunchProteinViewDialog({
   // lookup per tab meant the same UniProt search ran twice and a row picked on
   // one tab left the other pointing at a different gene.
   const lookup = useUniProtIdLookup({ feature, view })
+  // Also the dialog's, for the same reason: a tab that has been mounted since
+  // before the user changed this would otherwise launch with its own stale copy.
+  const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
+  const changeSideBySide = (value: boolean) => {
+    setSideBySide(value)
+    setLaunchSideBySide(value)
+  }
 
   return (
     <Dialog
@@ -63,6 +71,8 @@ export default function LaunchProteinViewDialog({
           feature={feature}
           handleClose={handleClose}
           lookup={lookup}
+          sideBySide={sideBySide}
+          onSideBySideChange={changeSideBySide}
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
@@ -72,6 +82,8 @@ export default function LaunchProteinViewDialog({
           feature={feature}
           handleClose={handleClose}
           lookup={lookup}
+          sideBySide={sideBySide}
+          onSideBySideChange={changeSideBySide}
         />
       </TabPanel>
       <TabPanel value={choice} index={2}>

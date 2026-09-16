@@ -41,12 +41,16 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   view,
   handleClose,
   lookup,
+  sideBySide,
+  onSideBySideChange,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
   lookup: UniProtIdLookup
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
 
@@ -138,6 +142,8 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           feature={feature}
           view={view}
           session={session}
+          sideBySide={sideBySide}
+          onSideBySideChange={onSideBySideChange}
           sequencesMatch={state.sequencesMatch}
           isLoading={state.isLoading}
           error={state.error}

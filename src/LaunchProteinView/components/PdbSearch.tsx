@@ -44,12 +44,16 @@ const PdbSearch = observer(function PdbSearch({
   view,
   handleClose,
   lookup,
+  sideBySide,
+  onSideBySideChange,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
   lookup: UniProtIdLookup
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
   const { uniprotId, isAutoMode, isLookupLoading } = lookup
@@ -194,6 +198,8 @@ const PdbSearch = observer(function PdbSearch({
           feature={feature}
           view={view}
           session={session}
+          sideBySide={sideBySide}
+          onSideBySideChange={onSideBySideChange}
           isLoading={isLoading}
           error={error}
         />

@@ -13,7 +13,6 @@ import {
   getConditionalProteinLaunches,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
-import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -28,6 +27,9 @@ interface ProteinViewActionsProps {
   feature: Feature
   view: LinearGenomeViewModel
   session: AbstractSessionModel
+  /** owned by the dialog so every tab launches with what the user last chose */
+  sideBySide: boolean
+  onSideBySideChange: (value: boolean) => void
   sequencesMatch?: boolean
   isLoading?: boolean
   /**
@@ -48,12 +50,13 @@ export default function ProteinViewActions({
   feature,
   view,
   session,
+  sideBySide,
+  onSideBySideChange,
   sequencesMatch,
   isLoading,
   error,
 }: ProteinViewActionsProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
-  const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
 
   const missingReasons = getLaunchMissingReasons({
     uniprotId,
@@ -171,10 +174,7 @@ export default function ProteinViewActions({
         onClose={closeMenu}
         options={launchOptions}
         sideBySide={sideBySide}
-        onSideBySideChange={value => {
-          setSideBySide(value)
-          setLaunchSideBySide(value)
-        }}
+        onSideBySideChange={onSideBySideChange}
       />
     </>
   )
