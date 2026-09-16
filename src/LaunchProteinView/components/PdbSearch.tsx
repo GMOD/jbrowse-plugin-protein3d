@@ -1,28 +1,22 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import {
-  DialogActions,
-  DialogContent,
-  TextField,
-  Typography,
-} from '@mui/material'
+import { DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import IdentifierSelector from './IdentifierSelector'
 import PdbResultsTable from './PdbResultsTable'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
-import UniProtIdInput from './UniProtIdInput'
+import UniProtLookupControls from './UniProtLookupControls'
 import UniProtResultsTable from './UniProtResultsTable'
 import ExternalLink from '../../components/ExternalLink'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
+import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
-import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
 import { getPdbStructureUrl, uniprotEntryUrl } from '../utils/structureUrls'
 
-import type { AlignmentAlgorithm } from '../../ProteinView/types'
+import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -35,12 +29,6 @@ const useStyles = makeStyles()({
     '& > *:last-child': {
       marginBottom: 0,
     },
-  },
-  endRow: {
-    display: 'flex',
-    flexDirection: 'row',
-    gap: 12,
-    alignItems: 'flex-start',
   },
 })
 
@@ -55,18 +43,15 @@ const PdbSearch = observer(function PdbSearch({
   session,
   view,
   handleClose,
-  alignmentAlgorithm,
-  onAlignmentAlgorithmChange,
+  lookup,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
-  alignmentAlgorithm: AlignmentAlgorithm
-  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
+  lookup: UniProtIdLookup
 }) {
   const { classes } = useStyles()
-  const lookup = useUniProtIdLookup({ feature, view })
   const { uniprotId, isAutoMode, isLookupLoading } = lookup
   const {
     entries,
@@ -74,26 +59,48 @@ const PdbSearch = observer(function PdbSearch({
     isLoading: isPdbLoading,
   } = usePdbBestStructures(uniprotId)
   const [userPdbId, setUserPdbId] = useState<string>()
-  const {
-    transcripts,
-    isoformSequences,
-    isLoading: isIsoformLoading,
-    error: isoformError,
-    selectedTranscriptId,
-    setSelectedTranscriptId,
-    selectedTranscript,
-    selectedIsoform,
-  } = useTranscriptIsoformSelection({ feature, view, resetKey: uniprotId })
 
   const selectedPdbId =
     userPdbId && entries?.some(e => e.pdbId === userPdbId)
       ? userPdbId
       : entries?.[0]?.pdbId
+  const structureUrl = selectedPdbId
+    ? getPdbStructureUrl(selectedPdbId)
+    : undefined
+
+  // The chosen entry's own residues, so the isoform picker can say which
+  // transcript matches it — the same annotation the AlphaFold tab shows. Its
+  // failure is not fatal: the launch reads the file again, and until then the
+  // picker just goes unannotated.
+  const {
+    sequences: structureSequences,
+    isLoading: isStructureLoading,
+    error: structureError,
+  } = useStructureFileSequence({ url: structureUrl })
+
+  const {
+    transcripts,
+    isoformSequences,
+    structureSequence,
+    isLoading: isIsoformLoading,
+    error: isoformError,
+    partialFailure: isoformPartialFailure,
+    selectedTranscriptId,
+    setSelectedTranscriptId,
+    selectedTranscript,
+    selectedIsoform,
+  } = useTranscriptIsoformSelection({
+    feature,
+    view,
+    structureSequences,
+    resetKey: uniprotId,
+  })
 
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isPdbLoading && 'Listing PDB entries from PDBe',
+    isStructureLoading && 'Reading residues from the selected PDB entry',
   ].filter((s): s is string => !!s)
   const isLoading = loadingStatuses.length > 0
   const error = isLoading
@@ -105,41 +112,17 @@ const PdbSearch = observer(function PdbSearch({
       <DialogContent className={classes.dialogContent}>
         {error ? <ErrorMessage error={error} /> : null}
 
-        <UniProtIdInput
-          lookupMode={lookup.lookupMode}
-          onLookupModeChange={lookup.setLookupMode}
-          manualUniprotId={lookup.manualUniprotId}
-          onManualUniprotIdChange={lookup.setManualUniprotId}
-          featureUniprotId={lookup.featureUniprotId}
-          endContent={
-            lookup.showIdentifierSelector ? (
-              <div className={classes.endRow}>
-                <IdentifierSelector
-                  recognizedIds={lookup.recognizedIds}
-                  geneName={lookup.geneName}
-                  selectedId={lookup.selectedQueryId}
-                  onSelectedIdChange={lookup.setSelectedQueryId}
-                />
-                <TextField
-                  size="small"
-                  label="Organism (NCBI taxon)"
-                  helperText="Scopes the gene-name search"
-                  value={lookup.taxonId}
-                  onChange={event => {
-                    lookup.setTaxonId(event.target.value)
-                  }}
-                  placeholder={String(lookup.effectiveTaxonId)}
-                  slotProps={{ inputLabel: { shrink: true } }}
-                  sx={{ width: 180 }}
-                />
-              </div>
-            ) : null
-          }
-        />
+        <UniProtLookupControls lookup={lookup} />
 
         {loadingStatuses.map(status => (
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
+
+        {isoformPartialFailure ? (
+          <Typography variant="body2" color="warning.main">
+            {isoformPartialFailure}
+          </Typography>
+        ) : null}
 
         {isAutoMode && lookup.uniprotEntries.length > 0 ? (
           <>
@@ -183,10 +166,18 @@ const PdbSearch = observer(function PdbSearch({
           )
         ) : null}
 
+        {structureError && !isStructureLoading ? (
+          <Typography variant="caption" color="textSecondary">
+            Could not read residues from {selectedPdbId?.toUpperCase()}, so the
+            isoform list is unannotated. The launch reads the file again.
+          </Typography>
+        ) : null}
+
         {isoformSequences && selectedTranscript ? (
           <TranscriptSelector
             val={selectedTranscriptId}
             setVal={setSelectedTranscriptId}
+            structureSequence={structureSequence}
             feature={feature}
             isoforms={transcripts}
             isoformSequences={isoformSequences}
@@ -199,12 +190,10 @@ const PdbSearch = observer(function PdbSearch({
           uniprotId={uniprotId}
           userSelectedProteinSequence={selectedIsoform}
           selectedTranscript={selectedTranscript}
-          url={selectedPdbId ? getPdbStructureUrl(selectedPdbId) : undefined}
+          url={structureUrl}
           feature={feature}
           view={view}
           session={session}
-          alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
           isLoading={isLoading}
           error={error}
         />

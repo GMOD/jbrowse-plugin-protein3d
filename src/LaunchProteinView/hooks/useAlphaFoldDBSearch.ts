@@ -2,20 +2,21 @@ import { useMemo } from 'react'
 
 import useAlphaFoldData from './useAlphaFoldData'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
-import useUniProtIdLookup from './useUniProtIdLookup'
 import { stripStopCodon } from '../utils/util'
 
+import type { UniProtIdLookup } from './useUniProtIdLookup'
 import type { Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export default function useAlphaFoldDBSearch({
   feature,
   view,
+  lookup,
 }: {
   feature: Feature
   view: LinearGenomeViewModel
+  lookup: UniProtIdLookup
 }) {
-  const lookup = useUniProtIdLookup({ feature, view })
   const { uniprotId, isAutoMode, isLookupLoading } = lookup
 
   const {
@@ -38,6 +39,7 @@ export default function useAlphaFoldDBSearch({
     structureSequence,
     isLoading: isIsoformLoading,
     error: isoformError,
+    partialFailure: isoformPartialFailure,
     selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
@@ -68,6 +70,7 @@ export default function useAlphaFoldDBSearch({
     transcriptOptions,
     selectedTranscript,
     isoformSequences,
+    isoformPartialFailure,
     userSelectedProteinSequence,
 
     url: model?.url,
