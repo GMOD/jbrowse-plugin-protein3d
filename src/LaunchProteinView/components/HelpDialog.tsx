@@ -9,11 +9,10 @@ import {
   Typography,
 } from '@mui/material'
 
-import type { TypographyProps } from '@mui/material'
+import ExternalLink from '../../components/ExternalLink'
 
-function Typography2({ children }: TypographyProps) {
-  return <Typography style={{ margin: 4 }}>{children}</Typography>
-}
+const ISSUES_URL = 'https://github.com/GMOD/jbrowse-plugin-protein3d/issues'
+
 export default function HelpDialog({
   handleClose,
 }: {
@@ -22,44 +21,51 @@ export default function HelpDialog({
   return (
     <Dialog open maxWidth="lg" onClose={handleClose} title="Help">
       <DialogContent>
-        <Typography2>
-          The procedure for the protein lookup is as follows:
+        <Typography sx={{ mb: 2 }}>
+          Each tab finds a structure a different way. All of them end in the
+          same place: the residues of the structure are aligned to the protein
+          sequence translated from the transcript you pick, and that alignment
+          maps genome coordinates onto positions in the 3D view.
+        </Typography>
+        <Typography component="div">
           <ul>
             <li>
-              (Automatic lookup) Searches UniProt for the transcript ID or gene
-              name to retrieve the UniProt ID, which is then used to lookup the
-              structure in AlphaFoldDB
+              <b>AlphaFoldDB search</b> resolves the feature to a UniProt
+              accession — from its own identifiers, or one you type — and opens
+              AlphaFold&apos;s predicted model for it.
             </li>
             <li>
-              (Manual) Allows you to choose your own structure file from your
-              local machine (e.g. a PDB file predicted by e.g. ColabFold) or
-              supply a specific URL
+              <b>PDB search</b> lists the experimental structures PDBe maps to
+              that accession, ranked on coverage and resolution. A crystal is
+              usually one domain, often with binding partners, so the chain the
+              transcript belongs to is chosen after the structure loads.
             </li>
             <li>
-              The residues from the structure are downloaded, and then you can
-              choose the transcript isoform from the selected gene that best
-              represents the structure. Asterisks are displayed if there is an
-              exact sequence match
+              <b>Foldseek search</b> sends the protein sequence to the
+              foldseek.com servers and lists structures similar in shape,
+              including ones with little sequence similarity.
             </li>
             <li>
-              The residues from the structure are finally aligned to the to the
-              selected transcript&apos;s protein sequence representation, and
-              this creates a mapping from the reference genome coordinates to
-              positions in the 3-D structure
-            </li>
-            <li>
-              Finally the molstar panel is opened, and this contains many
-              specialized features features, plus additional mouseover and
-              selection features supplied by the plugin to connect mouse click
-              actions and mouse hover with coordinates on the linear genome view
+              <b>File or URL</b> opens a structure you already have — the output
+              of ColabFold or another modelling tool, or any PDB/mmCIF file
+              reachable by URL.
             </li>
           </ul>
-        </Typography2>
-        <Typography2>
-          If you run into challenges with this workflow e.g. your transcripts
-          are not being found in UniProt then you can use the Manual import
-          form, or contact colin.diesh@gmail.com for troubleshooting
-        </Typography2>
+        </Typography>
+        <Typography sx={{ mb: 2 }}>
+          The isoform list marks which transcripts match the structure&apos;s
+          residues exactly, and counts identical residues for the rest. An exact
+          match is not required; the alignment handles the differences between
+          the two representations.
+        </Typography>
+        <Typography>
+          If a gene will not resolve, or something looks wrong, please open an
+          issue at{' '}
+          <ExternalLink href={ISSUES_URL}>
+            github.com/GMOD/jbrowse-plugin-protein3d
+          </ExternalLink>
+          .
+        </Typography>
       </DialogContent>
       <Divider />
       <DialogActions>

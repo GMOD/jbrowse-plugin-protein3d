@@ -8,6 +8,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
@@ -100,10 +101,22 @@ export default function FoldseekResultsTable({
               <TableCell className={classes.headerCell}>Database</TableCell>
               <TableCell className={classes.headerCell}>Target</TableCell>
               <TableCell className={classes.headerCell}>Organism</TableCell>
-              <TableCell className={classes.headerCell}>Prob</TableCell>
-              <TableCell className={classes.headerCell}>Seq. Id.</TableCell>
+              <TableCell className={classes.headerCell}>
+                <Tooltip title="Foldseek's estimated probability that the hit is a true structural homolog">
+                  <span>Prob</span>
+                </Tooltip>
+              </TableCell>
+              <TableCell className={classes.headerCell}>
+                <Tooltip title="Percentage of aligned residues whose amino acid is identical; structural hits are often low here">
+                  <span>Seq. Id.</span>
+                </Tooltip>
+              </TableCell>
               <TableCell className={classes.headerCell}>Coverage</TableCell>
-              <TableCell className={classes.headerCell}>E-value</TableCell>
+              <TableCell className={classes.headerCell}>
+                <Tooltip title="Hits of this score expected by chance in a database this size; smaller is stronger">
+                  <span>E-value</span>
+                </Tooltip>
+              </TableCell>
               <TableCell className={classes.headerCell}>Actions</TableCell>
             </TableRow>
           </TableHead>
