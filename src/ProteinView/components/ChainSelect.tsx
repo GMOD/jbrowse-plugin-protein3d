@@ -32,7 +32,7 @@ const ChainSelect = observer(function ChainSelect({
           model.chooseEntity(event.target.value)
         } catch (e) {
           console.error(e)
-          model.setError(e)
+          model.setViewError(e)
         }
       }}
       sx={{ minWidth: 200, mr: 1 }}

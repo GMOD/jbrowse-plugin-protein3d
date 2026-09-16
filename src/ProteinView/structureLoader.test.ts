@@ -39,14 +39,14 @@ const TestStructure = types
     entities: undefined as Entity[] | undefined,
     molstarStructure: undefined as Structure | undefined,
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
-    loadError: undefined as unknown,
+    error: undefined as unknown,
   }))
   .actions(self => ({
     setUrl(url: string) {
       self.url = url
     },
-    setLoadError(e: unknown) {
-      self.loadError = e
+    setError(e: unknown) {
+      self.error = e
     },
     setStructureData(d: StructureData) {
       self.entities = d.entities
@@ -68,6 +68,9 @@ const TestHost = types
   .actions(self => ({
     setPlugin(p: object) {
       self.molstarPluginContext = p
+    },
+    removeFirstStructure() {
+      self.structures.remove(self.structures[0]!)
     },
   }))
 
@@ -103,6 +106,30 @@ function setupAlphaFold(
   return {
     load: makeStructureLoader(asLoaderHost(host), fetchModels),
     structure: host.structures[0]!,
+  }
+}
+
+// A Mol* stand-in that records what a load's clean-up removed from it
+function recordingPlugin() {
+  const removed: unknown[] = []
+  return {
+    removed,
+    plugin: {
+      managers: {
+        structure: {
+          hierarchy: {
+            findStructure: (structure: unknown) =>
+              structure === undefined
+                ? undefined
+                : { kind: 'structure', model: { trajectory: structure } },
+            remove: (refs: unknown[]) => {
+              removed.push(...refs)
+              return undefined
+            },
+          },
+        },
+      },
+    },
   }
 }
 
@@ -203,7 +230,7 @@ test('reports a load error on the structure that failed, not the view', async ()
   const { load, structure } = setup({})
   load()
   await tick()
-  expect(structure.loadError).toBe(err)
+  expect(structure.error).toBe(err)
   expect(structure.loadedToMolstar).toBe(false)
   expect(logged).toHaveBeenCalledWith(err)
   logged.mockRestore()
@@ -223,7 +250,7 @@ test('a load that fails because its plugin was swapped away retries into the cur
   rejectFirst(new Error('plugin disposed'))
   await tick()
 
-  expect(structure.loadError).toBeUndefined()
+  expect(structure.error).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(true)
   expect(structure.entities).toEqual([entity('B')])
   expect(mockLoad).toHaveBeenCalledTimes(2)
@@ -264,6 +291,8 @@ test('with no transcript match the canonical model wins over an isoform', async 
   expect(structure.url).toBe(alphaFoldModel('P04637', '').url)
 })
 
+// An unreachable API has said nothing about the accession, so the spelled
+// filename is still worth trying.
 test('a failed prediction API falls back to the canonical filename', async () => {
   mockLoad.mockResolvedValue({})
   const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
@@ -273,6 +302,25 @@ test('a failed prediction API falls back to the canonical filename', async () =>
   await tick()
   expect(structure.url).toBe(getAlphaFoldStructureUrl('P04637'))
   expect(structure.loadedToMolstar).toBe(true)
+})
+
+// An API that answers with no models has: spelling a filename anyway turns
+// "AlphaFold has not folded this protein" into a 404 to diagnose.
+test('an accession AlphaFold has no model for is reported, not guessed at', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  mockLoad.mockResolvedValue({})
+  const { load, structure } = setupAlphaFold({ uniprotId: 'P99999' }, () =>
+    Promise.resolve([]),
+  )
+  load()
+  await tick()
+  expect(structure.url).toBeUndefined()
+  expect(structure.loadedToMolstar).toBe(false)
+  expect(structure.error).toEqual(
+    new Error('AlphaFold DB has no model for P99999'),
+  )
+  expect(mockLoad).not.toHaveBeenCalled()
+  logged.mockRestore()
 })
 
 test('a structure that already has a url never asks AlphaFold DB', async () => {
@@ -286,4 +334,51 @@ test('a structure that already has a url never asks AlphaFold DB', async () => {
   await tick()
   expect(fetchModels).not.toHaveBeenCalled()
   expect(structure.url).toBe('https://e.com/mine.cif')
+})
+
+// A structure removed while its file was still downloading has no
+// molstarStructure for removeStructure to take out, and the load that lands
+// afterwards still puts a trajectory in Mol*. Left there it stays on the canvas
+// and joins the next superposition as a structure the view does not know about.
+test('a structure removed mid-load takes its trajectory out of Mol* when it lands', async () => {
+  const structureHandle = molstarStructure('ghost')
+  let resolveLoad: (v: StructureData) => void = () => {}
+  mockLoad.mockImplementationOnce(() => new Promise(res => (resolveLoad = res)))
+  const { removed, plugin } = recordingPlugin()
+
+  const host = TestHost.create({ structures: [{ url: 'a.cif' }] })
+  host.setPlugin(plugin)
+  const load = makeStructureLoader(asLoaderHost(host))
+  load()
+
+  host.removeFirstStructure()
+  resolveLoad({ molstarStructure: structureHandle })
+  await tick()
+
+  expect(removed).toEqual([structureHandle])
+})
+
+// A remount retries the load from the start, so the last attempt's failure is
+// stale — and while it sat there `loading` read the structure as settled, so a
+// wait on the view finished in the middle of the retry.
+test('a retry clears the failure it is retrying', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  let settleSecond: (v: StructureData) => void = () => {}
+  mockLoad
+    .mockRejectedValueOnce(new Error('boom'))
+    .mockImplementationOnce(() => new Promise(res => (settleSecond = res)))
+
+  const { host, load, structure } = setup({ id: 'A' })
+  load()
+  await tick()
+  expect(structure.error).toEqual(new Error('boom'))
+
+  host.setPlugin({ id: 'B' })
+  load()
+  expect(structure.error).toBeUndefined()
+
+  settleSecond({})
+  await tick()
+  expect(structure.loadedToMolstar).toBe(true)
+  logged.mockRestore()
 })

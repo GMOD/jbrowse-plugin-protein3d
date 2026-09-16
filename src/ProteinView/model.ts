@@ -1,6 +1,6 @@
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
-import { addDisposer, types } from '@jbrowse/mobx-state-tree'
+import { addDisposer, getPath, types } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
 
 import {
@@ -248,27 +248,6 @@ function stateModelFactory() {
       },
       /**
        * #action
-       * Takes a structure out of the view and out of Mol*. The superposed
-       * count resets so the remaining structures are re-aligned against a
-       * pivot that still exists, and every derived highlight follows the
-       * structures array, so nothing is left pointing at a removed model.
-       */
-      removeStructure(structure: JBrowsePluginProteinStructureModel) {
-        const plugin = self.molstarPluginContext
-        const molstarStructure = structure.molstarStructure
-        self.structures.remove(structure)
-        self.superposedCount = 0
-        if (plugin) {
-          removeMolstarStructure({ plugin, molstarStructure }).catch(
-            (e: unknown) => {
-              console.error(e)
-              self.error = e
-            },
-          )
-        }
-      },
-      /**
-       * #action
        * Puts every structure's persistent selection down. The Mol* selection
        * is derived from it, so clearing the range clears the magenta.
        */
@@ -276,6 +255,33 @@ function stateModelFactory() {
         for (const structure of self.structures) {
           structure.setClickedStructureRange(undefined)
           structure.setSelectedFeatureId(undefined)
+        }
+      },
+    }))
+    .actions(self => ({
+      /**
+       * #action
+       * Takes a structure out of the view and out of Mol*. The superposed
+       * count resets so the remaining structures are re-aligned against a
+       * pivot that still exists, and every derived highlight follows the
+       * structures array, so nothing is left pointing at a removed model.
+       *
+       * A block of its own so the removal's rejection can report through
+       * `setError`: the promise settles after the action returns, and a write
+       * to `self` from there throws inside MST.
+       */
+      removeStructure(structure: JBrowsePluginProteinStructureModel) {
+        const plugin = self.molstarPluginContext
+        const molstarStructure = structure.molstarStructure
+        self.structures.remove(structure)
+        self.setSuperposedCount(0)
+        if (plugin) {
+          removeMolstarStructure({ plugin, molstarStructure }).catch(
+            (e: unknown) => {
+              console.error(e)
+              self.setError(e)
+            },
+          )
         }
       },
     }))
@@ -355,11 +361,17 @@ function stateModelFactory() {
       /**
        * #getter
        * What each still-settling structure is doing, for the canvas overlay.
+       * Each line carries its structure's path as an id: two copies of one
+       * entry say the same thing, and keying the overlay on the text alone
+       * made React complain about duplicate keys — which the e2e's console
+       * gate reads as a failure, rightly.
        */
       get loadingMessages() {
-        return self.structures
-          .map(s => s.loadingMessage)
-          .filter(m => m !== undefined)
+        return self.structures.flatMap(s =>
+          s.loadingMessage === undefined
+            ? []
+            : [{ id: getPath(s), message: s.loadingMessage }],
+        )
       },
       /**
        * #getter

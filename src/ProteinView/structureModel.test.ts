@@ -1,4 +1,4 @@
-import { types } from '@jbrowse/mobx-state-tree'
+import { getSnapshot, types } from '@jbrowse/mobx-state-tree'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import Structure from './structureModel'
@@ -108,6 +108,26 @@ test('keeps a uniprotId shorthand for the loader, and names the structure by it'
   expect(s.url).toBeUndefined()
   expect(s.uniprotId).toBe('P04637')
   expect(s.label).toBe('AlphaFold P04637')
+})
+
+// The loader may open an isoform file for a canonical accession, and reading
+// the accession back off that url would save P04637-2 — which UniProt's GFF
+// endpoint does not serve, so the reopened session would lose its feature
+// tracks and its entry link.
+test('a saved session keeps the accession that was asked for, not the file its model came from', () => {
+  const parent = TestParent.create({ structures: [{ uniprotId: 'P04637' }] })
+  const structure = parent.structures[0]!
+  structure.setUrl(
+    'https://alphafold.ebi.ac.uk/files/AF-P04637-2-F1-model_v6.cif',
+  )
+
+  const reopened = TestParent.create({
+    structures: [getSnapshot(parent).structures[0]!],
+  })
+  expect(reopened.structures[0]!.uniprotId).toBe('P04637')
+  expect(reopened.structures[0]!.url).toBe(
+    'https://alphafold.ebi.ac.uk/files/AF-P04637-2-F1-model_v6.cif',
+  )
 })
 
 // A grey canvas for the seconds a fetch, a parse, an alignment and a SIFTS
