@@ -1,11 +1,9 @@
 import { readConfObject } from '@jbrowse/core/configuration'
 import { parseLocString } from '@jbrowse/core/util'
 
+import { codingTranscripts } from '../LaunchProteinView/codingFeature'
 import { fetchProteinSeq } from '../LaunchProteinView/utils/calculateProteinSequence'
-import {
-  getTranscriptFeatures,
-  stripTrailingVersion,
-} from '../LaunchProteinView/utils/util'
+import { stripTrailingVersion } from '../LaunchProteinView/utils/util'
 
 import type { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import type {
@@ -140,7 +138,7 @@ export async function resolveShortLaunch({
       args,
     )
     for (const feat of feats) {
-      transcripts.push(...getTranscriptFeatures(feat))
+      transcripts.push(...codingTranscripts(feat))
     }
   }
 

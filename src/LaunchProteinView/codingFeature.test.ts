@@ -1,7 +1,12 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { describe, expect, it } from 'vitest'
 
-import { geneLikeRoot, isCodingFeature, isGeneLikeType } from './codingFeature'
+import {
+  codingTranscripts,
+  geneLikeRoot,
+  isCodingFeature,
+  isGeneLikeType,
+} from './codingFeature'
 
 function feature(type: string, subfeatures: SimpleFeature[] = []) {
   return new SimpleFeature({
@@ -52,8 +57,27 @@ describe('isCodingFeature', () => {
     expect(isCodingFeature(lnc)).toBe(false)
   })
 
-  it('counts the feature itself', () => {
-    expect(isCodingFeature(feature('CDS'))).toBe(true)
+  it('is false for a bare CDS with nothing to translate under it', () => {
+    expect(isCodingFeature(feature('CDS'))).toBe(false)
+  })
+})
+
+describe('codingTranscripts', () => {
+  it('lists the gene-like children that carry CDS records', () => {
+    const coding = feature('mRNA', [feature('CDS')])
+    const retained = feature('transcript', [feature('exon')])
+    const gene = feature('gene', [coding, retained])
+    expect(codingTranscripts(gene).map(f => f.get('type'))).toEqual(['mRNA'])
+  })
+
+  it('is the feature itself when its CDS records hang directly off it', () => {
+    const mrna = feature('mRNA', [feature('cds')])
+    expect(codingTranscripts(mrna)).toEqual([mrna])
+  })
+
+  it('reaches a V_gene_segment the way it reaches an mRNA', () => {
+    const gene = feature('gene', [feature('V_gene_segment', [feature('CDS')])])
+    expect(codingTranscripts(gene)).toHaveLength(1)
   })
 })
 

@@ -9,14 +9,28 @@ export function isGeneLikeType(type: string | undefined) {
   return type !== undefined && GENE_LIKE_TYPE.test(type.toLowerCase())
 }
 
-function isCDS(feature: Feature) {
+export function isCDS(feature: Feature) {
   return feature.get('type')?.toLowerCase() === 'cds'
 }
 
-// The feature itself counts: a viral polyprotein hangs its cleavage products
-// off its CDS rather than off further CDSs.
-export function isCodingFeature(feature: Feature): boolean {
-  return isCDS(feature) || !!feature.get('subfeatures')?.some(isCodingFeature)
+function hasDirectCDS(feature: Feature) {
+  return !!feature.get('subfeatures')?.some(isCDS)
+}
+
+// The transcripts the translator can read: the feature itself when its CDS
+// records hang directly off it, else each gene-like child that carries them.
+// One definition serves the menu gate, the isoform picker and the translator,
+// so the menu never promises a protein the dialog cannot compute.
+export function codingTranscripts(feature: Feature) {
+  return hasDirectCDS(feature)
+    ? [feature]
+    : (feature.get('subfeatures') ?? []).filter(
+        f => isGeneLikeType(f.get('type')) && hasDirectCDS(f),
+      )
+}
+
+export function isCodingFeature(feature: Feature) {
+  return codingTranscripts(feature).length > 0
 }
 
 // The outermost gene-like ancestor, so a click on an isoform opens the dialog

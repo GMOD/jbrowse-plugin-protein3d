@@ -3,6 +3,7 @@ import { revcom } from '@jbrowse/core/util'
 import { convertCodingSequenceToPeptides } from '@jbrowse/core/util/convertCodingSequenceToPeptides'
 
 import { getGeneticCode, parseTranslTable } from './geneticCodes'
+import { isCDS } from '../codingFeature'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 
@@ -80,7 +81,7 @@ export function getProteinSequence({
   const subfeatures = feature.get('subfeatures') ?? []
   const cds = dedupe(
     subfeatures
-      .filter(sub => sub.get('type') === 'CDS')
+      .filter(isCDS)
       .toSorted((a, b) => a.get('start') - b.get('start'))
       .map(sub => ({
         start: sub.get('start') - featureStart,
@@ -94,9 +95,7 @@ export function getProteinSequence({
   // rather than the transcript. GENCODE and UCSC declare nothing, so without
   // the assembly's code all 13 human mitochondrial proteins read TGA as a stop
   // and ATA as I.
-  const cdsSubfeature = subfeatures.find(
-    (f: Feature) => f.get('type')?.toLowerCase() === 'cds',
-  )
+  const cdsSubfeature = subfeatures.find(isCDS)
   const geneticCodeId =
     parseTranslTable(feature.get('transl_table')) ??
     parseTranslTable(cdsSubfeature?.get('transl_table')) ??

@@ -2,6 +2,7 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { renderHook } from '@testing-library/react'
 
+import * as codingFeature from '../src/LaunchProteinView/codingFeature'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
 // Import other necessary hooks and utilities from their respective paths
 import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
@@ -33,9 +34,12 @@ vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   return {
     ...actual,
     extractFeatureIdentifiers: vi.fn(), // Mock extractFeatureIdentifiers to control its output
-    getTranscriptFeatures: vi.fn(),
     getId: vi.fn(f => f?.id() || ''),
   }
+})
+vi.mock('../src/LaunchProteinView/codingFeature', async importOriginal => {
+  const actual = await importOriginal()
+  return { ...actual, codingTranscripts: vi.fn() }
 })
 
 // Import the mocked functions after mocking
@@ -44,7 +48,7 @@ const mockUseIsoformProteinSequences = vi.mocked(useIsoformProteinSequences)
 const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
 const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
-const mockGetTranscriptFeatures = util.getTranscriptFeatures as vi.Mock
+const mockGetTranscriptFeatures = codingFeature.codingTranscripts as vi.Mock
 const mockGetId = util.getId as vi.Mock
 const mockSelectBestTranscript = isoformRanking.selectBestTranscript as vi.Mock
 
@@ -224,15 +228,22 @@ describe('useAlphaFoldDBSearch', () => {
 describe('extractFeatureIdentifiers', () => {
   let actualExtractFeatureIdentifiers!: typeof util.extractFeatureIdentifiers
 
+  let actualCodingTranscripts!: typeof codingFeature.codingTranscripts
+
   beforeAll(async () => {
     const actualUtil = await vi.importActual<typeof util>(
       '../src/LaunchProteinView/utils/util',
     )
     actualExtractFeatureIdentifiers = actualUtil.extractFeatureIdentifiers
+    const actualCoding = await vi.importActual<typeof codingFeature>(
+      '../src/LaunchProteinView/codingFeature',
+    )
+    actualCodingTranscripts = actualCoding.codingTranscripts
   })
 
   beforeEach(() => {
     vi.clearAllMocks()
+    mockGetTranscriptFeatures.mockImplementation(actualCodingTranscripts)
   })
 
   it('should extract identifiers from the first transcript subfeature if the input is a gene with transcripts', () => {
@@ -247,6 +258,9 @@ describe('extractFeatureIdentifiers', () => {
       transcript_id: 'ENST00000123456',
       uniprot: 'P12345',
       Dbxref: ['HGNC:HGNC:5678', 'RefSeq:NM_001310462.2'],
+      subfeatures: [
+        { uniqueId: 'cds1', start: 0, end: 99, refName: 'chr1', type: 'CDS' },
+      ],
     })
 
     const mockGene = new SimpleFeature({

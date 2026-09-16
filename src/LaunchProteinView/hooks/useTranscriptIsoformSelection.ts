@@ -2,8 +2,9 @@ import { useMemo } from 'react'
 
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useTranscriptSelection from './useTranscriptSelection'
+import { codingTranscripts } from '../codingFeature'
 import { pickStructureSequence } from '../utils/isoformRanking'
-import { getId, getTranscriptFeatures } from '../utils/util'
+import { getId } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -24,7 +25,7 @@ export default function useTranscriptIsoformSelection({
   structureSequences?: string[]
   resetKey?: string
 }) {
-  const transcripts = getTranscriptFeatures(feature)
+  const transcripts = codingTranscripts(feature)
   const { isoformSequences, isLoading, error, partialFailure } =
     useIsoformProteinSequences({
       feature,

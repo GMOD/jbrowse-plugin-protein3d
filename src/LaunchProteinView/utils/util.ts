@@ -1,3 +1,5 @@
+import { codingTranscripts, isGeneLikeType } from '../codingFeature'
+
 import type { Feature } from '@jbrowse/core/util'
 
 /**
@@ -39,24 +41,6 @@ export function extractTaxonId(metadata: unknown): number | undefined {
       : undefined
   const n = Number(m.taxId ?? m.taxonId ?? ucsc?.taxId)
   return Number.isFinite(n) && n > 0 ? n : undefined
-}
-
-export function getTranscriptFeatures(feature: Feature) {
-  // check if we are looking at a 'two-level' or 'three-level' feature by
-  // finding exon/CDS subfeatures. we want to select from transcript names
-  const subfeatures = feature.get('subfeatures') ?? []
-
-  // Check for mRNA/transcript subfeatures (three-level: gene → mRNA → CDS)
-  const transcripts = subfeatures.filter(
-    (f: Feature) => f.get('type') === 'mRNA' || f.get('type') === 'transcript',
-  )
-  if (transcripts.length > 0) {
-    return transcripts
-  }
-
-  // Has direct CDS/exon children, treat feature itself as the transcript
-  // (two-level: gene → CDS or mRNA → CDS)
-  return [feature]
 }
 
 export function stripTrailingVersion(s?: string) {
@@ -242,13 +226,8 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
 
   let featureToProcess = f // Default to the parent feature
 
-  // If the feature is a gene, try to get identifiers from its first transcript.
-  if (f.get('type') === 'gene') {
-    const transcripts = getTranscriptFeatures(f)
-    if (transcripts.length > 0) {
-      featureToProcess = transcripts[0]! // Prioritize the first transcript (length > 0 checked above)
-    }
-    // If no transcripts found, featureToProcess remains the parent gene 'f'.
+  if (isGeneLikeType(f.get('type'))) {
+    featureToProcess = codingTranscripts(f)[0] ?? f
   }
 
   // --- Extracting Recognized IDs and UniProt ID from featureToProcess ---
