@@ -1,6 +1,8 @@
 import React from 'react'
 
+import CloseIcon from '@mui/icons-material/Close'
 import Chip from '@mui/material/Chip'
+import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { observer } from 'mobx-react'
@@ -26,8 +28,10 @@ const LOW_SIMILARITY_EXPLANATION = `Under ${Math.round(
 )}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`
 
 const StructureRow = observer(function StructureRow({
+  model,
   structure,
 }: {
+  model: JBrowsePluginProteinViewModel
   structure: JBrowsePluginProteinStructureModel
 }) {
   const { label, alignmentQuality: quality } = structure
@@ -51,6 +55,7 @@ const StructureRow = observer(function StructureRow({
           {coveredRange ? `, ${coveredRange}` : ''}
         </Typography>
       ) : null}
+      <div style={{ flex: 1 }} />
       {quality && isLowSimilarity(quality) ? (
         <Tooltip title={LOW_SIMILARITY_EXPLANATION}>
           <Chip
@@ -62,6 +67,17 @@ const StructureRow = observer(function StructureRow({
           />
         </Tooltip>
       ) : null}
+      <Tooltip title={`Remove ${label}`}>
+        <IconButton
+          size="small"
+          aria-label={`Remove ${label}`}
+          onClick={() => {
+            model.removeStructure(structure)
+          }}
+        >
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
     </div>
   )
 })
@@ -80,7 +96,7 @@ const HeaderStructureRows = observer(function HeaderStructureRows({
   return (
     <div>
       {model.structures.map((structure, idx) => (
-        <StructureRow key={idx} structure={structure} />
+        <StructureRow key={idx} model={model} structure={structure} />
       ))}
     </div>
   )

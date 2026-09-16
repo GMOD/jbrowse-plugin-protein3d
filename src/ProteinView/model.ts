@@ -14,6 +14,7 @@ import {
 import { makeSelectionFramer } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
 import { defaultDisplayName } from './proteinViewSpec'
+import { removeMolstarStructure } from './removeStructure'
 import { showLoading } from './showLoading'
 import {
   type PersistedSetting,
@@ -33,6 +34,7 @@ import {
 } from './types'
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
+import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
@@ -237,6 +239,38 @@ function stateModelFactory() {
       addStructure(structure: ProteinStructureSpec) {
         self.structures.push(Structure.create(structure))
       },
+      /**
+       * #action
+       * Takes a structure out of the view and out of Mol*. The superposed
+       * count resets so the remaining structures are re-aligned against a
+       * pivot that still exists, and every derived highlight follows the
+       * structures array, so nothing is left pointing at a removed model.
+       */
+      removeStructure(structure: JBrowsePluginProteinStructureModel) {
+        const plugin = self.molstarPluginContext
+        const molstarStructure = structure.molstarStructure
+        self.structures.remove(structure)
+        self.superposedCount = 0
+        if (plugin) {
+          removeMolstarStructure({ plugin, molstarStructure }).catch(
+            (e: unknown) => {
+              console.error(e)
+              self.error = e
+            },
+          )
+        }
+      },
+      /**
+       * #action
+       * Puts every structure's persistent selection down. The Mol* selection
+       * is derived from it, so clearing the range clears the magenta.
+       */
+      clearSelection() {
+        for (const structure of self.structures) {
+          structure.setClickedStructureRange(undefined)
+          structure.setSelectedFeatureId(undefined)
+        }
+      },
     }))
     .actions(self => ({
       /**
@@ -363,6 +397,21 @@ function stateModelFactory() {
             label: 'Add structure...',
             onClick: () => {
               self.setShowAddStructureDialog(true)
+            },
+          },
+          {
+            label: 'Remove structure',
+            subMenu: self.structures.map(structure => ({
+              label: structure.label,
+              onClick: () => {
+                self.removeStructure(structure)
+              },
+            })),
+          },
+          {
+            label: 'Clear selection',
+            onClick: () => {
+              self.clearSelection()
             },
           },
           {

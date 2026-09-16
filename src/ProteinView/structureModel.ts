@@ -1270,6 +1270,12 @@ const Structure = types
 
       addInteractionListener('click', info => {
         const hit = forMappedEntity(info)
+        if (!info) {
+          // clicking the background is how a user puts a selection down; a
+          // click that landed on another structure is that structure's
+          self.setClickedStructureRange(undefined)
+          self.setSelectedFeatureId(undefined)
+        }
         if (hit) {
           self.setHoveredPosition(hit)
           self.setSelectedFeatureId(undefined)
