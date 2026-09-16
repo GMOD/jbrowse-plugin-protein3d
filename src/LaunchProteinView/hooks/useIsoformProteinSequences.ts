@@ -2,11 +2,17 @@ import { getSession } from '@jbrowse/core/util'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { fetchProteinSeq } from '../utils/calculateProteinSequence'
+import { fetchTranscriptProteinSeqs } from '../utils/calculateProteinSequence'
 import { getTranscriptFeatures } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
+
+interface IsoformTranslations {
+  sequences: IsoformSequences
+  translated: number
+  total: number
+}
 
 export default function useIsoformProteinSequences({
   feature,
@@ -15,39 +21,30 @@ export default function useIsoformProteinSequences({
   feature: Feature
   view?: { assemblyNames?: string[] }
 }) {
-  const { data, error, isLoading } = useSWR<IsoformSequences>(
+  const { data, error, isLoading } = useSWR<IsoformTranslations>(
     ['isoform-sequences', feature.id(), view?.assemblyNames?.[0]],
     async () => {
       const transcripts = getTranscriptFeatures(feature)
-      const errors: unknown[] = []
-      const results = await Promise.all(
-        transcripts.map(async f => {
-          try {
-            const seq = await fetchProteinSeq({
-              session: getSession(view),
-              assemblyName: view?.assemblyNames?.[0],
-              feature: f,
-            })
-            return seq ? ([f.id(), { feature: f, seq }] as const) : undefined
-          } catch (e) {
-            console.error('[useIsoformProteinSequences] error for', f.id(), e)
-            errors.push(e)
-            return undefined
-          }
-        }),
-      )
-      const entries = results.filter(r => r !== undefined)
-      // If every transcript fetch failed, surface the underlying error rather
-      // than silently returning {} — otherwise the UI shows the misleading
-      // "feature may be missing CDS subfeatures" hint with no actual cause.
-      if (
-        entries.length === 0 &&
-        errors.length === transcripts.length &&
-        errors.length > 0
-      ) {
-        throw errors[0]
+      const results = await fetchTranscriptProteinSeqs({
+        transcripts,
+        session: getSession(view),
+        assemblyName: view?.assemblyNames?.[0],
+      })
+      for (const { feature: f, error: e } of results) {
+        if (e !== undefined) {
+          console.error('[useIsoformProteinSequences] error for', f.id(), e)
+        }
       }
-      return Object.fromEntries(entries)
+      const entries = results.flatMap(r =>
+        r.seq === undefined
+          ? []
+          : [[r.feature.id(), { feature: r.feature, seq: r.seq }] as const],
+      )
+      return {
+        sequences: Object.fromEntries(entries),
+        translated: entries.length,
+        total: results.length,
+      }
     },
     {
       ...STATIC_SWR_OPTIONS,
@@ -55,5 +52,16 @@ export default function useIsoformProteinSequences({
     },
   )
 
-  return { isLoading, isoformSequences: data, error }
+  // A transcript that fails to translate is reported rather than dropped:
+  // silently listing 18 of 20 isoforms reads as a gene with 18 isoforms.
+  const failed = data ? data.total - data.translated : 0
+  return {
+    isLoading,
+    isoformSequences: data?.sequences,
+    error,
+    partialFailure:
+      failed > 0 && data
+        ? `Could not translate ${failed} of ${data.total} transcripts`
+        : undefined,
+  }
 }

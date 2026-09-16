@@ -25,10 +25,11 @@ export default function useTranscriptIsoformSelection({
   resetKey?: string
 }) {
   const transcripts = getTranscriptFeatures(feature)
-  const { isoformSequences, isLoading, error } = useIsoformProteinSequences({
-    feature,
-    view,
-  })
+  const { isoformSequences, isLoading, error, partialFailure } =
+    useIsoformProteinSequences({
+      feature,
+      view,
+    })
   // one alignment per chain, so not once per render
   const structureSequence = useMemo(
     () => pickStructureSequence(structureSequences, isoformSequences),
@@ -51,6 +52,7 @@ export default function useTranscriptIsoformSelection({
     structureSequence,
     isLoading,
     error,
+    partialFailure,
     selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,

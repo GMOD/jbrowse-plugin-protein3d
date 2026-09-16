@@ -5,6 +5,7 @@ import {
   Button,
   DialogActions,
   DialogContent,
+  Link,
   TextField,
   Typography,
 } from '@mui/material'
@@ -36,6 +37,7 @@ const useStyles = makeStyles()({
     display: 'flex',
     flexDirection: 'column',
     gap: 8,
+    alignItems: 'flex-start',
   },
 })
 
@@ -56,6 +58,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     string | undefined
   >()
   const [selectedDatabases, setSelectedDatabases] = useState(DEFAULT_DATABASES)
+  const [show3Di, setShow3Di] = useState(false)
 
   const {
     results,
@@ -67,6 +70,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     statusMessage,
     predictStructure,
     search,
+    cancel,
     reset,
   } = useFoldseekSearch()
 
@@ -75,6 +79,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
     isoformSequences,
     isLoading: isLoadingIsoforms,
     error: isoformError,
+    partialFailure: isoformPartialFailure,
     selectedTranscriptId: effectiveSelectedTranscriptId,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
@@ -87,9 +92,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const sequence = userEditedSequence ?? cleanedSequence
 
   // Any change to the input sequence makes an existing 3Di prediction (and any
-  // results derived from it) stale. Clearing it returns the UI to the Predict
-  // step so a search can't silently run against the previously-predicted
-  // sequence after the user switches transcript or edits the residues.
+  // results derived from it) stale, so it goes back to being predicted on the
+  // next search rather than a search running against the old residues.
   const invalidatePrediction = () => {
     if (di3Sequence !== undefined || results !== undefined) {
       reset()
@@ -102,15 +106,27 @@ const FoldseekSearch = observer(function FoldseekSearch({
     invalidatePrediction()
   }
 
-  const canPredict = sequence.trim().length > 0 && !isPredicting && !isLoading
+  const isBusy = isLoading || isPredicting
   const canSearch =
-    !!cleanedAaSequence &&
-    !!di3Sequence &&
-    selectedDatabases.length > 0 &&
-    !isLoading
+    sequence.trim().length > 0 && selectedDatabases.length > 0 && !isBusy
+
+  // One button: predicting the 3Di alphabet is a step of the search, not a
+  // decision, and making the user click twice only invited a stale prediction.
+  const runSearch = async () => {
+    const predicted =
+      cleanedAaSequence && di3Sequence
+        ? { aaSequence: cleanedAaSequence, di3Sequence }
+        : await predictStructure(sequence.trim())
+    if (predicted) {
+      await search(
+        predicted.aaSequence,
+        predicted.di3Sequence,
+        selectedDatabases,
+      )
+    }
+  }
 
   const combinedError = error ?? isoformError
-  const isBusy = isLoading || isPredicting
 
   return (
     <>
@@ -124,6 +140,12 @@ const FoldseekSearch = observer(function FoldseekSearch({
             variant="subtitle2"
             message="Loading transcript sequences"
           />
+        ) : null}
+
+        {isoformPartialFailure ? (
+          <Typography variant="body2" color="warning.main">
+            {isoformPartialFailure}
+          </Typography>
         ) : null}
 
         {isoformSequences ? (
@@ -156,17 +178,28 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
         {di3Sequence ? (
           <div className={classes.di3Section}>
-            <Typography variant="subtitle2">
-              3Di structural alphabet (used for searching):
-            </Typography>
-            <TextField
-              multiline
-              rows={4}
-              value={di3Sequence}
-              slotProps={{
-                input: { className: classes.sequenceInput, readOnly: true },
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              onClick={() => {
+                setShow3Di(!show3Di)
               }}
-            />
+            >
+              {show3Di ? 'Hide 3Di' : 'Show 3Di'}
+            </Link>
+            {show3Di ? (
+              <TextField
+                label="3Di structural alphabet (what the search runs on)"
+                multiline
+                rows={4}
+                fullWidth
+                value={di3Sequence}
+                slotProps={{
+                  input: { className: classes.sequenceInput, readOnly: true },
+                }}
+              />
+            ) : null}
           </div>
         ) : null}
 
@@ -191,6 +224,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
             onClose={handleClose}
           />
         ) : null}
+
+        <Typography variant="body2" color="textSecondary">
+          Searching sends the protein sequence above to the foldseek.com
+          servers, which predict its 3Di alphabet and run the structure search.
+        </Typography>
       </DialogContent>
       <DialogActions>
         <Button
@@ -200,8 +238,18 @@ const FoldseekSearch = observer(function FoldseekSearch({
             handleClose()
           }}
         >
-          Cancel
+          Close
         </Button>
+        {isBusy ? (
+          <Button
+            variant="outlined"
+            onClick={() => {
+              cancel()
+            }}
+          >
+            Cancel search
+          </Button>
+        ) : null}
         {results ? (
           <Button
             variant="outlined"
@@ -212,29 +260,20 @@ const FoldseekSearch = observer(function FoldseekSearch({
             New search
           </Button>
         ) : null}
-        {!di3Sequence ? (
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!canPredict}
-            onClick={() => {
-              void predictStructure(sequence.trim())
-            }}
-          >
-            {isPredicting ? 'Predicting...' : 'Predict 3Di structure'}
-          </Button>
-        ) : (
-          <Button
-            variant="contained"
-            color="primary"
-            disabled={!canSearch}
-            onClick={() => {
-              void search(cleanedAaSequence!, di3Sequence, selectedDatabases)
-            }}
-          >
-            {isLoading ? 'Searching...' : 'Search Foldseek'}
-          </Button>
-        )}
+        <Button
+          variant="contained"
+          color="primary"
+          disabled={!canSearch}
+          onClick={() => {
+            void runSearch()
+          }}
+        >
+          {isPredicting
+            ? 'Predicting 3Di...'
+            : isLoading
+              ? 'Searching...'
+              : 'Search Foldseek'}
+        </Button>
       </DialogActions>
     </>
   )

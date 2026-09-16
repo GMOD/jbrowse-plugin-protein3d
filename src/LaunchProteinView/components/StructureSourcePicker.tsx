@@ -12,7 +12,6 @@ import {
 
 import HelpButton from './HelpButton'
 import { STRUCTURE_FILE_ACCEPT } from '../utils/readStructureFile'
-import { getPdbStructureUrl } from '../utils/structureUrls'
 
 export default function StructureSourcePicker({
   choice,
@@ -20,16 +19,12 @@ export default function StructureSourcePicker({
   structureURL,
   setStructureURL,
   setFile,
-  pdbId,
-  setPdbId,
 }: {
   choice: string
   setChoice: (c: string) => void
   structureURL: string
   setStructureURL: (url: string) => void
   setFile: (f: File) => void
-  pdbId: string
-  setPdbId: (id: string) => void
 }) {
   return (
     <div style={{ display: 'flex', margin: 30 }}>
@@ -46,7 +41,6 @@ export default function StructureSourcePicker({
         >
           <FormControlLabel value="url" control={<Radio />} label="URL" />
           <FormControlLabel value="file" control={<Radio />} label="File" />
-          <FormControlLabel value="pdb" control={<Radio />} label="PDB ID" />
         </RadioGroup>
       </FormControl>
 
@@ -61,9 +55,7 @@ export default function StructureSourcePicker({
             }}
           />
         </div>
-      ) : null}
-
-      {choice === 'file' ? (
+      ) : (
         <div style={{ paddingTop: 20 }}>
           <Typography>
             Open a PDB/mmCIF/etc. file from your local drive
@@ -83,19 +75,7 @@ export default function StructureSourcePicker({
             />
           </Button>
         </div>
-      ) : null}
-
-      {choice === 'pdb' ? (
-        <TextField
-          value={pdbId}
-          onChange={event => {
-            const s = event.target.value
-            setPdbId(s)
-            setStructureURL(getPdbStructureUrl(s))
-          }}
-          label="PDB ID"
-        />
-      ) : null}
+      )}
     </div>
   )
 }

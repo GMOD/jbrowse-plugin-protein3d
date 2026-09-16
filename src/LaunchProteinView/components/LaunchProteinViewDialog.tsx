@@ -10,10 +10,8 @@ import HelpButton from './HelpButton'
 import PdbSearch from './PdbSearch'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
-import { DEFAULT_ALIGNMENT_ALGORITHM } from '../../ProteinView/types'
-import { useLocalStorage } from '../hooks/useLocalStorage'
+import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
 
-import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -27,13 +25,12 @@ export default function LaunchProteinViewDialog({
   model: AbstractTrackModel
 }) {
   const [choice, setChoice] = useState(0)
-  const [alignmentAlgorithm, setAlignmentAlgorithm] =
-    useLocalStorage<AlignmentAlgorithm>(
-      'jbrowse-protein3d-alignment-algorithm',
-      DEFAULT_ALIGNMENT_ALGORITHM,
-    )
   const session = getSession(model)
   const view = getContainingView(model) as LinearGenomeViewModel
+  // One lookup for the whole dialog: the tabs stay mounted once visited, so a
+  // lookup per tab meant the same UniProt search ran twice and a row picked on
+  // one tab left the other pointing at a different gene.
+  const lookup = useUniProtIdLookup({ feature, view })
 
   return (
     <Dialog
@@ -57,7 +54,7 @@ export default function LaunchProteinViewDialog({
         <Tab value={0} label="AlphaFoldDB search" />
         <Tab value={1} label="PDB search" />
         <Tab value={2} label="Foldseek search" />
-        <Tab value={3} label="Open file manually" />
+        <Tab value={3} label="File or URL" />
       </Tabs>
       <TabPanel value={choice} index={0}>
         <AlphaFoldDBSearch
@@ -65,8 +62,7 @@ export default function LaunchProteinViewDialog({
           view={view}
           feature={feature}
           handleClose={handleClose}
-          alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
+          lookup={lookup}
         />
       </TabPanel>
       <TabPanel value={choice} index={1}>
@@ -75,8 +71,7 @@ export default function LaunchProteinViewDialog({
           view={view}
           feature={feature}
           handleClose={handleClose}
-          alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
+          lookup={lookup}
         />
       </TabPanel>
       <TabPanel value={choice} index={2}>
@@ -93,8 +88,6 @@ export default function LaunchProteinViewDialog({
           view={view}
           feature={feature}
           handleClose={handleClose}
-          alignmentAlgorithm={alignmentAlgorithm}
-          onAlignmentAlgorithmChange={setAlignmentAlgorithm}
         />
       </TabPanel>
     </Dialog>

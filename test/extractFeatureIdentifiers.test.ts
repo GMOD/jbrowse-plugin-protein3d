@@ -6,6 +6,7 @@ import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBS
 // Import other necessary hooks and utilities from their respective paths
 import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
 import useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsoformProteinSequences'
+import useUniProtIdLookup from '../src/LaunchProteinView/hooks/useUniProtIdLookup'
 import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
 import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
 // Import utility functions and constants directly
@@ -99,6 +100,17 @@ describe('useAlphaFoldDBSearch', () => {
     mockView = { id: 'mock-view-id', assemblyNames: [] } // Mock LinearGenomeViewModel
   })
 
+  // the dialog owns the lookup and hands it to every tab, so the hook under
+  // test takes one rather than making its own
+  function useSearchUnderTest() {
+    const lookup = useUniProtIdLookup({ feature: mockFeature, view: mockView })
+    return useAlphaFoldDBSearch({
+      feature: mockFeature,
+      view: mockView,
+      lookup,
+    })
+  }
+
   it('should initialize selectedQueryId to "auto" even when recognized IDs are available', () => {
     // Mock extractFeatureIdentifiers to return recognized IDs
     mockExtractFeatureIdentifiers.mockReturnValue({
@@ -108,9 +120,7 @@ describe('useAlphaFoldDBSearch', () => {
       uniprotId: undefined,
     })
 
-    const { result } = renderHook(() =>
-      useAlphaFoldDBSearch({ feature: mockFeature, view: mockView }),
-    )
+    const { result } = renderHook(() => useSearchUnderTest())
 
     // The default is 'auto' (= query all recognized IDs); individual IDs remain
     // selectable via the IdentifierSelector but are not the initial default.
@@ -126,9 +136,7 @@ describe('useAlphaFoldDBSearch', () => {
       uniprotId: undefined,
     })
 
-    const { result } = renderHook(() =>
-      useAlphaFoldDBSearch({ feature: mockFeature, view: mockView }),
-    )
+    const { result } = renderHook(() => useSearchUnderTest())
 
     // Check if selectedQueryId was initialized to 'auto' when only geneName is available
     expect(result.current.selectedQueryId).toBe('auto')
@@ -143,9 +151,7 @@ describe('useAlphaFoldDBSearch', () => {
       uniprotId: null,
     })
 
-    const { result } = renderHook(() =>
-      useAlphaFoldDBSearch({ feature: mockFeature, view: mockView }),
-    )
+    const { result } = renderHook(() => useSearchUnderTest())
 
     // Check if selectedQueryId was initialized to 'auto' when no identifiers are found
     expect(result.current.selectedQueryId).toBe('auto')
@@ -195,9 +201,7 @@ describe('useAlphaFoldDBSearch', () => {
       id: () => mockSelectedTranscriptId,
     })
 
-    const { result } = renderHook(() =>
-      useAlphaFoldDBSearch({ feature: mockFeature, view: mockView }),
-    )
+    const { result } = renderHook(() => useSearchUnderTest())
 
     // Expect autoTranscriptId to be derived from selectBestTranscript
     // selectBestTranscript should return transcript2 because its sequence matches structureSequence after stripping '*'

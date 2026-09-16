@@ -9,6 +9,7 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
   Typography,
 } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
@@ -70,7 +71,9 @@ export default function PdbResultsTable({
               <TableCell className={classes.headerCell}>Method</TableCell>
               <TableCell className={classes.headerCell}>Resolution</TableCell>
               <TableCell className={classes.headerCell}>
-                UniProt residues
+                <Tooltip title="The span of the UniProt sequence this entry resolves, by SIFTS. A crystal is usually one domain rather than the whole protein.">
+                  <span>UniProt residues</span>
+                </Tooltip>
               </TableCell>
               <TableCell className={classes.headerCell}>Coverage</TableCell>
               <TableCell className={classes.headerCell}>Chains</TableCell>

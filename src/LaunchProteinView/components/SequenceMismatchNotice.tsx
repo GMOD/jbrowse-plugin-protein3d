@@ -2,30 +2,16 @@ import React from 'react'
 
 import { Typography } from '@mui/material'
 
-import AlignmentSettingsButton from './AlignmentSettingsButton'
 import {
   ALIGNMENT_ALGORITHM_LABELS,
-  type AlignmentAlgorithm,
+  DEFAULT_ALIGNMENT_ALGORITHM,
 } from '../../ProteinView/types'
 
-export default function SequenceMismatchNotice({
-  alignmentAlgorithm,
-  onAlignmentAlgorithmChange,
-}: {
-  alignmentAlgorithm: AlignmentAlgorithm
-  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
-}) {
+export default function SequenceMismatchNotice() {
   return (
-    <Typography
-      variant="body2"
-      sx={{ mr: 2, display: 'flex', alignItems: 'center' }}
-    >
+    <Typography variant="body2" sx={{ mr: 2 }}>
       Transcript and structure sequences differ, will run{' '}
-      {ALIGNMENT_ALGORITHM_LABELS[alignmentAlgorithm]} alignment
-      <AlignmentSettingsButton
-        value={alignmentAlgorithm}
-        onChange={onAlignmentAlgorithmChange}
-      />
+      {ALIGNMENT_ALGORITHM_LABELS[DEFAULT_ALIGNMENT_ALGORITHM]} alignment
     </Typography>
   )
 }

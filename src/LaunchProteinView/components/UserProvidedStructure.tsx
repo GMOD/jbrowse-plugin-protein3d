@@ -1,15 +1,15 @@
 import React, { useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
-import { Button, DialogActions, DialogContent } from '@mui/material'
+import { Button, DialogActions, DialogContent, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import IsoformSequencesToggle from './IsoformSequencesToggle'
 import SequenceMismatchNotice from './SequenceMismatchNotice'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 import ExternalLink from '../../components/ExternalLink'
+import useDebouncedValue from '../hooks/useDebouncedValue'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
@@ -17,7 +17,6 @@ import { launch3DProteinView } from '../utils/launchViewUtils'
 import { readStructureFile } from '../utils/readStructureFile'
 import { stripStopCodon } from '../utils/util'
 
-import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -25,9 +24,6 @@ const useStyles = makeStyles()(theme => ({
   dialogContent: {
     marginTop: theme.spacing(6),
     width: '80em',
-  },
-  textAreaFont: {
-    fontFamily: 'Courier New',
   },
 }))
 
@@ -53,31 +49,32 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   session,
   view,
   handleClose,
-  alignmentAlgorithm,
-  onAlignmentAlgorithmChange,
 }: {
   feature: Feature
   session: AbstractSessionModel
   view: LGV
   handleClose: () => void
-  alignmentAlgorithm: AlignmentAlgorithm
-  onAlignmentAlgorithmChange: (algorithm: AlignmentAlgorithm) => void
 }) {
   const { classes } = useStyles()
   const [file, setFile] = useState<File>()
-  const [pdbId, setPdbId] = useState('')
   const [choice, setChoice] = useState('file')
   const [structureURL, setStructureURL] = useState('')
   const { runLaunch, launchError } = useSafeLaunch(handleClose)
 
   const activeFile = choice === 'file' ? file : undefined
-  const activeURL = choice === 'file' ? '' : structureURL
+  // Typing a url is a fast-changing value behind a download and a molstar
+  // parse, so the fetch waits for the field to settle rather than running once
+  // per keystroke against a dozen truncated urls.
+  const activeURL = useDebouncedValue(
+    choice === 'file' ? '' : structureURL,
+    600,
+  )
 
-  const { sequences: structureSequences, error: fileError } =
-    useStructureFileSequence({ file: activeFile, url: activeURL })
-
-  const structureName =
-    activeFile?.name ?? activeURL.slice(activeURL.lastIndexOf('/') + 1)
+  const {
+    sequences: structureSequences,
+    isLoading: isStructureLoading,
+    error: fileError,
+  } = useStructureFileSequence({ file: activeFile, url: activeURL })
 
   const {
     transcripts: options,
@@ -90,6 +87,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     selectedTranscript,
     selectedIsoform: protein,
     error: isoformError,
+    partialFailure: isoformPartialFailure,
   } = useTranscriptIsoformSelection({ feature, view, structureSequences })
 
   const error = isoformError ?? launchError ?? fileError
@@ -114,7 +112,6 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         url: activeURL ? activeURL : undefined,
         data: structureData,
         userProvidedTranscriptSequence: protein.seq,
-        alignmentAlgorithm,
       })
     }
   })
@@ -131,27 +128,29 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
           structureURL={structureURL}
           setStructureURL={setStructureURL}
           setFile={setFile}
-          pdbId={pdbId}
-          setPdbId={setPdbId}
         />
         <div style={{ margin: 20 }}>
+          {isStructureLoading ? (
+            <LoadingEllipses
+              variant="subtitle2"
+              message="Reading residues from the structure"
+            />
+          ) : null}
+          {isoformPartialFailure ? (
+            <Typography variant="body2" color="warning.main">
+              {isoformPartialFailure}
+            </Typography>
+          ) : null}
           {isoformSequences ? (
             structureSequence ? (
-              <>
-                <TranscriptSelector
-                  val={userSelection}
-                  setVal={setUserSelection}
-                  structureSequence={structureSequence}
-                  isoforms={options}
-                  feature={feature}
-                  isoformSequences={isoformSequences}
-                />
-                <IsoformSequencesToggle
-                  structureSequence={structureSequence}
-                  structureName={structureName}
-                  isoformSequences={isoformSequences}
-                />
-              </>
+              <TranscriptSelector
+                val={userSelection}
+                setVal={setUserSelection}
+                structureSequence={structureSequence}
+                isoforms={options}
+                feature={feature}
+                isoformSequences={isoformSequences}
+              />
             ) : null
           ) : (
             <LoadingEllipses title="Loading protein sequences" variant="h6" />
@@ -159,12 +158,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         </div>
       </DialogContent>
       <DialogActions>
-        {sequencesDiffer ? (
-          <SequenceMismatchNotice
-            alignmentAlgorithm={alignmentAlgorithm}
-            onAlignmentAlgorithmChange={onAlignmentAlgorithmChange}
-          />
-        ) : null}
+        {sequencesDiffer ? <SequenceMismatchNotice /> : null}
         <Button
           variant="contained"
           color="secondary"

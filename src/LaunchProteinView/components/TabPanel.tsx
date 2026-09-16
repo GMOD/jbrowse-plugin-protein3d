@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { useState } from 'react'
 
-// Panels stay mounted and are hidden via the `hidden` attribute rather than
-// unmounted, so switching tabs preserves each tab's in-progress work (typed
-// UniProt ID, fetched results, selected transcript) instead of resetting it.
+// A panel mounts the first time its tab is selected and stays mounted after,
+// hidden via the `hidden` attribute. Mounting lazily keeps a tab's fetches
+// (PDBe, AlphaFold, molstar parsing) from firing for a tab nobody opened;
+// staying mounted preserves its in-progress work across tab switches.
 export default function TabPanel({
   children,
   value,
@@ -13,9 +14,14 @@ export default function TabPanel({
   index: number
   value: number
 }) {
+  const active = value === index
+  const [visited, setVisited] = useState(active)
+  if (active && !visited) {
+    setVisited(true)
+  }
   return (
-    <div role="tabpanel" hidden={value !== index} {...other}>
-      {children}
+    <div role="tabpanel" hidden={!active} {...other}>
+      {visited ? children : null}
     </div>
   )
 }
