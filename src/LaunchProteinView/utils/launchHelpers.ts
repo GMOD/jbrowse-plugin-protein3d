@@ -22,6 +22,7 @@ interface LaunchRequirements {
   userSelectedProteinSequence?: { seq: string }
   selectedTranscript?: unknown
   url?: string
+  pdbId?: string
 }
 
 /**
@@ -29,18 +30,27 @@ interface LaunchRequirements {
  * unmet. An empty array means the launch can proceed. Callers decide whether to
  * surface these (e.g. suppressed while loading or while a real upstream error
  * is already shown via <ErrorMessage>, where a duplicate hint would mislead).
+ *
+ * A launch that names its own structure needs no accession. Bypassing a lookup
+ * that failed or resolved the wrong gene is the whole point of typing a PDB id,
+ * and the view resolves SIFTS from the entry itself; the accession only feeds
+ * the feature tracks and the view's name, both of which do without it. The
+ * AlphaFold tab keeps the requirement for free — its structure url is derived
+ * from the accession, so no accession means no structure either.
  */
 export function getLaunchMissingReasons({
   uniprotId,
   userSelectedProteinSequence,
   selectedTranscript,
   url,
+  pdbId,
 }: LaunchRequirements): string[] {
+  const namesOwnStructure = !!url || !!pdbId
   return [
-    !uniprotId && 'No UniProt ID found',
+    !namesOwnStructure && !uniprotId && 'No UniProt ID found',
     !userSelectedProteinSequence?.seq &&
       'Could not compute protein sequence (feature may be missing CDS subfeatures)',
     !selectedTranscript && 'No transcript selected',
-    !url && 'No structure selected',
+    !namesOwnStructure && 'No structure selected',
   ].filter((s): s is string => typeof s === 'string')
 }

@@ -23,6 +23,8 @@ interface ProteinViewActionsProps {
   userSelectedProteinSequence?: { seq: string }
   selectedTranscript?: Feature
   url?: string
+  /** the entry a typed PDB id names, which launches without an accession */
+  pdbId?: string
   confidenceUrl?: string
   feature: Feature
   view: LinearGenomeViewModel
@@ -46,6 +48,7 @@ export default function ProteinViewActions({
   userSelectedProteinSequence,
   selectedTranscript,
   url,
+  pdbId,
   confidenceUrl,
   feature,
   view,
@@ -63,6 +66,7 @@ export default function ProteinViewActions({
     userSelectedProteinSequence,
     selectedTranscript,
     url,
+    pdbId,
   })
   // Loading or errored, SWR's keepPreviousData can still hold the previous
   // accession's structure, which Launch would open under the new name.
