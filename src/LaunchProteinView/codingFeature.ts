@@ -1,8 +1,7 @@
 import type { Feature } from '@jbrowse/core/util'
 
-// Copied from @jbrowse/core's featureTypes rather than imported: the barrel
-// only exports it from v5, and a bundle resolving it on a v4 host reads
-// undefined.
+// Copied from @jbrowse/core's featureTypes: the barrel export reads undefined
+// on a v4 host, and the deep path is not in core's exports map.
 const GENE_LIKE_TYPE = /gene(_segment)?$|rna$|transcript/
 
 export function isGeneLikeType(type: string | undefined) {
