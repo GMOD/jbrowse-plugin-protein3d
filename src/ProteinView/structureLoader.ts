@@ -21,7 +21,6 @@ export type AlphaFoldModelFetcher = (
 export type StructureLoaderHost = IAnyStateTreeNode & {
   readonly molstarPluginContext: PluginContext | undefined
   readonly structures: StructureInstance[]
-  setError: (error: unknown) => void
 }
 
 /**
@@ -115,7 +114,9 @@ export function makeStructureLoader(
           // the current one, not in an error
           loadInto(structure, current)
         } else {
-          host.setError(e)
+          // the structure carries its own failure: a view-wide "Failed to
+          // fetch" names neither which structure nor what it was fetching
+          structure.setLoadError(e)
           console.error(e)
         }
       })

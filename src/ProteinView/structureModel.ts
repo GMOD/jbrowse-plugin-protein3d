@@ -51,6 +51,7 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import subscribeMolstarInteraction, {
   type MolstarLocationInfo,
 } from './subscribeMolstarInteraction'
+import { errorMessage } from './util'
 import {
   getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
@@ -295,6 +296,14 @@ const Structure = types
      */
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     uniProtMappingsError: undefined as unknown,
+    /**
+     * #volatile
+     * Why this structure could not be shown: a failed download, an unparseable
+     * file, an alignment that threw. Per structure rather than a view-wide
+     * banner, because with several open "Failed to fetch" names none of them.
+     */
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    loadError: undefined as unknown,
   }))
   .actions(self => ({
     /**
@@ -304,6 +313,12 @@ const Structure = types
      */
     setUrl(url: string) {
       self.url = url
+    },
+    /**
+     * #action
+     */
+    setLoadError(error: unknown) {
+      self.loadError = error
     },
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
@@ -925,6 +940,11 @@ const Structure = types
      * the SIFTS answer that unmaps a fusion partner and places UniProt tracks.
      */
     get loading() {
+      if (self.loadError !== undefined) {
+        // a structure that failed is finished, not pending: the ready marker
+        // and JBrowse's showLoading both read this
+        return false
+      }
       return (
         !self.loadedToMolstar ||
         this.alignmentPending ||
@@ -957,6 +977,17 @@ const Structure = types
           : `Aligning ${this.label}`
       }
       return `Mapping ${this.label} to UniProt`
+    },
+    /**
+     * #getter
+     * What went wrong with this structure, for the line beside its label in
+     * the header: a failed load, or a structure with no chain the transcript
+     * can be aligned to. One line per structure, rather than a view-wide
+     * banner that names neither which structure nor what it was doing.
+     */
+    get statusMessage() {
+      const error = self.loadError
+      return error === undefined ? self.alignmentSkipped : errorMessage(error)
     },
     /**
      * #getter
@@ -1222,14 +1253,13 @@ const Structure = types
                   } aa transcript`
                 : 'This structure has no protein chain to align the transcript to'
               self.setAlignmentSkipped(reason)
-              self.parentView.setError(new Error(reason))
               return
             }
             self.setMappedEntityId(entities[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
           } catch (e) {
             console.error(e)
-            self.parentView.setError(e)
+            self.setLoadError(e)
           }
         }),
       )

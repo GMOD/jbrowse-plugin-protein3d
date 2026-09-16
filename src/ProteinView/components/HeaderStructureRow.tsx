@@ -34,7 +34,7 @@ const StructureRow = observer(function StructureRow({
   model: JBrowsePluginProteinViewModel
   structure: JBrowsePluginProteinStructureModel
 }) {
-  const { label, alignmentQuality: quality } = structure
+  const { label, alignmentQuality: quality, statusMessage } = structure
   const coveredRange = quality ? describeCoveredRange(quality) : undefined
   return (
     <div
@@ -45,6 +45,15 @@ const StructureRow = observer(function StructureRow({
       <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
         {label}
       </Typography>
+      {statusMessage ? (
+        <Typography
+          variant="caption"
+          color="error"
+          data-testid="structure-status"
+        >
+          {statusMessage}
+        </Typography>
+      ) : null}
       {quality ? (
         <Typography
           variant="caption"

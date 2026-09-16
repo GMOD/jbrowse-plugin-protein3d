@@ -38,10 +38,15 @@ const TestStructure = types
     loadedToMolstar: false,
     entities: undefined as Entity[] | undefined,
     molstarStructure: undefined as Structure | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+    loadError: undefined as unknown,
   }))
   .actions(self => ({
     setUrl(url: string) {
       self.url = url
+    },
+    setLoadError(e: unknown) {
+      self.loadError = e
     },
     setStructureData(d: StructureData) {
       self.entities = d.entities
@@ -59,14 +64,10 @@ const TestHost = types
   .model('TestHost', { structures: types.array(TestStructure) })
   .volatile(() => ({
     molstarPluginContext: undefined as object | undefined,
-    errors: [] as unknown[],
   }))
   .actions(self => ({
     setPlugin(p: object) {
       self.molstarPluginContext = p
-    },
-    setError(e: unknown) {
-      self.errors.push(e)
     },
   }))
 
@@ -193,16 +194,16 @@ test('unloading drops the handle so highlights never target a dead plugin', asyn
   expect(structure.molstarStructure).toBeUndefined()
 })
 
-test('reports load errors and leaves the structure unloaded', async () => {
+test('reports a load error on the structure that failed, not the view', async () => {
   const err = new Error('boom')
   // the handler logs as well as reporting, so expect the log rather than let
   // it print: an unexpected console.error in this suite is worth noticing
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   mockLoad.mockRejectedValue(err)
-  const { host, load, structure } = setup({})
+  const { load, structure } = setup({})
   load()
   await tick()
-  expect(host.errors).toContain(err)
+  expect(structure.loadError).toBe(err)
   expect(structure.loadedToMolstar).toBe(false)
   expect(logged).toHaveBeenCalledWith(err)
   logged.mockRestore()
@@ -222,7 +223,7 @@ test('a load that fails because its plugin was swapped away retries into the cur
   rejectFirst(new Error('plugin disposed'))
   await tick()
 
-  expect(host.errors).toEqual([])
+  expect(structure.loadError).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(true)
   expect(structure.entities).toEqual([entity('B')])
   expect(mockLoad).toHaveBeenCalledTimes(2)

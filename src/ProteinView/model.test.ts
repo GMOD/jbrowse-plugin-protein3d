@@ -60,6 +60,19 @@ test('a removal takes out the trajectory the structure came from', async () => {
   expect(removed).toEqual([trajectory])
 })
 
+// A view-wide banner reading "Failed to fetch" names neither which structure
+// nor what it was fetching, and a structure stuck at loading never settles.
+test('a failed structure reports on its own line and stops being pending', () => {
+  const view = makeView()
+  const [first, second] = view.structures
+  first!.setLoadError(new Error('HTTP 404 fetching a.cif'))
+
+  expect(first!.statusMessage).toBe('HTTP 404 fetching a.cif')
+  expect(first!.loading).toBe(false)
+  expect(second!.statusMessage).toBeUndefined()
+  expect(view.error).toBeUndefined()
+})
+
 test('clearing the selection puts every structure down', () => {
   const view = makeView()
   for (const structure of view.structures) {

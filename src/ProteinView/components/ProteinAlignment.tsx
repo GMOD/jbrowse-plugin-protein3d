@@ -24,6 +24,7 @@ import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
 import { hydrophobicityColor, plddtColor } from '../residueTracks'
+import { errorMessage } from '../util'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -139,7 +140,17 @@ const ProteinAlignment = observer(function ProteinAlignment({
     error: trackError,
   } = useProteinFeatureTrackData(model, uniprotId, mapUniProtPosition)
   const featureLoading = uniprotLoading || trackLoading
+  // Two different failures reach one gutter cell, and "Error" alone leaves the
+  // reader guessing whether the structure has no UniProt entry or the entry's
+  // features would not download.
   const featureError = uniprotError ?? trackError
+  const featureErrorMessage = featureError
+    ? `${
+        uniprotError
+          ? `Could not map ${label} to a UniProt entry through SIFTS`
+          : `Could not load UniProt features for ${uniprotId ?? label}`
+      }: ${errorMessage(featureError)}`
+    : undefined
 
   // Recenter only on a large jump — when the hovered column lands well outside
   // the viewport (e.g. hovering a distant residue in the 3D structure). A column
@@ -293,14 +304,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
           {showProteinTracks ? (
             featureLoading ? (
               <div className={classes.gutterStatus}>Loading...</div>
-            ) : featureError ? (
-              <Tooltip
-                title={
-                  featureError instanceof Error
-                    ? featureError.message
-                    : 'Error loading features'
-                }
-              >
+            ) : featureErrorMessage ? (
+              <Tooltip title={featureErrorMessage}>
                 <div className={classes.gutterError}>Error</div>
               </Tooltip>
             ) : featureData ? (
