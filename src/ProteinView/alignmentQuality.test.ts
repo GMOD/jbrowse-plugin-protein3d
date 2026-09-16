@@ -11,6 +11,8 @@ import {
   SHORT_ALIGNMENT_RESIDUES,
   alignmentQuality,
   describeAlignmentQuality,
+  describeCoveredRange,
+  describeTranscriptCoverage,
   isLowSimilarity,
 } from './alignmentQuality'
 import { alignTranscriptToEntity } from './chooseMappedEntity'
@@ -35,7 +37,25 @@ test('counts aligned, identical and per-row lengths, ignoring case', () => {
     identity: 1,
     identityOverShorter: 8 / 9,
     structureCoverage: 8 / 9,
+    transcriptStart: 1,
+    transcriptEnd: 9,
   })
+})
+
+// The header readout counts from the transcript's side: how much of the gene's
+// protein a structure speaks for is what decides whether a codon has a residue.
+test('the header readout names coverage of the transcript, and a fragment says where', () => {
+  const fragment = alignmentQuality(pa('MKAAWYVLQP', '--AAWYV---'))
+  expect(describeTranscriptCoverage(fragment)).toBe(
+    '100% identity, 5 of 10 transcript residues covered',
+  )
+  expect(describeCoveredRange(fragment)).toBe('covers transcript residues 3–7')
+
+  const whole = alignmentQuality(pa('MKAA', 'MKAA'))
+  expect(describeTranscriptCoverage(whole)).toBe(
+    '100% identity, 4 of 4 transcript residues covered',
+  )
+  expect(describeCoveredRange(whole)).toBeUndefined()
 })
 
 test('an alignment with nothing aligned is zero, not NaN', () => {

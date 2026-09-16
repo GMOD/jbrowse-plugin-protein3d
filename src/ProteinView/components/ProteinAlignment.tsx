@@ -18,13 +18,7 @@ import SplitString, { AlignmentHighlights } from './SplitString'
 import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
-import {
-  LOW_IDENTITY_OVER_SHORTER,
-  SHORT_ALIGNMENT_IDENTITY,
-  SHORT_ALIGNMENT_RESIDUES,
-  describeAlignmentQuality,
-  isLowSimilarity,
-} from '../alignmentQuality'
+import { describeAlignmentQuality } from '../alignmentQuality'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
@@ -232,8 +226,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
             rows mean is in the help dialog. */}
         <Typography variant="subtitle2">
           {label}
-          {/* The alignment always produces something, so the readout is what
-              tells a chance hit on an unrelated chain from a real mapping. */}
+          {/* Identity and coverage live in the header, which stays visible when
+              this panel is hidden. What is left here is what only means
+              something inside the panel. */}
           {quality ? (
             <Typography
               variant="caption"
@@ -244,20 +239,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
               {describeAlignmentQuality(quality)}
               {showHighlight ? ', green is the aligned portion' : ''}
             </Typography>
-          ) : null}
-          {quality && isLowSimilarity(quality) ? (
-            <Tooltip
-              title={`Under ${Math.round(LOW_IDENTITY_OVER_SHORTER * 100)}% of the shorter sequence is identical (${Math.round(SHORT_ALIGNMENT_IDENTITY * 100)}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`}
-            >
-              <Typography
-                variant="caption"
-                color="error"
-                sx={{ ml: 1 }}
-                data-testid="alignment-low-similarity"
-              >
-                low similarity: mapped positions may not correspond
-              </Typography>
-            </Tooltip>
           ) : null}
         </Typography>
         <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

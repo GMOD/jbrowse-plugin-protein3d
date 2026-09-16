@@ -15,6 +15,7 @@ import { observer } from 'mobx-react'
 
 import AddStructureDialog from './AddStructureDialog'
 import HeaderStructureInfo from './HeaderStructureInfo'
+import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
 import { COLOR_SCHEMES } from '../applyColorTheme'
 
@@ -157,6 +158,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           <DisplaySettingsMenu model={model} />
         </div>
       </div>
+      <HeaderStructureRows model={model} />
       {showAlignment
         ? structures
             .filter(

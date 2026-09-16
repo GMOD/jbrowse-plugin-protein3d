@@ -59,7 +59,6 @@ import {
 } from '../LaunchProteinView/utils/structureUrls'
 import { stripStopCodon } from '../LaunchProteinView/utils/util'
 import {
-  alignmentLength,
   codonGenomeSpan,
   genomeToTranscriptSeqMapping,
   mappedStructureIdentity,
@@ -90,7 +89,6 @@ export interface ParentProteinView {
   compactTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
-  setShowAlignment: (f: boolean) => void
   setError: (e: unknown) => void
 }
 
@@ -1229,9 +1227,6 @@ const Structure = types
             }
             self.setMappedEntityId(entities[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
-            if (selection.matches < alignmentLength(selection.alignment)) {
-              self.parentView.setShowAlignment(true)
-            }
           } catch (e) {
             console.error(e)
             self.parentView.setError(e)
