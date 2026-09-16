@@ -109,18 +109,20 @@ export function getProteinSequence({
   })
 }
 
-export async function fetchProteinSeq({
-  feature,
+/** The genome under one span, with the assembly's code for that contig. */
+export async function fetchRegionSequence({
   session,
   assemblyName,
+  refName,
+  start,
+  end,
 }: {
-  feature: Feature
   session: AbstractSessionModel
   assemblyName: string | undefined
+  refName: string
+  start: number
+  end: number
 }) {
-  const start = feature.get('start')
-  const end = feature.get('end')
-  const refName = feature.get('refName')
   const { assemblyManager, rpcManager } = session
   const assembly = assemblyName
     ? await assemblyManager.waitForAssembly(assemblyName)
@@ -144,13 +146,104 @@ export async function fetchProteinSeq({
   }
   const [feat] = await rpcManager.call(sessionId, 'CoreGetFeatures', args)
   const seq = feat?.get('seq') as string | undefined
+  return { seq, assemblyGeneticCodeId: assemblyGeneticCode(assembly, refName) }
+}
+
+export async function fetchProteinSeq({
+  feature,
+  session,
+  assemblyName,
+}: {
+  feature: Feature
+  session: AbstractSessionModel
+  assemblyName: string | undefined
+}) {
+  const { seq, assemblyGeneticCodeId } = await fetchRegionSequence({
+    session,
+    assemblyName,
+    refName: feature.get('refName'),
+    start: feature.get('start'),
+    end: feature.get('end'),
+  })
   return seq
-    ? getProteinSequence({
-        seq,
-        feature,
-        assemblyGeneticCodeId: assemblyGeneticCode(assembly, refName),
-      })
+    ? getProteinSequence({ seq, feature, assemblyGeneticCodeId })
     : undefined
+}
+
+export interface TranscriptTranslation {
+  feature: Feature
+  seq?: string
+  error?: unknown
+}
+
+interface SpanSequence {
+  seq?: string
+  assemblyGeneticCodeId?: number
+}
+
+/**
+ * Translate several transcripts of one gene off a single sequence fetch. The
+ * transcripts overlap, so one request for the span covering them all costs a
+ * 20-isoform gene one round trip instead of twenty. `fetchSpan` is a parameter
+ * so the slicing can be tested without a session.
+ */
+export async function translateTranscripts({
+  transcripts,
+  fetchSpan,
+}: {
+  transcripts: Feature[]
+  fetchSpan: (span: {
+    refName: string
+    start: number
+    end: number
+  }) => Promise<SpanSequence>
+}): Promise<TranscriptTranslation[]> {
+  const first = transcripts[0]
+  if (!first) {
+    return []
+  }
+  const spanStart = Math.min(...transcripts.map(f => f.get('start')))
+  const spanEnd = Math.max(...transcripts.map(f => f.get('end')))
+  const { seq, assemblyGeneticCodeId } = await fetchSpan({
+    refName: first.get('refName'),
+    start: spanStart,
+    end: spanEnd,
+  })
+  if (!seq) {
+    return transcripts.map(feature => ({ feature }))
+  }
+  return transcripts.map(feature => {
+    try {
+      return {
+        feature,
+        seq: getProteinSequence({
+          seq: seq.slice(
+            feature.get('start') - spanStart,
+            feature.get('end') - spanStart,
+          ),
+          feature,
+          assemblyGeneticCodeId,
+        }),
+      }
+    } catch (e) {
+      return { feature, error: e }
+    }
+  })
+}
+
+export async function fetchTranscriptProteinSeqs({
+  transcripts,
+  session,
+  assemblyName,
+}: {
+  transcripts: Feature[]
+  session: AbstractSessionModel
+  assemblyName: string | undefined
+}) {
+  return translateTranscripts({
+    transcripts,
+    fetchSpan: span => fetchRegionSequence({ session, assemblyName, ...span }),
+  })
 }
 
 // v5 hosts only; a v4 assembly has neither the method nor the config slot
