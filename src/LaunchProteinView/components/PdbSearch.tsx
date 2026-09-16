@@ -10,6 +10,7 @@ import {
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
+import PartialFailureNotice from './PartialFailureNotice'
 import PdbResultsTable from './PdbResultsTable'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
@@ -140,11 +141,7 @@ const PdbSearch = observer(function PdbSearch({
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
 
-        {isoformPartialFailure ? (
-          <Typography variant="body2" color="warning.main">
-            {isoformPartialFailure}
-          </Typography>
-        ) : null}
+        <PartialFailureNotice message={isoformPartialFailure} />
 
         {isAutoMode && lookup.uniprotEntries.length > 0 ? (
           <>

@@ -14,6 +14,7 @@ import { makeStyles } from 'tss-react/mui'
 
 import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
 import FoldseekResultsTable from './FoldseekResultsTable'
+import PartialFailureNotice from './PartialFailureNotice'
 import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
@@ -142,11 +143,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
           />
         ) : null}
 
-        {isoformPartialFailure ? (
-          <Typography variant="body2" color="warning.main">
-            {isoformPartialFailure}
-          </Typography>
-        ) : null}
+        <PartialFailureNotice message={isoformPartialFailure} />
 
         {isoformSequences ? (
           <>

@@ -23,9 +23,9 @@ export default function HelpDialog({
       <DialogContent>
         <Typography sx={{ mb: 2 }}>
           Each tab finds a structure a different way. All of them end in the
-          same place: the residues of the structure are aligned to the protein
-          sequence translated from the transcript you pick, and that alignment
-          maps genome coordinates onto positions in the 3D view.
+          same place: the plugin aligns the structure's residues to the protein
+          sequence it translates from the transcript you pick, and that
+          alignment maps genome coordinates onto positions in the 3D view.
         </Typography>
         <Typography component="div">
           <ul>
@@ -37,8 +37,8 @@ export default function HelpDialog({
             <li>
               <b>PDB search</b> lists the experimental structures PDBe maps to
               that accession, ranked on coverage and resolution. A crystal is
-              usually one domain, often with binding partners, so the chain the
-              transcript belongs to is chosen after the structure loads.
+              usually one domain, often with binding partners, so the view picks
+              the chain the transcript belongs to once the structure loads.
             </li>
             <li>
               <b>Foldseek search</b> sends the protein sequence to the
@@ -54,8 +54,8 @@ export default function HelpDialog({
         </Typography>
         <Typography sx={{ mb: 2 }}>
           The isoform list marks which transcripts match the structure&apos;s
-          residues exactly, and counts identical residues for the rest. An exact
-          match is not required; the alignment handles the differences between
+          residues exactly, and counts identical residues for the rest. You do
+          not need an exact match; the alignment absorbs the differences between
           the two representations.
         </Typography>
         <Typography>

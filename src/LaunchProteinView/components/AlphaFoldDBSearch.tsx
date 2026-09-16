@@ -6,6 +6,7 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import AlphaFoldDBSearchStatus from './AlphaFoldDBSearchStatus'
+import PartialFailureNotice from './PartialFailureNotice'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
@@ -73,11 +74,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           <LoadingEllipses key={status} variant="subtitle2" message={status} />
         ))}
 
-        {state.isoformPartialFailure ? (
-          <Typography variant="body2" color="warning.main">
-            {state.isoformPartialFailure}
-          </Typography>
-        ) : null}
+        <PartialFailureNotice message={state.isoformPartialFailure} />
 
         {state.showUniprotResults && (
           <>

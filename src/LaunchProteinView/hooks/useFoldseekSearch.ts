@@ -100,9 +100,8 @@ export default function useFoldseekSearch() {
     }
   }
 
-  // Stop the in-flight prediction or poll and let the user try again, keeping
-  // whatever has already come back. The aborted operation's own finally is
-  // skipped, so the busy flags are cleared here.
+  // Stop the in-flight prediction or poll. The aborted operation's own finally
+  // is skipped, so the busy flags are cleared here.
   const cancel = () => {
     abortRef.current?.abort()
     abortRef.current = null
@@ -111,15 +110,12 @@ export default function useFoldseekSearch() {
     setStatusMessage('')
   }
 
-  // the aborted operation's own finally skips these, so reset clears them
+  // cancel, and throw away what it came back with
   const reset = () => {
-    abortRef.current?.abort()
+    cancel()
     setResults(undefined)
     setPredictData(undefined)
     setError(undefined)
-    setStatusMessage('')
-    setIsLoading(false)
-    setIsPredicting(false)
   }
 
   return {

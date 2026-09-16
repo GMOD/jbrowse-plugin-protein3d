@@ -4,6 +4,7 @@ import { TextField, Typography } from '@mui/material'
 import { makeStyles } from 'tss-react/mui'
 
 import IdentifierSelector from './IdentifierSelector'
+import PartialFailureNotice from './PartialFailureNotice'
 import UniProtIdInput from './UniProtIdInput'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -80,11 +81,7 @@ export default function UniProtLookupControls({
         </Typography>
       ) : null}
 
-      {lookup.lookupPartialFailure ? (
-        <Typography variant="body2" color="warning.main">
-          {lookup.lookupPartialFailure}
-        </Typography>
-      ) : null}
+      <PartialFailureNotice message={lookup.lookupPartialFailure} />
     </>
   )
 }

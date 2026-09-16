@@ -1,4 +1,4 @@
-export function hostOf(url: string) {
+function hostOf(url: string) {
   try {
     return new URL(url).host
   } catch {
