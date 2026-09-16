@@ -92,6 +92,10 @@ export function makeStructureLoader(
 
   function loadInto(structure: StructureInstance, plugin: PluginContext) {
     loadingStructures.add(structure)
+    // A retry — a plugin swap, a remount — starts over, so the last attempt's
+    // failure goes with it. Left in place it also reported the structure as
+    // settled for the whole of the retry, since `loading` reads it.
+    structure.setError(undefined)
     // a structure that already knows its file dispatches synchronously, so the
     // in-flight guard covers it before the autorun body returns
     const accession = unresolvedAccession(structure)

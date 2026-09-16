@@ -357,3 +357,28 @@ test('a structure removed mid-load takes its trajectory out of Mol* when it land
 
   expect(removed).toEqual([structureHandle])
 })
+
+// A remount retries the load from the start, so the last attempt's failure is
+// stale — and while it sat there `loading` read the structure as settled, so a
+// wait on the view finished in the middle of the retry.
+test('a retry clears the failure it is retrying', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  let settleSecond: (v: StructureData) => void = () => {}
+  mockLoad
+    .mockRejectedValueOnce(new Error('boom'))
+    .mockImplementationOnce(() => new Promise(res => (settleSecond = res)))
+
+  const { host, load, structure } = setup({ id: 'A' })
+  load()
+  await tick()
+  expect(structure.error).toEqual(new Error('boom'))
+
+  host.setPlugin({ id: 'B' })
+  load()
+  expect(structure.error).toBeUndefined()
+
+  settleSecond({})
+  await tick()
+  expect(structure.loadedToMolstar).toBe(true)
+  logged.mockRestore()
+})
