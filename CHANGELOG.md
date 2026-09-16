@@ -1,3 +1,83 @@
+## [0.12.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.2...v0.12.0) (2026-09-16)
+
+### Bug Fixes
+
+- Offer the protein view only for features that code for one ([4b8cf7b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4b8cf7bc22b17fe2e6fce1a49e11d6c01be245bd))
+- Stop defaulting the organism to human, and match the gene symbol exactly ([4b6d8b2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4b6d8b2df08deba16b760dd7f413e1a86cf28b7f))
+- Report partial lookup failures, and errors a reader can act on ([ddcd0c5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ddcd0c5e9b75deb2e25956fbd4a77dc19940b333))
+- Debounce the structure url, and say when the file is being read ([0443090](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0443090f54e0333f476f7f7a0c0a5c35c66a8ece))
+- Say what the columns mean and what the dialog does ([ec8f238](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ec8f23831455bd6f85a0e47660519179d23a88ab))
+- One side-by-side choice for the dialog, not one per tab ([648762f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/648762fafe17f7bb10ee3c7e103a3f8d7954f6ce))
+- A transcript with no CDS is untranslated, not a 0aa isoform ([f2f7508](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f2f7508f1878098c9212902c98216e7f43fafba2))
+- Read a PDB entry's residues from PDBe, not by parsing its mmCIF ([484bbcc](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/484bbcc789d0b6d0d9e7f53f9364da8c8aad9c34))
+- Count the gene-name attempt only when its answer is read, and quote it ([efb7866](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/efb78665ea25a81cefe8a7b90b71d5050d9e6d2e))
+- Debounce the taxon field, and say when its value means nothing ([b3df98f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b3df98fa4db732e413a1f10280781b4ab6b5d8a4))
+- Launch the url the user typed, not the one from 600 ms ago ([3d227a6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3d227a688b286076c4fc17258cc9d7b2d518986a))
+- A launch that names its own structure needs no accession ([9f845fe](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9f845fe9c18cf758dea3815f8301ddd0df1f06c7))
+- Ask AlphaFold DB which model a uniprotId opens ([4461292](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4461292cefd055de8a25f5972b2eb4810bd16204))
+- Report a structure's failure on the structure, once ([ff3020d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff3020d0c745b7c6e5979ba8afe3d04a959de9f0))
+- Remember the layout, not the behaviour ([73b9366](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/73b9366bcb23797266a9300a0bd851ab32f846c1))
+- Keep data-structure naming the alignment panel alone ([8381703](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/83817036823ba264eb122628e8a76c2d7d00b11e))
+- An accession with no AlphaFold model says so ([50784cf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/50784cf4630a6afa247eea717477825ee78cc448))
+- Report a failed removal through the action, not a raw write ([82b28cb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/82b28cb7637e836908b0baac4a9051d786928f2c))
+- A structure removed mid-load leaves no ghost in Mol* ([9e2fe6e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9e2fe6e4aebf233df710a2e99613172ba9c14ab3))
+- Keep the accession that was asked for across a save ([bc939b4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bc939b48e748a29180788afba8e2128d7feff00a))
+- Name the structure's failure `error`, as its readers do ([2028c0d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2028c0d0ab221244ec50d04d353d7202bf74400f))
+- A retried load drops the failure it is retrying ([8d49fc9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8d49fc977f6b499a4a58e83fb42e1b75ac102c77))
+- Key the loading overlay on the structure, not its text ([f230060](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f2300602f645ca2130a3a5597acbb27f769fca2f))
+- Name the package that owns the jbrowse binary ([d5369a3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d5369a37481b4e5c0a54a76b51087cfde83c9b3f))
+
+### Chores
+
+- Lock p2s_mapper to the published 1.0.0 ([47666f9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/47666f9cdbfe22c626cd1d1328a1fe0f3ce54e25))
+- P2s_mapper 1.2.0, which stops retrying a 4xx ([727e49a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/727e49ad13e7b7b0c83484bf3b1a9d4e9a93f37f))
+
+### Documentation
+
+- Say why the gene-like regex is a copy ([41a9e85](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/41a9e85979193080777fa9abf0079efa4e796840))
+- The view model instantiates under vitest now ([6f59f11](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6f59f11db93f92eae5df2a2dc73fdbf4b0a51df6))
+- The release-age cutoff is not the same everywhere ([e313954](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e3139548783f52a19e768b85cd0f33cc71b41ca4))
+
+### Features
+
+- One Foldseek button, a cancel while it polls, and the 3Di out of the way ([d37345d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d37345d20d35bc9d1194464b65998d7fb02a6648))
+- Type a PDB ID on the PDB search tab ([3dbe732](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3dbe73237b4fd99f0be3bf60dfa25c41f971aa90))
+- Say what is loading over the canvas ([ff122c2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff122c2a93d31ef34f8a5aa98c00ba268f3281b4))
+- Put alignment quality in the header and stop forcing the panel open ([2e4dad8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2e4dad8b2bd6bfeecca83d194afe3e792a05b2f4))
+- Remove a structure, and put a selection down ([57e0a36](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/57e0a36206b7810d62fef5a5c853110b4a992ece))
+- Say what the track colours mean ([6a832ac](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6a832aca723ac8bf1b824d9b244e6808bfd9bf5b))
+
+### Performance Improvements
+
+- Translate every isoform off one sequence fetch ([f3f8bb0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f3f8bb050acb587c51dceeead979559baf0b39e4))
+
+### Refactoring
+
+- One UniProt lookup for the dialog, and tabs that mount when opened ([9ac5013](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9ac5013916ddcc160f3a475b6b04acb675c1089f))
+- Delete the launch dialog's dead controls ([7d9cf01](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7d9cf01ad9964b0893c5dd4b990e40fea9ae8fda))
+- One definition of which transcripts code for a protein ([9a82338](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9a82338546389f185486b0f20d96506210343d85))
+- Every service error takes its shape from one module ([2774267](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2774267fbc00f2dae3f016ecaa1fb00d6ff946b5))
+- One partial-failure notice, and the tidy-ups around it ([e65d607](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e65d6073129e5694a3a93bca0a6e4e5f46619b98))
+- Split the menus by what they do ([929209b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/929209bda53e5700d78626fc3f24fa063df0e443))
+- Lift the Mol* interaction wiring out of the structure model ([ba104ba](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ba104ba554d4d8bca1d046f65c3af7e14e7672ac))
+- Give plddtColor its doc comment back ([f58df6b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f58df6b87d2eb30e59782dfa4d07fba162f6aaa9))
+- Translate with core's geneticCodes rather than a vendored copy ([62482a1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/62482a1af072f6aeefb813cc5a7129e28dab2143))
+- Take the transcript-to-structure mapping from p2s_mapper ([3e37867](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3e37867f76e734e52d1fa6848ed695e5ad06a38a))
+
+### Styling
+
+- Wrap the CLAUDE.md paragraph ([efd41bb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/efd41bb5444c3d62d0318848f605800acba26dc5))
+
+### Tests
+
+- Refresh the dialog reference screenshots ([851277c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/851277c3b38589930c16ef6d2bdb4be8eae81b52))
+- Assert the lines the lookup logs instead of printing them ([666a101](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/666a10148a497352885a05033b35f17e5eed0718))
+- Refresh the reference screenshots for the PDB ID field ([411675b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/411675b07809d7b6f944728e06e386df3c51a210))
+- Refresh the reference screenshots ([f016f50](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f016f500beef4aa1c6fd6a68815a199273be0d83))
+- Pin what a click on the Mol* background clears ([c1f263a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c1f263a0a450671d3a5cb24aa6564ca4f76d3555))
+- Pin the Feature-to-p2s_mapper isoform conversion ([6ee2541](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6ee254184c4026acd45b079e0fc084c06ebe9305))
+- Refresh the hotspot-panel capture ([dbb52e4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/dbb52e4d5073fab223a92a0d08189ab1df6e77d3))
+
 ## [0.11.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.1...v0.11.2) (2026-09-14)
 
 ### Bug Fixes
