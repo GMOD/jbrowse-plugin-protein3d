@@ -15,6 +15,7 @@ import {
 } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
+import TrackLegend from './TrackLegend'
 import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
 import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
@@ -381,6 +382,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ) : null}
         </div>
       </div>
+      {showProteinTracks ? (
+        <TrackLegend
+          featureTypes={
+            featureData?.visibleGroups.map(group => group.type) ?? []
+          }
+          showConfidence={confidenceCells.length > 0}
+        />
+      ) : null}
     </div>
   )
 })

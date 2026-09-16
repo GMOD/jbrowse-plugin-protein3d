@@ -1,11 +1,22 @@
 import { expect, test } from 'vitest'
 
 import {
+  PLDDT_BINS,
   hydrophobicityColor,
   kyteDoolittleScores,
   mapResidueValuesToColumns,
   plddtColor,
 } from './residueTracks'
+
+test('every pLDDT legend bin draws the colour its band is painted in', () => {
+  expect(PLDDT_BINS.map(bin => plddtColor(bin.score))).toEqual([
+    plddtColor(100),
+    plddtColor(90),
+    plddtColor(70),
+    plddtColor(50),
+  ])
+  expect(new Set(PLDDT_BINS.map(bin => plddtColor(bin.score))).size).toBe(4)
+})
 
 test('kyteDoolittleScores returns per-residue hydropathy, undefined for gaps', () => {
   // I=4.5 (most hydrophobic), R=-4.5 (most hydrophilic), X/'-' absent
