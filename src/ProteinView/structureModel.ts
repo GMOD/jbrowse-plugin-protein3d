@@ -9,6 +9,7 @@ import {
 import { autorun, when } from 'mobx'
 
 import { alignmentQuality } from './alignmentQuality'
+import { attachStructureInteractions } from './attachStructureInteractions'
 import {
   alignTranscriptToEntity,
   chooseMappedEntity,
@@ -44,13 +45,10 @@ import {
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
-  proteinRangeToGenomeMapping,
-  proteinToGenomeMapping,
+  structureRangeToGenomeRegions,
 } from './proteinToGenomeMapping'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
-import subscribeMolstarInteraction, {
-  type MolstarLocationInfo,
-} from './subscribeMolstarInteraction'
+import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { errorMessage } from './util'
 import {
   getPdbIdFromUrl,
@@ -819,30 +817,16 @@ const Structure = types
     structureRangeToGenomeHighlight(
       range: { start: number; end: number } | undefined,
     ): IRegion[] {
-      const assemblyName = self.connectedView?.assemblyNames[0]
-      const mapping = this.genomeToTranscriptSeqMapping
-      if (!range || !assemblyName || !mapping) {
-        return []
-      }
-      const model = {
-        genomeToTranscriptSeqMapping: mapping,
-        pairwiseAlignment: this.alignment,
-        structureSeqToTranscriptSeqPosition:
-          this.structureSeqToTranscriptSeqPosition,
-      }
-      const mapped =
-        range.end > range.start + 1
-          ? proteinRangeToGenomeMapping({
-              model,
-              structureSeqPos: range.start,
-              structureSeqEndPos: range.end,
-            })
-          : proteinToGenomeMapping({ model, structureSeqPos: range.start })
-      if (!mapped) {
-        return []
-      }
-      const [start, end] = mapped
-      return [{ assemblyName, refName: mapping.refName, start, end }]
+      return structureRangeToGenomeRegions({
+        range,
+        assemblyName: self.connectedView?.assemblyNames[0],
+        model: {
+          genomeToTranscriptSeqMapping: this.genomeToTranscriptSeqMapping,
+          pairwiseAlignment: this.alignment,
+          structureSeqToTranscriptSeqPosition:
+            this.structureSeqToTranscriptSeqPosition,
+        },
+      })
     },
 
     /**
@@ -1001,6 +985,10 @@ const Structure = types
 
     /**
      * #getter
+     * Whether the mapped chain spells the transcript's translation exactly.
+     * Nothing in this repo reads it; jb2hubs' `scripts/checkProteinLaunches.ts`
+     * does, off the live model, to assert a launch that should map as an
+     * identity did. It stays for that.
      */
     get exactMatch() {
       const r1 = stripStopCodon(self.userProvidedTranscriptSequence)
@@ -1176,44 +1164,6 @@ const Structure = types
         )
       }
 
-      // Re-subscribe to a molstar click/hover behavior whenever the plugin
-      // changes (view remount installs a fresh PluginContext). The previous
-      // subscription is torn down first so they don't accumulate across
-      // remounts, and a subscription that resolves after the context has already
-      // moved on is disposed immediately rather than left dangling.
-      const addInteractionListener = (
-        kind: 'click' | 'hover',
-        onUpdate: (info: MolstarLocationInfo | undefined) => void,
-      ) => {
-        let unsubscribe: (() => void) | undefined
-        addDisposer(self, () => {
-          unsubscribe?.()
-        })
-        addDisposer(
-          self,
-          autorun(async () => {
-            const { molstarPluginContext } = self
-            unsubscribe?.()
-            unsubscribe = undefined
-            if (molstarPluginContext) {
-              const dispose = await subscribeMolstarInteraction({
-                plugin: molstarPluginContext,
-                kind,
-                onUpdate,
-              })
-              if (
-                isAlive(self) &&
-                self.molstarPluginContext === molstarPluginContext
-              ) {
-                unsubscribe = dispose
-              } else {
-                dispose()
-              }
-            }
-          }),
-        )
-      }
-
       addDisposer(
         self,
         autorun(() => {
@@ -1291,37 +1241,7 @@ const Structure = types
         }),
       )
 
-      const forMappedEntity = (info?: MolstarLocationInfo) => {
-        const structureSeqPos = info && self.interactionPosition(info)
-        return structureSeqPos === undefined
-          ? undefined
-          : { ...info, structureSeqPos }
-      }
-
-      addInteractionListener('click', info => {
-        const hit = forMappedEntity(info)
-        if (!info) {
-          // clicking the background is how a user puts a selection down; a
-          // click that landed on another structure is that structure's
-          self.setClickedStructureRange(undefined)
-          self.setSelectedFeatureId(undefined)
-        }
-        if (hit) {
-          self.setHoveredPosition(hit)
-          self.setSelectedFeatureId(undefined)
-          clickProteinToGenome({
-            model: self,
-            structureSeqPos: hit.structureSeqPos,
-          }).catch((e: unknown) => {
-            console.error(e)
-            self.parentView.setError(e)
-          })
-        }
-      })
-
-      addInteractionListener('hover', info => {
-        self.setHoveredPosition(forMappedEntity(info))
-      })
+      attachStructureInteractions(self)
     },
   }))
 
