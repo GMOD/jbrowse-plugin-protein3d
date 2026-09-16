@@ -111,6 +111,25 @@ test('keeps a uniprotId shorthand for the loader, and names the structure by it'
   expect(s.label).toBe('AlphaFold P04637')
 })
 
+// A grey canvas for the seconds a fetch, a parse, an alignment and a SIFTS
+// lookup take says nothing about which of them is running.
+test('names the step it is on while it settles', () => {
+  const parent = TestParent.create({
+    structures: [{ uniprotId: 'P04637' }, { url: 'x.cif' }, { pdbId: '1TUP' }],
+  })
+  const [pending, loading, pdb] = parent.structures
+  expect(pending!.loadingMessage).toBe('Resolving AlphaFold model for P04637')
+  expect(loading!.loadingMessage).toBe('Loading x.cif')
+
+  // an RCSB entry is still settling until SIFTS answers: that is what unmaps a
+  // fusion partner and places the UniProt tracks
+  pdb!.setLoadedToMolstar(true)
+  expect(pdb!.loadingMessage).toBe('Mapping 1TUP to UniProt')
+  pdb!.setUniProtMappings([])
+  expect(pdb!.loading).toBe(false)
+  expect(pdb!.loadingMessage).toBeUndefined()
+})
+
 test('resolves a pdbId shorthand to an RCSB url at hydration', () => {
   const parent = TestParent.create({ structures: [{ pdbId: '1CRN' }] })
   expect(parent.structures[0]!.url).toBe(

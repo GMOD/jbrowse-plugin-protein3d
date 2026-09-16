@@ -937,6 +937,31 @@ const Structure = types
     },
     /**
      * #getter
+     * Which of those steps is running, named for the overlay on the canvas. A
+     * structure fetch, a parse, an alignment and a SIFTS lookup run for seconds
+     * behind what would otherwise be an empty grey rectangle.
+     */
+    get loadingMessage() {
+      if (!this.loading) {
+        return undefined
+      }
+      if (!self.loadedToMolstar) {
+        return self.url === undefined &&
+          self.data === undefined &&
+          self.uniprotId
+          ? `Resolving AlphaFold model for ${self.uniprotId}`
+          : `Loading ${this.label}`
+      }
+      if (this.alignmentPending) {
+        const name = self.feature?.name
+        return typeof name === 'string'
+          ? `Aligning ${this.label} to ${name}`
+          : `Aligning ${this.label}`
+      }
+      return `Mapping ${this.label} to UniProt`
+    },
+    /**
+     * #getter
      * Identity and coverage of the pairwise alignment, for the header readout
      * and the low-similarity warning. See alignmentQuality.ts.
      */

@@ -306,6 +306,15 @@ function stateModelFactory() {
       },
       /**
        * #getter
+       * What each still-settling structure is doing, for the canvas overlay.
+       */
+      get loadingMessages() {
+        return self.structures
+          .map(s => s.loadingMessage)
+          .filter(m => m !== undefined)
+      },
+      /**
+       * #getter
        * The boolean display settings, in one list so the view menu and the
        * header's settings menu offer the same toggles under the same names.
        */
