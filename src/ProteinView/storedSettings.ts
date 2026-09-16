@@ -2,12 +2,17 @@ import { readStoredJson, writeStorage } from '../storage'
 
 const SETTINGS_KEY = 'proteinView-settings'
 
+/**
+ * What a reader's last choice should still be true of the next view: how the
+ * panel is laid out. Deliberately not what a click or a highlight does —
+ * `zoomToBaseLevel` and `showHighlight` change behavior, and carrying a
+ * behavior from one session's view into another's leaves a reader wondering
+ * why the same click does something different.
+ */
 export const PERSISTED_SETTINGS = [
   'showAlignment',
   'showProteinTracks',
   'showControls',
-  'zoomToBaseLevel',
-  'showHighlight',
   'autoScrollAlignment',
   'compactTracks',
 ] as const
@@ -20,7 +25,7 @@ export type PersistedSettings = Partial<Record<PersistedSetting, boolean>>
  * A stored preference fills in only what the snapshot leaves unsaid. Comparing
  * against the property defaults instead, as this used to, cannot tell a spec
  * that declares the default value from one that says nothing, so a stored
- * `zoomToBaseLevel: false` overrode a spec's explicit `true`. A re-hydrated
+ * `showAlignment: false` overrode a spec's explicit `true`. A re-hydrated
  * session snapshot names every setting, so it keeps exactly what it saved.
  */
 export function withStoredSettings<T extends PersistedSettings>(

@@ -1,6 +1,7 @@
 import { expect, test, vi } from 'vitest'
 
 import {
+  PERSISTED_SETTINGS,
   readStoredSettings,
   storeSetting,
   withStoredSettings,
@@ -8,17 +9,34 @@ import {
 
 test('a stored preference fills in a setting the snapshot leaves unsaid', () => {
   expect(
-    withStoredSettings({ type: 'ProteinView' }, { zoomToBaseLevel: false }),
-  ).toEqual({ type: 'ProteinView', zoomToBaseLevel: false })
+    withStoredSettings({ type: 'ProteinView' }, { showAlignment: false }),
+  ).toEqual({ type: 'ProteinView', showAlignment: false })
 })
 
 test('a declared value wins even when it equals the property default', () => {
   expect(
     withStoredSettings(
-      { type: 'ProteinView', zoomToBaseLevel: true },
-      { zoomToBaseLevel: false },
+      { type: 'ProteinView', showAlignment: true },
+      { showAlignment: false },
     ),
-  ).toEqual({ type: 'ProteinView', zoomToBaseLevel: true })
+  ).toEqual({ type: 'ProteinView', showAlignment: true })
+})
+
+// What a click does is not a layout preference: a stored zoomToBaseLevel used
+// to follow the reader into every later view, including one whose spec had
+// said nothing about it.
+test('a behavior setting is never restored from storage', () => {
+  expect(PERSISTED_SETTINGS).toEqual([
+    'showAlignment',
+    'showProteinTracks',
+    'showControls',
+    'autoScrollAlignment',
+    'compactTracks',
+  ])
+  const stored = { zoomToBaseLevel: false, showHighlight: true }
+  expect(withStoredSettings({ type: 'ProteinView' }, stored)).toEqual({
+    type: 'ProteinView',
+  })
 })
 
 test('no stored preference leaves the snapshot alone', () => {
