@@ -1,11 +1,11 @@
+import {
+  jsonfetch,
+  parseEntryMolecules,
+  pdbeEntryMoleculesUrl,
+} from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { jsonfetch } from '../../fetchUtils'
-import {
-  parseEntryMolecules,
-  pdbeEntryMoleculesUrl,
-} from '../services/pdbeEntryMolecules'
 
 export default function usePdbEntryMolecules(pdbId: string | undefined) {
   const { data, error, isLoading, isValidating } = useSWR<string[]>(

@@ -14,9 +14,9 @@ import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginConfig } from 'molstar/lib/mol-plugin/config'
 
 import { addStructureFromURL } from '../src/ProteinView/addStructureFromURL'
-import { extractEntities } from '../src/ProteinView/extractStructureSequences'
 
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import { extractEntities } from 'p2s_mapper'
 
 export interface EntityInfo {
   /** index into the plugin's entities array */

@@ -7,14 +7,35 @@ import {
   types,
 } from '@jbrowse/mobx-state-tree'
 import { autorun, when } from 'mobx'
-
-import { alignmentQuality } from './alignmentQuality'
-import { attachStructureInteractions } from './attachStructureInteractions'
 import {
   alignTranscriptToEntity,
+  alignmentCol,
+  alignmentQuality,
   chooseMappedEntity,
+  codonGenomeSpan,
+  entityLabel,
+  fetchUniProtStructureMappings,
+  fusionPartnerPositions,
+  getPdbIdFromUrl,
+  getUniprotIdFromAlphaFoldTarget,
   interactionMatchesMappedEntity,
-} from './chooseMappedEntity'
+  looksLikePlddt,
+  makeCoordinateMapper,
+  makeLabelSeqIdIndex,
+  mappedStructureIdentity,
+  rangeToLabelSeqIds,
+  residueNumber,
+  residueRangeToPositions,
+  resolveStructureUrl,
+  stripStopCodon,
+  structureDisplayLabel,
+  structurePos,
+  toLabelSeqIds,
+  transcriptRangeToStructureRange,
+  unmapStructurePositions,
+} from 'p2s_mapper'
+
+import { attachStructureInteractions } from './attachStructureInteractions'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   COMPACT_TRACK_GAP,
@@ -22,26 +43,6 @@ import {
   NORMAL_TRACK_GAP,
   NORMAL_TRACK_HEIGHT,
 } from './constants'
-import {
-  type CoordinateMapper,
-  alignmentCol,
-  makeCoordinateMapper,
-  structurePos,
-  transcriptRangeToStructureRange,
-} from './coordinates'
-import { looksLikePlddt } from './extractPerResidueConfidence'
-import {
-  entityLabel,
-  makeLabelSeqIdIndex,
-  rangeToLabelSeqIds,
-  residueNumber,
-  residueRangeToPositions,
-  toLabelSeqIds,
-} from './extractStructureSequences'
-import {
-  fetchUniProtStructureMappings,
-  fusionPartnerPositions,
-} from './pdbUniProtMapping'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
@@ -50,31 +51,22 @@ import {
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { errorMessage } from './util'
-import {
-  getPdbIdFromUrl,
-  getUniprotIdFromAlphaFoldTarget,
-  resolveStructureUrl,
-  structureDisplayLabel,
-} from '../LaunchProteinView/utils/structureUrls'
-import { stripStopCodon } from '../LaunchProteinView/utils/util'
-import {
-  codonGenomeSpan,
-  genomeToTranscriptSeqMapping,
-  mappedStructureIdentity,
-  unmapStructurePositions,
-} from '../mappings'
+import { genomeToTranscriptSeqMapping } from '../mappings'
 
-import type { Entity } from './extractStructureSequences'
 import type { EntityConfidence, StructureData } from './loadStructureData'
-import type { UniProtStructureMapping } from './pdbUniProtMapping'
 import type { ProteinStructureSpec } from './proteinViewSpec'
-import type { PairwiseAlignment } from '../mappings'
-import type { AlignmentAlgorithm } from './types'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import type { Structure as MolstarStructure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type {
+  AlignmentAlgorithm,
+  CoordinateMapper,
+  Entity,
+  PairwiseAlignment,
+  UniProtStructureMapping,
+} from 'p2s_mapper'
 
 type LGV = LinearGenomeViewModel
 type MaybeLGV = LGV | undefined

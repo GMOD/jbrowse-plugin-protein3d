@@ -1,10 +1,9 @@
+import { isRecognizedDatabaseId, searchUniProtEntries } from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { searchUniProtEntries } from '../services/lookupMethods'
-import { isRecognizedDatabaseId } from '../utils/util'
 
-import type { UniProtSearchResult } from '../services/lookupMethods'
+import type { UniProtSearchResult } from 'p2s_mapper'
 
 export function partialFailureNotice({
   attemptedCount,

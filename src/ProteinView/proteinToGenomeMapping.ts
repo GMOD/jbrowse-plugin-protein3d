@@ -1,11 +1,10 @@
 import { getSession } from '@jbrowse/core/util'
+import { codonGenomeSpan } from 'p2s_mapper'
 
-import { codonGenomeSpan } from '../mappings'
-
-import type { PairwiseAlignment } from '../mappings'
 import type { Region } from '@jbrowse/core/util/types'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import type { PairwiseAlignment } from 'p2s_mapper'
 
 interface GenomeToTranscriptSeqMapping {
   p2gCodon: Record<number, number[]>

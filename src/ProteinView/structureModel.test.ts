@@ -4,8 +4,8 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import Structure from './structureModel'
 import { parseStructure } from '../test_data/molstarStructure'
 
-import type { AlignmentAlgorithm } from './types'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
+import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()

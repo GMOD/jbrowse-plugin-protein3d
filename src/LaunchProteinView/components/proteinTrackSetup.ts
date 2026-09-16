@@ -1,5 +1,4 @@
-import { myfetch } from '../../fetchUtils'
-import { uniprotGffUrl } from '../utils/structureUrls'
+import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 
 import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
 

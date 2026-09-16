@@ -7,8 +7,8 @@ import {
 } from './proteinToGenomeMapping'
 import Structure from './structureModel'
 
-import type { AlignmentAlgorithm } from './types'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
+import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()

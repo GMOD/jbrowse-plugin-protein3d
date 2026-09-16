@@ -3,6 +3,12 @@ import React, { useEffect, useRef } from 'react'
 import { Tooltip, Typography } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
+import {
+  describeAlignmentQuality,
+  structureAlignedSeq,
+  transcriptAlignedSeq,
+  uniprotEntryUrl,
+} from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import AlignmentRuler from './AlignmentRuler'
@@ -16,10 +22,7 @@ import {
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
 import TrackLegend from './TrackLegend'
-import { uniprotEntryUrl } from '../../LaunchProteinView/utils/structureUrls'
 import ExternalLink from '../../components/ExternalLink'
-import { structureAlignedSeq, transcriptAlignedSeq } from '../../mappings'
-import { describeAlignmentQuality } from '../alignmentQuality'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'

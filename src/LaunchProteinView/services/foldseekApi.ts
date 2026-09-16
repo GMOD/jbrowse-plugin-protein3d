@@ -1,10 +1,4 @@
-import {
-  abortError,
-  httpError,
-  jsonfetch,
-  rawfetch,
-  timeout,
-} from '../../fetchUtils'
+import { abortError, httpError, jsonfetch, rawfetch, timeout } from 'p2s_mapper'
 
 export const FOLDSEEK_DATABASES = [
   { id: 'pdb100', label: 'PDB (100% redundancy)' },

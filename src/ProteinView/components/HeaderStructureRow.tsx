@@ -6,7 +6,6 @@ import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { observer } from 'mobx-react'
-
 import {
   LOW_IDENTITY_OVER_SHORTER,
   SHORT_ALIGNMENT_IDENTITY,
@@ -14,7 +13,7 @@ import {
   describeCoveredRange,
   describeTranscriptCoverage,
   isLowSimilarity,
-} from '../alignmentQuality'
+} from 'p2s_mapper'
 
 import type {
   JBrowsePluginProteinStructureModel,

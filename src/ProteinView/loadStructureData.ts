@@ -1,15 +1,14 @@
+import { extractEntities, extractPerResidueConfidence } from 'p2s_mapper'
+
 import { addStructureFromData } from './addStructureFromData'
 import { addStructureFromURL } from './addStructureFromURL'
-import { extractPerResidueConfidence } from './extractPerResidueConfidence'
-import { extractEntities } from './extractStructureSequences'
 import loadMolstar from './loadMolstar'
 
-import type { EntityConfidence } from './extractPerResidueConfidence'
-import type { Entity } from './extractStructureSequences'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { Entity, EntityConfidence } from 'p2s_mapper'
 
-export type { EntityConfidence } from './extractPerResidueConfidence'
+export type { EntityConfidence } from 'p2s_mapper'
 
 export interface StructureData {
   entities?: Entity[]

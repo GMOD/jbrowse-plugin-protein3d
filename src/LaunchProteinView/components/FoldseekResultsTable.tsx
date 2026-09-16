@@ -11,10 +11,10 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import { getStructureUrlFromTarget } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import FoldseekActionMenu from './FoldseekActionMenu'
-import { getStructureUrlFromTarget } from '../utils/structureUrls'
 
 import type { FlattenedHit } from './FoldseekActionMenu'
 import type { FoldseekResult } from '../services/foldseekApi'

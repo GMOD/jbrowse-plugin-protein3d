@@ -1,7 +1,7 @@
+import { extractStructureSequences } from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { extractStructureSequences } from '../../ProteinView/extractStructureSequences'
 import { parseStructureTrajectory } from '../../ProteinView/structurePipeline'
 import { withTemporaryMolstarPlugin } from '../../ProteinView/withTemporaryMolstarPlugin'
 import { readStructureFile } from '../utils/readStructureFile'

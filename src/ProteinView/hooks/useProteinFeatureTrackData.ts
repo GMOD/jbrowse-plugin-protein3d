@@ -1,12 +1,13 @@
 import { useMemo } from 'react'
 
-import { alignmentLength } from '../../mappings'
+import { alignmentLength } from 'p2s_mapper'
+
 import { CHAR_WIDTH } from '../constants'
 import useUniProtFeatures from './useUniProtFeatures'
 
 import type { UniProtFeature } from './useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
-import type { MapUniProtPosition } from '../pdbUniProtMapping'
+import type { MapUniProtPosition } from 'p2s_mapper'
 
 export interface FeatureLayout {
   feature: UniProtFeature

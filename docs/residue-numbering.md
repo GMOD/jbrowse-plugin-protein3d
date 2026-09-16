@@ -34,9 +34,9 @@ p53 it contains. The plugin never assumes they agree; it asks SIFTS.
 Every stored or derived coordinate is a **position**: `initialSelection`, the
 clicked range, the hover, the pairwise alignment maps, feature layouts. That is
 the one numbering that is guaranteed dense and zero-based whatever the file, so
-it is the only one arithmetic is done in. `src/ProteinView/coordinates.ts`
-brands the three internal spaces (structure position, transcript position,
-alignment column) so the compiler rejects mixing them.
+it is the only one arithmetic is done in. p2s_mapper's `coordinates.ts` brands
+the three internal spaces (structure position, transcript position, alignment
+column) so the compiler rejects mixing them.
 
 Two conversions leave that space, and each is done in exactly one place.
 
@@ -49,9 +49,8 @@ SEQRES-less PDB file, where Mol\* numbers the observed residues by author
 numbering, so a chain starting at residue 94 has ids 94.. and an unobserved loop
 leaves a hole. `extractEntities` therefore keeps the real ids per position
 (`Entity.seqIds`) and every crossing goes through `toLabelSeqIds`,
-`rangeToLabelSeqIds` and `makeLabelSeqIdIndex` in
-`src/ProteinView/extractStructureSequences.ts`. Adding 1 anywhere else is the
-bug this replaced.
+`rangeToLabelSeqIds` and `makeLabelSeqIdIndex` in p2s_mapper's
+`extractStructureSequences.ts`. Adding 1 anywhere else is the bug this replaced.
 
 ### To the user: `auth_seq_id` through `Entity.authSeqIds`
 
@@ -107,11 +106,11 @@ UniProt annotates the full-length protein. To draw the DNA-binding region on
 and the offset between UniProt and structure numbering, which is not constant
 across a construct. Both come from
 [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
-`mappings/uniprot/{pdbId}` endpoint (`src/ProteinView/pdbUniProtMapping.ts`).
-Only the segments for the entity mapped to the transcript are used, so a
-heteromer annotates the right chain, and a feature outside the modeled region is
-dropped rather than drawn at a misleading residue. AlphaFold models skip SIFTS:
-the accession is in the filename and UniProt position `p` is position `p - 1`.
+`mappings/uniprot/{pdbId}` endpoint (p2s_mapper's `pdbUniProtMapping.ts`). Only
+the segments for the entity mapped to the transcript are used, so a heteromer
+annotates the right chain, and a feature outside the modeled region is dropped
+rather than drawn at a misleading residue. AlphaFold models skip SIFTS: the
+accession is in the filename and UniProt position `p` is position `p - 1`.
 
 The feature tooltip names both numberings when they differ, so a bar reading
 "UniProt position 102-292" on a fragment also says which structure residues it

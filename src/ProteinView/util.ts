@@ -17,10 +17,6 @@ export function checkHovered(hovered: unknown): hovered is HoveredState {
   )
 }
 
-export function invertMap(arg: Record<number, number>): Record<number, number> {
-  return Object.fromEntries(Object.entries(arg).map(([a, b]) => [b, +a]))
-}
-
 /**
  * A genome hover, resolved to a 0-based transcript (protein) position.
  *

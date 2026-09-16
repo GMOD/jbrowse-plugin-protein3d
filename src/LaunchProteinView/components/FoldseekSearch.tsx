@@ -10,6 +10,7 @@ import {
   Typography,
 } from '@mui/material'
 import { observer } from 'mobx-react'
+import { stripAllStopCodons } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
@@ -19,7 +20,6 @@ import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { DEFAULT_DATABASES } from '../services/foldseekApi'
-import { stripAllStopCodons } from '../utils/util'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'

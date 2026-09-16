@@ -1,9 +1,9 @@
 import React from 'react'
 
 import { Typography } from '@mui/material'
+import { uniprotEntryUrl } from 'p2s_mapper'
 
 import ExternalLink from '../../components/ExternalLink'
-import { uniprotEntryUrl } from '../utils/structureUrls'
 
 export default function AlphaFoldDBSearchStatus({
   uniprotId,

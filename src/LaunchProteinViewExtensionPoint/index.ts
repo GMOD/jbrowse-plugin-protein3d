@@ -1,13 +1,13 @@
+import { coerceAlignmentAlgorithm, resolveStructureUrl } from 'p2s_mapper'
+
 import {
   type ConnectedViewSpec,
   type ResolvedShortLaunch,
   resolveShortLaunch,
 } from './resolveShortLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
-import { resolveStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
-import { coerceAlignmentAlgorithm } from '../ProteinView/types'
 
 import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type PluginManager from '@jbrowse/core/PluginManager'

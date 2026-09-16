@@ -2,10 +2,11 @@
 
 A standalone web app that loads real PDB / AlphaFold structures through the
 plugin's **actual** molstar path (`addStructureFromURL` → `createModel` →
-`extractEntities`), the plugin's **actual** entity resolution
-(`chooseMappedEntity`) and the plugin's **actual** alignment
-(`runLocalAlignment`, `structureSeqVsTranscriptSeqMap`), then reports what it
-would really map and flags the biological cases that stay hazardous.
+`extractEntities`), the **actual** entity resolution (`chooseMappedEntity`) and
+the **actual** alignment (`runLocalAlignment`,
+`structureSeqVsTranscriptSeqMap`), then reports what it would really map and
+flags the biological cases that stay hazardous. Everything but the molstar path
+comes from `p2s_mapper`, which is what the plugin itself calls.
 
 Faithfulness is the whole point, and it is easy to lose: this page used to
 hardcode "the plugin maps entity [0]", which was true when written. Once

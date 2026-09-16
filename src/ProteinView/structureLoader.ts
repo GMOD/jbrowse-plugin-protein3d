@@ -1,17 +1,17 @@
 import { isAlive } from '@jbrowse/mobx-state-tree'
+import {
+  fetchAlphaFoldModels,
+  getAlphaFoldStructureUrl,
+  pickAlphaFoldModel,
+} from 'p2s_mapper'
 
 import { loadStructureData } from './loadStructureData'
 import { removeMolstarStructure } from './removeStructure'
-import {
-  fetchAlphaFoldModels,
-  pickAlphaFoldModel,
-} from '../LaunchProteinView/services/alphaFoldModels'
-import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 
 import type StructureModel from './structureModel'
-import type { AlphaFoldModel } from '../LaunchProteinView/services/alphaFoldModels'
 import type { IAnyStateTreeNode, Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { AlphaFoldModel } from 'p2s_mapper'
 
 type StructureInstance = Instance<typeof StructureModel>
 

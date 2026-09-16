@@ -3,14 +3,13 @@ import { parsePDB } from 'molstar/lib/mol-io/reader/pdb/parser'
 import { trajectoryFromMmCIF } from 'molstar/lib/mol-model-formats/structure/mmcif'
 import { trajectoryFromPDB } from 'molstar/lib/mol-model-formats/structure/pdb'
 import { Task } from 'molstar/lib/mol-task'
-import { expect, test, vi } from 'vitest'
-
 import {
   extractEntities,
   makeLabelSeqIdIndex,
   rangeToLabelSeqIds,
-} from './extractStructureSequences'
-import { structureFormatFromContent } from './structureFormat'
+  structureFormatFromContent,
+} from 'p2s_mapper'
+import { expect, test, vi } from 'vitest'
 
 // Why this test exists, offline and against real molstar rather than a stub:
 // the plugin used to derive molstar's label_seq_id as `structurePosition + 1`.

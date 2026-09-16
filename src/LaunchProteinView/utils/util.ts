@@ -1,27 +1,9 @@
+import { isRecognizedDatabaseId, matchDbIdPattern } from 'p2s_mapper'
+
 import { codingTranscripts, isGeneLikeType } from '../codingFeature'
 
 import type { Feature } from '@jbrowse/core/util'
-
-/**
- * Drop the terminal stop codon(s) from a translated protein sequence.
- *
- * Only trailing `*` go: an interior stop (mis-annotated CDS, selenoprotein
- * read-through) occupies a real codon position, and deleting it would shift
- * every later residue out of step with g2p's codon-indexed transcript
- * coordinates — offsetting every genome↔structure hover past that point.
- */
-export function stripStopCodon(seq: string) {
-  return seq.replace(/\*+$/, '')
-}
-
-/**
- * Strip every stop codon, including interior ones. Only for sequences handed to
- * an external similarity search (Foldseek, AlphaFold), where `*` is not a valid
- * query character and no coordinate depends on the result's positions.
- */
-export function stripAllStopCodons(seq: string) {
-  return seq.replaceAll('*', '')
-}
+import type { Isoform } from 'p2s_mapper'
 
 /**
  * Pull an NCBI taxon id out of reference-sequence-track metadata. jb2hubs
@@ -43,10 +25,6 @@ export function extractTaxonId(metadata: unknown): number | undefined {
   return Number.isFinite(n) && n > 0 ? n : undefined
 }
 
-export function stripTrailingVersion(s?: string) {
-  return s?.replace(/\.[^./]+$/, '')
-}
-
 export function getId(val?: Feature): string {
   return val === undefined ? '' : val.id()
 }
@@ -63,49 +41,6 @@ export function getGeneDisplayName(val?: Feature): string {
   return val === undefined
     ? ''
     : firstString(val.get('gene_name'), val.get('name'), val.get('id'))
-}
-
-// Single source of truth for database IDs that UniProt can cross-reference.
-// Each entry carries everything downstream needs: the UniProt xref database
-// keyword, the regex (Ensembl patterns cover human ENS, mouse ENSMUS, zebrafish
-// ENSDAR, etc.), and a human-readable label. Recognition, label rendering, and
-// xref-query building all derive from this list, so a new ID type is one entry.
-type DbType = 'ensembl' | 'refseq' | 'ccds' | 'hgnc'
-
-const DB_ID_PATTERNS: { db: DbType; pattern: RegExp; label: string }[] = [
-  { db: 'ensembl', pattern: /^ENS[A-Z]*G\d+/i, label: 'Ensembl gene' },
-  { db: 'ensembl', pattern: /^ENS[A-Z]*T\d+/i, label: 'Ensembl transcript' },
-  { db: 'ensembl', pattern: /^ENS[A-Z]*P\d+/i, label: 'Ensembl protein' },
-  { db: 'refseq', pattern: /^[NX]M_\d+/i, label: 'RefSeq mRNA' },
-  { db: 'refseq', pattern: /^[NX]R_\d+/i, label: 'RefSeq ncRNA' },
-  { db: 'refseq', pattern: /^[NX]P_\d+/i, label: 'RefSeq protein' },
-  { db: 'ccds', pattern: /^CCDS\d+/i, label: 'CCDS' },
-  { db: 'hgnc', pattern: /^HGNC:\d+/i, label: 'HGNC' },
-]
-
-function matchDbIdPattern(id: string) {
-  return DB_ID_PATTERNS.find(p => p.pattern.test(id))
-}
-
-// Check if an ID is a recognized database identifier that UniProt can map
-export function isRecognizedDatabaseId(id: string) {
-  return matchDbIdPattern(id) !== undefined
-}
-
-// Human-readable label for an ID, e.g. "ENST00000123 (Ensembl transcript)".
-// Unrecognized IDs are returned unadorned.
-export function getDbIdLabel(id: string) {
-  const match = matchDbIdPattern(id)
-  return match ? `${id} (${match.label})` : id
-}
-
-// Build the UniProt xref query fragment for a recognized ID, e.g.
-// "xref:ensembl-ENST00000123". HGNC strips its redundant "HGNC:" prefix.
-export function buildUniProtXrefQuery(id: string) {
-  const match = matchDbIdPattern(id)
-  return match
-    ? `xref:${match.db}-${match.db === 'hgnc' ? id.replace('HGNC:', '') : id}`
-    : undefined
 }
 
 /**
@@ -264,3 +199,23 @@ export interface IsoformSequence {
 }
 
 export type IsoformSequences = Record<string, IsoformSequence>
+
+/** The translations that have arrived, as the records p2s_mapper ranks. */
+export function isoformRecords(isoformSequences?: IsoformSequences): Isoform[] {
+  return Object.entries(isoformSequences ?? {}).map(([id, { seq }]) => ({
+    id,
+    seq,
+  }))
+}
+
+/** Every transcript the dialog lists, in its order, carrying whichever
+ * translations have arrived — an isoform with none is ranked as `noData`. */
+export function rankableIsoforms(
+  options: Feature[],
+  isoformSequences?: IsoformSequences,
+): Isoform[] {
+  return options.map(f => ({
+    id: f.id(),
+    seq: isoformSequences?.[f.id()]?.seq,
+  }))
+}

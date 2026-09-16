@@ -12,12 +12,12 @@ import {
   TableRow,
   Typography,
 } from '@mui/material'
+import { uniprotEntryUrl } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import ExternalLink from '../../components/ExternalLink'
-import { uniprotEntryUrl } from '../utils/structureUrls'
 
-import type { UniProtEntry } from '../services/lookupMethods'
+import type { UniProtEntry } from 'p2s_mapper'
 
 const useStyles = makeStyles()(theme => ({
   tableContainer: {

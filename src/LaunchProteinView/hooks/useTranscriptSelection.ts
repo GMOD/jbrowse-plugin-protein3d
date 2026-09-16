@@ -1,6 +1,8 @@
 import { useState } from 'react'
 
-import { selectBestTranscript } from '../utils/isoformRanking'
+import { selectBestTranscript } from 'p2s_mapper'
+
+import { rankableIsoforms } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
@@ -29,10 +31,9 @@ export default function useTranscriptSelection({
   const autoSelection =
     isoformSequences !== undefined
       ? selectBestTranscript({
-          options,
-          isoformSequences,
+          isoforms: rankableIsoforms(options, isoformSequences),
           structureSequence,
-        })?.id()
+        })
       : undefined
 
   return { userSelection: userSelection ?? autoSelection, setUserSelection }

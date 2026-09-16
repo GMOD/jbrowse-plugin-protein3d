@@ -2,8 +2,7 @@ import React from 'react'
 
 import { MenuItem, TextField } from '@mui/material'
 import { observer } from 'mobx-react'
-
-import { entityLabel } from '../extractStructureSequences'
+import { entityLabel } from 'p2s_mapper'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 

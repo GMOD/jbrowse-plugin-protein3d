@@ -1,11 +1,10 @@
 import React from 'react'
 
 import { Typography } from '@mui/material'
-
 import {
   ALIGNMENT_ALGORITHM_LABELS,
   DEFAULT_ALIGNMENT_ALGORITHM,
-} from '../../ProteinView/types'
+} from 'p2s_mapper'
 
 export default function SequenceMismatchNotice() {
   return (

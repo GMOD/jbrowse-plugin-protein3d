@@ -1,10 +1,7 @@
+import { identityUniProtPositionMap, makeUniProtPositionMap } from 'p2s_mapper'
 import { expect, test } from 'vitest'
 
 import { layoutFeature } from './useProteinFeatureTrackData'
-import {
-  identityUniProtPositionMap,
-  makeUniProtPositionMap,
-} from '../pdbUniProtMapping'
 
 import type { UniProtFeature } from './useUniProtFeatures'
 

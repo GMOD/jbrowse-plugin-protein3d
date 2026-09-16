@@ -2,18 +2,19 @@ import React, { useState } from 'react'
 
 import { ErrorMessage } from '@jbrowse/core/ui'
 import { Button, Menu, MenuItem } from '@mui/material'
+import {
+  caCoordsToPdb,
+  getConfidenceUrlFromTarget,
+  getUniprotIdFromAlphaFoldTarget,
+  hasValidCaCoords,
+} from 'p2s_mapper'
 
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
-import { caCoordsToPdb, hasValidCaCoords } from '../utils/caCoordsToPdb'
 import {
   PROTEIN_LAUNCH_LABELS,
   getConditionalProteinLaunches,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
-import {
-  getConfidenceUrlFromTarget,
-  getUniprotIdFromAlphaFoldTarget,
-} from '../utils/structureUrls'
 
 import type { FoldseekAlignment } from '../services/foldseekApi'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'

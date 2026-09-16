@@ -1,17 +1,17 @@
 import React from 'react'
 
 import { MenuItem, TextField } from '@mui/material'
+import { classifyIsoforms, stripStopCodon } from 'p2s_mapper'
 
-import { classifyIsoforms } from '../utils/isoformRanking'
 import {
   getGeneDisplayName,
   getTranscriptDisplayName,
-  stripStopCodon,
+  rankableIsoforms,
 } from '../utils/util'
 
-import type { RankedIsoform } from '../utils/isoformRanking'
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
+import type { RankedIsoform } from 'p2s_mapper'
 
 export default function TranscriptSelector({
   val,
@@ -31,9 +31,9 @@ export default function TranscriptSelector({
   disabled?: boolean
 }) {
   const geneName = getGeneDisplayName(feature)
+  const byId = new Map(isoforms.map(f => [f.id(), f]))
   const { matches, nonMatches, noData } = classifyIsoforms({
-    options: isoforms,
-    isoformSequences,
+    isoforms: rankableIsoforms(isoforms, isoformSequences),
     structureSequence,
   })
 
@@ -41,13 +41,13 @@ export default function TranscriptSelector({
     ? stripStopCodon(structureSequence).length
     : undefined
   const renderOption = (
-    { feature: f, length, identical }: RankedIsoform,
+    { id, length, identical }: RankedIsoform,
     note = identical === undefined
       ? ''
       : ` (${identical}/${structureLength} structure residues identical)`,
   ) => (
-    <MenuItem value={f.id()} key={f.id()}>
-      {geneName} - {getTranscriptDisplayName(f)} ({length}aa){note}
+    <MenuItem value={id} key={id}>
+      {geneName} - {getTranscriptDisplayName(byId.get(id))} ({length}aa){note}
     </MenuItem>
   )
 
@@ -63,9 +63,9 @@ export default function TranscriptSelector({
     >
       {matches.map(m => renderOption(m, ' (matches structure residues)'))}
       {nonMatches.map(m => renderOption(m))}
-      {noData.map(f => (
-        <MenuItem value={f.id()} key={f.id()} disabled>
-          {geneName} - {getTranscriptDisplayName(f)} (no data)
+      {noData.map(id => (
+        <MenuItem value={id} key={id} disabled>
+          {geneName} - {getTranscriptDisplayName(byId.get(id))} (no data)
         </MenuItem>
       ))}
     </TextField>

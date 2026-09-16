@@ -6,7 +6,10 @@ structure's own sequence in the browser, every time a view opens. This page
 records where that approach comes from, what it gets right, what it cannot get
 right, and how the plugin decides which chain and which isoform to align.
 Numbers below were measured on 2026-09-11 with the plugin's own aligner unless
-another date is given.
+another date is given. The modules named below — `extractStructureSequences.ts`,
+`chooseMappedEntity.ts`, `pairwiseAlignment.ts`, `alignmentQuality.ts`,
+`pdbUniProtMapping.ts`, `isoformRanking.ts` — are the `p2s_mapper` package's,
+not this repo's.
 
 ## The precedent
 

@@ -12,12 +12,12 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material'
+import { rcsbEntryUrl } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import ExternalLink from '../../components/ExternalLink'
-import { rcsbEntryUrl } from '../services/pdbeBestStructures'
 
-import type { PdbStructureEntry } from '../services/pdbeBestStructures'
+import type { PdbStructureEntry } from 'p2s_mapper'
 
 const useStyles = makeStyles()(theme => ({
   tableContainer: {

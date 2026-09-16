@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { SimpleFeature } from '@jbrowse/core/util'
 import { renderHook } from '@testing-library/react'
+import * as p2s from 'p2s_mapper'
 
 import * as codingFeature from '../src/LaunchProteinView/codingFeature'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
@@ -11,7 +12,6 @@ import useUniProtIdLookup from '../src/LaunchProteinView/hooks/useUniProtIdLooku
 import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
 import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
 // Import utility functions and constants directly
-import * as isoformRanking from '../src/LaunchProteinView/utils/isoformRanking'
 import * as util from '../src/LaunchProteinView/utils/util' // Import all utilities from util
 
 // Use vi.mock for Vitest
@@ -19,16 +19,13 @@ vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
-vi.mock(
-  '../src/LaunchProteinView/utils/isoformRanking',
-  async importOriginal => {
-    const actual = await importOriginal()
-    return {
-      ...actual,
-      selectBestTranscript: vi.fn(),
-    }
-  },
-)
+vi.mock('p2s_mapper', async importOriginal => {
+  const actual = await importOriginal()
+  return {
+    ...actual,
+    selectBestTranscript: vi.fn(),
+  }
+})
 vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   const actual = await importOriginal()
   return {
@@ -50,7 +47,7 @@ const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
 const mockGetTranscriptFeatures = codingFeature.codingTranscripts as vi.Mock
 const mockGetId = util.getId as vi.Mock
-const mockSelectBestTranscript = isoformRanking.selectBestTranscript as vi.Mock
+const mockSelectBestTranscript = p2s.selectBestTranscript as vi.Mock
 
 describe('useAlphaFoldDBSearch', () => {
   let mockFeature: SimpleFeature
@@ -201,9 +198,7 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Mock selectBestTranscript to return a predictable value
     const mockSelectedTranscriptId = 'transcript2'
-    mockSelectBestTranscript.mockReturnValue({
-      id: () => mockSelectedTranscriptId,
-    })
+    mockSelectBestTranscript.mockReturnValue(mockSelectedTranscriptId)
 
     const { result } = renderHook(() => useSearchUnderTest())
 
@@ -214,8 +209,10 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Verify that selectBestTranscript was called with the correct arguments
     expect(mockSelectBestTranscript).toHaveBeenCalledWith({
-      options: mockTranscriptOptions,
-      isoformSequences: mockIsoformSequences,
+      isoforms: [
+        { id: 'transcript1', seq: 'MALS...' },
+        { id: 'transcript2', seq: 'MALS....*' },
+      ],
       structureSequence: mockStructureSequence,
     })
   })

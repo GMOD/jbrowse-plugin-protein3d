@@ -7,8 +7,7 @@ import {
   MenuItem,
   Select,
 } from '@mui/material'
-
-import { getDbIdLabel } from '../utils/util'
+import { getDbIdLabel } from 'p2s_mapper'
 
 interface IdentifierSelectorProps {
   recognizedIds: string[]

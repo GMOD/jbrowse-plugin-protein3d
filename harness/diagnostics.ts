@@ -1,12 +1,14 @@
 // Pure analysis layer. Reuses the plugin's real alignment + coordinate-map code
 // so the numbers shown are the numbers the plugin would actually compute, then
 // derives the verdicts the plugin never surfaces to the user.
-import { structureSeqVsTranscriptSeqMap } from '../src/mappings'
-import { chooseMappedEntity } from '../src/ProteinView/chooseMappedEntity'
-import { runLocalAlignment } from '../src/ProteinView/pairwiseAlignment'
 
 import type { EntityInfo, LoadedStructure } from './molstar'
-import type { AlignmentAlgorithm } from '../src/ProteinView/types'
+import {
+  chooseMappedEntity,
+  runLocalAlignment,
+  structureSeqVsTranscriptSeqMap,
+} from 'p2s_mapper'
+import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 export interface EntityAlignment {
   entity: EntityInfo

@@ -1,12 +1,14 @@
+import {
+  httpError,
+  parseBestStructures,
+  pdbeBestStructuresUrl,
+  rawfetch,
+} from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
-import { httpError, rawfetch } from '../../fetchUtils'
-import {
-  type PdbStructureEntry,
-  parseBestStructures,
-  pdbeBestStructuresUrl,
-} from '../services/pdbeBestStructures'
+
+import type { PdbStructureEntry } from 'p2s_mapper'
 
 // PDBe answers 404 for an accession with no experimental structure, which is
 // the ordinary case for most genes rather than a failure.

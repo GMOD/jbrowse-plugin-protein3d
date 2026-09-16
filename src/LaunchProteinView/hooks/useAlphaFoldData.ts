@@ -1,13 +1,10 @@
 import { useMemo } from 'react'
 
+import { fetchAlphaFoldModels, pickAlphaFoldModel } from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from './swrOptions'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
-import {
-  fetchAlphaFoldModels,
-  pickAlphaFoldModel,
-} from '../services/alphaFoldModels'
 
 import type { Feature } from '@jbrowse/core/util'
 

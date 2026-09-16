@@ -67,7 +67,7 @@ Sketch (each step already exists in the interactive flow; this composes them):
 1. **structure URL from uniprotId** — `getUniprotIdFromAlphaFoldTarget` inverse;
    AlphaFold URL is
    `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-model_v6.cif`. (See
-   `src/LaunchProteinView/services/lookupMethods.ts` for the existing lookup.)
+   p2s_mapper's `uniProtSearch.ts` for the existing lookup.)
 2. **`feature` from the connected track** — once `connectedView` is created,
    fetch features at `loc` from the named gene track and pick the transcript by
    `transcriptId`/name (reuse `selectBestTranscript.ts`). Needs the track

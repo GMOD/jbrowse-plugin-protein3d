@@ -1,8 +1,7 @@
+import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 import useSWR from 'swr'
 
 import { STATIC_SWR_OPTIONS } from '../../LaunchProteinView/hooks/swrOptions'
-import { uniprotGffUrl } from '../../LaunchProteinView/utils/structureUrls'
-import { myfetch } from '../../fetchUtils'
 
 export interface UniProtFeature {
   type: string

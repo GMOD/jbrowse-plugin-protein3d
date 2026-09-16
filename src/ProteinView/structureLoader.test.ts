@@ -1,11 +1,10 @@
 import { types } from '@jbrowse/mobx-state-tree'
+import { getAlphaFoldStructureUrl } from 'p2s_mapper'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { loadStructureData } from './loadStructureData'
 import { makeStructureLoader } from './structureLoader'
-import { getAlphaFoldStructureUrl } from '../LaunchProteinView/utils/structureUrls'
 
-import type { Entity } from './extractStructureSequences'
 import type { StructureData } from './loadStructureData'
 import type {
   AlphaFoldModelFetcher,
@@ -13,6 +12,7 @@ import type {
 } from './structureLoader'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { Structure } from 'molstar/lib/mol-model/structure'
+import type { Entity } from 'p2s_mapper'
 
 const entity = (seq: string): Entity => ({
   entityId: '1',

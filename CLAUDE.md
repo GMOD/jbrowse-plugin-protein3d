@@ -4,6 +4,20 @@ A JBrowse plugin that opens a molstar protein view from a genomic feature. Most
 of what is hard here is a seam — between molstar's idea of a sequence and ours,
 and between JBrowse host versions.
 
+## The mapping itself lives in p2s_mapper
+
+Everything between a transcript's translation and a structure's residues is the
+`p2s_mapper` package (`~/src/gmod/p2s_mapper`): the pairwise aligner and its
+quality statistics, the coordinate maps, `chooseMappedEntity`,
+`extractStructureSequences`, SIFTS, the AlphaFold/PDBe/UniProt lookups, the url
+builders and `structureFormat`. It has no React, no `@jbrowse/*` and no molstar
+import — a loaded Mol\* model reaches it through narrow structural interfaces —
+so a change to any of those rules is made and tested there, and this repo keeps
+what needs a JBrowse `Feature`, a session or a Mol\* plugin.
+
+`p2s_mapper` is **bundled, never externalized**: it is not a `@jbrowse/core`
+re-export, so `esbuild.mjs` leaves it alone and no host can drop it.
+
 ## Molstar: the wrong parser fails silently in one direction
 
 Handing molstar the wrong trajectory parser fails asymmetrically:
@@ -20,8 +34,8 @@ Handing molstar the wrong trajectory parser fails asymmetrically:
 That second case is easy to reintroduce, because `addStructureFromData` has to
 guess — an inline `data` snapshot has no filename. Detection therefore sniffs
 **content** (first non-comment line starting with `data_` ⇒ mmCIF) rather than
-trusting a name, and lives in `src/ProteinView/structureFormat.ts` as the
-default for both `addStructureFromURL` and `addStructureFromData`. Do not re-add
+trusting a name, and lives in p2s_mapper's `structureFormat.ts` as the default
+for both `addStructureFromURL` and `addStructureFromData`. Do not re-add
 per-caller detection; that was the bug this replaced.
 
 ## Molstar: `structurePosition + 1 === label_seq_id` only sometimes

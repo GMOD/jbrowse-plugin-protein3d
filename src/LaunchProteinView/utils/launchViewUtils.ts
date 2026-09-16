@@ -5,9 +5,9 @@ import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
 import type { SessionWithAddTracks } from './sessionWithAddTracks'
-import type { AlignmentAlgorithm } from '../../ProteinView/types'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 interface LaunchViewParams {
   session: AbstractSessionModel

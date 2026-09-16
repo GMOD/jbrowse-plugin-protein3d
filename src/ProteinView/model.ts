@@ -2,6 +2,10 @@ import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, getPath, types } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
+import {
+  ALIGNMENT_ALGORITHM_VALUES,
+  DEFAULT_ALIGNMENT_ALGORITHM,
+} from 'p2s_mapper'
 
 import {
   COLOR_SCHEME_VALUES,
@@ -24,16 +28,12 @@ import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
-import {
-  ALIGNMENT_ALGORITHM_VALUES,
-  type AlignmentAlgorithm,
-  DEFAULT_ALIGNMENT_ALGORITHM,
-} from './types'
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 // What a click and a highlight do, as opposed to what the panel shows. Named
 // here rather than in storedSettings because these are deliberately not

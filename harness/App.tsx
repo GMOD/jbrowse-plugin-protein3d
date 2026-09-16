@@ -3,16 +3,16 @@ import React, { useRef, useState } from 'react'
 import { diagnose, sampleCoordinateMap } from './diagnostics'
 import { EXAMPLES } from './examples'
 import { createPlugin, loadAndIntrospect } from './molstar'
-import {
-  getAlphaFoldStructureUrl,
-  getPdbStructureUrl,
-  uniprotFastaUrl,
-} from '../src/LaunchProteinView/utils/structureUrls'
 
 import type { Diagnosis, Severity } from './diagnostics'
 import type { Example } from './examples'
 import type { LoadedStructure } from './molstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import {
+  getAlphaFoldStructureUrl,
+  getPdbStructureUrl,
+  uniprotFastaUrl,
+} from 'p2s_mapper'
 
 // The plugin's own URL builders, imported rather than mirrored: structureUrls
 // has no imports of its own, so it costs the harness nothing, and the AlphaFold

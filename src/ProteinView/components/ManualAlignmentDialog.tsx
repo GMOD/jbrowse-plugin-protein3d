@@ -11,12 +11,11 @@ import {
 } from '@mui/material'
 import { parsePairwise } from 'clustal-js'
 import { observer } from 'mobx-react'
-
-import { stripStopCodon } from '../../LaunchProteinView/utils/util'
 import {
   pairwiseAlignmentProblem,
   pairwiseAlignmentSequenceProblem,
-} from '../../mappings'
+  stripStopCodon,
+} from 'p2s_mapper'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 

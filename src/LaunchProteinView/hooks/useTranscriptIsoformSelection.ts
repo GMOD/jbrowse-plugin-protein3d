@@ -1,10 +1,11 @@
 import { useMemo } from 'react'
 
+import { pickStructureSequence } from 'p2s_mapper'
+
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useTranscriptSelection from './useTranscriptSelection'
 import { codingTranscripts } from '../codingFeature'
-import { pickStructureSequence } from '../utils/isoformRanking'
-import { getId } from '../utils/util'
+import { getId, isoformRecords } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -33,7 +34,11 @@ export default function useTranscriptIsoformSelection({
     })
   // one alignment per chain, so not once per render
   const structureSequence = useMemo(
-    () => pickStructureSequence(structureSequences, isoformSequences),
+    () =>
+      pickStructureSequence(
+        structureSequences,
+        isoformRecords(isoformSequences),
+      ),
     [structureSequences, isoformSequences],
   )
   const { userSelection, setUserSelection } = useTranscriptSelection({

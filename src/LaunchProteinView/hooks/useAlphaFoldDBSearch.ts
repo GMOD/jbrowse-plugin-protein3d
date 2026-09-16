@@ -1,8 +1,9 @@
 import { useMemo } from 'react'
 
+import { stripStopCodon } from 'p2s_mapper'
+
 import useAlphaFoldData from './useAlphaFoldData'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
-import { stripStopCodon } from '../utils/util'
 
 import type { UniProtIdLookup } from './useUniProtIdLookup'
 import type { Feature } from '@jbrowse/core/util'

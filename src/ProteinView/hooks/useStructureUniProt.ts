@@ -1,13 +1,16 @@
 import { useMemo } from 'react'
 
 import {
-  type MapUniProtPosition,
-  type SegmentEntity,
-  type UniProtStructureMapping,
   chooseUniProtMappingForEntity,
   identityUniProtPositionMap,
   makeUniProtPositionMap,
-} from '../pdbUniProtMapping'
+} from 'p2s_mapper'
+
+import type {
+  MapUniProtPosition,
+  SegmentEntity,
+  UniProtStructureMapping,
+} from 'p2s_mapper'
 
 export interface StructureUniProt {
   /** accession the structure's mapped entity corresponds to, when known */

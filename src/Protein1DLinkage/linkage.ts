@@ -1,6 +1,7 @@
 import { SimpleFeature } from '@jbrowse/core/util'
+import { codonGenomeSpan } from 'p2s_mapper'
 
-import { codonGenomeSpan, genomeToTranscriptSeqMapping } from '../mappings'
+import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 

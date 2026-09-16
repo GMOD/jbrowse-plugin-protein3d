@@ -8,6 +8,7 @@ import {
   Typography,
 } from '@mui/material'
 import { observer } from 'mobx-react'
+import { getPdbStructureUrl, isPdbId, uniprotEntryUrl } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import PartialFailureNotice from './PartialFailureNotice'
@@ -21,8 +22,6 @@ import useDebouncedValue from '../hooks/useDebouncedValue'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
 import usePdbEntryMolecules from '../hooks/usePdbEntryMolecules'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
-import { isPdbId } from '../services/pdbeBestStructures'
-import { getPdbStructureUrl, uniprotEntryUrl } from '../utils/structureUrls'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'

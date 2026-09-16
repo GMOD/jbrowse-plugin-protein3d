@@ -1,12 +1,8 @@
-import {
-  resolveStructureUrl,
-  structureDisplayLabel,
-} from '../LaunchProteinView/utils/structureUrls'
+import { resolveStructureUrl, structureDisplayLabel } from 'p2s_mapper'
 
 import type { ProteinColorScheme } from './applyColorTheme'
-import type { AlignmentAlgorithm } from './types'
-import type { PairwiseAlignment } from '../mappings'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
+import type { AlignmentAlgorithm, PairwiseAlignment } from 'p2s_mapper'
 
 /**
  * One structure in a ProteinView, described declaratively. Every field maps

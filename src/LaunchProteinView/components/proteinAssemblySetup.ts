@@ -1,4 +1,4 @@
-import { uniprotFastaUrl } from '../utils/structureUrls'
+import { uniprotFastaUrl } from 'p2s_mapper'
 
 import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
 
