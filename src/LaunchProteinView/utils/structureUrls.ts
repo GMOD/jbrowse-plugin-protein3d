@@ -20,6 +20,12 @@ export function uniprotEntryUrl(uniprotId: string) {
   return `https://www.uniprot.org/uniprotkb/${uniprotId}/entry`
 }
 
+/**
+ * The guessed filename of an accession's canonical AlphaFold model. A guess:
+ * the F1 fragment does not exist past the length cap and the version moves, so
+ * this is the last resort when the prediction API cannot be reached. Ask
+ * `fetchAlphaFoldModels` for the real files.
+ */
 export function getAlphaFoldStructureUrl(
   uniprotId: string,
   version = ALPHAFOLD_VERSION,
@@ -32,19 +38,20 @@ export function getPdbStructureUrl(pdbId: string) {
 }
 
 /**
- * Resolve the `{ uniprotId }` / `{ pdbId }` shorthand to a concrete structure
- * URL, so a hand-authored snapshot or a short launch URL doesn't have to know
- * the AlphaFold/RCSB filename formats.
+ * Resolve the `{ pdbId }` shorthand to a concrete structure URL, so a
+ * hand-authored snapshot or a short launch URL doesn't have to know RCSB's
+ * filename format. An explicit `url` (or inline `data`) always wins.
+ * Idempotent: re-resolving an already-resolved spec returns the same url.
  *
- * An explicit `url` (or inline `data`) always wins, and the shorthand resolves
- * the canonical form only — AlphaFold's F1 fragment, RCSB's mmCIF. Idempotent:
- * re-resolving an already-resolved spec returns the same url.
+ * `uniprotId` deliberately resolves to no url here, and still outranks a
+ * `pdbId`. An accession's files are whatever AlphaFold DB currently holds — an
+ * isoform model, several fragments, a new model version — so the structure
+ * keeps the accession and the structure loader asks the prediction API which
+ * file to open.
  *
  * Shared by the Structure model's snapshot preprocessor and the
  * LaunchView-ProteinView extension point, which would otherwise each carry
- * their own copy of the same precedence rule and drift on which ids they
- * accept — the extension point took uniprotId but not pdbId for exactly that
- * reason.
+ * their own copy of the same precedence rule.
  */
 export function resolveStructureUrl({
   url,
@@ -60,10 +67,9 @@ export function resolveStructureUrl({
   if (url !== undefined || data !== undefined) {
     return url
   }
-  if (uniprotId !== undefined) {
-    return getAlphaFoldStructureUrl(uniprotId)
-  }
-  return pdbId === undefined ? undefined : getPdbStructureUrl(pdbId)
+  return uniprotId !== undefined || pdbId === undefined
+    ? undefined
+    : getPdbStructureUrl(pdbId)
 }
 
 // Hosts that serve the PDB archive, so a 4-character filename there really is
@@ -139,20 +145,26 @@ export function getConfidenceUrlFromTarget(target: string) {
 export function structureDisplayLabel({
   url,
   data,
+  uniprotId,
 }: {
   url?: string
   data?: string
+  uniprotId?: string
 }) {
   if (url === undefined) {
-    return data === undefined ? '' : 'Uploaded structure'
+    return data !== undefined
+      ? 'Uploaded structure'
+      : uniprotId
+        ? `AlphaFold ${uniprotId}`
+        : ''
   }
   const pdbId = getPdbIdFromUrl(url)
   if (pdbId) {
     return pdbId.toUpperCase()
   }
-  const uniprotId = getUniprotIdFromAlphaFoldTarget(url)
-  if (uniprotId) {
-    return `AlphaFold ${uniprotId}`
+  const urlAccession = getUniprotIdFromAlphaFoldTarget(url)
+  if (urlAccession) {
+    return `AlphaFold ${urlAccession}`
   }
   return url.split('/').pop()?.split('?')[0] || url
 }

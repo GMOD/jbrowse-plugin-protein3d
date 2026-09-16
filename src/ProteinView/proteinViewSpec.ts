@@ -80,7 +80,11 @@ export function defaultDisplayName(structures: ProteinStructureSpec[]) {
     'Protein view',
     typeof featureName === 'string' ? featureName : undefined,
     ...structures.map(s =>
-      structureDisplayLabel({ url: resolveStructureUrl(s), data: s.data }),
+      structureDisplayLabel({
+        url: resolveStructureUrl(s),
+        data: s.data,
+        uniprotId: s.uniprotId,
+      }),
     ),
   ]
     .filter(s => !!s)

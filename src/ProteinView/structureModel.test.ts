@@ -100,11 +100,15 @@ test('hydrates every declarative per-structure field from a snapshot', () => {
   expect(s.initialSelection).toEqual({ start: 3, end: 7 })
 })
 
-test('resolves a uniprotId shorthand to an AlphaFold url at hydration', () => {
+// The accession is kept rather than spelled into a filename: which files
+// AlphaFold DB holds for it is the prediction API's answer, and the structure
+// loader asks before it opens one.
+test('keeps a uniprotId shorthand for the loader, and names the structure by it', () => {
   const parent = TestParent.create({ structures: [{ uniprotId: 'P04637' }] })
-  expect(parent.structures[0]!.url).toBe(
-    'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif',
-  )
+  const s = parent.structures[0]!
+  expect(s.url).toBeUndefined()
+  expect(s.uniprotId).toBe('P04637')
+  expect(s.label).toBe('AlphaFold P04637')
 })
 
 test('resolves a pdbId shorthand to an RCSB url at hydration', () => {

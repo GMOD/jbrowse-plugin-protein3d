@@ -127,7 +127,11 @@ export default function LaunchProteinViewExtensionPointF(
       const urls = requested.map(s => resolveStructureUrl(s))
       const primary = requested[0]!
       const primaryUrl = urls[0]
-      if (!primaryUrl && primary.data === undefined) {
+      if (
+        !primaryUrl &&
+        primary.data === undefined &&
+        primary.uniprotId === undefined
+      ) {
         const message =
           'No url, uniprotId or pdbId provided when launching protein view'
         console.error(message)
@@ -141,11 +145,10 @@ export default function LaunchProteinViewExtensionPointF(
       // of the launch. Failures surface via notify and abort — we never leave a
       // half-wired view (see agent-docs/urlparam_plan.md).
       let resolved: ResolvedShortLaunch | undefined
-      if (!userProvidedTranscriptSequence && transcriptId && primaryUrl) {
+      if (!userProvidedTranscriptSequence && transcriptId) {
         try {
           resolved = await resolveShortLaunch({
             session,
-            structureUrl: primaryUrl,
             transcriptId,
             connectedView,
           })
@@ -177,6 +180,7 @@ export default function LaunchProteinViewExtensionPointF(
 
       const structures: ProteinStructureSpec[] = requested.map((s, i) => ({
         url: urls[i],
+        uniprotId: s.uniprotId,
         data: s.data,
         initialSelection: s.initialSelection,
         initialResidues: s.initialResidues,

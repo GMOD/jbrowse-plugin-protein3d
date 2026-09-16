@@ -106,6 +106,15 @@ const Structure = types
     data: types.maybe(types.string),
     /**
      * #property
+     * UniProt accession of the structure: the one a `{ uniprotId }` shorthand
+     * asked for, or the one an AlphaFold url names. With no url the structure
+     * loader asks AlphaFold DB which of the accession's models to open and
+     * fills in `url` — the files an accession has are the API's answer, not a
+     * filename this plugin can spell.
+     */
+    uniprotId: types.maybe(types.string),
+    /**
+     * #property
      */
     connectedViewId: types.maybe(types.string),
     /**
@@ -170,23 +179,24 @@ const Structure = types
      */
     alignmentImported: types.optional(types.boolean, false),
   })
-  // Input-only shorthand: remap a `{ uniprotId }`/`{ pdbId }` snapshot to a
-  // concrete `url` at hydration and strip the shorthand keys (they are not
-  // stored — uniprotId stays derivable from the url via the getter below), so a
-  // hand-authored snapshot loads without the caller knowing the AlphaFold/RCSB
-  // URL format. An explicit url/data always wins; the shorthand resolves the
-  // canonical isoform (AF-<id>-F1) only. Idempotent: a re-snapshot has no
-  // shorthand keys and an already-set url, so it passes through unchanged.
+  // Shorthand: a `{ pdbId }` snapshot resolves to a concrete `url` at
+  // hydration, so a hand-authored snapshot loads without the caller knowing
+  // RCSB's URL format. A `{ uniprotId }` keeps the accession instead and the
+  // loader resolves the file. An explicit url/data always wins, and an
+  // AlphaFold url fills in the accession it names. Idempotent: a re-snapshot
+  // carries an already-set url, so it passes through unchanged.
   // A snapshot carrying an alignment but no alignmentImported predates the
   // flag or was written by hand; either way the alignment is used as given.
-  .preProcessSnapshot(
-    ({ uniprotId, pdbId, ...rest }: ProteinStructureSpec) => ({
+  .preProcessSnapshot(({ pdbId, uniprotId, ...rest }: ProteinStructureSpec) => {
+    const url = resolveStructureUrl({ ...rest, uniprotId, pdbId })
+    return {
       ...rest,
-      url: resolveStructureUrl({ ...rest, uniprotId, pdbId }),
+      url,
+      uniprotId: url ? getUniprotIdFromAlphaFoldTarget(url) : uniprotId,
       alignmentImported:
         rest.alignmentImported ?? rest.pairwiseAlignment !== undefined,
-    }),
-  )
+    }
+  })
   .volatile(() => ({
     /**
      * #volatile
@@ -289,6 +299,14 @@ const Structure = types
     uniProtMappingsError: undefined as unknown,
   }))
   .actions(self => ({
+    /**
+     * #action
+     * The file the accession's structure lives in, once the loader has asked
+     * AlphaFold DB for it. Stored, so a saved session reopens the same model.
+     */
+    setUrl(url: string) {
+      self.url = url
+    },
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
       self.uniProtMappingsError = error
@@ -452,17 +470,6 @@ const Structure = types
      */
     get label() {
       return structureDisplayLabel(self)
-    },
-    /**
-     * #getter
-     * Extracts UniProt ID from AlphaFold URL if available
-     */
-    get uniprotId() {
-      const { url } = self
-      if (!url) {
-        return undefined
-      }
-      return getUniprotIdFromAlphaFoldTarget(url)
     },
     /**
      * #getter
