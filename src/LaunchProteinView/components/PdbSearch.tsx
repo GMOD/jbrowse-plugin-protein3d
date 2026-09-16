@@ -12,7 +12,7 @@ import UniProtLookupControls from './UniProtLookupControls'
 import UniProtResultsTable from './UniProtResultsTable'
 import ExternalLink from '../../components/ExternalLink'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
-import useStructureFileSequence from '../hooks/useStructureFileSequence'
+import usePdbEntryMolecules from '../hooks/usePdbEntryMolecules'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { getPdbStructureUrl, uniprotEntryUrl } from '../utils/structureUrls'
 
@@ -72,15 +72,17 @@ const PdbSearch = observer(function PdbSearch({
     ? getPdbStructureUrl(selectedPdbId)
     : undefined
 
-  // The chosen entry's own residues, so the isoform picker can say which
-  // transcript matches it — the same annotation the AlphaFold tab shows. Its
-  // failure is not fatal: the launch reads the file again, and until then the
-  // picker just goes unannotated.
-  const {
-    sequences: structureSequences,
-    isLoading: isStructureLoading,
-    error: structureError,
-  } = useStructureFileSequence({ url: structureUrl })
+  // The chosen entry's residues, so the isoform picker can say which transcript
+  // matches it — the same annotation the AlphaFold tab shows. It is a label and
+  // nothing more: Launch never waits on it, and its failure costs the label
+  // rather than the launch, which reads the structure file itself.
+  //
+  // While another entry's answer is in flight keepPreviousData still holds the
+  // last one, so isValidating withholds it rather than labelling these rows
+  // with the previous entry's chains.
+  const { sequences, isValidating: isMoleculesValidating } =
+    usePdbEntryMolecules(selectedPdbId)
+  const structureSequences = isMoleculesValidating ? undefined : sequences
 
   const {
     transcripts,
@@ -104,7 +106,6 @@ const PdbSearch = observer(function PdbSearch({
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isPdbLoading && 'Listing PDB entries from PDBe',
-    isStructureLoading && 'Reading residues from the selected PDB entry',
   ].filter((s): s is string => !!s)
   const isLoading = loadingStatuses.length > 0
   const error = isLoading
@@ -168,13 +169,6 @@ const PdbSearch = observer(function PdbSearch({
               . The AlphaFoldDB tab has a predicted one.
             </Typography>
           )
-        ) : null}
-
-        {structureError && !isStructureLoading ? (
-          <Typography variant="caption" color="textSecondary">
-            Could not read residues from {selectedPdbId?.toUpperCase()}, so the
-            isoform list is unannotated. The launch reads the file again.
-          </Typography>
         ) : null}
 
         {isoformSequences && selectedTranscript ? (
