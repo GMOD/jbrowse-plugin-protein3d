@@ -15,6 +15,7 @@ import type {
   AbstractSessionModel,
   SimpleFeatureSerialized,
 } from '@jbrowse/core/util'
+import type { InitState } from '@jbrowse/plugin-linear-genome-view'
 
 // One structure of a launch: where it comes from, plus the per-structure
 // settings a spec may carry. The transcript mapping is shared across all of
@@ -37,6 +38,12 @@ interface LaunchStructure {
 export default function LaunchProteinViewExtensionPointF(
   pluginManager: PluginManager,
 ) {
+  // v4 hosts declare `init`; v5 reads the settings off the view object and
+  // warns about the nesting
+  const lgvTakesInit = () =>
+    'init' in
+    pluginManager.getViewType('LinearGenomeView').stateModel.properties
+
   pluginManager.addToExtensionPoint(
     'LaunchView-ProteinView',
     // A LaunchView point is a transformer — the chain hands what each callback
@@ -169,10 +176,12 @@ export default function LaunchProteinViewExtensionPointF(
       const resolvedConnectedViewId =
         connectedViewId ??
         (connectedView
-          ? session.addView('LinearGenomeView', {
-              ...connectedView,
-              type: 'LinearGenomeView',
-            }).id
+          ? session.addView(
+              'LinearGenomeView',
+              lgvTakesInit()
+                ? { type: 'LinearGenomeView', init: connectedView as InitState }
+                : { ...connectedView, type: 'LinearGenomeView' },
+            ).id
           : undefined)
 
       const structures: ProteinStructureSpec[] = requested.map((s, i) => ({
