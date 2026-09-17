@@ -15,7 +15,6 @@ import type {
   AbstractSessionModel,
   SimpleFeatureSerialized,
 } from '@jbrowse/core/util'
-import type { InitState } from '@jbrowse/plugin-linear-genome-view'
 
 // One structure of a launch: where it comes from, plus the per-structure
 // settings a spec may carry. The transcript mapping is shared across all of
@@ -171,10 +170,8 @@ export default function LaunchProteinViewExtensionPointF(
         connectedViewId ??
         (connectedView
           ? session.addView('LinearGenomeView', {
+              ...connectedView,
               type: 'LinearGenomeView',
-              // a spec's connectedView is unvalidated json, so a missing
-              // assembly reaches the view and is reported there, as before
-              init: connectedView as InitState,
             }).id
           : undefined)
 
