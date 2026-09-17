@@ -1,3 +1,10 @@
+## [0.12.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.12.0...v0.12.1) (2026-09-17)
+
+### Bug Fixes
+
+- Write the connected LinearGenomeView's settings on the view, not under init ([0a66a79](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0a66a79568dc91d646ce8080dc8beba06a25bfdd))
+- Keep init for v4 hosts, whose LinearGenomeView drops flat settings ([61b922f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/61b922f9d8863abe8a2a560e31e5e3a4377a5643))
+
 ## [0.12.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.11.2...v0.12.0) (2026-09-16)
 
 ### Bug Fixes
