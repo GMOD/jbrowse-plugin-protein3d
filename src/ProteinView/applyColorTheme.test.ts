@@ -2,17 +2,21 @@ import { expect, test, vi } from 'vitest'
 
 import { COLOR_SCHEME_VALUES, applyColorTheme } from './applyColorTheme'
 
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-function makePlugin(structureComponents: unknown[]) {
+function makePlugin(structureComponents: string[]) {
   const updateRepresentationsTheme = vi.fn(() => Promise.resolve())
+  const loaded = structureComponents.map(components => ({
+    molstarStructure: {} as Structure,
+    components,
+  }))
   const plugin = {
     managers: {
       structure: {
         hierarchy: {
-          current: {
-            structures: structureComponents.map(components => ({ components })),
-          },
+          findStructure: (structure: Structure) =>
+            loaded.find(l => l.molstarStructure === structure),
         },
         component: { updateRepresentationsTheme },
       },
@@ -20,6 +24,7 @@ function makePlugin(structureComponents: unknown[]) {
   }
   return {
     plugin: plugin as unknown as PluginContext,
+    structures: loaded.map(l => ({ molstarStructure: l.molstarStructure })),
     updateRepresentationsTheme,
   }
 }
@@ -32,8 +37,15 @@ test('exposes pLDDT among the color schemes', () => {
 })
 
 test('applies the chosen theme to every loaded structure', async () => {
-  const { plugin, updateRepresentationsTheme } = makePlugin(['compA', 'compB'])
-  await applyColorTheme({ plugin, colorScheme: 'plddt-confidence' })
+  const { plugin, structures, updateRepresentationsTheme } = makePlugin([
+    'compA',
+    'compB',
+  ])
+  await applyColorTheme({
+    plugin,
+    colorScheme: 'plddt-confidence',
+    structures,
+  })
   expect(updateRepresentationsTheme).toHaveBeenCalledTimes(2)
   expect(updateRepresentationsTheme).toHaveBeenNthCalledWith(1, 'compA', {
     color: 'plddt-confidence',
@@ -44,15 +56,50 @@ test('applies the chosen theme to every loaded structure', async () => {
 })
 
 test('passes built-in theme names through unchanged', async () => {
-  const { plugin, updateRepresentationsTheme } = makePlugin(['comp'])
-  await applyColorTheme({ plugin, colorScheme: 'hydrophobicity' })
+  const { plugin, structures, updateRepresentationsTheme } = makePlugin([
+    'comp',
+  ])
+  await applyColorTheme({ plugin, colorScheme: 'hydrophobicity', structures })
   expect(updateRepresentationsTheme).toHaveBeenCalledWith('comp', {
     color: 'hydrophobicity',
   })
 })
 
+test("colors each structure's own mapped chain", async () => {
+  const { plugin, structures, updateRepresentationsTheme } = makePlugin([
+    'compA',
+    'compB',
+  ])
+  await applyColorTheme({
+    plugin,
+    colorScheme: 'mapped-chain',
+    structures: [
+      { ...structures[0]!, entityId: '1' },
+      { ...structures[1]!, entityId: '3' },
+    ],
+  })
+  expect(updateRepresentationsTheme).toHaveBeenNthCalledWith(1, 'compA', {
+    color: 'mapped-chain',
+    colorParams: { entityId: '1' },
+  })
+  expect(updateRepresentationsTheme).toHaveBeenNthCalledWith(2, 'compB', {
+    color: 'mapped-chain',
+    colorParams: { entityId: '3' },
+  })
+})
+
+test('skips a structure molstar no longer holds', async () => {
+  const { plugin, updateRepresentationsTheme } = makePlugin(['comp'])
+  await applyColorTheme({
+    plugin,
+    colorScheme: 'default',
+    structures: [{ molstarStructure: {} as Structure }],
+  })
+  expect(updateRepresentationsTheme).not.toHaveBeenCalled()
+})
+
 test('no-op when no structures are loaded', async () => {
-  const { plugin, updateRepresentationsTheme } = makePlugin([])
-  await applyColorTheme({ plugin, colorScheme: 'default' })
+  const { plugin, structures, updateRepresentationsTheme } = makePlugin([])
+  await applyColorTheme({ plugin, colorScheme: 'default', structures })
   expect(updateRepresentationsTheme).not.toHaveBeenCalled()
 })

@@ -1,11 +1,14 @@
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { StructureComponentManager } from 'molstar/lib/mol-plugin-state/manager/structure/component'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
+import type { SizeTheme } from 'molstar/lib/mol-theme/size'
 
 /**
  * Color schemes offered in the protein view menu. The `value`s are molstar
- * color-theme names: all are built-in except `plddt-confidence`, which is
- * registered by the MAQualityAssessment behavior (see useProteinView) and reads
- * the per-residue pLDDT scores parsed from AlphaFold mmCIF files.
+ * color-theme names: all are built-in except `plddt-confidence`, which the
+ * MAQualityAssessment behavior registers from AlphaFold's per-residue pLDDT,
+ * and `mapped-chain`, which useProteinView registers.
  */
 export const COLOR_SCHEMES = [
   { value: 'default', label: 'Default (element/chain)' },
@@ -16,6 +19,7 @@ export const COLOR_SCHEMES = [
   { value: 'residue-name', label: 'Residue type' },
   { value: 'uncertainty', label: 'B-factor / uncertainty' },
   { value: 'molecule-type', label: 'Molecule type' },
+  { value: 'mapped-chain', label: 'Mapped chain' },
 ] as const
 
 export type ProteinColorScheme = (typeof COLOR_SCHEMES)[number]['value']
@@ -30,19 +34,31 @@ export function coerceColorScheme(value: string): ProteinColorScheme {
 export async function applyColorTheme({
   plugin,
   colorScheme,
+  structures,
 }: {
   plugin: PluginContext
   colorScheme: ProteinColorScheme
+  structures: readonly { molstarStructure: Structure; entityId?: string }[]
 }) {
-  const { structures } = plugin.managers.structure.hierarchy.current
-  for (const structure of structures) {
-    // molstar types `color` against its statically-generated built-in theme
-    // union, which excludes extension themes like 'plddt-confidence'. Its own
-    // API doc says to widen the name here; ProteinColorScheme keeps it
-    // constrained to schemes we actually expose.
-    await plugin.managers.structure.component.updateRepresentationsTheme(
-      structure.components,
-      { color: colorScheme as ColorTheme.BuiltIn | 'default' },
-    )
+  for (const { molstarStructure, entityId } of structures) {
+    const ref =
+      plugin.managers.structure.hierarchy.findStructure(molstarStructure)
+    if (ref) {
+      // molstar types the theme against its statically-generated built-in
+      // union, which excludes extension themes like 'plddt-confidence' and
+      // 'mapped-chain'. Its own API doc says to widen the name here;
+      // ProteinColorScheme keeps it constrained to schemes we actually expose.
+      const theme =
+        colorScheme === 'mapped-chain'
+          ? { color: colorScheme, colorParams: { entityId: entityId ?? '' } }
+          : { color: colorScheme }
+      await plugin.managers.structure.component.updateRepresentationsTheme(
+        ref.components,
+        theme as StructureComponentManager.UpdateThemeParams<
+          ColorTheme.BuiltIn,
+          SizeTheme.BuiltIn
+        >,
+      )
+    }
   }
 }
