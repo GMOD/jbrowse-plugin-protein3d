@@ -92,7 +92,7 @@ test('an unobserved loop makes the offset non-constant', async () => {
 // a short one yields no frames at all. Since none of those surface as an error
 // to the user, the tests below assert the consequence (no entities come out)
 // rather than any one failure mode. This is why detection had to move into
-// addStructureFromData rather than staying in the launch dialog.
+// the structure pipeline rather than staying in the launch dialog.
 
 async function parseAsMmcif(text: string) {
   const parsed = await CIF.parseText(text).run()

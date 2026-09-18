@@ -35,7 +35,6 @@ import {
   unmapStructurePositions,
 } from 'p2s_mapper'
 
-import { attachStructureInteractions } from './attachStructureInteractions'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   COMPACT_TRACK_GAP,
@@ -1277,8 +1276,6 @@ const Structure = types
           }
         }),
       )
-
-      attachStructureInteractions(self)
     },
   }))
 

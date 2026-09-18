@@ -1,7 +1,7 @@
 # PDB ↔ transcript mapping harness
 
 A standalone web app that loads real PDB / AlphaFold structures through the
-plugin's **actual** molstar path (`addStructureFromURL` → `createModel` →
+plugin's **actual** molstar path (`loadStructure` → the preset's model →
 `extractEntities`), the **actual** entity resolution (`chooseMappedEntity`) and
 the **actual** alignment (`runLocalAlignment`,
 `structureSeqVsTranscriptSeqMap`), then reports what it would really map and

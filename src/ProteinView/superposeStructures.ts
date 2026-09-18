@@ -1,4 +1,5 @@
 import loadMolstar from './loadMolstar'
+import { structureRootCell } from './structureCells'
 
 import type { Mat4 } from 'molstar/lib/mol-math/linear-algebra'
 import type { Structure } from 'molstar/lib/mol-model/structure'
@@ -19,36 +20,32 @@ export async function superposeStructures(
   plugin: PluginContext,
   loads: readonly (readonly Structure[])[],
 ) {
+  const molstar = await loadMolstar()
   const {
     QueryContext,
+    StateTransforms,
     StructureElement,
     StructureSelection,
     StructureSelectionQueries,
     PluginCommands,
-    PluginStateObject,
     tmAlign,
-  } = await loadMolstar()
-  const { hierarchy } = plugin.managers.structure
+  } = molstar
   const { query } = StructureSelectionQueries.trace
 
   // each trace loci stays paired with the cells it moves, so a load that
   // yields no loci cannot shift the transform onto its neighbour
   const traces = loads.flatMap(load => {
     const [first] = load
-    const refs = load.flatMap(s => hierarchy.findStructure(s) ?? [])
-    const parent = first && plugin.helpers.substructureParent.get(first)
-    const root =
-      parent &&
-      plugin.state.data.selectQ(q =>
-        q.byValue(parent).rootOfType(PluginStateObject.Molecule.Structure),
-      )[0]?.obj?.data
-    if (!first || !root || refs.length === 0) {
+    const cells = load.flatMap(s => structureRootCell(plugin, molstar, s) ?? [])
+    const [rootCell] = cells
+    const root = rootCell?.obj?.data
+    if (!first || !rootCell || !root) {
       return []
     }
     const loci = StructureSelection.toLociWithSourceUnits(
       query(new QueryContext(first)),
     )
-    return [{ refs, loci: StructureElement.Loci.remap(loci, root) }]
+    return [{ rootCell, cells, loci: StructureElement.Loci.remap(loci, root) }]
   })
 
   const [pivot, ...mobile] = traces
@@ -56,15 +53,22 @@ export async function superposeStructures(
     return
   }
 
-  const coordinateSystem = hierarchy.findStructure(pivot.loci.structure)
-    ?.transform?.cell.obj?.data.coordinateSystem
+  // the pivot keeps a transform an earlier superposition gave it, as when the
+  // structure it was aligned to has been removed, and the rest follow it there
+  const pivotTransform = plugin.state.data.selectQ(q =>
+    q
+      .byValue(pivot.rootCell)
+      .subtree()
+      .withTransformer(StateTransforms.Model.TransformStructureConformation),
+  )[0]
+  const coordinateSystem = pivotTransform?.obj?.data.coordinateSystem
 
-  for (const { refs, loci } of mobile) {
+  for (const { cells, loci } of mobile) {
     const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = tmAlign(
       pivot.loci,
       loci,
     )
-    for (const { cell } of refs) {
+    for (const cell of cells) {
       await applyTransform(plugin, cell, bTransform, coordinateSystem)
     }
     plugin.log.info(

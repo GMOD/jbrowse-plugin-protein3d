@@ -1,8 +1,7 @@
 import { extractEntities, extractPerResidueConfidence } from 'p2s_mapper'
 
-import { addStructureFromData } from './addStructureFromData'
-import { addStructureFromURL } from './addStructureFromURL'
 import loadMolstar from './loadMolstar'
+import { loadStructure } from './structurePipeline'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -36,15 +35,14 @@ export async function loadStructureData({
   structure: { data?: string; url?: string }
   plugin: PluginContext
 }): Promise<StructureData> {
+  const { data, url } = structure
   const {
     model,
     structures: molstarStructures,
     modelIds,
-  } = structure.data
-    ? await addStructureFromData({ data: structure.data, plugin })
-    : structure.url
-      ? await addStructureFromURL({ url: structure.url, plugin })
-      : { model: undefined, structures: [], modelIds: [] }
+  } = data || url
+    ? await loadStructure({ plugin, data: data || undefined, url })
+    : { model: undefined, structures: [], modelIds: [] }
   // An experimental entry's B-factors are not confidence: read as pLDDT they
   // invert, drawing a well-ordered residue as "very low".
   const { MmcifFormat } = await loadMolstar()

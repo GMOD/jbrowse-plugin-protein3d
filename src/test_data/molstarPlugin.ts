@@ -1,8 +1,5 @@
 import { caOnlyMmcif } from './molstarStructure'
-import {
-  applyStructurePreset,
-  parseStructureTrajectory,
-} from '../ProteinView/structurePipeline'
+import { loadStructure } from '../ProteinView/structurePipeline'
 
 import type { TestChain } from './molstarStructure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -14,9 +11,5 @@ export async function loadCaOnly(
   chains: TestChain[],
   options?: { models?: number },
 ) {
-  const trajectory = await parseStructureTrajectory({
-    plugin,
-    data: caOnlyMmcif(chains, options),
-  })
-  return applyStructurePreset({ plugin, trajectory })
+  return loadStructure({ plugin, data: caOnlyMmcif(chains, options) })
 }

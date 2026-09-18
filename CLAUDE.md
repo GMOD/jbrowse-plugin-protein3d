@@ -31,12 +31,26 @@ Handing molstar the wrong trajectory parser fails asymmetrically:
   loads with no sequence, no alignment and no genome mapping, and nothing
   reports an error.
 
-That second case is easy to reintroduce, because `addStructureFromData` has to
-guess — an inline `data` snapshot has no filename. Detection therefore sniffs
-**content** (first non-comment line starting with `data_` ⇒ mmCIF) rather than
-trusting a name, and lives in p2s_mapper's `structureFormat.ts` as the default
-for both `addStructureFromURL` and `addStructureFromData`. Do not re-add
-per-caller detection; that was the bug this replaced.
+That second case is easy to reintroduce, because a load from inline `data` has
+to guess — a snapshot has no filename. Detection therefore sniffs **content**
+(first non-comment line starting with `data_` ⇒ mmCIF) rather than trusting a
+name, and lives in p2s_mapper's `structureFormat.ts` as the default
+`parseStructureTrajectory` applies to both data and urls, so the view, the
+launch dialog and the harness all load through it. Do not re-add per-caller
+detection; that was the bug this replaced. A parse that yields no frames now
+throws, naming the parser, rather than loading an empty view.
+
+## Molstar: read structures from the live state tree
+
+`plugin.managers.structure.hierarchy` — `findStructure`, `current` and the
+component refs `updateRepresentationsTheme` takes — is a snapshot Mol\*
+republishes only on some state events, and on none while a data transaction is
+open anywhere in the plugin. Colour, removal and superposition run the moment a
+load lands, which is exactly when it can lag, so they find a structure's cell
+through `structureRootCell` (the substructure-parent map, updated on every
+object event) and walk the state tree from there. The tests that pin this load a
+structure inside an open `dataTransaction`; through the snapshot, colour and
+superposition skipped it and removal left it in place.
 
 ## Molstar: `structurePosition + 1 === label_seq_id` only sometimes
 
@@ -155,10 +169,13 @@ Colour, highlight and selection address every one; superposition TM-aligns the
 first and moves the rest with it; removal goes by the trajectory. Until
 2026-09-18 only the first was kept: a colour scheme reached 1 of 1D3Z's ten
 models, and superposition, reading `hierarchy.current.structures` instead,
-aligned each model separately. The e2e leg `colours every model of an NMR
-ensemble` guards it. It failed once in about 35 runs, with 1 of 10 recoloured,
-and never again under CPU throttling or delayed replies; the cause is
-unexplained, so treat a repeat as a real race rather than noise.
+aligned each model separately. The e2e leg
+`colours every model of an NMR ensemble` guards it. It failed once in about 35
+runs, with 1 of 10 recoloured, and never under CPU throttling or delayed
+replies. A hierarchy snapshot taken after the first model was built would give
+exactly that, and colour no longer reads the snapshot (see the live-tree
+section), but the failure was never reproduced to prove it. A repeat means the
+cause was something else: treat it as a real race, not noise.
 
 ## Everything on one Mol\* plugin hears everything
 
@@ -371,10 +388,10 @@ that mean a user is affected**.
 `@emotion/styled` (`model.test.ts` creates a view with `getSession` mocked). It
 still needs a mocked session, so test the pure pieces first, each built as a
 factory over a narrow host interface (`structureLoader`, `structureSuperposer`,
-`lociChannel`, `frameSelection`, `connectedHover`,
-`attachStructureInteractions`, `storedSettings`), and hand them observables or a
-small MST stand-in. `structureModel` instantiates inside a `types.array` under a
-stub parent (`structureModel.test.ts`), with real Mol\* structures from
+`lociChannel`, `frameSelection`, `connectedHover`, `viewInteractions`,
+`storedSettings`), and hand them observables or a small MST stand-in.
+`structureModel` instantiates inside a `types.array` under a stub parent
+(`structureModel.test.ts`), with real Mol\* structures from
 `test_data/molstarStructure.ts` rather than cast fakes.
 
 Some conclusions those tests cannot reach, so they are not worth re-deriving:

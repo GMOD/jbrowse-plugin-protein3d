@@ -6,14 +6,9 @@ import {
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-import type { StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset'
 import type { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
 import type { PluginStateObject } from 'molstar/lib/mol-plugin-state/objects'
 import type { StateObjectSelector } from 'molstar/lib/mol-state'
-
-export interface LoadStructureOptions {
-  representationParams?: StructureRepresentationPresetProvider.CommonParams
-}
 
 type RawStructure = StateObjectSelector<
   PluginStateObject.Data.String | PluginStateObject.Data.Binary
@@ -56,7 +51,10 @@ export async function parseStructureTrajectory({
   let parsedAs: BuiltInTrajectoryFormat
   if (data !== undefined) {
     parsedAs = format ?? structureFormatFromContent(data)
-    raw = await plugin.builders.data.rawData({ data, label: dataLabel })
+    raw = await plugin.builders.data.rawData(
+      { data, label: dataLabel },
+      { state: { isGhost: true } },
+    )
   } else if (url !== undefined) {
     parsedAs = format ?? structureFormatFromName(url)
     raw = await plugin.builders.data.download(
@@ -103,22 +101,14 @@ function presetOutput(
  * the preset rather than `hierarchy.current.structures`, which also holds every
  * other load's.
  */
-export async function applyStructurePreset({
-  plugin,
-  trajectory,
-  options,
-}: {
-  plugin: PluginContext
-  trajectory: StateObjectSelector
-  options?: LoadStructureOptions
-}) {
+async function applyStructurePreset(
+  plugin: PluginContext,
+  trajectory: StateObjectSelector,
+) {
   const preset = await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
     'all-models',
-    {
-      useDefaultIfSingleModel: true,
-      representationPresetParams: options?.representationParams,
-    },
+    { useDefaultIfSingleModel: true },
   )
   const { models, structures } = presetOutput(preset)
   const loaded = structures.flatMap(s => (s.obj ? [s.obj.data] : []))
@@ -127,4 +117,18 @@ export async function applyStructurePreset({
     structures: loaded,
     modelIds: loaded.flatMap(s => s.models.map(m => m.id)),
   }
+}
+
+/** Load a structure from its text or its url, as the view shows one. */
+export async function loadStructure({
+  plugin,
+  data,
+  url,
+}: {
+  plugin: PluginContext
+  data?: string
+  url?: string
+}) {
+  const trajectory = await parseStructureTrajectory({ plugin, data, url })
+  return applyStructurePreset(plugin, trajectory)
 }

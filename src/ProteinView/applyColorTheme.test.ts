@@ -1,46 +1,26 @@
 // @vitest-environment jsdom
+import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
+import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
 import { COLOR_SCHEME_VALUES, applyColorTheme } from './applyColorTheme'
+import { MappedChainColorThemeProvider } from './mappedChainColorTheme'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 
-import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
-// what each call to updateRepresentationsTheme asked for, component by component
-function makePlugin(structureComponents: string[]) {
-  const calls: { component: string; theme: unknown }[][] = []
-  const loaded = structureComponents.map(component => ({
-    molstarStructure: {} as Structure,
-    components: [component],
-  }))
-  const plugin = {
-    managers: {
-      structure: {
-        hierarchy: {
-          findStructure: (structure: Structure) =>
-            loaded.find(l => l.molstarStructure === structure),
-        },
-        component: {
-          updateRepresentationsTheme: (
-            components: string[],
-            themeOf: (c: string) => unknown,
-          ) => {
-            calls.push(
-              components.map(c => ({ component: c, theme: themeOf(c) })),
-            )
-            return Promise.resolve()
-          },
-        },
-      },
-    },
-  }
-  return {
-    plugin: plugin as unknown as PluginContext,
-    structures: loaded.map(l => ({ molstarStructure: l.molstarStructure })),
-    calls,
-  }
+const chain = { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }
+
+// every representation in the plugin, as the colour theme it carries
+function themes(plugin: PluginContext) {
+  return plugin.state.data
+    .select(
+      StateSelection.Generators.ofTransformer(
+        StateTransforms.Representation.StructureRepresentation3D,
+      ),
+    )
+    .map(cell => cell.transform.params?.colorTheme)
 }
 
 test('exposes pLDDT among the color schemes', () => {
@@ -50,67 +30,62 @@ test('exposes pLDDT among the color schemes', () => {
   expect(new Set(COLOR_SCHEME_VALUES).size).toBe(COLOR_SCHEME_VALUES.length)
 })
 
-test('applies the chosen theme to every loaded structure in one update', async () => {
-  const { plugin, structures, calls } = makePlugin(['compA', 'compB'])
-  await applyColorTheme({
-    plugin,
-    colorScheme: 'plddt-confidence',
-    structures,
+test('applies the chosen theme to every loaded structure', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const a = await loadCaOnly(plugin, [chain])
+    const b = await loadCaOnly(plugin, [chain])
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'hydrophobicity',
+      structures: [...a.structures, ...b.structures].map(molstarStructure => ({
+        molstarStructure,
+      })),
+    })
+    const names = themes(plugin).map(t => t?.name)
+    expect(names).toHaveLength(2)
+    expect(new Set(names)).toEqual(new Set(['hydrophobicity']))
   })
-  expect(calls).toEqual([
-    [
-      { component: 'compA', theme: { color: 'plddt-confidence' } },
-      { component: 'compB', theme: { color: 'plddt-confidence' } },
-    ],
-  ])
-})
-
-test('passes built-in theme names through unchanged', async () => {
-  const { plugin, structures, calls } = makePlugin(['comp'])
-  await applyColorTheme({ plugin, colorScheme: 'hydrophobicity', structures })
-  expect(calls).toEqual([
-    [{ component: 'comp', theme: { color: 'hydrophobicity' } }],
-  ])
 })
 
 test("colors each structure's own mapped chain", async () => {
-  const { plugin, structures, calls } = makePlugin(['compA', 'compB'])
-  await applyColorTheme({
-    plugin,
-    colorScheme: 'mapped-chain',
-    structures: [
-      { ...structures[0]!, entityId: '1' },
-      { ...structures[1]!, entityId: '3' },
-    ],
+  await withTemporaryMolstarPlugin(async plugin => {
+    plugin.representation.structure.themes.colorThemeRegistry.add(
+      MappedChainColorThemeProvider,
+    )
+    const a = await loadCaOnly(plugin, [chain])
+    const b = await loadCaOnly(plugin, [chain])
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'mapped-chain',
+      structures: [
+        { molstarStructure: a.structures[0]!, entityId: '1' },
+        { molstarStructure: b.structures[0]!, entityId: '3' },
+      ],
+    })
+    expect(themes(plugin)).toEqual([
+      { name: 'mapped-chain', params: { entityId: '1' } },
+      { name: 'mapped-chain', params: { entityId: '3' } },
+    ])
   })
-  expect(calls).toEqual([
-    [
-      {
-        component: 'compA',
-        theme: { color: 'mapped-chain', colorParams: { entityId: '1' } },
-      },
-      {
-        component: 'compB',
-        theme: { color: 'mapped-chain', colorParams: { entityId: '3' } },
-      },
-    ],
-  ])
 })
 
-test('skips a structure molstar no longer holds', async () => {
-  const { plugin, calls } = makePlugin(['comp'])
-  await applyColorTheme({
-    plugin,
-    colorScheme: 'default',
-    structures: [{ molstarStructure: {} as Structure }],
+test("'default' puts each representation's own default theme back", async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const { structures } = await loadCaOnly(plugin, [chain])
+    const loaded = structures.map(molstarStructure => ({ molstarStructure }))
+    const [original] = themes(plugin)
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'hydrophobicity',
+      structures: loaded,
+    })
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'default',
+      structures: loaded,
+    })
+    expect(themes(plugin)).toEqual([original])
   })
-  expect(calls).toEqual([])
-})
-
-test('no-op when no structures are loaded', async () => {
-  const { plugin, structures, calls } = makePlugin([])
-  await applyColorTheme({ plugin, colorScheme: 'default', structures })
-  expect(calls).toEqual([])
 })
 
 // An NMR ensemble loads as one Mol* structure per model. Recoloring only the
@@ -118,21 +93,47 @@ test('no-op when no structures are loaded', async () => {
 // 20-model entry a chosen scheme looked as if it had not applied.
 test('recolors every model of an ensemble', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
-    const { structures } = await loadCaOnly(
-      plugin,
-      [{ asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }],
-      { models: 4 },
-    )
+    const { structures } = await loadCaOnly(plugin, [chain], { models: 4 })
     await applyColorTheme({
       plugin,
       colorScheme: 'hydrophobicity',
       structures: structures.map(molstarStructure => ({ molstarStructure })),
     })
-    const themes = plugin.managers.structure.hierarchy.current.structures
-      .flatMap(s => s.components)
-      .flatMap(c => c.representations)
-      .map(r => r.cell.transform.params?.colorTheme.name)
-    expect(themes).toHaveLength(4)
-    expect(new Set(themes)).toEqual(new Set(['hydrophobicity']))
+    const names = themes(plugin).map(t => t?.name)
+    expect(names).toHaveLength(4)
+    expect(new Set(names)).toEqual(new Set(['hydrophobicity']))
+  })
+})
+
+// Mol* publishes its structure hierarchy only on some state events and on none
+// while a data transaction is open anywhere in the plugin. Found through it, a
+// structure loaded meanwhile was skipped and kept its old colours.
+test('recolors a structure the published hierarchy has not caught up with', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    await plugin.dataTransaction(async () => {
+      const { structures } = await loadCaOnly(plugin, [chain])
+      await applyColorTheme({
+        plugin,
+        colorScheme: 'hydrophobicity',
+        structures: structures.map(molstarStructure => ({ molstarStructure })),
+      })
+    })
+    expect(themes(plugin).map(t => t?.name)).toEqual(['hydrophobicity'])
+  })
+})
+
+test('skips a structure molstar no longer holds', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const gone = await loadCaOnly(plugin, [chain])
+    await plugin.clear()
+    const kept = await loadCaOnly(plugin, [chain])
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'hydrophobicity',
+      structures: [...gone.structures, ...kept.structures].map(
+        molstarStructure => ({ molstarStructure }),
+      ),
+    })
+    expect(themes(plugin).map(t => t?.name)).toEqual(['hydrophobicity'])
   })
 })

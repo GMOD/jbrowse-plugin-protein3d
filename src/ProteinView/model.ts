@@ -28,6 +28,7 @@ import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
+import { attachViewInteractions } from './viewInteractions'
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
@@ -376,6 +377,9 @@ function stateModelFactory() {
 
         addDisposer(self, autorun(makeLociChannel(self, 'select')))
         addDisposer(self, autorun(makeLociChannel(self, 'highlight')))
+
+        // Mol*'s click and hover, heard once for the whole view
+        attachViewInteractions(self)
       },
     }))
     .views(self => ({

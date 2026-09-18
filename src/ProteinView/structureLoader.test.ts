@@ -3,6 +3,7 @@ import { getAlphaFoldStructureUrl } from 'p2s_mapper'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { loadStructureData } from './loadStructureData'
+import { removeMolstarStructure } from './removeStructure'
 import { makeStructureLoader } from './structureLoader'
 
 import type { StructureData } from './loadStructureData'
@@ -24,6 +25,11 @@ const molstarStructure = (id: string) => ({ id }) as unknown as Structure
 
 vi.mock('./loadStructureData', () => ({ loadStructureData: vi.fn() }))
 const mockLoad = vi.mocked(loadStructureData)
+
+vi.mock('./removeStructure', () => ({
+  removeMolstarStructure: vi.fn(() => Promise.resolve()),
+}))
+const mockRemove = vi.mocked(removeMolstarStructure)
 
 // Minimal stand-ins matching only the surface makeStructureLoader touches, so
 // the test exercises the loader's guard logic without molstar/structureModel.
@@ -110,29 +116,6 @@ function setupAlphaFold(
 }
 
 // A Mol* stand-in that records what a load's clean-up removed from it
-function recordingPlugin() {
-  const removed: unknown[] = []
-  return {
-    removed,
-    plugin: {
-      managers: {
-        structure: {
-          hierarchy: {
-            findStructure: (structure: unknown) =>
-              structure === undefined
-                ? undefined
-                : { kind: 'structure', model: { trajectory: structure } },
-            remove: (refs: unknown[]) => {
-              removed.push(...refs)
-              return undefined
-            },
-          },
-        },
-      },
-    },
-  }
-}
-
 const alphaFoldModel = (accession: string, sequence: string) => ({
   accession,
   url: `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-model_v6.cif`,
@@ -344,8 +327,7 @@ test('a structure removed mid-load takes its trajectory out of Mol* when it land
   const structureHandle = molstarStructure('ghost')
   let resolveLoad: (v: StructureData) => void = () => {}
   mockLoad.mockImplementationOnce(() => new Promise(res => (resolveLoad = res)))
-  const { removed, plugin } = recordingPlugin()
-
+  const plugin = {}
   const host = TestHost.create({ structures: [{ url: 'a.cif' }] })
   host.setPlugin(plugin)
   const load = makeStructureLoader(asLoaderHost(host))
@@ -355,7 +337,10 @@ test('a structure removed mid-load takes its trajectory out of Mol* when it land
   resolveLoad({ molstarStructures: [structureHandle] })
   await tick()
 
-  expect(removed).toEqual([structureHandle])
+  expect(mockRemove).toHaveBeenCalledWith({
+    plugin,
+    molstarStructure: structureHandle,
+  })
 })
 
 // A remount retries the load from the start, so the last attempt's failure is

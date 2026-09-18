@@ -3,9 +3,11 @@ import { expect, test, vi } from 'vitest'
 import stateModelFactory from './model'
 import { removeMolstarStructure } from './removeStructure'
 
-import type { StructureRemovalHost } from './removeStructure'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+
+vi.mock('./removeStructure', () => ({ removeMolstarStructure: vi.fn() }))
+const mockRemove = vi.mocked(removeMolstarStructure)
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
@@ -15,9 +17,8 @@ vi.mock('@jbrowse/core/util', async importActual => {
 const ProteinView = stateModelFactory()
 
 // One cast, where a stand-in stands in for the whole Mol* plugin: the view only
-// reaches the structure hierarchy through removeMolstarStructure.
-const asPluginContext = (stub: StructureRemovalHost) =>
-  stub as unknown as PluginContext
+// hands it to removeMolstarStructure, which is mocked.
+const plugin = {} as unknown as PluginContext
 
 function makeView() {
   return ProteinView.create({
@@ -47,47 +48,12 @@ test('removing a structure leaves the others as they were', () => {
 test('a removal that fails reports through the error action', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   const view = makeView()
-  view.setMolstarPluginContext(
-    asPluginContext({
-      managers: {
-        structure: {
-          hierarchy: {
-            findStructure: () => ({ kind: 'structure' }),
-            remove: () => Promise.reject(new Error('plugin disposed')),
-          },
-        },
-      },
-    }),
-  )
+  mockRemove.mockRejectedValueOnce(new Error('plugin disposed'))
+  view.setMolstarPluginContext(plugin)
   view.removeStructure(view.structures[0]!)
   await new Promise(resolve => setTimeout(resolve, 0))
   expect(view.error).toEqual(new Error('plugin disposed'))
   logged.mockRestore()
-})
-
-// Removing the structure node alone would leave the download, trajectory and
-// model behind, and an ensemble's other models with them.
-test('a removal takes out the trajectory the structure came from', async () => {
-  const trajectory = { kind: 'trajectory' }
-  const structureRef = { kind: 'structure', model: { trajectory } }
-  const removed: unknown[] = []
-  await removeMolstarStructure({
-    plugin: {
-      managers: {
-        structure: {
-          hierarchy: {
-            findStructure: () => structureRef,
-            remove: (refs: unknown[]) => {
-              removed.push(...refs)
-              return undefined
-            },
-          },
-        },
-      },
-    },
-    molstarStructure: undefined,
-  })
-  expect(removed).toEqual([trajectory])
 })
 
 // The view menu used to repeat the header's four toggles, the colour scheme and

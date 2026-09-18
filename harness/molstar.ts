@@ -1,5 +1,5 @@
 // Loads a structure through the SAME molstar path the plugin uses
-// (addStructureFromURL -> createModel -> extractEntities) and then introspects
+// (loadStructure -> the preset's model -> extractEntities) and then introspects
 // the loaded structure for per-entity / per-chain facts the plugin does not
 // surface. The point is faithfulness: the entities here are byte-for-byte what
 // `structureModel.entities` would hold, so the diagnosis can run the plugin's
@@ -13,7 +13,7 @@ import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginConfig } from 'molstar/lib/mol-plugin/config'
 
-import { addStructureFromURL } from '../src/ProteinView/addStructureFromURL'
+import { loadStructure } from '../src/ProteinView/structurePipeline'
 
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import { extractEntities } from 'p2s_mapper'
@@ -66,7 +66,7 @@ export async function loadAndIntrospect({
   plugin: PluginContext
 }): Promise<LoadedStructure> {
   await plugin.clear()
-  const { model } = await addStructureFromURL({ url, plugin })
+  const { model } = await loadStructure({ url, plugin })
   if (!model) {
     throw new Error('molstar returned no model')
   }

@@ -43,6 +43,20 @@ test('an ensemble moves as one unit, by one transform', async () => {
   })
 })
 
+// Superposition runs as soon as a second structure has loaded, which is when
+// Mol*'s published hierarchy can lag; found through it, the newcomer was
+// skipped and left where it loaded.
+test('a structure the published hierarchy has not caught up with is moved', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    await plugin.dataTransaction(async () => {
+      const pivot = await loadCaOnly(plugin, [chain])
+      const other = await loadCaOnly(plugin, [chain])
+      await superposeStructures(plugin, [pivot.structures, other.structures])
+    })
+    expect(transforms(plugin)).toHaveLength(1)
+  })
+})
+
 test('an ensemble as the pivot stays where it is', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     const ensemble = await loadCaOnly(plugin, [chain], { models: 4 })

@@ -1,9 +1,8 @@
+import loadMolstar from './loadMolstar'
+import { structureRootCell } from './structureCells'
+
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-import type { StructureComponentManager } from 'molstar/lib/mol-plugin-state/manager/structure/component'
-import type { StructureComponentRef } from 'molstar/lib/mol-plugin-state/manager/structure/hierarchy-state'
-import type { ColorTheme } from 'molstar/lib/mol-theme/color'
-import type { SizeTheme } from 'molstar/lib/mol-theme/size'
 
 /**
  * Color schemes offered in the protein view menu. The `value`s are molstar
@@ -32,22 +31,13 @@ export function coerceColorScheme(value: string): ProteinColorScheme {
   return COLOR_SCHEME_VALUES.find(v => v === value) ?? 'default'
 }
 
-// molstar types the theme against its statically-generated built-in union,
-// which excludes extension themes like 'plddt-confidence' and 'mapped-chain'.
-// Its own API doc says to widen the name here; ProteinColorScheme keeps it
-// constrained to schemes we actually expose.
-function themeFor(colorScheme: ProteinColorScheme, entityId?: string) {
-  return (
-    colorScheme === 'mapped-chain'
-      ? { color: colorScheme, colorParams: { entityId: entityId ?? '' } }
-      : { color: colorScheme }
-  ) as StructureComponentManager.UpdateThemeParams<
-    ColorTheme.BuiltIn,
-    SizeTheme.BuiltIn
-  >
-}
-
-/** Recolor every structure's components in one Mol* state update. */
+/**
+ * Recolor every representation of every structure in one Mol* state update.
+ * The representations are found in the live state tree rather than through
+ * `updateRepresentationsTheme`, whose components come from the hierarchy
+ * snapshot (see structureRootCell). The non-ghost ones are what that call
+ * reached: each component's, the focus representation's included.
+ */
 export async function applyColorTheme({
   plugin,
   colorScheme,
@@ -57,17 +47,40 @@ export async function applyColorTheme({
   colorScheme: ProteinColorScheme
   structures: readonly { molstarStructure: Structure; entityId?: string }[]
 }) {
-  const { hierarchy, component } = plugin.managers.structure
-  const entityIds = new Map<StructureComponentRef, string | undefined>()
+  const molstar = await loadMolstar()
+  const { StateSelection, StateTransforms, createStructureColorThemeParams } =
+    molstar
+  const theme = colorScheme === 'default' ? undefined : colorScheme
+  const update = plugin.state.data.build()
+  let recolored = 0
   for (const { molstarStructure, entityId } of structures) {
-    const ref = hierarchy.findStructure(molstarStructure)
-    for (const c of ref?.components ?? []) {
-      entityIds.set(c, entityId)
+    const cell = structureRootCell(plugin, molstar, molstarStructure)
+    const representations = cell
+      ? plugin.state.data.select(
+          StateSelection.Generators.ofTransformer(
+            StateTransforms.Representation.StructureRepresentation3D,
+            cell.transform.ref,
+          ),
+        )
+      : []
+    const params =
+      colorScheme === 'mapped-chain' ? { entityId: entityId ?? '' } : undefined
+    for (const representation of representations) {
+      if (!representation.state.isGhost) {
+        update.to(representation).update(prev => {
+          prev.colorTheme = createStructureColorThemeParams(
+            plugin,
+            molstarStructure,
+            prev.type.name,
+            theme,
+            params,
+          )
+        })
+        recolored++
+      }
     }
   }
-  if (entityIds.size > 0) {
-    await component.updateRepresentationsTheme([...entityIds.keys()], c =>
-      themeFor(colorScheme, entityIds.get(c)),
-    )
+  if (recolored > 0) {
+    await update.commit()
   }
 }
