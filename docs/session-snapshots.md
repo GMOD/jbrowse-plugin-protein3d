@@ -22,7 +22,7 @@ hand-written snapshot should keep its settings flat for the genome view as well.
       "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
       "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
       "feature": {
-        /* serialized transcript, see launching.md "Feature shape" */
+        /* serialized transcript, see launch-parameters.md "Feature shape" */
       },
       "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
       "initialSelection": { "start": 338, "end": 350 }, // optional pre-lit domain
@@ -59,8 +59,8 @@ the model version moves under every config already published.
 
 An explicit `url` or `data` always wins over both shorthands, and a `uniprotId`
 beside it names the protein for the UniProt tracks instead
-([your own structures](your-own-structures.md) covers when that is safe). The
-shorthand only sets the structure; it does **not** build the genome↔protein
+([UniProt feature tracks](uniprot-feature-tracks.md) covers when that is safe).
+The shorthand only sets the structure; it does **not** build the genome↔protein
 connection — for that use a session spec's `transcriptId`.
 
 ## Which chain maps
@@ -91,28 +91,9 @@ from, the transcript `feature`, and the `uniprotId`. The plugin adds the
 property to every LinearGenomeView, so a hand-authored snapshot can set it and
 the 1D↔genome hover highlight works after a reload or from a shared session.
 
-## UniProt feature tracks on PDB structures
+## UniProt feature tracks
 
-The protein feature tracks (domains, sites, variants — `useUniProtFeatures`)
-need two things: the UniProt accession, and how UniProt positions line up with
-the structure's own residue numbering.
-
-- **AlphaFold models** answer both from the filename: the URL carries the
-  accession, and the model _is_ the UniProt sequence, so UniProt position `p` is
-  structure position `p - 1`.
-- **PDB entries** answer neither. The URL has no accession, and the deposited
-  construct is usually a fragment, often tagged or engineered, so the numbering
-  is offset — 1TUP's p53 chain starts at UniProt 94, 6VXX's spike has SEQRES 33
-  = UniProt 14. The plugin resolves both from
-  [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
-  `mappings/uniprot/{pdbId}` API (p2s_mapper's `pdbUniProtMapping.ts`, read here
-  by `hooks/useStructureUniProt.ts`), which gives a per-segment correspondence.
-  It uses only the segments for the entity it mapped to the transcript — a
-  heteromer maps each chain to a different accession, so the wrong one would
-  annotate the wrong protein. `residue_number` in that API is the 1-based
-  SEQRES/`label_seq_id` index, i.e. this plugin's structure position + 1.
-
-The tracks drop a feature outside the modeled region rather than draw it at a
-misleading residue. The plugin infers a PDB id only from URLs on the PDB archive
-hosts, so a user-supplied model named `1abc.cif` can't inherit that entry's
-annotations.
+A snapshot names no accession or numbering for the UniProt tracks; the plugin
+derives both when the structure loads, from the AlphaFold filename or from
+SIFTS. [UniProt feature tracks](uniprot-feature-tracks.md) explains how, and
+when a `uniprotId` beside a `url` is safe.

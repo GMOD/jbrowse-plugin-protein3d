@@ -66,7 +66,8 @@ BinaryCIF (`.bcif`).
 Swap `transcriptId` and the track for an explicit `feature` and
 `userProvidedTranscriptSequence` when the transcript is not in any track, such
 as a novel isoform you folded from your own annotation.
-[Launching](launching.md) lists every parameter and the feature shape.
+[Launch parameters](launch-parameters.md) lists every argument and the feature
+shape.
 
 ### Comparing your model with AlphaFold DB or the PDB
 
@@ -101,19 +102,12 @@ the file holds real B-factors from refinement, the track and the colours will
 mislead — rescale the column or leave that colour scheme alone.
 
 **UniProt feature tracks.** Domains, sites and variants need a UniProt
-accession, and the file name of your model does not carry one. Add `uniprotId`
-beside `url` to supply it:
-
-```js
-{ url: 'https://example.org/folds/TP53_model_0.cif', uniprotId: 'P04637' }
-```
-
-`url` still decides which file opens. The plugin then places UniProt position
-`p` at residue `p` of your model, as it does for an AlphaFold DB model, so only
-add the accession to a full-length model of the canonical UniProt sequence
-numbered from 1. For a domain, a construct or another isoform, leave it off: no
-tracks is better than tracks drawn on the wrong residues. The genome mapping
-does not depend on this — it comes from the alignment either way.
+accession, which the file name of your model does not carry. Add `uniprotId`
+beside `url` to supply it, but only for a full-length model of the canonical
+UniProt sequence numbered from 1:
+[UniProt feature tracks](uniprot-feature-tracks.md#your-own-models) explains
+why. The genome mapping does not depend on this — it comes from the alignment
+either way.
 
 **Complexes.** A multi-chain prediction, such as an AlphaFold 3 or Boltz
 complex, maps the transcript to the protein chain with the highest identity over

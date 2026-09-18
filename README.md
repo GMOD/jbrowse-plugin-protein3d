@@ -40,11 +40,13 @@ Using the plugin:
 
 Linking and embedding:
 
-- [Launching from a URL or code](docs/launching.md): session-spec parameters,
+- [Launching from a URL or code](docs/launching.md): worked session-spec links,
   the short `uniprotId`/`pdbId` + `transcriptId` form, several structures in one
   view, and the `LaunchView-ProteinView` extension point.
-- [Session snapshots](docs/session-snapshots.md): the saved view's shape, chain
-  choice, and how UniProt tracks line up on PDB entries.
+- [Launch parameters](docs/launch-parameters.md): every argument, the
+  `connectedView` settings, and the transcript `feature` shape.
+- [Session snapshots](docs/session-snapshots.md): the saved view's shape, the
+  structure shorthands, and which chain maps.
 
 How it works, for someone extending the plugin or checking what a number on
 screen means:
@@ -53,14 +55,19 @@ screen means:
   the plugin aligns the transcript's translation to the structure on the fly,
   the precedent for that in SIFTS and G2S, how it picks the chain and isoform,
   and what sequence alignment cannot decide.
+- [UniProt feature tracks](docs/uniprot-feature-tracks.md): where the accession
+  and the UniProt-to-structure offset come from for AlphaFold models, PDB
+  entries and your own models.
 - [Residue numbering](docs/residue-numbering.md): how a paper's R248 becomes
   position 154 in the file, `label_seq_id` 155 for Mol\*, and the codon on
   chr17, and how a session spec names a residue the literature's way.
 
 Working on the plugin:
 
-- [DEVELOPERS.md](DEVELOPERS.md): running it locally, the test suites, host
-  version compatibility, and publishing.
+- [DEVELOPERS.md](DEVELOPERS.md): running it locally and publishing.
+- [Testing](docs/testing.md): the unit, e2e, documentation and demo checks.
+- [Host compatibility](docs/host-compatibility.md): keeping the published bundle
+  working on JBrowse releases years old.
 - [Live checks](docs/live-checks.md): serving a local build to a session on
   jbrowse.org.
 

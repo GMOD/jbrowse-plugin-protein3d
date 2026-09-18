@@ -101,20 +101,11 @@ nothing rather than something else.
 
 ## Placing UniProt features on a fragment
 
-UniProt annotates the full-length protein. To draw the DNA-binding region on
-1TUP the plugin needs the accession, which for a PDB entry is not in the URL,
-and the offset between UniProt and structure numbering, which is not constant
-across a construct. Both come from
-[SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
-`mappings/uniprot/{pdbId}` endpoint (p2s_mapper's `pdbUniProtMapping.ts`). Only
-the segments for the entity mapped to the transcript are used, so a heteromer
-annotates the right chain, and a feature outside the modeled region is dropped
-rather than drawn at a misleading residue. AlphaFold models skip SIFTS: the
-accession is in the filename and UniProt position `p` is position `p - 1`.
-
-The feature tooltip names both numberings when they differ, so a bar reading
-"UniProt position 102-292" on a fragment also says which structure residues it
-covers.
+UniProt annotates the full-length protein, so drawing the DNA-binding region on
+1TUP takes the UniProt-to-structure offset, which is not constant across a
+construct. SIFTS supplies it per segment for a PDB entry, and an AlphaFold model
+needs none: UniProt position `p` is position `p - 1`.
+[UniProt feature tracks](uniprot-feature-tracks.md) has the details.
 
 ## The whole chain, hover on the genome to atoms in Mol\*
 
