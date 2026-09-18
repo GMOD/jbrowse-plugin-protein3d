@@ -40,6 +40,7 @@ import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   COMPACT_TRACK_GAP,
   COMPACT_TRACK_HEIGHT,
+  MINOR_FEATURE_TYPES,
   NORMAL_TRACK_GAP,
   NORMAL_TRACK_HEIGHT,
 } from './constants'
@@ -78,6 +79,7 @@ export interface ParentProteinView {
   showHighlight: boolean
   showProteinTracks: boolean
   compactTracks: boolean
+  showAllFeatureTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
   setError: (e: unknown) => void
@@ -1019,6 +1021,19 @@ const Structure = types
     },
     get showProteinTracks(): boolean {
       return this.parentView.showProteinTracks
+    },
+    get showAllFeatureTracks(): boolean {
+      return this.parentView.showAllFeatureTracks
+    },
+    /**
+     * #getter
+     * The feature types left undrawn: the ones hidden by hand, and the minor
+     * ones unless every track is shown.
+     */
+    get omittedFeatureTypes(): Set<string> {
+      return this.showAllFeatureTracks
+        ? self.hiddenFeatureTypes
+        : new Set([...MINOR_FEATURE_TYPES, ...self.hiddenFeatureTypes])
     },
     get trackHeight(): number {
       return this.parentView.compactTracks

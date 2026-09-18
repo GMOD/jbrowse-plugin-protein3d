@@ -116,6 +116,18 @@ function stateModelFactory() {
         compactTracks: true,
         /**
          * #property
+         * also draw the feature types in MINOR_FEATURE_TYPES and the
+         * hydrophobicity track
+         */
+        showAllFeatureTracks: false,
+        /**
+         * #property
+         * which structure's alignment panel is open; unset opens the seeded
+         * structure, else the first
+         */
+        alignmentStructureIndex: types.maybe(types.number),
+        /**
+         * #property
          */
         alignmentAlgorithm: types.optional(
           types.enumeration<AlignmentAlgorithm>(
@@ -257,6 +269,12 @@ function stateModelFactory() {
           structure.setSelectedFeatureId(undefined)
         }
       },
+      /**
+       * #action
+       */
+      openAlignmentOf(structure: JBrowsePluginProteinStructureModel) {
+        self.alignmentStructureIndex = self.structures.indexOf(structure)
+      },
     }))
     .actions(self => ({
       /**
@@ -273,6 +291,12 @@ function stateModelFactory() {
       removeStructure(structure: JBrowsePluginProteinStructureModel) {
         const plugin = self.molstarPluginContext
         const molstarStructure = structure.molstarStructure
+        const removed = self.structures.indexOf(structure)
+        const open = self.alignmentStructureIndex
+        if (open !== undefined) {
+          self.alignmentStructureIndex =
+            removed === open ? undefined : removed < open ? open - 1 : open
+        }
         self.structures.remove(structure)
         self.setSuperposedCount(0)
         if (plugin) {
@@ -384,6 +408,20 @@ function stateModelFactory() {
       },
       /**
        * #getter
+       * The one structure whose alignment panel is open.
+       */
+      get alignmentStructure() {
+        const { structures, alignmentStructureIndex } = self
+        return (
+          (alignmentStructureIndex === undefined
+            ? undefined
+            : structures[alignmentStructureIndex]) ??
+          structures.find(s => s.seededSelection) ??
+          structures[0]
+        )
+      },
+      /**
+       * #getter
        * What the header's Tune menu offers: the layout choices, remembered for
        * views opened later. The view menu carries actions instead, so a reader
        * looking for a toggle has one place to look.
@@ -393,6 +431,7 @@ function stateModelFactory() {
           [
             ['showAlignment', 'Show alignment'],
             ['showProteinTracks', 'Show feature tracks'],
+            ['showAllFeatureTracks', 'Show all feature tracks'],
             ['compactTracks', 'Compact tracks'],
             [
               'autoScrollAlignment',

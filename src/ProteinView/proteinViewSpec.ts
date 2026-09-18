@@ -54,6 +54,7 @@ export interface ProteinViewSpec {
   showHighlight?: boolean
   showProteinTracks?: boolean
   compactTracks?: boolean
+  showAllFeatureTracks?: boolean
   zoomToBaseLevel?: boolean
   autoScrollAlignment?: boolean
   colorScheme?: ProteinColorScheme

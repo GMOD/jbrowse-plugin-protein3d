@@ -1,6 +1,8 @@
 import React from 'react'
 
+import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Tooltip from '@mui/material/Tooltip'
@@ -35,14 +37,39 @@ const StructureRow = observer(function StructureRow({
 }) {
   const { label, alignmentQuality: quality, statusMessage } = structure
   const coveredRange = quality ? describeCoveredRange(quality) : undefined
+  const switchable = model.showAlignment && model.structures.length > 1
+  const open = model.alignmentStructure === structure
   return (
     // data-label rather than data-structure: that one names the alignment
     // panel, and a selector matching both finds whichever the DOM has first
     <div
       data-testid="structure-row"
       data-label={label}
+      data-open={switchable ? open : undefined}
       style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24 }}
     >
+      {switchable ? (
+        <Tooltip title={open ? 'Alignment shown below' : 'Show alignment'}>
+          <span>
+            <IconButton
+              size="small"
+              aria-label={`Show ${label} alignment`}
+              aria-expanded={open}
+              disabled={open}
+              onClick={() => {
+                model.openAlignmentOf(structure)
+              }}
+              sx={{ p: 0 }}
+            >
+              {open ? (
+                <ExpandMoreIcon fontSize="small" />
+              ) : (
+                <ChevronRightIcon fontSize="small" />
+              )}
+            </IconButton>
+          </span>
+        </Tooltip>
+      ) : null}
       <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
         {label}
       </Typography>

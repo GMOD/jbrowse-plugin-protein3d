@@ -14,6 +14,7 @@ import { makeStyles } from 'tss-react/mui'
 import AlignmentRuler from './AlignmentRuler'
 import ChainSelect from './ChainSelect'
 import HoverMarker from './HoverMarker'
+import PlddtLegend from './PlddtLegend'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   ProteinFeatureTrackContent,
@@ -21,7 +22,6 @@ import {
 } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
-import TrackLegend from './TrackLegend'
 import ExternalLink from '../../components/ExternalLink'
 import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
@@ -116,10 +116,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
     alignmentQuality: quality,
     showHighlight,
     showProteinTracks,
+    showAllFeatureTracks,
     label,
     confidenceCells,
-    hydrophobicityCells,
   } = model
+  const hydrophobicityCells = showAllFeatureTracks
+    ? model.hydrophobicityCells
+    : []
   const { classes } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
@@ -385,14 +388,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ) : null}
         </div>
       </div>
-      {showProteinTracks ? (
-        <TrackLegend
-          featureTypes={
-            featureData?.visibleGroups.map(group => group.type) ?? []
-          }
-          showConfidence={confidenceCells.length > 0}
-        />
-      ) : null}
+      {showProteinTracks && confidenceCells.length > 0 ? <PlddtLegend /> : null}
     </div>
   )
 })

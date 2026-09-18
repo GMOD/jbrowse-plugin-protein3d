@@ -32,6 +32,7 @@ test('a behavior setting is never restored from storage', () => {
     'showControls',
     'autoScrollAlignment',
     'compactTracks',
+    'showAllFeatureTracks',
   ])
   const stored = { zoomToBaseLevel: false, showHighlight: true }
   expect(withStoredSettings({ type: 'ProteinView' }, stored)).toEqual({

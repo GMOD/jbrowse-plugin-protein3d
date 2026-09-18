@@ -105,7 +105,7 @@ export default function useProteinFeatureTrackData(
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
   const {
     alignment: pairwiseAlignment,
-    hiddenFeatureTypes,
+    omittedFeatureTypes,
     structurePositionToAlignmentMap,
   } = model
 
@@ -115,7 +115,7 @@ export default function useProteinFeatureTrackData(
     }
     const groups = new Map<string, FeatureLayout[]>()
     for (const feature of features) {
-      if (!hiddenFeatureTypes.has(feature.type)) {
+      if (!omittedFeatureTypes.has(feature.type)) {
         const layout = layoutFeature(
           feature,
           structurePositionToAlignmentMap,
@@ -143,7 +143,7 @@ export default function useProteinFeatureTrackData(
   }, [
     features,
     pairwiseAlignment,
-    hiddenFeatureTypes,
+    omittedFeatureTypes,
     structurePositionToAlignmentMap,
     mapUniProtPosition,
   ])

@@ -15,6 +15,7 @@ export const PERSISTED_SETTINGS = [
   'showControls',
   'autoScrollAlignment',
   'compactTracks',
+  'showAllFeatureTracks',
 ] as const
 
 export type PersistedSetting = (typeof PERSISTED_SETTINGS)[number]

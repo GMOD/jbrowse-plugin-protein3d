@@ -19,10 +19,7 @@ import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
 import { COLOR_SCHEMES } from '../applyColorTheme'
 
-import type {
-  JBrowsePluginProteinStructureModel,
-  JBrowsePluginProteinViewModel,
-} from '../model'
+import type { JBrowsePluginProteinViewModel } from '../model'
 
 const ColorSchemeSelect = observer(function ColorSchemeSelect({
   model,
@@ -132,7 +129,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { structures, showAlignment } = model
+  const { alignmentStructure, showAlignment } = model
   return (
     <div>
       <div
@@ -156,19 +153,11 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
         </div>
       </div>
       <HeaderStructureRows model={model} />
-      {showAlignment
-        ? structures
-            .filter(s => s.pairwiseAlignment || s.alignmentPending)
-            .map((structure: JBrowsePluginProteinStructureModel, idx) => (
-              <div key={idx}>
-                {structure.pairwiseAlignment ? (
-                  <ProteinAlignment model={structure} />
-                ) : (
-                  <LoadingEllipses message="Loading pairwise alignment" />
-                )}
-              </div>
-            ))
-        : null}
+      {showAlignment && alignmentStructure?.pairwiseAlignment ? (
+        <ProteinAlignment model={alignmentStructure} />
+      ) : showAlignment && alignmentStructure?.alignmentPending ? (
+        <LoadingEllipses message="Loading pairwise alignment" />
+      ) : null}
       <AddStructureDialog model={model} />
     </div>
   )

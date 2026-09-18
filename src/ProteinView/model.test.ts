@@ -163,3 +163,51 @@ test('clearing the selection puts every structure down', () => {
     expect(structure.selectedFeatureId).toBeUndefined()
   }
 })
+
+test('one alignment panel is open: the seeded structure, else the first', () => {
+  const plain = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }, { url: 'b.cif' }, { url: 'c.cif' }],
+  })
+  expect(plain.alignmentStructure?.url).toBe('a.cif')
+
+  const seeded = ProteinView.create({
+    type: 'ProteinView',
+    structures: [
+      { url: 'a.cif' },
+      { url: 'b.cif', initialResidues: { start: 248, end: 248 } },
+    ],
+  })
+  expect(seeded.alignmentStructure?.url).toBe('b.cif')
+
+  seeded.openAlignmentOf(seeded.structures[0]!)
+  expect(seeded.alignmentStructure?.url).toBe('a.cif')
+})
+
+test('removing a structure keeps the open panel on the structure it was on', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }, { url: 'b.cif' }, { url: 'c.cif' }],
+  })
+  view.openAlignmentOf(view.structures[2]!)
+  view.removeStructure(view.structures[0]!)
+  expect(view.alignmentStructure?.url).toBe('c.cif')
+
+  view.removeStructure(view.structures[1]!)
+  expect(view.alignmentStructure?.url).toBe('b.cif')
+})
+
+test('minor feature types are omitted until every track is shown', () => {
+  const view = makeView()
+  const structure = view.structures[0]!
+  structure.hideFeatureType('Natural variant')
+  expect(structure.omittedFeatureTypes.has('Helix')).toBe(true)
+  expect(structure.omittedFeatureTypes.has('Region')).toBe(false)
+  expect(structure.omittedFeatureTypes.has('Natural variant')).toBe(true)
+
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {} })
+  view.toggleSetting('showAllFeatureTracks')
+  vi.unstubAllGlobals()
+  expect(structure.omittedFeatureTypes.has('Helix')).toBe(false)
+  expect(structure.omittedFeatureTypes.has('Natural variant')).toBe(true)
+})

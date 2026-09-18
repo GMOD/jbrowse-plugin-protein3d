@@ -4,7 +4,22 @@ export const COMPACT_TRACK_HEIGHT = 8
 export const COMPACT_TRACK_GAP = 1
 export const NORMAL_TRACK_HEIGHT = 12
 export const NORMAL_TRACK_GAP = 2
-export const LABEL_WIDTH = 50
+export const LABEL_WIDTH = 124
+
+export const MINOR_FEATURE_TYPES = new Set([
+  'Chain',
+  'Helix',
+  'Turn',
+  'Beta strand',
+  'Compositional bias',
+  'Modified residue',
+  'Glycosylation',
+  'Lipidation',
+  'Cross-link',
+  'Alternative sequence',
+  'Sequence conflict',
+  'Initiator methionine',
+])
 
 export const HOVER_MARKER_COLOR = 'rgba(255, 105, 180, 0.5)'
 export const SELECTED_BORDER = '2px solid #333'
