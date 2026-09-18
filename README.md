@@ -1,29 +1,29 @@
 # jbrowse-plugin-protein3d
 
-This is a 3-D protein structure viewer for JBrowse 2
+A 3-D protein structure viewer for JBrowse 2, linked residue by residue to the
+genome.
 
-The major workflow enabled by this is
+![TP53 beside PDB 1TUP, p53's core domain bound to DNA, with the R248 hotspot selected](https://raw.githubusercontent.com/GMOD/jbrowse-plugin-protein3d/readme-figure/readme.png)
 
-- Right click gene of interest -> launch 3-D protein viewer with linked
-  mouseover between genome and structure
+TP53 beside PDB 1TUP, p53's core domain bound to DNA. R248, a cancer hotspot, is
+selected in magenta on the structure, and its codon is marked on the gene.
+[Open this session](https://jbrowse.org/code/jb2/main/?config=test_data/protein3d_config.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22pdbId%22%3A%221TUP%22%2C%22initialResidues%22%3A%7B%22start%22%3A248%2C%22end%22%3A248%7D%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22sideBySide%22%3Atrue%2C%22zoomToBaseLevel%22%3Afalse%2C%22colorScheme%22%3A%22mapped-chain%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C673%2C700-7%2C674%2C700%22%2C%22tracks%22%3A%5B%7B%22trackId%22%3A%22hg38-ncbiRefSeq%22%2C%22geneGlyphMode%22%3A%22longestCoding%22%7D%2C%22clinvar_ncbi_hg38%22%5D%7D%7D%5D%7D).
+CI re-renders the figure from `main` every hour
+([scripts/readme-figure.mjs](scripts/readme-figure.mjs)).
 
-It has features to automatically look up a protein structure of interest using
-the UniProt ID mapping API to connect to AlphaFoldDB, lists the experimental PDB
-entries SIFTS maps to that UniProt entry, and can also use Foldseek to look up
-related structures
+Right-click a gene and choose to open its protein structure. The plugin looks up
+the AlphaFold model through UniProt, lists the experimental PDB entries SIFTS
+maps to that UniProt entry, and can search Foldseek for related structures. It
+aligns each structure to the transcript's translation, so hovering a residue
+highlights its codon and hovering a codon highlights its residue.
 
 ## Try it
 
 The [protein browser](https://staging.genomes.jbrowse.org/protein-browser/)
 takes a gene name and opens it in JBrowse with its structure linked to the
-genome.
-
-## Screenshot
-
-![](img/1.png)
-
-Example at
-https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=share-aZOIjR_qs4&password=NT4sa
+genome. The plugin is also installed by default on
+[genomes.jbrowse.org](https://genomes.jbrowse.org), so it works for any species
+there.
 
 ## Demos
 
@@ -42,11 +42,6 @@ Alignments, and Structures With Nucleotide-level Evidence in JBrowse 2. Journal
 of Molecular Biology, 169645. https://doi.org/10.1016/j.jmb.2026.169645
 
 See also https://github.com/GMOD/proteinbrowser for overview
-
-## Availability
-
-This plugin is installed by default on https://genomes.jbrowse.org so you can
-use it on any species there
 
 ## Programmatic usage
 
@@ -67,8 +62,9 @@ extending the plugin or checking what a number on screen means:
 
 ## Publishing
 
-just push a new tag using e.g.
+```
+pnpm version patch
+```
 
-```
-pnpm version minor
-```
+`preversion` waits for green CI, lints, builds and boots the bundle on hosted
+JBrowse releases; pushing the tag publishes to npm from CI.

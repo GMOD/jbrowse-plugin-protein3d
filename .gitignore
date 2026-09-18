@@ -134,6 +134,9 @@ cypress/screenshots
 .vscode
 stats.html
 
+# published to the readme-figure branch by .github/workflows/readme-figure.yml
+/img/readme.png
+
 # test:docs output artifacts (regenerated each run)
 test-screenshots/docs-connected.png
 test-screenshots/docs-short.png
