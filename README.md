@@ -12,15 +12,11 @@ the UniProt ID mapping API to connect to AlphaFoldDB, lists the experimental PDB
 entries SIFTS maps to that UniProt entry, and can also use Foldseek to look up
 related structures
 
-## Coordinate-mapping harness
+## Try it
 
-A standalone diagnostic page that loads real PDB / AlphaFold structures through
-the plugin's actual mapping code and surfaces cases it mishandles (multi-chain
-complexes, partial/repeat structures, AlphaFold fragments):
-
-https://gmod.org/jbrowse-plugin-protein3d/
-
-Source and details in [harness/](harness/).
+The [protein browser](https://staging.genomes.jbrowse.org/protein-browser/)
+takes a gene name and opens it in JBrowse with its structure linked to the
+genome.
 
 ## Screenshot
 
