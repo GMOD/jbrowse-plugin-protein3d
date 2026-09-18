@@ -1,3 +1,10 @@
+## [0.13.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.12.1...v0.13.0) (2026-09-18)
+
+### Features
+
+- Mapped chain colour scheme, and a solid magenta selection ([3de775a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3de775a87bca08b53cf88da418212dfa7713879b))
+- Focus a one-residue seed the way a click on it does ([c69191c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c69191c933c16c694f5d45d569ba8a6a6af35d39))
+
 ## [0.12.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.12.0...v0.12.1) (2026-09-17)
 
 ### Bug Fixes
