@@ -1,3 +1,10 @@
+## [0.13.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.1...v0.13.2) (2026-09-18)
+
+### Bug Fixes
+
+- Address every model of a Mol* load; tighten the molstar pipeline ([38a6b0a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/38a6b0aa7e61be30d55fe21caafddcc50e42794b))
+- Read Mol* structures from the live state tree; one interaction subscription per view ([9a4eece](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9a4eecebab894c00cc78553f17c1dfeade8e3394))
+
 ## [0.13.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.0...v0.13.1) (2026-09-18)
 
 ### Features
