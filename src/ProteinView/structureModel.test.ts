@@ -435,12 +435,12 @@ test('a Mol* interaction on another structure of the view names no position here
   // the human entry as an NMR ensemble: a hover on its second model is its own
   human!.setStructureData({
     entities,
-    molstarStructure: humanStructure,
+    molstarStructures: [humanStructure],
     modelIds: [humanStructure.model.id, 'human-model-2'],
   })
   mouse!.setStructureData({
     entities,
-    molstarStructure: mouseStructure,
+    molstarStructures: [mouseStructure],
     modelIds: [mouseStructure.model.id],
   })
 

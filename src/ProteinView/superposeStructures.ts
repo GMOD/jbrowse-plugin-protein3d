@@ -1,12 +1,24 @@
 import loadMolstar from './loadMolstar'
 
 import type { Mat4 } from 'molstar/lib/mol-math/linear-algebra'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { StateObjectRef } from 'molstar/lib/mol-state'
 
 const SuperpositionTag = 'SuperpositionTransform'
 
-export async function superposeStructures(plugin: PluginContext) {
+/**
+ * TM-align every load onto the first, one load per structure of the view. A
+ * load's first model decides its transform and all its models take the same
+ * one, so an NMR ensemble moves as a unit and keeps its spread. The loads come
+ * from the view rather than `hierarchy.current.structures`, which lists an
+ * ensemble's models as separate structures: it used to align each of them on
+ * its own, twenty TM-aligns for one NMR entry.
+ */
+export async function superposeStructures(
+  plugin: PluginContext,
+  loads: readonly (readonly Structure[])[],
+) {
   const {
     QueryContext,
     StructureElement,
@@ -16,52 +28,45 @@ export async function superposeStructures(plugin: PluginContext) {
     PluginStateObject,
     tmAlign,
   } = await loadMolstar()
-
-  const structures = plugin.managers.structure.hierarchy.current.structures
-  if (structures.length < 2) {
-    return
-  }
-
+  const { hierarchy } = plugin.managers.structure
   const { query } = StructureSelectionQueries.trace
 
-  // each trace loci stays paired with the cell it came from, so a structure
-  // that yields no loci cannot shift the transform onto its neighbour
-  const traces = structures.flatMap(s => {
-    const structure = s.cell.obj?.data
-    if (!structure) {
-      return []
-    }
-    const parent = plugin.helpers.substructureParent.get(structure)
-    if (!parent) {
-      return []
-    }
-    const rootStructure = plugin.state.data.selectQ(q =>
-      q.byValue(parent).rootOfType(PluginStateObject.Molecule.Structure),
-    )[0]?.obj?.data
-    if (!rootStructure) {
+  // each trace loci stays paired with the cells it moves, so a load that
+  // yields no loci cannot shift the transform onto its neighbour
+  const traces = loads.flatMap(load => {
+    const [first] = load
+    const refs = load.flatMap(s => hierarchy.findStructure(s) ?? [])
+    const parent = first && plugin.helpers.substructureParent.get(first)
+    const root =
+      parent &&
+      plugin.state.data.selectQ(q =>
+        q.byValue(parent).rootOfType(PluginStateObject.Molecule.Structure),
+      )[0]?.obj?.data
+    if (!first || !root || refs.length === 0) {
       return []
     }
     const loci = StructureSelection.toLociWithSourceUnits(
-      query(new QueryContext(structure)),
+      query(new QueryContext(first)),
     )
-    return [
-      { cell: s.cell, loci: StructureElement.Loci.remap(loci, rootStructure) },
-    ]
+    return [{ refs, loci: StructureElement.Loci.remap(loci, root) }]
   })
 
-  const pivot = traces[0]
-  if (!pivot || traces.length < 2) {
+  const [pivot, ...mobile] = traces
+  if (!pivot || mobile.length === 0) {
     return
   }
 
-  const coordinateSystem = plugin.managers.structure.hierarchy.findStructure(
-    pivot.loci.structure,
-  )?.transform?.cell.obj?.data.coordinateSystem
+  const coordinateSystem = hierarchy.findStructure(pivot.loci.structure)
+    ?.transform?.cell.obj?.data.coordinateSystem
 
-  for (const { cell, loci } of traces.slice(1)) {
-    const result = tmAlign(pivot.loci, loci)
-    const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = result
-    await applyTransform(plugin, cell, bTransform, coordinateSystem)
+  for (const { refs, loci } of mobile) {
+    const { bTransform, tmScoreA, tmScoreB, rmsd, alignedLength } = tmAlign(
+      pivot.loci,
+      loci,
+    )
+    for (const { cell } of refs) {
+      await applyTransform(plugin, cell, bTransform, coordinateSystem)
+    }
     plugin.log.info(
       `TM-align: TM-score=${tmScoreA.toFixed(4)}/${tmScoreB.toFixed(4)}, RMSD=${rmsd.toFixed(2)} Å, aligned ${alignedLength} residues.`,
     )

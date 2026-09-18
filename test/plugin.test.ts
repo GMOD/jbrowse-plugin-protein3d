@@ -289,4 +289,45 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('08-hotspot-panel'))
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
+
+  // An NMR entry loads as one Mol* structure per model, and the colour scheme
+  // used to reach only the first: on 1D3Z's ten models the other nine kept
+  // their per-model colours, as if the scheme had not applied.
+  it('colours every model of an NMR ensemble', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [{ pdbId: '1D3Z' }],
+          colorScheme: 'hydrophobicity',
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const themes = () =>
+      page.evaluate(
+        () =>
+          window.JBrowseSession?.views
+            ?.find(v => v.type === 'ProteinView')
+            ?.molstarPluginContext?.managers.structure.hierarchy.current.structures.flatMap(
+              s =>
+                s.components.flatMap(c =>
+                  c.representations.map(
+                    r => r.cell.transform.params?.colorTheme?.name,
+                  ),
+                ),
+            ) ?? [],
+      )
+    await expect
+      .poll(themes, { timeout: 30_000 })
+      .toSatisfy(
+        (names: (string | undefined)[]) =>
+          names.length >= 10 && names.every(n => n === 'hydrophobicity'),
+      )
+    await captureScreenshot(page, screenshot('09-nmr-ensemble'))
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
 })

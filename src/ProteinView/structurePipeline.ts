@@ -8,15 +8,37 @@ import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { StructureRepresentationPresetProvider } from 'molstar/lib/mol-plugin-state/builder/structure/representation-preset'
 import type { BuiltInTrajectoryFormat } from 'molstar/lib/mol-plugin-state/formats/trajectory'
+import type { PluginStateObject } from 'molstar/lib/mol-plugin-state/objects'
 import type { StateObjectSelector } from 'molstar/lib/mol-state'
 
 export interface LoadStructureOptions {
   representationParams?: StructureRepresentationPresetProvider.CommonParams
 }
 
+type RawStructure = StateObjectSelector<
+  PluginStateObject.Data.String | PluginStateObject.Data.Binary
+>
+
+// Typed as always resolving to a trajectory, but Mol* reverts a parse that
+// fails and resolves with nothing
+function parseTrajectory(
+  plugin: PluginContext,
+  raw: RawStructure,
+  format: BuiltInTrajectoryFormat,
+): Promise<
+  StateObjectSelector<PluginStateObject.Molecule.Trajectory> | undefined
+> {
+  return plugin.builders.structure.parseTrajectory(raw, format)
+}
+
 /** Download or ingest a structure and parse it into a trajectory, with the
  * format sniffed from the content or the url unless the caller says otherwise.
- * Needs no renderer, so a headless plugin can run it to read sequences. */
+ * Needs no renderer, so a headless plugin can run it to read sequences.
+ *
+ * A parse that fails resolves with no trajectory, and a file read with the
+ * wrong parser can yield one with no frames. Both used to reach the user as
+ * `Cannot read properties of undefined` from a later call, so they are named
+ * here, parser included. */
 export async function parseStructureTrajectory({
   plugin,
   data,
@@ -30,48 +52,57 @@ export async function parseStructureTrajectory({
   format?: BuiltInTrajectoryFormat
   dataLabel?: string
 }) {
+  let raw: RawStructure
+  let parsedAs: BuiltInTrajectoryFormat
   if (data !== undefined) {
-    const raw = await plugin.builders.data.rawData({ data, label: dataLabel })
-    return plugin.builders.structure.parseTrajectory(
-      raw,
-      format ?? structureFormatFromContent(data),
+    parsedAs = format ?? structureFormatFromContent(data)
+    raw = await plugin.builders.data.rawData({ data, label: dataLabel })
+  } else if (url !== undefined) {
+    parsedAs = format ?? structureFormatFromName(url)
+    raw = await plugin.builders.data.download(
+      { url, isBinary: isBinaryStructureUrl(url) },
+      { state: { isGhost: true } },
     )
-  }
-  if (url === undefined) {
+  } else {
     throw new Error('a structure needs either data or a url')
   }
-  const downloaded = await plugin.builders.data.download(
-    { url, isBinary: isBinaryStructureUrl(url) },
-    { state: { isGhost: true } },
-  )
-  return plugin.builders.structure.parseTrajectory(
-    downloaded,
-    format ?? structureFormatFromName(url),
-  )
+  const trajectory = await parseTrajectory(plugin, raw, parsedAs)
+  if (!trajectory?.obj?.data.frameCount) {
+    throw new Error(
+      `No model could be read from ${url ?? dataLabel ?? 'the structure data'} as ${parsedAs}`,
+    )
+  }
+  return trajectory
 }
 
-// The 'all-models' preset returns { structure } for a single-model trajectory
-// and { structures } for a multi-model one (and {} if the trajectory vanished).
-// Callers only care about the structure this load produced, so collapse the
-// three shapes here — this is the only handle that identifies *our* structure,
-// since hierarchy.current.structures is ordered by load completion.
+type ModelSelector = StateObjectSelector<PluginStateObject.Molecule.Model>
+
 interface StructureSelector {
   readonly obj?: { data: Structure }
 }
 
-function presetStructures(
+// The 'all-models' preset hands back { model, structure } through the default
+// preset for a single-model trajectory, { models, structures } for an
+// ensemble, and {} if the trajectory vanished.
+function presetOutput(
   preset:
-    | { structure: StructureSelector }
-    | { structures?: StructureSelector[] }
+    | { model: ModelSelector; structure: StructureSelector }
+    | { models?: ModelSelector[]; structures?: StructureSelector[] }
     | undefined,
-): Structure[] {
-  const selectors =
-    preset && 'structure' in preset
-      ? [preset.structure]
-      : (preset?.structures ?? [])
-  return selectors.flatMap(s => (s.obj ? [s.obj.data] : []))
+) {
+  return preset && 'structure' in preset
+    ? { models: [preset.model], structures: [preset.structure] }
+    : { models: preset?.models ?? [], structures: preset?.structures ?? [] }
 }
 
+/**
+ * Build the trajectory's models, structures and representations. One load is
+ * one Mol* structure per model, so an NMR ensemble is twenty of them, and the
+ * load returns every one: a colour, a highlight or a superposition that
+ * addresses only the first leaves the other nineteen behind. They come from
+ * the preset rather than `hierarchy.current.structures`, which also holds every
+ * other load's.
+ */
 export async function applyStructurePreset({
   plugin,
   trajectory,
@@ -81,8 +112,6 @@ export async function applyStructurePreset({
   trajectory: StateObjectSelector
   options?: LoadStructureOptions
 }) {
-  const model = await plugin.builders.structure.createModel(trajectory)
-
   const preset = await plugin.builders.structure.hierarchy.applyPreset(
     trajectory,
     'all-models',
@@ -91,11 +120,11 @@ export async function applyStructurePreset({
       representationPresetParams: options?.representationParams,
     },
   )
-  const structures = presetStructures(preset)
+  const { models, structures } = presetOutput(preset)
+  const loaded = structures.flatMap(s => (s.obj ? [s.obj.data] : []))
   return {
-    model,
-    structure: structures[0],
-    // every model of an ensemble, so a hover on model 2 is still this load's
-    modelIds: structures.flatMap(s => s.models.map(m => m.id)),
+    model: models[0],
+    structures: loaded,
+    modelIds: loaded.flatMap(s => s.models.map(m => m.id)),
   }
 }

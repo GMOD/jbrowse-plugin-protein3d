@@ -13,10 +13,11 @@ export type { EntityConfidence } from 'p2s_mapper'
 export interface StructureData {
   entities?: Entity[]
   confidence?: EntityConfidence[]
-  /** The molstar Structure this load created. Held by identity so highlights
-   * bind to the right geometry — concurrent loads finish in arbitrary order, so
-   * a position in `hierarchy.current.structures` identifies nothing stable. */
-  molstarStructure?: Structure
+  /** The Mol* structures this load created, one per model. Held by identity so
+   * highlights bind to the right geometry — concurrent loads finish in
+   * arbitrary order, so a position in `hierarchy.current.structures`
+   * identifies nothing stable. */
+  molstarStructures?: Structure[]
   /** Ids of every Mol* model this load created, which is how an interaction
    * on the shared plugin is told apart from one on another structure. */
   modelIds?: string[]
@@ -37,13 +38,13 @@ export async function loadStructureData({
 }): Promise<StructureData> {
   const {
     model,
-    structure: molstarStructure,
+    structures: molstarStructures,
     modelIds,
   } = structure.data
     ? await addStructureFromData({ data: structure.data, plugin })
     : structure.url
       ? await addStructureFromURL({ url: structure.url, plugin })
-      : { model: undefined, structure: undefined, modelIds: [] }
+      : { model: undefined, structures: [], modelIds: [] }
   // An experimental entry's B-factors are not confidence: read as pLDDT they
   // invert, drawing a well-ordered residue as "very low".
   const { MmcifFormat } = await loadMolstar()
@@ -57,7 +58,7 @@ export async function loadStructureData({
     entities: model ? extractEntities(model) : undefined,
     confidence:
       model && !experimental ? extractPerResidueConfidence(model) : undefined,
-    molstarStructure,
+    molstarStructures,
     modelIds,
   }
 }

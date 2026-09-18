@@ -1,6 +1,7 @@
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { StructureComponentManager } from 'molstar/lib/mol-plugin-state/manager/structure/component'
+import type { StructureComponentRef } from 'molstar/lib/mol-plugin-state/manager/structure/hierarchy-state'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
 import type { SizeTheme } from 'molstar/lib/mol-theme/size'
 
@@ -31,6 +32,22 @@ export function coerceColorScheme(value: string): ProteinColorScheme {
   return COLOR_SCHEME_VALUES.find(v => v === value) ?? 'default'
 }
 
+// molstar types the theme against its statically-generated built-in union,
+// which excludes extension themes like 'plddt-confidence' and 'mapped-chain'.
+// Its own API doc says to widen the name here; ProteinColorScheme keeps it
+// constrained to schemes we actually expose.
+function themeFor(colorScheme: ProteinColorScheme, entityId?: string) {
+  return (
+    colorScheme === 'mapped-chain'
+      ? { color: colorScheme, colorParams: { entityId: entityId ?? '' } }
+      : { color: colorScheme }
+  ) as StructureComponentManager.UpdateThemeParams<
+    ColorTheme.BuiltIn,
+    SizeTheme.BuiltIn
+  >
+}
+
+/** Recolor every structure's components in one Mol* state update. */
 export async function applyColorTheme({
   plugin,
   colorScheme,
@@ -40,25 +57,17 @@ export async function applyColorTheme({
   colorScheme: ProteinColorScheme
   structures: readonly { molstarStructure: Structure; entityId?: string }[]
 }) {
+  const { hierarchy, component } = plugin.managers.structure
+  const entityIds = new Map<StructureComponentRef, string | undefined>()
   for (const { molstarStructure, entityId } of structures) {
-    const ref =
-      plugin.managers.structure.hierarchy.findStructure(molstarStructure)
-    if (ref) {
-      // molstar types the theme against its statically-generated built-in
-      // union, which excludes extension themes like 'plddt-confidence' and
-      // 'mapped-chain'. Its own API doc says to widen the name here;
-      // ProteinColorScheme keeps it constrained to schemes we actually expose.
-      const theme =
-        colorScheme === 'mapped-chain'
-          ? { color: colorScheme, colorParams: { entityId: entityId ?? '' } }
-          : { color: colorScheme }
-      await plugin.managers.structure.component.updateRepresentationsTheme(
-        ref.components,
-        theme as StructureComponentManager.UpdateThemeParams<
-          ColorTheme.BuiltIn,
-          SizeTheme.BuiltIn
-        >,
-      )
+    const ref = hierarchy.findStructure(molstarStructure)
+    for (const c of ref?.components ?? []) {
+      entityIds.set(c, entityId)
     }
+  }
+  if (entityIds.size > 0) {
+    await component.updateRepresentationsTheme([...entityIds.keys()], c =>
+      themeFor(colorScheme, entityIds.get(c)),
+    )
   }
 }

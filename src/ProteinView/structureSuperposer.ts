@@ -2,15 +2,16 @@ import { isAlive } from '@jbrowse/mobx-state-tree'
 
 import { superposeStructures } from './superposeStructures'
 
-import type StructureModel from './structureModel'
-import type { IAnyStateTreeNode, Instance } from '@jbrowse/mobx-state-tree'
+import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-
-type StructureInstance = Instance<typeof StructureModel>
 
 export type StructureSuperposerHost = IAnyStateTreeNode & {
   readonly molstarPluginContext: PluginContext | undefined
-  readonly structures: StructureInstance[]
+  readonly structures: readonly {
+    readonly loadedToMolstar: boolean
+    readonly molstarStructures: readonly Structure[]
+  }[]
   /** How many loaded structures the last superposition covered; observable,
    * so the camera framing can wait for the reset that ends a superposition. */
   readonly superposedCount: number
@@ -43,7 +44,8 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
 
   function run() {
     const { molstarPluginContext: plugin, structures } = host
-    const loadedCount = structures.filter(s => s.loadedToMolstar).length
+    const loaded = structures.filter(s => s.loadedToMolstar)
+    const loadedCount = loaded.length
     if (plugin !== superposedPlugin) {
       superposedPlugin = plugin
       host.setSuperposedCount(0)
@@ -55,7 +57,10 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
       loadedCount !== host.superposedCount
     ) {
       superposing = true
-      superposeStructures(plugin)
+      superposeStructures(
+        plugin,
+        loaded.map(s => s.molstarStructures),
+      )
         .catch((e: unknown) => {
           if (isAlive(host)) {
             host.setError(e)

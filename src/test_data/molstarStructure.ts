@@ -10,15 +10,26 @@ export interface TestChain {
 }
 
 /**
- * A Mol* Structure parsed from a CA-only mmCIF, one atom per residue numbered
- * from label_seq_id 1. Every call parses anew, so two calls give two models
- * with different ids, as two loads into one view do.
+ * A CA-only mmCIF, one atom per residue numbered from label_seq_id 1. Each
+ * chain is an α-helix of its own, so a superposition has real geometry to fit,
+ * and every model after the first is nudged, as an NMR ensemble's are.
  */
-export async function parseStructure(chains: TestChain[]) {
-  const atoms = chains.flatMap(({ asym, entity, residues }) =>
-    residues.map((comp, i) => ({ asym, entity, comp, seq: i + 1 })),
-  )
-  const mmcif = `data_TEST
+export function caOnlyMmcif(chains: TestChain[], { models = 1 } = {}) {
+  const rows: string[] = []
+  for (let model = 1; model <= models; model++) {
+    chains.forEach(({ asym, entity, residues }, chainIndex) => {
+      residues.forEach((comp, i) => {
+        const turn = (i * 100 * Math.PI) / 180
+        const x = 2.3 * Math.cos(turn) + 20 * chainIndex + 0.2 * (model - 1)
+        const y = 2.3 * Math.sin(turn)
+        const z = 1.5 * i
+        rows.push(
+          `ATOM ${rows.length + 1} C CA ${comp} ${asym} ${entity} ${i + 1} ${x.toFixed(3)} ${y.toFixed(3)} ${z.toFixed(3)} ${i + 1} ${asym} ${model}`,
+        )
+      })
+    })
+  }
+  return `data_TEST
 loop_
 _atom_site.group_PDB
 _atom_site.id
@@ -33,14 +44,18 @@ _atom_site.Cartn_y
 _atom_site.Cartn_z
 _atom_site.auth_seq_id
 _atom_site.auth_asym_id
-${atoms
-  .map(
-    ({ asym, entity, comp, seq }, i) =>
-      `ATOM ${i + 1} C CA ${comp} ${asym} ${entity} ${seq} ${i + 1}.0 0.0 0.0 ${seq} ${asym}`,
-  )
-  .join('\n')}
+_atom_site.pdbx_PDB_model_num
+${rows.join('\n')}
 `
-  const parsed = await CIF.parseText(mmcif).run()
+}
+
+/**
+ * A Mol* Structure parsed from `caOnlyMmcif`, without a plugin. Every call
+ * parses anew, so two calls give two models with different ids, as two loads
+ * into one view do.
+ */
+export async function parseStructure(chains: TestChain[]) {
+  const parsed = await CIF.parseText(caOnlyMmcif(chains)).run()
   if (parsed.isError) {
     throw new Error(parsed.message)
   }

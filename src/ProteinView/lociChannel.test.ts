@@ -45,7 +45,7 @@ async function structure(selectLabelSeqIds: number[] = []) {
   ])
   const hoverLabelSeqIds: number[] = []
   return observable({
-    molstarStructure,
+    molstarStructures: [molstarStructure],
     mappedEntity: { entityId: '1' },
     selectLabelSeqIds,
     hoverLabelSeqIds,
@@ -64,14 +64,14 @@ test('a structure selecting nothing leaves another structure selection lit', asy
   await vi.waitFor(() => {
     expect(lit).toHaveLength(1)
   })
-  expect(lit[0]).toBe(human.molstarStructure)
+  expect(lit[0]).toBe(human.molstarStructures[0])
 
   runInAction(() => {
     host.structures.push(mouse)
   })
   await new Promise(r => setTimeout(r, 0))
   expect(lit).toHaveLength(1)
-  expect(lit[0]).toBe(human.molstarStructure)
+  expect(lit[0]).toBe(human.molstarStructures[0])
 
   runInAction(() => {
     human.selectLabelSeqIds = []
@@ -97,6 +97,6 @@ test('when updates overlap, the later one is what stays lit', async () => {
   })
   await new Promise(r => setTimeout(r, 0))
   expect(lit).toHaveLength(1)
-  expect(lit[0]).toBe(mouse.molstarStructure)
+  expect(lit[0]).toBe(mouse.molstarStructures[0])
   dispose()
 })

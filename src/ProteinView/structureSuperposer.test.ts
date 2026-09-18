@@ -3,8 +3,10 @@ import { beforeEach, expect, test, vi } from 'vitest'
 
 import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
+import { parseStructure } from '../test_data/molstarStructure'
 
 import type { StructureSuperposerHost } from './structureSuperposer'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 
 vi.mock('./superposeStructures', () => ({ superposeStructures: vi.fn() }))
 const mockSuperpose = vi.mocked(superposeStructures)
@@ -12,10 +14,14 @@ const mockSuperpose = vi.mocked(superposeStructures)
 // Minimal stand-ins matching only the surface makeStructureSuperposer touches.
 const TestStructure = types
   .model('TestStructure', {})
-  .volatile(() => ({ loadedToMolstar: false }))
+  .volatile(() => ({
+    loadedToMolstar: false,
+    molstarStructures: new Array<Structure>(),
+  }))
   .actions(self => ({
-    setLoadedToMolstar(v: boolean) {
+    setLoadedToMolstar(v: boolean, molstarStructures: Structure[] = []) {
       self.loadedToMolstar = v
+      self.molstarStructures = molstarStructures
     },
   }))
 
@@ -49,6 +55,8 @@ function setup(plugin: object, loadedCount: number) {
   )
   return { host, run }
 }
+
+const chain = { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }
 
 const tick = () => new Promise<void>(resolve => setTimeout(resolve, 0))
 
@@ -114,4 +122,21 @@ test('reports superposition errors', async () => {
   expect(host.errors).toContain(err)
   expect(logged).toHaveBeenCalledWith(err)
   logged.mockRestore()
+})
+
+// The view's structures, each with every model of its load, in view order: the
+// first is the pivot. Reading Mol*'s own list instead aligned each model of an
+// NMR ensemble on its own.
+test('superposes the loaded structures of the view, each with all its models', async () => {
+  const [model1, model2, single] = await Promise.all([
+    parseStructure([chain]),
+    parseStructure([chain]),
+    parseStructure([chain]),
+  ])
+  const host = TestHost.create({ structures: [{}, {}, {}] })
+  host.setPlugin({})
+  host.structures[0]!.setLoadedToMolstar(true, [model1, model2])
+  host.structures[2]!.setLoadedToMolstar(true, [single])
+  makeStructureSuperposer(host as unknown as StructureSuperposerHost)()
+  expect(mockSuperpose).toHaveBeenCalledWith({}, [[model1, model2], [single]])
 })

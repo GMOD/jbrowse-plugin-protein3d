@@ -46,6 +46,25 @@ interface SessionView {
   type: string
   structures?: ProteinViewStructure[]
   tracks?: { displays?: { featureIdUnderMouse?: string }[] }[]
+  molstarPluginContext?: {
+    managers: {
+      structure: {
+        hierarchy: {
+          current: {
+            structures: {
+              components: {
+                representations: {
+                  cell: {
+                    transform: { params?: { colorTheme?: { name: string } } }
+                  }
+                }[]
+              }[]
+            }[]
+          }
+        }
+      }
+    }
+  }
 }
 declare global {
   interface Window {

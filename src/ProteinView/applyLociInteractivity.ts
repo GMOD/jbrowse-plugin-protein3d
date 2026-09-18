@@ -11,11 +11,17 @@ import type { Script } from 'molstar/lib/mol-script/script'
 export interface LociMarks {
   lociHighlights: {
     clearHighlights(): void
-    highlight(current: { loci: StructureElement.Loci }): void
+    highlight(
+      current: { loci: StructureElement.Loci },
+      applyGranularity: boolean,
+    ): void
   }
   lociSelects: {
     deselectAll(): void
-    select(current: { loci: StructureElement.Loci }): void
+    select(
+      current: { loci: StructureElement.Loci },
+      applyGranularity: boolean,
+    ): void
   }
 }
 
@@ -71,6 +77,10 @@ export function residueLoci(
  * so a call covers all structures at once; clearing per structure wipes the
  * others. Nothing awaits between clearing and marking, so when two calls
  * overlap the later one's residues are what stay lit.
+ *
+ * The residues are marked exactly as given. Mol* would otherwise widen them
+ * to its Picking Level, a setting meant for the user's own clicks, and a user
+ * who set it to Chain saw one hovered codon light the whole chain.
  */
 export async function setMolstarLoci({
   interactivity,
@@ -89,12 +99,12 @@ export async function setMolstarLoci({
   if (channel === 'highlight') {
     lociHighlights.clearHighlights()
     for (const loci of locis) {
-      lociHighlights.highlight({ loci })
+      lociHighlights.highlight({ loci }, false)
     }
   } else {
     lociSelects.deselectAll()
     for (const loci of locis) {
-      lociSelects.select({ loci })
+      lociSelects.select({ loci }, false)
     }
   }
 }

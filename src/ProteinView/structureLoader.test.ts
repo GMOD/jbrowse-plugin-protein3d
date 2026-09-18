@@ -37,7 +37,7 @@ const TestStructure = types
   .volatile(() => ({
     loadedToMolstar: false,
     entities: undefined as Entity[] | undefined,
-    molstarStructure: undefined as Structure | undefined,
+    molstarStructures: new Array<Structure>(),
     // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     error: undefined as unknown,
   }))
@@ -50,12 +50,12 @@ const TestStructure = types
     },
     setStructureData(d: StructureData) {
       self.entities = d.entities
-      self.molstarStructure = d.molstarStructure
+      self.molstarStructures = d.molstarStructures ?? []
     },
     setLoadedToMolstar(v: boolean) {
       self.loadedToMolstar = v
       if (!v) {
-        self.molstarStructure = undefined
+        self.molstarStructures = []
       }
     },
   }))
@@ -193,7 +193,7 @@ test('each structure keeps the handle its own load returned, whatever the order'
   let resolveFirst: (v: StructureData) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise(res => (resolveFirst = res)))
-    .mockResolvedValueOnce({ molstarStructure: second })
+    .mockResolvedValueOnce({ molstarStructures: [second] })
 
   const { host, load } = setup({}, 2)
   load()
@@ -201,24 +201,24 @@ test('each structure keeps the handle its own load returned, whatever the order'
 
   // structures[1] finishes first — the array position no longer matches
   await tick()
-  expect(host.structures[1]!.molstarStructure).toBe(second)
-  expect(host.structures[0]!.molstarStructure).toBeUndefined()
+  expect(host.structures[1]!.molstarStructures).toEqual([second])
+  expect(host.structures[0]!.molstarStructures).toEqual([])
 
-  resolveFirst({ molstarStructure: first })
+  resolveFirst({ molstarStructures: [first] })
   await tick()
-  expect(host.structures[0]!.molstarStructure).toBe(first)
-  expect(host.structures[1]!.molstarStructure).toBe(second)
+  expect(host.structures[0]!.molstarStructures).toEqual([first])
+  expect(host.structures[1]!.molstarStructures).toEqual([second])
 })
 
 test('unloading drops the handle so highlights never target a dead plugin', async () => {
-  mockLoad.mockResolvedValue({ molstarStructure: molstarStructure('a') })
+  mockLoad.mockResolvedValue({ molstarStructures: [molstarStructure('a')] })
   const { load, structure } = setup({})
   load()
   await tick()
-  expect(structure.molstarStructure).toBeDefined()
+  expect(structure.molstarStructures).toHaveLength(1)
 
   structure.setLoadedToMolstar(false)
-  expect(structure.molstarStructure).toBeUndefined()
+  expect(structure.molstarStructures).toEqual([])
 })
 
 test('reports a load error on the structure that failed, not the view', async () => {
@@ -352,7 +352,7 @@ test('a structure removed mid-load takes its trajectory out of Mol* when it land
   load()
 
   host.removeFirstStructure()
-  resolveLoad({ molstarStructure: structureHandle })
+  resolveLoad({ molstarStructures: [structureHandle] })
   await tick()
 
   expect(removed).toEqual([structureHandle])

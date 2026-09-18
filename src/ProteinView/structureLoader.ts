@@ -115,7 +115,7 @@ export function makeStructureLoader(
           loadingStructures.delete(structure)
           removeMolstarStructure({
             plugin,
-            molstarStructure: data.molstarStructure,
+            molstarStructure: data.molstarStructures?.[0],
           }).catch((e: unknown) => {
             console.error(e)
           })

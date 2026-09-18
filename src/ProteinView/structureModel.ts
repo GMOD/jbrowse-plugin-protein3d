@@ -249,13 +249,13 @@ const Structure = types
     loadedToMolstar: false,
     /**
      * #volatile
-     * The molstar Structure this model's load produced, captured from the
-     * loader rather than looked up by position in
+     * The Mol* structures this model's load produced, one per model of the
+     * file, captured from the loader rather than looked up by position in
      * `hierarchy.current.structures` — that array is ordered by load
      * completion, so with two structures in flight index N can be another
      * model's geometry.
      */
-    molstarStructure: undefined as MolstarStructure | undefined,
+    molstarStructures: new Array<MolstarStructure>(),
     /**
      * #volatile
      * Ids of every Mol* model that load produced, all of an ensemble's models
@@ -330,7 +330,7 @@ const Structure = types
     setStructureData(data: StructureData) {
       self.entities = data.entities
       self.structureConfidence = data.confidence
-      self.molstarStructure = data.molstarStructure
+      self.molstarStructures = data.molstarStructures ?? []
       self.molstarModelIds = data.modelIds ?? new Array<string>()
     },
     /**
@@ -371,13 +371,22 @@ const Structure = types
     setLoadedToMolstar(val: boolean) {
       self.loadedToMolstar = val
       if (!val) {
-        // the handle belongs to the plugin we were unloaded from
-        self.molstarStructure = undefined
+        // the handles belong to the plugin we were unloaded from
+        self.molstarStructures = []
         self.molstarModelIds = new Array<string>()
       }
     },
   }))
   .views(self => ({
+    /**
+     * #getter
+     * The load's first model, which stands for the whole load where Mol*
+     * takes one structure: framing, focus, and removal, which goes by the
+     * trajectory and so takes every model with it.
+     */
+    get molstarStructure(): MolstarStructure | undefined {
+      return self.molstarStructures[0]
+    },
     /**
      * #getter
      */

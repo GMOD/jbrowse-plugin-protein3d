@@ -340,13 +340,11 @@ function stateModelFactory() {
           autorun(() => {
             const { molstarPluginContext, colorScheme } = self
             const structures = self.structures.flatMap(s =>
-              s.molstarStructure && s.structureSequences
-                ? [
-                    {
-                      molstarStructure: s.molstarStructure,
-                      entityId: s.mappedEntity?.entityId,
-                    },
-                  ]
+              s.structureSequences
+                ? s.molstarStructures.map(molstarStructure => ({
+                    molstarStructure,
+                    entityId: s.mappedEntity?.entityId,
+                  }))
                 : [],
             )
             if (molstarPluginContext && structures.length > 0) {
@@ -501,12 +499,13 @@ function stateModelFactory() {
             label: 'Re-align structures (TM-align)',
             onClick: () => {
               if (self.molstarPluginContext) {
-                superposeStructures(self.molstarPluginContext).catch(
-                  (e: unknown) => {
-                    console.error(e)
-                    self.setError(e)
-                  },
-                )
+                superposeStructures(
+                  self.molstarPluginContext,
+                  self.structures.map(s => s.molstarStructures),
+                ).catch((e: unknown) => {
+                  console.error(e)
+                  self.setError(e)
+                })
               }
             },
           },
