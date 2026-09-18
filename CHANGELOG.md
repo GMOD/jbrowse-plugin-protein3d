@@ -1,3 +1,9 @@
+## [0.13.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.0...v0.13.1) (2026-09-18)
+
+### Features
+
+- A compact protein view: one alignment panel, fewer feature rows ([8f3acf5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8f3acf5bdf67e4470b23b94032bba81545a12ffa))
+
 ## [0.13.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.12.1...v0.13.0) (2026-09-18)
 
 ### Features
