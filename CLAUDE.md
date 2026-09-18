@@ -428,9 +428,10 @@ Two lists in `test/setup.ts` say what the page is allowed to say:
 - `KNOWN_DEBT` holds two entries and every entry needs an exit condition. One is
   v5's warning that `LinearGenomeView` "nests its settings under `init`":
   v4.3.0's LGV has no other door — `init: types.frozen<InitState>()` plus the
-  autorun in its `afterAttach.ts` — so `addView` in
-  `LaunchProteinViewExtensionPoint` has to keep writing it, and until v4 goes
-  every declarative launch warns on a v5 host.
+  autorun in its `afterAttach.ts`. Since 2026-09-17 (`61b922f`) `addView` in
+  `LaunchProteinViewExtensionPoint` writes `init` only when the host's LGV
+  declares it, so the plugin's own launches are flat on v5; the e2e fixture's
+  `defaultSession` in `test/setup.ts` still nests, for the v4 legs.
 
 An entry can be scoped to the hosts it is true of, and the second one has to be.
 `sideBySide.ts` warns that the session "supports workspaces but not
@@ -442,10 +443,11 @@ deletes the alarm it exists to raise, so its `expectedOn` is every host but
 `host-compat`, with unit tests beside them, because a mis-scoped entry fails
 open and in silence.
 
-Verify the gate still bites before trusting it: delete the `init` entry and two
-legs fail, naming the message. One is the test config's own session, the other
-the view the plugin itself adds — which is how you can tell the deprecation
-reaches shipped code and not just the fixture.
+Verify the gate still bites before trusting it: delete the `init` entry and the
+legs fail, naming the message. Before `61b922f` two sources failed, the test
+config's own session and the view the plugin itself adds; after it only the
+fixture should, which is the check that the deprecation no longer reaches
+shipped code. That second half has not been re-measured.
 
 **`host-compat` gates on the same rules, and arming that found its own bug.**
 The probe launched Chrome with `--use-gl=swiftshader` and no

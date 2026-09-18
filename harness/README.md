@@ -28,7 +28,7 @@ regression alarm instead of a known bug.
   A structure can also be launched declaratively, without the dialog, via the
   `LaunchView-ProteinView` extension point — `pdbId` for an RCSB entry or
   `uniprotId` for an AlphaFold model, plus a `transcriptId` and a
-  `connectedView`. See [DEVELOPERS.md](../DEVELOPERS.md).
+  `connectedView`. See [docs/launching.md](../docs/launching.md).
 
 ## Run
 

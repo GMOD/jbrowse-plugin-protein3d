@@ -25,12 +25,44 @@ genome. The plugin is also installed by default on
 [genomes.jbrowse.org](https://genomes.jbrowse.org), so it works for any species
 there.
 
-## Demos
+## Documentation
 
-[Structures that are easy to map wrong](docs/demos.md), each one link away: a
-peptide bound to a larger partner, a protein bound to DNA, a receptor with
-another protein fused into it, a phosphorylated residue, and a mitochondrial
-protein.
+Using the plugin:
+
+- [Demos](docs/demos.md): structures that are easy to map wrong, each one link
+  away — a peptide bound to a larger partner, a protein bound to DNA, a receptor
+  with another protein fused into it, a phosphorylated residue, and a
+  mitochondrial protein.
+- [Your own structures](docs/your-own-structures.md): opening a model you folded
+  yourself (ColabFold, AlphaFold 3, Boltz…) instead of the AlphaFold DB one,
+  from a file, a URL or a generated link per gene, and which features carry
+  over.
+
+Linking and embedding:
+
+- [Launching from a URL or code](docs/launching.md): session-spec parameters,
+  the short `uniprotId`/`pdbId` + `transcriptId` form, several structures in one
+  view, and the `LaunchView-ProteinView` extension point.
+- [Session snapshots](docs/session-snapshots.md): the saved view's shape, chain
+  choice, and how UniProt tracks line up on PDB entries.
+
+How it works, for someone extending the plugin or checking what a number on
+screen means:
+
+- [Genome to structure alignment](docs/genome-to-structure-alignment.md): why
+  the plugin aligns the transcript's translation to the structure on the fly,
+  the precedent for that in SIFTS and G2S, how it picks the chain and isoform,
+  and what sequence alignment cannot decide.
+- [Residue numbering](docs/residue-numbering.md): how a paper's R248 becomes
+  position 154 in the file, `label_seq_id` 155 for Mol\*, and the codon on
+  chr17, and how a session spec names a residue the literature's way.
+
+Working on the plugin:
+
+- [DEVELOPERS.md](DEVELOPERS.md): running it locally, the test suites, host
+  version compatibility, and publishing.
+- [Live checks](docs/live-checks.md): serving a local build to a session on
+  jbrowse.org.
 
 ## Publication
 
@@ -42,29 +74,3 @@ Alignments, and Structures With Nucleotide-level Evidence in JBrowse 2. Journal
 of Molecular Biology, 169645. https://doi.org/10.1016/j.jmb.2026.169645
 
 See also https://github.com/GMOD/proteinbrowser for overview
-
-## Programmatic usage
-
-See [DEVELOPERS.md](DEVELOPERS.md)
-
-## How it works
-
-Notes on the parts that are easy to get subtly wrong, written for someone
-extending the plugin or checking what a number on screen means:
-
-- [Genome to structure alignment](docs/genome-to-structure-alignment.md): why
-  the plugin aligns the transcript's translation to the structure on the fly,
-  the precedent for that in SIFTS and G2S, how it picks the chain and isoform,
-  and what sequence alignment cannot decide.
-- [Residue numbering](docs/residue-numbering.md): how a paper's R248 becomes
-  position 154 in the file, `label_seq_id` 155 for Mol\*, and the codon on
-  chr17, and how a session spec names a residue the literature's way.
-
-## Publishing
-
-```
-pnpm version patch
-```
-
-`preversion` waits for green CI, lints, builds and boots the bundle on hosted
-JBrowse releases; pushing the tag publishes to npm from CI.

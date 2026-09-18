@@ -1,4 +1,4 @@
-// Smoke-tests the session-spec examples documented in DEVELOPERS.md against a
+// Smoke-tests the session-spec examples documented in docs/launching.md against a
 // real browser, so the docs can't silently rot (e.g. an AlphaFold URL version
 // bump, or a regression in the connectedView launch wiring).
 //
@@ -30,7 +30,7 @@ import {
 } from './localApp.mjs'
 import { saveStableScreenshot } from './pngSnapshot.mjs'
 
-// --- DEVELOPERS.md connected example data (TP53 / UniProt P04637) ------------
+// --- docs/launching.md connected example data (TP53 / UniProt P04637) ------------
 // P04637 canonical protein (translated from NM_000546.6); aligned to the
 // AlphaFold structure to map genome positions onto residues.
 const TP53_PROTEIN =

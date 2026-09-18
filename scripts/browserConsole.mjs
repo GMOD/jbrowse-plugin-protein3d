@@ -40,9 +40,9 @@ const KNOWN_DEBT = [
   {
     // v5 unwraps v4's nested `init` and warns; v4.3.0's LinearGenomeView has no
     // other way in (`init: types.frozen<InitState>()` plus the autorun in
-    // `afterAttach.ts` that reads it), so `addView` in
-    // LaunchProteinViewExtensionPoint has to keep writing it while a v4 host is
-    // supported. Drop the nesting there, and this entry, together with v4.
+    // `afterAttach.ts` that reads it). The extension point writes whichever
+    // shape the host declares, so only the e2e fixture's defaultSession in
+    // test/setup.ts still says it on v5. Drop both together with v4.
     needle: 'nests its settings under "init"',
   },
   {

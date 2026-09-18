@@ -1,410 +1,39 @@
-## Declarative view setup
+# Developing jbrowse-plugin-protein3d
 
-There are two declarative ways to open a ProteinView, and they differ in how
-much the plugin resolves for you:
+For launching views from URLs or code, see
+[docs/launching.md](docs/launching.md) and
+[docs/session-snapshots.md](docs/session-snapshots.md). This page covers
+building, testing and releasing the plugin itself.
 
-- **`LaunchView-ProteinView` extension point** (`session=spec-{…}` URL params) —
-  a _resolving_ contract: short-form props like `uniprotId`/`transcriptId` are
-  turned into a structure URL, a transcript feature, and an alignment sequence
-  before the view is created. Documented below.
-- **Full session snapshot** (`buildSessionUrl`-style deflated `session=`, or a
-  `defaultSession`) — the view hydrates _directly_ from its own model
-  properties, all set at the **top level** of the view object. This is what the
-  gene-explorer (`react-msaview/website`) and `jb2hubs` apps emit.
-
-### Top-level snapshot shape (no `init`)
-
-Unlike `LinearGenomeView`, **ProteinView has no `init` property**. `init` exists
-only for keys that need on-attach resolution (LGV's `loc` can't become
-`displayedRegions` until its assembly loads); ProteinView has none — structures
-load into Mol\* reactively and the alignment/mapping derive themselves — so
-every field is a plain top-level property that MST restores natively:
-
-```jsonc
-{
-  "type": "ProteinView",
-  "height": 500,
-  "zoomToBaseLevel": false,
-  "structures": [
-    {
-      "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
-      "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
-      "feature": {/* serialized transcript, see "feature shape" */},
-      "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
-      "initialSelection": { "start": 338, "end": 350 }, // optional pre-lit domain
-    },
-  ],
-}
-```
-
-Cross-view wiring is by declared id (`connectedViewId`) and a shared `feature`,
-so no imperative wiring code is needed. An MsaView connected to the same genome
-view links to the structure with no id of its own: a hover in either lights the
-other through the codon it maps to. The typed spec and its snapshot builder live
-in `src/ProteinView/proteinViewSpec.ts` (`ProteinViewSpec` /
-`proteinViewSnapshot`) — every launch path funnels through that one builder so
-they can't drift into different property subsets.
-
-#### Structure shorthand: `uniprotId` / `pdbId`
-
-Instead of a full `url`, a structure may give a `uniprotId` (→ AlphaFold model)
-or `pdbId` (→ RCSB mmCIF), so you don't have to know the file-URL format:
-
-```jsonc
-{ "type": "ProteinView", "structures": [{ "uniprotId": "P04637" }] }
-```
-
-`pdbId` resolves to `<pdbId>.cif` at hydration and is not stored. `uniprotId` is
-stored, and the structure loader asks AlphaFold DB's prediction API which of the
-accession's files to open, then fills in `url`. It picks the model folded from
-exactly the transcript's translation where one exists — so an isoform launch
-maps as an identity — else the canonical model, else the longest isoform. A
-spelled `AF-<id>-F1-model_v6.cif` is only the fallback for an unreachable API:
-dystrophin has fourteen isoform models and no F1 fragment, and the model version
-moves under every config already published.
-
-An explicit `url`/`data` always wins over both shorthands. This snapshot
-shorthand only sets the structure; it does **not** build the genome↔protein
-connection (feature/sequence) — for that use the extension point's `uniprotId` +
-`transcriptId` short form below.
-
-A structure with several polymer chains maps the transcript to the protein chain
-with the most identical residues over the shorter of transcript and chain, so a
-short peptide beats the long partner it is bound to and a fusion construct still
-wins on the chain that holds the whole transcript; DNA and RNA chains are never
-candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …) overrides
-that choice in a snapshot and is what the alignment panel's **Mapped chain**
-picker writes, so a saved session restores the chain the user chose along with
-the alignment computed against it.
-
-Persisted UI preferences (`showAlignment`, `zoomToBaseLevel`, etc. in
-localStorage) only fill settings the snapshot does not name, so an explicitly
-declared value always wins over a sticky preference, even when it equals the
-property default.
-
-#### The 1D annotation view's link back to the genome
-
-A LinearGenomeView launched as a 1D protein-annotation view carries a
-`proteinLinkage` property: the `connectedViewId` of the genome view it came
-from, the transcript `feature`, and the `uniprotId`. The plugin adds the
-property to every LinearGenomeView, so a hand-authored snapshot can set it and
-the 1D↔genome hover highlight works after a reload or from a shared session.
-
-#### UniProt feature tracks on PDB structures
-
-The protein feature tracks (domains, sites, variants — `useUniProtFeatures`)
-need two things: the UniProt accession, and how UniProt positions line up with
-the structure's own residue numbering.
-
-- **AlphaFold models** answer both from the filename: the accession is in the
-  URL, and the model _is_ the UniProt sequence, so UniProt position `p` is
-  structure position `p - 1`.
-- **PDB entries** answer neither. The accession isn't in the URL, and the
-  deposited construct is usually a fragment, often tagged or engineered, so the
-  numbering is offset — 1TUP's p53 chain starts at UniProt 94, 6VXX's spike has
-  SEQRES 33 = UniProt 14. These are resolved from
-  [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) via PDBe's
-  `mappings/uniprot/{pdbId}` API (p2s_mapper's `pdbUniProtMapping.ts`, read here
-  by `hooks/useStructureUniProt.ts`), which gives a per-segment correspondence.
-  Only the segments for the entity the plugin mapped to the transcript are used
-  — a heteromer maps each chain to a different accession, so the wrong one would
-  annotate the wrong protein. `residue_number` in that API is the 1-based
-  SEQRES/`label_seq_id` index, i.e. this plugin's structure position + 1.
-
-A feature outside the modeled region maps to nothing and is dropped rather than
-drawn at a misleading residue. A PDB id is only inferred from URLs on the PDB
-archive hosts, so a user-supplied model named `1abc.cif` can't inherit that
-entry's annotations.
-
-## LaunchView-ProteinView extension point
-
-This plugin registers a `LaunchView-ProteinView` extension point that allows
-programmatic launching of a ProteinView. This can be used via the JBrowse 2
-session spec URL parameters (see
-https://jbrowse.org/jb2/docs/urlparams/#session-spec).
-
-### Parameters
-
-| Parameter                        | Required | Description                                                                       |
-| -------------------------------- | -------- | --------------------------------------------------------------------------------- |
-| `url`                            | Yes\*    | Structure file URL (PDB, mmCIF, etc.)                                             |
-| `uniprotId`                      | Yes\*    | UniProt accession; derives the AlphaFold `url` (short form, see below)            |
-| `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url` (short form, see below)                    |
-| `structures`                     | Yes\*    | Several structures in one view, each `{ url \| uniprotId \| pdbId, … }`           |
-| `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form) |
-| `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                    |
-| `feature`                        | No       | Genomic feature for cross-linking                                                 |
-| `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                      |
-| `connectedView`                  | No       | LGV init (`loc`/`assembly`/`tracks`) to create + connect a new LinearGenomeView   |
-| `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back        |
-| `colorScheme`                    | No       | A scheme from the view's **Color scheme** menu, e.g. 'plddt-confidence'           |
-| `displayName`                    | No       | View name; defaults to the transcript and structure labels                        |
-| `height`                         | No       | View height in pixels (default: 650)                                              |
-| `showControls`                   | No       | Show Mol\* controls panel                                                         |
-| `showHighlight`                  | No       | Show alignment highlight on structure                                             |
-| `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                 |
-| `showProteinTracks`              | No       | Show the feature tracks (default: true)                                           |
-| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true)                         |
-| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue                                       |
-| `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
-| `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view               |
-| `initialTranscriptResidues`      | No       | `{ start, end }` 1-based inclusive residues of the transcript, selected on load   |
-| `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)     |
-| `initialSelection`               | No       | The same as a 0-based half-open position range, for callers that already have it  |
-
-\* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
-form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same
-precedence a `structures: [...]` snapshot uses, since both go through
-`resolveStructureUrl` and then the structure loader.
-
-### URL example
-
-Open a structure on its own (no genome connection):
-
-```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","url":"https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif"}]}
-```
-
-### Connected genome + protein view
-
-A **connected** view links the structure to a LinearGenomeView: hovering a
-variant highlights the matching residue on the structure, and clicking a residue
-highlights the codon in the genome. Normally this connection is made for you
-when you launch the viewer from a gene. To build the same connected session
-**declaratively** — for a demo link or an embedded app — there are two ways,
-depending on whether the transcript is already served by a track in the genome
-view.
-
-#### Short form (recommended): `uniprotId` / `pdbId` + `transcriptId`
-
-If the connected genome view serves a gene track that contains the transcript,
-this is all you need — the plugin resolves the structure, the feature, and the
-alignment sequence for you:
-
-```js
-const session = `spec-${JSON.stringify({
-  views: [
-    {
-      type: 'ProteinView',
-      uniprotId: 'P04637', // -> AlphaFold AF-P04637-F1-model_v6.cif
-      transcriptId: 'NM_000546.6', // resolved from a track at `loc` below
-      connectedView: {
-        assembly: 'hg38',
-        loc: 'chr17:7,668,421-7,687,550',
-        tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
-      },
-    },
-  ],
-})}`
-const url = `https://your-jbrowse/?config=/config.json&session=${encodeURIComponent(session)}`
-```
-
-A ready-to-open URL (against the public hg38 instance) looks like:
-
-```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","uniprotId":"P04637","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
-```
-
-To open an **experimental** structure instead of an AlphaFold model, swap
-`uniprotId` for `pdbId` — everything else is identical:
-
-```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","pdbId":"1TUP","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
-```
-
-1TUP is p53's core domain bound to DNA: entities [0] and [1] are the DNA strands
-and the protein is entity [2], so it exercises `chooseMappedEntity`, and its
-chain starts at UniProt residue 94, so it exercises the SIFTS offset that places
-the UniProt feature tracks. See [harness/](harness/) for more structures chosen
-to exercise specific paths.
-
-Given the short form + `transcriptId`, the plugin:
-
-- derives the structure URL from `uniprotId` (whichever model AlphaFold DB's
-  prediction API names for the transcript) or `pdbId` (`<pdbId>.cif` from RCSB),
-- fetches features at `loc` from the `connectedView` `tracks` and picks the
-  transcript whose id/name matches `transcriptId` (trailing version optional, so
-  `NM_000546` matches `NM_000546.6`),
-- translates that transcript's CDS against the connected assembly to build the
-  alignment sequence.
-
-If any step fails (no structure for that id, transcript not found at that locus,
-transcript has no CDS, or it can't be translated), the launch is **aborted with
-an on-screen error** rather than leaving a half-wired structure — so a typo in
-`transcriptId` is visible, not silent.
-
-> The matched transcript must actually be present in one of the `tracks` at
-> `loc`. If it isn't (e.g. a custom isoform, or a track that isn't loaded), use
-> the explicit form below.
-
-#### Explicit form: `url` + `feature` + `userProvidedTranscriptSequence`
-
-Spell out the three inputs the genome↔protein mapping needs directly. Use this
-for hand-crafted links where the transcript may not live in a loaded track, or
-when you already hold the data (e.g. an embedding app):
-
-```js
-const session = `spec-${JSON.stringify({
-  views: [
-    {
-      type: 'ProteinView',
-      url: 'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif',
-      // translated protein for the transcript below; aligned to the structure
-      // sequence to map genome <-> residue
-      userProvidedTranscriptSequence: 'MEEPQSDPSVEPPLSQETFSDLWKLLPENN...',
-      feature: transcriptFeature, // see "feature shape" below
-      connectedView: {
-        assembly: 'hg38',
-        loc: 'chr17:7,668,421-7,687,550',
-        tracks: ['ncbiRefSeqCurated', 'clinvar'],
-      },
-    },
-  ],
-})}`
-const url = `https://your-jbrowse/?config=/config.json&session=${encodeURIComponent(session)}`
-```
-
-In both forms, `connectedView` accepts the same `init` keys as a
-`LinearGenomeView` spec (`loc`, `assembly`, `tracks`); `tracks` is a list of
-trackIds (or `{ trackId, displaySnapshot }` objects) that must exist in the
-target config.
-
-#### Several structures in one launch
-
-`structures` opens one view holding several structures, superposed with TM-align
-and each mapped to the same transcript, which is what the view's **Add
-structure...** dialog builds by hand. Each entry takes `url`, `uniprotId` or
-`pdbId`, and may carry its own `initialTranscriptResidues`, `initialResidues` or
-`initialSelection`, a `mappedEntityId`, and a `feature` and
-`userProvidedTranscriptSequence` of its own where the launch-wide ones do not
-apply. The top-level `url`/`uniprotId`/`pdbId` is the one-structure shorthand
-for it. See [docs/residue-numbering.md](docs/residue-numbering.md) for how a
-residue number in a spec becomes a position in the file.
-
-```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
-```
-
-#### feature shape
-
-`feature` is a serialized transcript (the shape produced by a JBrowse feature's
-`.toJSON()`). The genome↔protein mapping reads its `strand` and its `CDS`
-subfeatures (absolute, 0-based half-open coordinates, with `phase`), so a
-minimal connected `feature` looks like:
-
-```json
-{
-  "uniqueId": "NM_000546.6",
-  "refName": "chr17",
-  "start": 7668420,
-  "end": 7687490,
-  "strand": -1,
-  "type": "mRNA",
-  "name": "TP53",
-  "subfeatures": [
-    {
-      "type": "CDS",
-      "refName": "chr17",
-      "start": 7676520,
-      "end": 7676594,
-      "phase": 0
-    },
-    {
-      "type": "CDS",
-      "refName": "chr17",
-      "start": 7675993,
-      "end": 7676272,
-      "phase": 0
-    }
-  ]
-}
-```
-
-Each codon maps to one residue; intronic/UTR positions are skipped. Exon
-(non-CDS) subfeatures are ignored by the mapping.
-
-### Programmatic usage
-
-```typescript
-// minimal: structure only
-pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
-  session,
-  url: 'https://alphafold.ebi.ac.uk/files/AF-P12345-F1-model_v6.cif',
-  userProvidedTranscriptSequence: 'MKTLLLTLVVV...',
-  displayName: 'AlphaFold - P12345',
-})
-
-// connected: also create + link a genome view
-pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
-  session,
-  url: 'https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif',
-  userProvidedTranscriptSequence: 'MEEPQSDPSVEPPLSQETFSDLWKLLPENN...',
-  feature: transcriptFeature,
-  connectedView: {
-    assembly: 'hg38',
-    loc: 'chr17:7,668,421-7,687,550',
-    tracks: ['ncbiRefSeqCurated', 'clinvar'],
-  },
-})
-
-// short form: resolve url/feature/sequence from uniprotId + transcriptId
-pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
-  session,
-  uniprotId: 'P04637',
-  transcriptId: 'NM_000546.6',
-  connectedView: {
-    assembly: 'hg38',
-    loc: 'chr17:7,668,421-7,687,550',
-    tracks: ['ncbiRefSeqCurated', 'clinvar'],
-  },
-})
-```
-
-### Host version compatibility
-
-This plugin is named by hub configs at permanent urls
-(`jbrowse.org/ucsc/hg38/config.json`), which desktop installs and published
-links keep opening on whatever JBrowse they have. So the published bundle has to
-work on hosts much older than the one we develop against, and there are two
-separate floors:
-
-- **Loading.** The bundle externalizes every module in the `@jbrowse/core`
-  ReExports list it was built against. A host missing one of them leaves
-  `JBrowseExports["mod"]` undefined, the UMD global is never defined, and
-  `PluginLoader`'s `Promise.all` fails the **entire session** — not just this
-  view. Loading currently works back to `v2.15.0`.
-- **Working.** A host API the plugin calls but an older host lacks throws at use
-  time. This is the floor that actually moves, and it moves silently: a single
-  `session.getTracksById()` call (added to core 2026-01) held the declarative
-  launch at `v4.2.0` while the bundle loaded fine seven releases earlier.
-  Reading whichever lookup the host has (`findTrackConf` in
-  `resolveShortLaunch.ts`) is the pattern — feature-detect rather than assume,
-  so the floor stays where the rest of the plugin already works.
-
-`pnpm host-compat` probes the published bundle against every hosted release
-(`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), booting
-each one with a declarative connected launch and waiting on
-`[data-testid="protein-view-ready"]` — a real settled-state signal, not a fixed
-delay. It reports per version whether the session survived, the global appeared,
-and the view settled, with the console error when it did not.
+## Running locally
 
 ```bash
-pnpm host-compat                              # report the matrix
-pnpm host-compat -- --floor v4.2.0            # exit non-zero if that host or newer fails
-pnpm host-compat -- --versions v3.7.0,latest  # narrow it
+pnpm install
+pnpm start
 ```
 
-Pass `--floor` in CI so a release that raises the floor fails the build instead
-of turning into a bug report from someone on last year's Desktop.
+`pnpm start` rebuilds on change and serves the repo on `http://localhost:9000`;
+`config.json` loads the plugin from there, so point a JBrowse instance at
+`http://localhost:9000/config.json`.
 
-### Testing these examples
+The genome↔structure mapping — the aligner, chain choice, SIFTS, the AlphaFold
+and PDBe lookups — lives in the
+[`p2s_mapper`](https://github.com/GMOD/p2s_mapper) package, which the plugin
+bundles. A change to those rules is made and tested there. [harness/](harness/)
+runs that code on real structures without JBrowse.
 
-`pnpm test:docs` opens the standalone and connected specs above in a headless
-browser and asserts they render (structure extracted, `connectedView` wires the
-genome view, genome→protein mapping built, tracks rendered, no console errors).
-It auto-starts `pnpm start` if a dev server isn't already running on :9000. The
-`Daily` workflow runs it, so a dead AlphaFold URL or a broken launch path shows
-up as a failed nightly rather than as a bug report.
+## Tests
+
+| Command            | What it checks                                                            |
+| ------------------ | ------------------------------------------------------------------------- |
+| `pnpm test`        | Unit tests plus the e2e suite on a nightly JBrowse                        |
+| `pnpm test:docs`   | The session-spec examples in [docs/launching.md](docs/launching.md)       |
+| `pnpm check-demos` | Every link in [docs/demos.md](docs/demos.md) against its expected mapping |
+| `pnpm host-compat` | The plugin on hosted JBrowse releases, see below                          |
+
+`pnpm test:docs` starts `pnpm start` itself if nothing is listening on :9000,
+and the `Daily` workflow runs it, so a dead AlphaFold URL or a broken launch
+path shows up as a failed nightly rather than as a bug report.
 
 ### The E2E suite
 
@@ -424,28 +53,82 @@ the whole app — which is exactly what it did before. In particular:
   actual pixels drawn — the container mounts ~5s before the structure appears,
   so waiting on the container alone screenshots an empty viewer,
 - the session's structure has to be aligned, with its genome→protein mapping
-  covering the whole translated transcript.
+  covering the whole translated transcript,
+- the page has logged nothing at warn or error beyond the known entries in
+  `scripts/browserConsole.mjs`.
 
-Hosts differ in what they hand the context menu: v3 passes the gene and the
-plugin resolves the transcript itself (all four NRAS CDS records), while v4
-passes a transcript reduced to a single CDS, so the same click yields a 40aa
-transcript there and a 190aa one on v3. The suite asserts the mapping is
-consistent with whatever transcript arrived rather than pinning a length.
+The suite asserts the mapping is consistent with whatever transcript arrived
+rather than pinning a length, because hosts differ in what they hand the context
+menu. `pnpm test` fetches the nightly zip into `.test-jbrowse-nightly` only when
+that directory is missing, so a local copy freezes at whatever `main` was the
+day it was made. When a nightly leg fails, check its date before your diff.
 
-For a check the suite does not make, such as what a protein-browser session does
-on jbrowse.org, [docs/live-checks.md](docs/live-checks.md) has the recipe for
-serving `dist/` to a hosted release and reading the model back.
+### Screenshots
 
-#### Screenshots
+The E2E suites write reference PNGs under `test-screenshots/`. A failing run
+writes its captures to `test-screenshots/failed/<version>/` (gitignored) instead
+of over the committed references, so a broken run never promotes pictures of the
+broken app to the new baseline. puppeteer captures aren't pixel-deterministic
+(antialiasing, WebGL, font hinting), so `scripts/pngSnapshot.mjs` normalizes
+each capture through `pngquant --nofs` and only overwrites a committed PNG when
+more than ~1% of pixels differ. Tune the threshold with `SCREENSHOT_DIFF_RATIO`
+(`0` always rewrites, `0.05` tolerates larger wobble). `pngquant` is optional;
+without it the raw PNG is used.
 
-The E2E suites write reference PNGs under `test-screenshots/`. A failing run's
-captures go to `test-screenshots/failed/<version>/` (gitignored) instead of over
-the committed references — otherwise a broken run quietly promotes pictures of
-the broken app to the new baseline. puppeteer captures aren't
-pixel-deterministic (antialiasing, WebGL/molstar, font hinting), so
-`scripts/pngSnapshot.mjs` normalizes each capture through `pngquant --nofs` and
-only overwrites a committed PNG when it differs by more than ~1% of pixels —
-otherwise the existing file is left byte-for-byte intact, so unrelated runs
-don't churn git. Tune the threshold with `SCREENSHOT_DIFF_RATIO` (e.g. `0` to
-always rewrite, `0.05` to tolerate larger wobble). `pngquant` is optional: where
-it's absent the raw PNG is used as a fallback.
+## Host version compatibility
+
+Hub configs at permanent urls (`jbrowse.org/ucsc/hg38/config.json`) name this
+plugin, and desktop installs and published links keep opening them on whatever
+JBrowse they have. So the published bundle has to work on hosts much older than
+the one we develop against, and there are two separate floors:
+
+- **Loading.** The bundle externalizes a module only when every host in
+  `scripts/host-reexports.json` re-exports it. A host missing one leaves
+  `JBrowseExports["mod"]` undefined, the UMD global is never defined, and
+  `PluginLoader`'s `Promise.all` fails the **entire session** — not just this
+  view. `pnpm check-host-externals` greps the built bundle to confirm.
+- **Working.** A host API the plugin calls but an older host lacks throws at use
+  time. This floor moves silently: a single `session.getTracksById()` call held
+  the declarative launch at `v4.2.0` while the bundle loaded fine seven releases
+  earlier. Feature-detect rather than assume, as `findTrackConf` in
+  `resolveShortLaunch.ts` does.
+
+The same goes for the settings the plugin writes into other views. JBrowse 5
+deprecates the `init` key JBrowse 4 used for a LinearGenomeView's launch
+settings, but a v4.3.0 LinearGenomeView reads nothing else, so the extension
+point checks whether the host's LinearGenomeView declares `init` and writes
+whichever shape it takes, so a v5 host sees flat settings and warns about
+nothing. The e2e's own test session in `test/setup.ts` still nests its genome
+view under `init` so the v4 legs can read it, which is why
+`scripts/browserConsole.mjs` excuses v5's deprecation warning until v4 support
+goes.
+
+`pnpm host-compat` boots the bundle on hosted releases
+(`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), with a
+declarative connected launch and a right-click on a gene. It waits on
+`[data-testid="protein-view-ready"]` and reports per version whether the session
+survived, the global appeared, the view settled, the context menu kept the
+host's own rows, and the console stayed clean.
+
+```bash
+pnpm host-compat                              # the published bundle, v2.15.0 to main
+pnpm host-compat:candidate                    # dist/ on v4.0.0, v4.3.0, latest, main
+pnpm host-compat -- --versions v3.7.0,latest  # narrow it
+```
+
+`host-compat:candidate` runs in `preversion` with `--floor v4.0.0`, so a build
+that breaks a supported host fails before the tag rather than after.
+
+For what a session does on jbrowse.org, which none of these see,
+[docs/live-checks.md](docs/live-checks.md) has the recipe for serving `dist/` to
+a hosted release and reading the model back.
+
+## Publishing
+
+```bash
+pnpm version patch
+```
+
+`preversion` waits for green CI, lints, builds and boots the bundle on hosted
+JBrowse releases; `postversion` pushes the tag, and CI publishes to npm and
+writes the GitHub release from `CHANGELOG.md`.

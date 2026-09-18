@@ -150,7 +150,7 @@ resolves to positions 154..155 and the ruler under the panel carries a 250 tick.
 
 ## Related
 
-- [DEVELOPERS.md](../DEVELOPERS.md) for the spec and extension-point parameters.
+- [Launching](launching.md) for the spec and extension-point parameters.
 - `CLAUDE.md` for the coordinate conventions in the terms the code uses.
 - The [TP53 tutorial](https://jbrowse.org/jb2/docs/tutorials/tp53_structures)
   walks the same structures from the user's side.
