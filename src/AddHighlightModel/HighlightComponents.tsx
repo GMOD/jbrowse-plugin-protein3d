@@ -5,10 +5,7 @@ import { observer } from 'mobx-react'
 import GenomeMouseoverHighlight from './GenomeMouseoverHighlight'
 import GenomeTo1DProteinHoverHighlight from './GenomeTo1DProteinHoverHighlight'
 import Protein1DToGenomeHoverHighlight from './Protein1DToGenomeHoverHighlight'
-import {
-  ProteinToGenomeClickHighlight,
-  ProteinToGenomeHoverHighlight,
-} from './ProteinToGenomeHighlight'
+import ProteinToGenomeHighlight from './ProteinToGenomeHighlight'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -19,8 +16,8 @@ const HighlightComponents = observer(function Highlight({
 }) {
   return (
     <>
-      <ProteinToGenomeClickHighlight model={model} />
-      <ProteinToGenomeHoverHighlight model={model} />
+      <ProteinToGenomeHighlight model={model} field="clickGenomeHighlights" />
+      <ProteinToGenomeHighlight model={model} field="hoverGenomeHighlights" />
       <Protein1DToGenomeHoverHighlight model={model} />
       <GenomeTo1DProteinHoverHighlight model={model} />
       <GenomeMouseoverHighlight model={model} />
