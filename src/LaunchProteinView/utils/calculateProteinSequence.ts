@@ -4,11 +4,13 @@ import { convertCodingSequenceToPeptides } from '@jbrowse/core/util/convertCodin
 import {
   getGeneticCode,
   parseTranslTable,
+  relativizeTranslExcept,
 } from '@jbrowse/core/util/geneticCodes'
 
 import { isCDS } from '../codingFeature'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import type { TranslExcept } from '@jbrowse/core/util/geneticCodes'
 
 // `@jbrowse/core/util/convertCodingSequenceToPeptides` is a deep path, so unlike
 // the `@jbrowse/core/util` barrel it is absent from ReExports and gets bundled
@@ -27,24 +29,29 @@ export interface Feat {
   phase?: number
 }
 
+/**
+ * The translation core's feature panel shows: the genetic code's alternative
+ * initiators read as M, and a `transl_except` (RefSeq's selenocysteines) as its
+ * named residue.
+ */
 export function calculateProteinSequence({
   cds,
   sequence,
   geneticCodeId,
+  translExcept,
 }: {
   cds: Feat[]
   sequence: string
   geneticCodeId?: number
+  translExcept?: TranslExcept[]
 }) {
-  // `starts` is deliberately not passed: @jbrowse/core 4.3.0's signature has no
-  // such parameter, so alternative initiators (GTG under table 11, ATA under
-  // table 2) render as their internal residue rather than M. Core main added it;
-  // pass it here when the @jbrowse/core floor reaches that release.
-  const { codonTable } = getGeneticCode(geneticCodeId)
+  const { codonTable, starts } = getGeneticCode(geneticCodeId)
   return convertCodingSequenceToPeptides({
     cds,
     sequence,
     codonTable,
+    starts,
+    translExcept,
   })
 }
 
@@ -103,11 +110,21 @@ export function getProteinSequence({
     parseTranslTable(feature.get('transl_table')) ??
     parseTranslTable(cdsSubfeature?.get('transl_table')) ??
     assemblyGeneticCodeId
+  const rawTranslExcept =
+    feature.get('transl_except') ?? cdsSubfeature?.get('transl_except')
 
   return calculateProteinSequence({
     cds: strand === -1 ? revlist(cds, seq.length) : cds,
     sequence: strand === -1 ? revcom(seq) : seq,
     geneticCodeId,
+    translExcept: rawTranslExcept
+      ? relativizeTranslExcept({
+          raw: rawTranslExcept,
+          featureStart,
+          featureLength: seq.length,
+          strand,
+        })
+      : undefined,
   })
 }
 

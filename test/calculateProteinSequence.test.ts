@@ -215,3 +215,71 @@ describe('getProteinSequence genetic code', () => {
     ).toBe('MA**')
   })
 })
+
+// Read as core's feature panel reads them, so the transcript row agrees with
+// the one msaview builds for the same transcript
+describe('getProteinSequence initiators and transl_except', () => {
+  const transcript = ({
+    strand,
+    cdsAttributes,
+  }: {
+    strand: 1 | -1
+    cdsAttributes: Record<string, unknown>
+  }) =>
+    new SimpleFeature({
+      uniqueId: 't1',
+      refName: 'chr1',
+      start: 0,
+      end: 15,
+      strand,
+      type: 'mRNA',
+      subfeatures: [
+        {
+          uniqueId: 'c1',
+          refName: 'chr1',
+          start: 0,
+          end: 15,
+          strand,
+          type: 'CDS',
+          phase: 0,
+          ...cdsAttributes,
+        },
+      ],
+    })
+
+  it('reads an alternative initiator as M', () => {
+    const feature = transcript({ strand: 1, cdsAttributes: {} })
+    expect(
+      getProteinSequence({
+        feature,
+        seq: 'GTGAAAAAAAAATAA',
+        assemblyGeneticCodeId: 11,
+      }),
+    ).toBe('MKKK*')
+    expect(getProteinSequence({ feature, seq: 'GTGAAAAAAAAATAA' })).toBe(
+      'VKKK*',
+    )
+  })
+
+  it('reads a selenocysteine transl_except as U', () => {
+    expect(
+      getProteinSequence({
+        feature: transcript({
+          strand: 1,
+          cdsAttributes: { transl_except: '(pos:4..6,aa:Sec)' },
+        }),
+        seq: 'ATGTGAAAAAAATAA',
+      }),
+    ).toBe('MUKK*')
+  })
+
+  it('places a minus-strand transl_except on the reverse-complemented codon', () => {
+    const minus = (transl_except: string) =>
+      getProteinSequence({
+        feature: transcript({ strand: -1, cdsAttributes: { transl_except } }),
+        seq: 'TTATTTTTTTCACAT',
+      })
+    expect(minus('(pos:complement(10..12),aa:Sec)')).toBe('MUKK*')
+    expect(minus('(pos:complement(4..6),aa:Sec)')).toBe('M*KU*')
+  })
+})
