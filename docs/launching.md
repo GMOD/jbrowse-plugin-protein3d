@@ -78,9 +78,11 @@ Given `transcriptId`, the plugin:
 - derives the structure URL from `uniprotId` (whichever model AlphaFold DB's
   prediction API names for the transcript) or `pdbId` (`<pdbId>.cif` from RCSB),
   unless `url` is given,
-- fetches features at `loc` from the `connectedView` `tracks` and picks the
-  transcript whose id or name matches `transcriptId` (trailing version optional,
-  so `NM_000546` matches `NM_000546.6`),
+- fetches features at `loc` from the feature tracks among the `connectedView`
+  `tracks` and picks the first transcript whose name, ID or `transcript_id`
+  matches `transcriptId` (trailing version optional, so `NM_000546` matches
+  `NM_000546.6`; `transcript_id` is how an Ensembl GFF3 spells the ID without
+  its `transcript:` prefix),
 - translates that transcript's CDS against the connected assembly to build the
   alignment sequence.
 
@@ -89,8 +91,9 @@ transcript has no CDS, or it can't be translated), the plugin aborts the launch
 with an on-screen error rather than leaving a half-wired structure, so a typo in
 `transcriptId` is visible, not silent.
 
-> The matched transcript must be present in one of the `tracks` at `loc`. If it
-> isn't (a custom isoform, or a track that isn't loaded), use the explicit form.
+> The matched transcript must be present in one of the feature tracks at `loc`.
+> If it isn't (a custom isoform, or a track that isn't loaded), use the explicit
+> form.
 
 ### Explicit form: `url` + `feature` + `userProvidedTranscriptSequence`
 
