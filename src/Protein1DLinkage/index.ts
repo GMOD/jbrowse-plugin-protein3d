@@ -1,6 +1,7 @@
 import { types } from '@jbrowse/mobx-state-tree'
 
 import { extendPluggableStateModel } from '../extendStateModel'
+import { linkageGenomeMapping } from './linkage'
 
 import type { Protein1DLinkage } from './linkage'
 import type PluginManager from '@jbrowse/core/PluginManager'
@@ -13,7 +14,7 @@ export {
   findProteinLinkedView,
   genomeHighlightsForProteinPosition,
   getProteinLinkage,
-  linkageGenomeMapping,
+  getProteinLinkageMapping,
 } from './linkage'
 
 function isLinearGenomeView(elt: { name: string }): elt is ViewType {
@@ -24,11 +25,21 @@ function isLinearGenomeView(elt: { name: string }): elt is ViewType {
  * Gives every LinearGenomeView an optional `proteinLinkage` property, set on
  * the 1D protein-annotation view when it is launched from a transcript. Living
  * on the view means it is serialized with the session and dies with the view.
+ * The transcript's genome mapping is a computed beside it, so the hover
+ * bridges asking on every mouse move build it once.
  */
-function withProteinLinkage(stateModel: IAnyModelType) {
-  return stateModel.props({
-    proteinLinkage: types.maybe(types.frozen<Protein1DLinkage>()),
-  })
+export function withProteinLinkage(stateModel: IAnyModelType) {
+  return stateModel
+    .props({
+      proteinLinkage: types.maybe(types.frozen<Protein1DLinkage>()),
+    })
+    .views((self: { proteinLinkage?: Protein1DLinkage }) => ({
+      get proteinLinkageMapping() {
+        return self.proteinLinkage
+          ? linkageGenomeMapping(self.proteinLinkage)
+          : undefined
+      },
+    }))
 }
 
 export default function Protein1DLinkageF(pluginManager: PluginManager) {

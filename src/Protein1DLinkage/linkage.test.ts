@@ -1,9 +1,13 @@
+import { types } from '@jbrowse/mobx-state-tree'
 import { expect, test } from 'vitest'
 
+import { withProteinLinkage } from '.'
 import {
   findProteinLinkedView,
   genomeHighlightsForProteinPosition,
   getProteinLinkage,
+  getProteinLinkageMapping,
+  linkageGenomeMapping,
 } from './linkage'
 
 import type { Protein1DLinkage } from './linkage'
@@ -48,7 +52,9 @@ const linkage: Protein1DLinkage = {
 
 test('an exon-boundary codon highlights each of its bases and not the intron', () => {
   const spans = (pos: number) =>
-    genomeHighlightsForProteinPosition(linkage, pos).map(r => [r.start, r.end])
+    genomeHighlightsForProteinPosition(linkageGenomeMapping(linkage), pos).map(
+      r => [r.start, r.end],
+    )
   // codon 0 = [0,1,2] contiguous
   expect(spans(0)).toEqual([[0, 3]])
   // codon 1 = [3,10,11] split across the intron
@@ -73,4 +79,20 @@ test('finds the open 1D view for a UniProt entry by its linkage', () => {
   ]
   expect(findProteinLinkedView({ views }, 'SPLIT_TEST')?.id).toBe('p1d')
   expect(findProteinLinkedView({ views }, 'NOPE')).toBeUndefined()
+})
+
+test('a linked view carries its genome mapping, an unlinked one none', () => {
+  const View = withProteinLinkage(types.model({ id: types.identifier }))
+  expect(View.create({ id: 'lgv' }).proteinLinkageMapping).toBeUndefined()
+  const linked = View.create({ id: 'p1d', proteinLinkage: linkage })
+  expect(getProteinLinkageMapping(linked)?.refName).toBe('chr1')
+  expect(
+    genomeHighlightsForProteinPosition(
+      getProteinLinkageMapping(linked)!,
+      1,
+    ).map(r => [r.start, r.end]),
+  ).toEqual([
+    [3, 4],
+    [10, 12],
+  ])
 })

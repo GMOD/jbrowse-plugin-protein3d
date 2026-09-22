@@ -4,7 +4,10 @@ import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
-import { getProteinLinkage, linkageGenomeMapping } from '../Protein1DLinkage'
+import {
+  getProteinLinkage,
+  getProteinLinkageMapping,
+} from '../Protein1DLinkage'
 import { genomeHoverToTranscriptPos } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -27,7 +30,7 @@ const GenomeTo1DProteinHoverHighlight = observer(
 
     const proteinPos = genomeHoverToTranscriptPos(
       hovered,
-      linkageGenomeMapping(linkage),
+      getProteinLinkageMapping(model),
     )
     if (proteinPos === undefined) {
       return null

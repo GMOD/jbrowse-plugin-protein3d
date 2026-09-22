@@ -8,6 +8,7 @@ import {
   findProteinLinkedView,
   genomeHighlightsForProteinPosition,
   getProteinLinkage,
+  getProteinLinkageMapping,
 } from '../Protein1DLinkage'
 import { checkHovered } from '../ProteinView/util'
 
@@ -31,15 +32,17 @@ const Protein1DToGenomeHoverHighlight = observer(
     }
 
     const { coord, refName } = hovered.hoverPosition
-    const linkage = getProteinLinkage(findProteinLinkedView(session, refName))
+    const linkedView = findProteinLinkedView(session, refName)
+    const linkage = getProteinLinkage(linkedView)
+    const mapping = getProteinLinkageMapping(linkedView)
     const assemblyName = assemblyNames[0]
-    if (linkage?.connectedViewId !== viewId || !assemblyName) {
+    if (linkage?.connectedViewId !== viewId || !mapping || !assemblyName) {
       return null
     }
 
     return (
       <>
-        {genomeHighlightsForProteinPosition(linkage, coord - 1).map(r => (
+        {genomeHighlightsForProteinPosition(mapping, coord - 1).map(r => (
           <Highlight
             key={r.start}
             model={model}

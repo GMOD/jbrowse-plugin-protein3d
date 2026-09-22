@@ -17,13 +17,20 @@ export interface Protein1DLinkage {
   uniprotId: string
 }
 
+export type LinkageMapping = ReturnType<typeof genomeToTranscriptSeqMapping>
+
 interface LinkableView {
   id: string
   proteinLinkage?: Protein1DLinkage
+  proteinLinkageMapping?: LinkageMapping
 }
 
 export function getProteinLinkage(view: unknown) {
   return (view as LinkableView | undefined)?.proteinLinkage
+}
+
+export function getProteinLinkageMapping(view: unknown) {
+  return (view as LinkableView | undefined)?.proteinLinkageMapping
 }
 
 /** The 1D view showing this UniProt entry, if one is open. */
@@ -34,27 +41,14 @@ export function findProteinLinkedView(
   return session.views.find(v => getProteinLinkage(v)?.uniprotId === uniprotId)
 }
 
-// The g2p map walks every CDS of the transcript and the hover bridges ask for
-// it on every mouse move; the frozen linkage object is a stable key.
-const mappings = new WeakMap<
-  Protein1DLinkage,
-  ReturnType<typeof genomeToTranscriptSeqMapping>
->()
-
 export function linkageGenomeMapping(linkage: Protein1DLinkage) {
-  let mapping = mappings.get(linkage)
-  if (!mapping) {
-    mapping = genomeToTranscriptSeqMapping(new SimpleFeature(linkage.feature))
-    mappings.set(linkage, mapping)
-  }
-  return mapping
+  return genomeToTranscriptSeqMapping(new SimpleFeature(linkage.feature))
 }
 
 export function genomeHighlightsForProteinPosition(
-  linkage: Protein1DLinkage,
+  { p2gCodon, refName }: LinkageMapping,
   proteinPos: number,
 ) {
-  const { p2gCodon, refName } = linkageGenomeMapping(linkage)
   return codingSpans(p2gCodon, [proteinPos]).map(([start, end]) => ({
     refName,
     start,
