@@ -192,30 +192,10 @@ function stateModelFactory() {
       /**
        * #action
        */
-      setShowAlignment(f: boolean) {
-        self.showAlignment = f
-      },
-
-      /**
-       * #action
-       */
-      setShowControls(arg: boolean) {
-        self.showControls = arg
-      },
-
-      /**
-       * #action
-       */
       setError(e: unknown) {
         self.error = e
       },
 
-      /**
-       * #action
-       */
-      setAlignmentAlgorithm(algorithm: AlignmentAlgorithm) {
-        self.alignmentAlgorithm = algorithm
-      },
       /**
        * #action
        */

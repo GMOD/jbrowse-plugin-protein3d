@@ -601,12 +601,6 @@ const Structure = types
     /**
      * #getter
      */
-    get pairwiseAlignmentToTranscriptPosition() {
-      return this.coordinateMapper?.maps.alignmentToTranscriptPosition
-    },
-    /**
-     * #getter
-     */
     get pairwiseAlignmentToStructurePosition() {
       return this.coordinateMapper?.maps.alignmentToStructurePosition
     },
