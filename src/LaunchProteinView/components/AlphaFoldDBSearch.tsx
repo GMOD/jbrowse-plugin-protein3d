@@ -38,6 +38,7 @@ const useStyles = makeStyles()({
 
 const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   feature,
+  preferredTranscriptId,
   session,
   view,
   handleClose,
@@ -46,6 +47,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
   onSideBySideChange,
 }: {
   feature: Feature
+  preferredTranscriptId?: string
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
@@ -55,7 +57,12 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
 }) {
   const { classes } = useStyles()
 
-  const state = useAlphaFoldDBSearch({ feature, view, lookup })
+  const state = useAlphaFoldDBSearch({
+    feature,
+    view,
+    lookup,
+    preferredTranscriptId,
+  })
 
   return (
     <>

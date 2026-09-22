@@ -19,10 +19,13 @@ import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 export default function LaunchProteinViewDialog({
   handleClose,
   feature,
+  preferredTranscriptId,
   model,
 }: {
   handleClose: () => void
   feature: Feature
+  // the isoform the user right-clicked, preselected in every tab's picker
+  preferredTranscriptId?: string
   model: AbstractTrackModel
 }) {
   const [choice, setChoice] = useState(0)
@@ -69,6 +72,7 @@ export default function LaunchProteinViewDialog({
           session={session}
           view={view}
           feature={feature}
+          preferredTranscriptId={preferredTranscriptId}
           handleClose={handleClose}
           lookup={lookup}
           sideBySide={sideBySide}
@@ -80,6 +84,7 @@ export default function LaunchProteinViewDialog({
           session={session}
           view={view}
           feature={feature}
+          preferredTranscriptId={preferredTranscriptId}
           handleClose={handleClose}
           lookup={lookup}
           sideBySide={sideBySide}
@@ -91,6 +96,7 @@ export default function LaunchProteinViewDialog({
           session={session}
           view={view}
           feature={feature}
+          preferredTranscriptId={preferredTranscriptId}
           handleClose={handleClose}
         />
       </TabPanel>
@@ -99,6 +105,7 @@ export default function LaunchProteinViewDialog({
           session={session}
           view={view}
           feature={feature}
+          preferredTranscriptId={preferredTranscriptId}
           handleClose={handleClose}
         />
       </TabPanel>

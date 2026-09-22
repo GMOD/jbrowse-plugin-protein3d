@@ -29,13 +29,9 @@ worth doing:
   on `main` would open the session directly; the README example is an opaque
   share link rather than a spec a reader can see into.
 
-- launch dialog: the URL and PDB-id fields fetch on every keystroke
-  (`StructureSourcePicker` → `UserProvidedStructure`); the dialog ignores which
-  isoform was right-clicked; `AlphaFoldDBSearch` and `PdbSearch` duplicate the
-  UniProt section and the copies disagree; Foldseek reports a 400 or 414 raw for
-  a protein over its length limit; the snapshot `uniprotId` shorthand
-  (`resolveStructureUrl`) still guesses `AF-<acc>-F1-model_v6`, because
-  hydration is synchronous.
+- launch dialog: Foldseek reports a 400 or 414 raw for a protein over its length
+  limit; the snapshot `uniprotId` shorthand (`resolveStructureUrl`) still
+  guesses `AF-<acc>-F1-model_v6`, because hydration is synchronous.
 
 - traced by review, not reproduced: a spec-supplied `pairwiseAlignment` is never
   validated and skips entity choice, so `mappedEntity` falls back to entity 1 (a

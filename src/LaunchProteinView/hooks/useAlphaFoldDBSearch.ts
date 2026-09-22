@@ -13,10 +13,12 @@ export default function useAlphaFoldDBSearch({
   feature,
   view,
   lookup,
+  preferredTranscriptId,
 }: {
   feature: Feature
   view: LinearGenomeViewModel
   lookup: UniProtIdLookup
+  preferredTranscriptId?: string
 }) {
   const { uniprotId, isAutoMode, isLookupLoading } = lookup
 
@@ -49,6 +51,7 @@ export default function useAlphaFoldDBSearch({
     feature,
     view,
     structureSequences,
+    preferredTranscriptId,
     resetKey: model?.url,
   })
 

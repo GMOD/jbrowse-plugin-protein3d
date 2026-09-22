@@ -47,6 +47,7 @@ const useStyles = makeStyles()({
 // here.
 const PdbSearch = observer(function PdbSearch({
   feature,
+  preferredTranscriptId,
   session,
   view,
   handleClose,
@@ -55,6 +56,7 @@ const PdbSearch = observer(function PdbSearch({
   onSideBySideChange,
 }: {
   feature: Feature
+  preferredTranscriptId?: string
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
@@ -116,6 +118,7 @@ const PdbSearch = observer(function PdbSearch({
     feature,
     view,
     structureSequences,
+    preferredTranscriptId,
     resetKey: uniprotId,
   })
 

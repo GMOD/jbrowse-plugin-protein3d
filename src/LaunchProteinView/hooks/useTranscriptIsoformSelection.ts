@@ -17,6 +17,7 @@ export default function useTranscriptIsoformSelection({
   feature,
   view,
   structureSequences,
+  preferredTranscriptId,
   resetKey,
 }: {
   feature: Feature
@@ -24,6 +25,8 @@ export default function useTranscriptIsoformSelection({
   // every protein chain of the structure, not just the first — see
   // pickStructureSequence
   structureSequences?: string[]
+  // the isoform the user right-clicked, when the dialog opened on its gene
+  preferredTranscriptId?: string
   resetKey?: string
 }) {
   const transcripts = codingTranscripts(feature)
@@ -45,6 +48,7 @@ export default function useTranscriptIsoformSelection({
     options: transcripts,
     isoformSequences,
     structureSequence,
+    preferredTranscriptId,
     resetKey,
   })
   const selectedTranscript = transcripts.find(f => getId(f) === userSelection)

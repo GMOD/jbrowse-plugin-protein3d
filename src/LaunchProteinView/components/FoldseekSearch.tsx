@@ -44,11 +44,13 @@ const useStyles = makeStyles()({
 
 const FoldseekSearch = observer(function FoldseekSearch({
   feature,
+  preferredTranscriptId,
   session,
   view,
   handleClose,
 }: {
   feature: Feature
+  preferredTranscriptId?: string
   session: AbstractSessionModel
   view: LinearGenomeViewModel
   handleClose: () => void
@@ -85,7 +87,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
     selectedIsoform: selectedIsoformData,
-  } = useTranscriptIsoformSelection({ feature, view })
+  } = useTranscriptIsoformSelection({
+    feature,
+    view,
+    preferredTranscriptId,
+  })
 
   const cleanedSequence = selectedIsoformData
     ? stripAllStopCodons(selectedIsoformData.seq)

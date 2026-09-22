@@ -41,11 +41,12 @@ interface DisplayModel {
   ) => Promise<Feature | undefined>
 }
 
-// The host difference, resolved: the type to gate the menu item on, and the
-// Feature to hand the dialog once it is clicked.
-type MenuTarget =
-  | { type: string; feature: Feature }
-  | { type: string; fetchFeature: () => Promise<Feature | undefined> }
+// The host difference, resolved: the type to gate the menu item on, the
+// Feature to hand the dialog once it is clicked, and the isoform the click
+// landed on, which the dialog preselects once it has climbed to the gene.
+type MenuTarget = { type: string; preferredTranscriptId?: string } & (
+  { feature: Feature } | { fetchFeature: () => Promise<Feature | undefined> }
+)
 
 function canvasTarget(
   info: NonNullable<DisplayModel['contextMenuInfo']>,
@@ -61,6 +62,7 @@ function canvasTarget(
     : {
         type,
         fetchFeature: () => fetchFullFeature(parentId, displayedRegionIndex),
+        preferredTranscriptId: subfeature?.featureId,
       }
 }
 
@@ -72,10 +74,14 @@ function legacyTarget(feature: Feature): MenuTarget | undefined {
   const type = root.get('type')
   return type === undefined || !isCodingFeature(root)
     ? undefined
-    : { type, feature: root }
+    : {
+        type,
+        feature: root,
+        preferredTranscriptId: root === feature ? undefined : feature.id(),
+      }
 }
 
-function resolveTarget(self: DisplayModel): MenuTarget | undefined {
+export function resolveTarget(self: DisplayModel): MenuTarget | undefined {
   const { contextMenuFeature, contextMenuInfo, fetchFullFeature } = self
   return contextMenuInfo && fetchFullFeature
     ? canvasTarget(contextMenuInfo, fetchFullFeature)
@@ -87,10 +93,11 @@ function resolveTarget(self: DisplayModel): MenuTarget | undefined {
 function launchProteinView(self: DisplayModel, target: MenuTarget) {
   const track = getContainingTrack(self)
   const session = getSession(track)
+  const { preferredTranscriptId } = target
   const openDialog = (feature: Feature) => {
     session.queueDialog(handleClose => [
       LaunchProteinViewDialog,
-      { model: track, handleClose, feature },
+      { model: track, handleClose, feature, preferredTranscriptId },
     ])
   }
   if ('feature' in target) {

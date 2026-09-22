@@ -47,11 +47,13 @@ function HelpText() {
 
 const UserProvidedStructure = observer(function UserProvidedStructure({
   feature,
+  preferredTranscriptId,
   session,
   view,
   handleClose,
 }: {
   feature: Feature
+  preferredTranscriptId?: string
   session: AbstractSessionModel
   view: LGV
   handleClose: () => void
@@ -88,7 +90,12 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     selectedIsoform: protein,
     error: isoformError,
     partialFailure: isoformPartialFailure,
-  } = useTranscriptIsoformSelection({ feature, view, structureSequences })
+  } = useTranscriptIsoformSelection({
+    feature,
+    view,
+    structureSequences,
+    preferredTranscriptId,
+  })
 
   const error = isoformError ?? launchError ?? fileError
 
