@@ -20,9 +20,9 @@ import {
 // plugin and the page that is supposed to reproduce it.
 const pdbFormatUrl = (id: string) => `https://files.rcsb.org/download/${id}.pdb`
 
-// Deep-link into the real plugin running in the hosted webgl-poc JBrowse build,
-// using the config.json published alongside this page.
-const CODE_APP = 'https://jbrowse.org/code/jb2/webgl-poc/'
+// Deep-link into the real plugin on the nightly JBrowse build, using the
+// config.json published alongside this page.
+const CODE_APP = 'https://jbrowse.org/code/jb2/main/'
 const GENCODE_TRACK = 'gencode.v44.annotation.sorted.gff3'
 function jbrowseUrl(gene: string) {
   const config = new URL('config.json', window.location.href).href
@@ -249,8 +249,8 @@ export default function App() {
         </div>
         <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
           <strong>name</strong> = fast verdict here · <strong>↗ JBrowse</strong>{' '}
-          = open the gene in the real plugin (webgl-poc), then right-click →
-          Launch protein view → PDB search → enter the PDB ID.
+          = open the gene in the real plugin, then right-click → Launch protein
+          view → PDB search → enter the PDB ID.
         </div>
         {EXAMPLES.map(ex => (
           <div

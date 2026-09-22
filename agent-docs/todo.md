@@ -24,10 +24,9 @@ worth doing:
   author-numbered residue (`initialResidues` 248 on 1TUP) and no NMR ensemble
   (2L14, twenty models). jbrowse.org's `tp53_structures` tutorial already opens
   a superposition (AF P04637, 1TUP, 1YCR) and `initialResidues` 248 on 1TUP, so
-  only the ensemble is missing everywhere; `harness/App.tsx` deep-links to
-  `jbrowse.org/code/jb2/webgl-poc`, last built 2026-07-15, where a spec launch
-  on `main` would open the session directly; the README example is an opaque
-  share link rather than a spec a reader can see into.
+  only the ensemble is missing everywhere; the harness's examples open the gene
+  on `main` and leave the launch to the reader, where a spec would open the
+  structure directly if each example carried a transcript id.
 
 - launch dialog: Foldseek reports a 400 or 414 raw for a protein over its length
   limit; the snapshot `uniprotId` shorthand (`resolveStructureUrl`) still
