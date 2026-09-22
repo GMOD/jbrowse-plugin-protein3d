@@ -29,6 +29,12 @@ there.
 
 Using the plugin:
 
+- Tutorials on jbrowse.org:
+  [TP53 from prediction to crystal](https://jbrowse.org/jb2/docs/tutorials/tp53_structures/)
+  opens an AlphaFold model and two crystal structures superposed beside the
+  gene, and reads the R248 hotspot back to its codon;
+  [Proteins on genomes.jbrowse.org](https://jbrowse.org/jb2/docs/tutorials/genomes_proteins/)
+  launches a structure and an MSA from any gene's right-click menu.
 - [Demos](docs/demos.md): structures that are easy to map wrong, each one link
   away — a peptide bound to a larger partner, a protein bound to DNA, a receptor
   with another protein fused into it, a phosphorylated residue, and a
