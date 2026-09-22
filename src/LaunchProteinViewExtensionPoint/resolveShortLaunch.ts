@@ -54,14 +54,62 @@ function findTrackConf(session: AbstractSessionModel, trackId: string) {
   )
 }
 
+// `transcript_id` because Ensembl's GFF3 prefixes the ID (`transcript:ENST…`)
 function transcriptMatches(transcript: Feature, transcriptId: string) {
   const target = stripTrailingVersion(transcriptId)
-  return [transcript.get('name'), transcript.get('id'), transcript.id()].some(
+  return [
+    transcript.get('name'),
+    transcript.get('id'),
+    transcript.get('transcript_id'),
+    transcript.id(),
+  ].some(
     candidate =>
       typeof candidate === 'string' &&
       (candidate === transcriptId ||
         stripTrailingVersion(candidate) === target),
   )
+}
+
+// Gene models live on feature tracks; a spec's variant or alignments track
+// would be fetched for nothing
+function isFeatureTrack(trackConf: AnyConfigurationModel) {
+  return readConfObject(trackConf, 'type') === 'FeatureTrack'
+}
+
+async function findTranscript({
+  session,
+  trackConfs,
+  region,
+  transcriptId,
+}: {
+  session: AbstractSessionModel
+  trackConfs: AnyConfigurationModel[]
+  region: { assemblyName: string; refName: string; start: number; end: number }
+  transcriptId: string
+}) {
+  const sessionId = 'getFeatures'
+  for (const trackConf of trackConfs) {
+    // a named object keeps sessionId, which v4 hosts read from the args
+    const args = {
+      adapterConfig: readConfObject(trackConf, 'adapter'),
+      sessionId,
+      regions: [region],
+    }
+    const feats = await session.rpcManager.call(
+      sessionId,
+      'CoreGetFeatures',
+      args,
+    )
+    for (const feat of feats) {
+      const hit = codingTranscripts(feat).find(t =>
+        transcriptMatches(t, transcriptId),
+      )
+      if (hit) {
+        return hit
+      }
+    }
+  }
+  return undefined
 }
 
 /**
@@ -115,40 +163,19 @@ export async function resolveShortLaunch({
   }
 
   const trackIds = trackSpecs.map(getTrackId).filter(t => t !== undefined)
-  const sessionId = 'getFeatures'
-  const transcripts: Feature[] = []
-  for (const trackId of trackIds) {
-    const trackConf = findTrackConf(session, trackId)
-    if (!trackConf) {
-      continue
-    }
-    // a named object keeps sessionId, which v4 hosts read from the args
-    const args = {
-      adapterConfig: readConfObject(trackConf, 'adapter'),
-      sessionId,
-      regions: [region],
-    }
-    const feats = await session.rpcManager.call(
-      sessionId,
-      'CoreGetFeatures',
-      args,
-    )
-    for (const feat of feats) {
-      transcripts.push(...codingTranscripts(feat))
-    }
-  }
-
-  const transcript = transcripts.find(f => transcriptMatches(f, transcriptId))
+  const transcript = await findTranscript({
+    session,
+    trackConfs: trackIds.flatMap(trackId => {
+      const conf = findTrackConf(session, trackId)
+      return conf && isFeatureTrack(conf) ? [conf] : []
+    }),
+    region,
+    transcriptId,
+  })
   if (!transcript) {
     throw new Error(
-      `transcript "${transcriptId}" not found at ${loc} in tracks [${trackIds.join(', ')}]`,
+      `transcript "${transcriptId}" not found at ${loc} in the feature tracks of [${trackIds.join(', ')}]`,
     )
-  }
-  const hasCds = (transcript.get('subfeatures') ?? []).some(
-    (sub: Feature) => sub.get('type') === 'CDS',
-  )
-  if (!hasCds) {
-    throw new Error(`transcript "${transcriptId}" has no CDS subfeatures`)
   }
 
   const userProvidedTranscriptSequence = await fetchProteinSeq({
