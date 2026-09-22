@@ -1,7 +1,6 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import { codonGenomeSpan } from 'p2s_mapper'
 
-import { genomeToTranscriptSeqMapping } from '../mappings'
+import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 
@@ -51,11 +50,14 @@ export function linkageGenomeMapping(linkage: Protein1DLinkage) {
   return mapping
 }
 
-export function genomeHighlightForProteinPosition(
+export function genomeHighlightsForProteinPosition(
   linkage: Protein1DLinkage,
   proteinPos: number,
 ) {
   const { p2gCodon, refName } = linkageGenomeMapping(linkage)
-  const span = codonGenomeSpan(p2gCodon, proteinPos)
-  return span ? { refName, start: span[0], end: span[1] } : undefined
+  return codingSpans(p2gCodon, [proteinPos]).map(([start, end]) => ({
+    refName,
+    start,
+    end,
+  }))
 }

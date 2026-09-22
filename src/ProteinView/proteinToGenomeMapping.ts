@@ -1,6 +1,6 @@
 import { getSession } from '@jbrowse/core/util'
-import { getCodonRanges } from 'g2p_mapper'
-import { codonGenomeSpan } from 'p2s_mapper'
+
+import { codingSpans } from '../mappings'
 
 import type { Region } from '@jbrowse/core/util/types'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
@@ -32,88 +32,32 @@ export type ClickProteinToGenomeModel = NavigateToProteinPositionModel & {
   setClickedStructureRange: (range?: { start: number; end: number }) => void
 }
 
-/**
- * Maps a protein structure position to genome coordinates
- * @returns [start, end] tuple of genome coordinates, or undefined if mapping fails
- */
-export function proteinToGenomeMapping({
-  model,
-  structureSeqPos,
-}: {
-  structureSeqPos: number
-  model: ProteinGenomeMappingModel
-}) {
-  const {
-    genomeToTranscriptSeqMapping,
-    pairwiseAlignment,
-    structureSeqToTranscriptSeqPosition,
-  } = model
-
-  if (!genomeToTranscriptSeqMapping || !pairwiseAlignment) {
-    return undefined
+// The coding spans under a structure-residue range, through the residues the
+// alignment pairs with the transcript
+function structureRangeSpans(
+  model: ProteinGenomeMappingModel,
+  range: { start: number; end: number },
+) {
+  const mapping = model.genomeToTranscriptSeqMapping
+  if (!mapping || !model.pairwiseAlignment) {
+    return []
   }
-
-  const { p2gCodon } = genomeToTranscriptSeqMapping
-  const transcriptPos = structureSeqToTranscriptSeqPosition?.[structureSeqPos]
-
-  return transcriptPos === undefined
-    ? undefined
-    : codonGenomeSpan(p2gCodon, transcriptPos)
-}
-
-/**
- * Maps a protein structure range to genome coordinates
- * @returns [start, end] tuple of genome coordinates spanning the full range, or undefined if mapping fails
- */
-export function proteinRangeToGenomeMapping({
-  model,
-  structureSeqPos,
-  structureSeqEndPos,
-}: {
-  structureSeqPos: number
-  structureSeqEndPos: number
-  model: ProteinGenomeMappingModel
-}) {
-  let minStart: number | undefined
-  let maxEnd: number | undefined
-  for (let pos = structureSeqPos; pos < structureSeqEndPos; pos++) {
-    const result = proteinToGenomeMapping({ structureSeqPos: pos, model })
-    if (result) {
-      const [s, e] = result
-      if (minStart === undefined || s < minStart) {
-        minStart = s
-      }
-      if (maxEnd === undefined || e > maxEnd) {
-        maxEnd = e
-      }
+  const transcriptPositions: number[] = []
+  for (let pos = range.start; pos < range.end; pos++) {
+    const transcriptPos = model.structureSeqToTranscriptSeqPosition?.[pos]
+    if (transcriptPos !== undefined) {
+      transcriptPositions.push(transcriptPos)
     }
   }
-  if (minStart !== undefined && maxEnd !== undefined) {
-    return [minStart, maxEnd] as const
-  }
-  return undefined
-}
-
-function mergeAbutting(pieces: [number, number][]) {
-  const merged: [number, number][] = []
-  for (const [start, end] of pieces.toSorted((a, b) => a[0] - b[0])) {
-    const last = merged.at(-1)
-    if (last && start <= last[1]) {
-      last[1] = Math.max(last[1], end)
-    } else {
-      merged.push([start, end])
-    }
-  }
-  return merged
+  return codingSpans(mapping.p2gCodon, transcriptPositions)
 }
 
 /**
  * The genome a structure-residue range covers, one region per stretch of
- * contiguous coding bases. A codon split by an intron is two regions, as is a
- * range across one, so no band paints the intron between. Pure: the caller
+ * contiguous coding bases, as a JBrowse highlight takes them. Pure: the caller
  * supplies the assembly and the mapping, so the same conversion serves the
- * hover band, the click band and a test with neither a session nor a
- * connected view.
+ * hover band, the click band and a test with neither a session nor a connected
+ * view.
  */
 export function structureRangeToGenomeRegions({
   range,
@@ -124,23 +68,15 @@ export function structureRangeToGenomeRegions({
   assemblyName: string | undefined
   model: ProteinGenomeMappingModel
 }): Region[] {
-  const mapping = model.genomeToTranscriptSeqMapping
-  if (!range || !assemblyName || !mapping || !model.pairwiseAlignment) {
-    return []
-  }
-  const pieces: [number, number][] = []
-  for (let pos = range.start; pos < range.end; pos++) {
-    const transcriptPos = model.structureSeqToTranscriptSeqPosition?.[pos]
-    if (transcriptPos !== undefined) {
-      pieces.push(...(getCodonRanges(mapping.p2gCodon, transcriptPos) ?? []))
-    }
-  }
-  return mergeAbutting(pieces).map(([start, end]) => ({
-    assemblyName,
-    refName: mapping.refName,
-    start,
-    end,
-  }))
+  const refName = model.genomeToTranscriptSeqMapping?.refName
+  return range && assemblyName && refName
+    ? structureRangeSpans(model, range).map(([start, end]) => ({
+        assemblyName,
+        refName,
+        start,
+        end,
+      }))
+    : []
 }
 
 export async function navigateToProteinPosition({
@@ -165,19 +101,15 @@ export async function navigateToProteinPosition({
     return
   }
 
-  const result =
-    structureSeqEndPos !== undefined
-      ? proteinRangeToGenomeMapping({
-          structureSeqPos,
-          structureSeqEndPos,
-          model,
-        })
-      : proteinToGenomeMapping({ structureSeqPos, model })
-
-  if (!result) {
+  const spans = structureRangeSpans(model, {
+    start: structureSeqPos,
+    end: structureSeqEndPos ?? structureSeqPos + 1,
+  })
+  const start = spans[0]?.[0]
+  const end = spans.at(-1)?.[1]
+  if (start === undefined || end === undefined) {
     return
   }
-  const [start, end] = result
 
   if (zoomToBaseLevel) {
     // start/end are 0-based half-open (from getCodonRanges). navToLocString

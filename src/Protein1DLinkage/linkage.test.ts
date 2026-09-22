@@ -2,7 +2,7 @@ import { expect, test } from 'vitest'
 
 import {
   findProteinLinkedView,
-  genomeHighlightForProteinPosition,
+  genomeHighlightsForProteinPosition,
   getProteinLinkage,
 } from './linkage'
 
@@ -46,25 +46,18 @@ const linkage: Protein1DLinkage = {
   uniprotId: 'SPLIT_TEST',
 }
 
-test('highlight for an exon-boundary codon encloses all its genomic bases', () => {
+test('an exon-boundary codon highlights each of its bases and not the intron', () => {
+  const spans = (pos: number) =>
+    genomeHighlightsForProteinPosition(linkage, pos).map(r => [r.start, r.end])
   // codon 0 = [0,1,2] contiguous
-  expect(genomeHighlightForProteinPosition(linkage, 0)).toEqual({
-    refName: 'chr1',
-    start: 0,
-    end: 3,
-  })
-  // codon 1 = [3,10,11] split across the intron -> span [3,12)
-  expect(genomeHighlightForProteinPosition(linkage, 1)).toEqual({
-    refName: 'chr1',
-    start: 3,
-    end: 12,
-  })
+  expect(spans(0)).toEqual([[0, 3]])
+  // codon 1 = [3,10,11] split across the intron
+  expect(spans(1)).toEqual([
+    [3, 4],
+    [10, 12],
+  ])
   // codon 2 = [12,13,14] contiguous
-  expect(genomeHighlightForProteinPosition(linkage, 2)).toEqual({
-    refName: 'chr1',
-    start: 12,
-    end: 15,
-  })
+  expect(spans(2)).toEqual([[12, 15]])
 })
 
 test('a missing view has no linkage rather than throwing', () => {

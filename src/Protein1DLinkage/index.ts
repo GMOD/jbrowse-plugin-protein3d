@@ -11,7 +11,7 @@ import type { IAnyModelType } from '@jbrowse/mobx-state-tree'
 export type { Protein1DLinkage } from './linkage'
 export {
   findProteinLinkedView,
-  genomeHighlightForProteinPosition,
+  genomeHighlightsForProteinPosition,
   getProteinLinkage,
   linkageGenomeMapping,
 } from './linkage'

@@ -3,7 +3,6 @@ import { expect, test, vi } from 'vitest'
 
 import {
   navigateToProteinPosition,
-  proteinToGenomeMapping,
   structureRangeToGenomeRegions,
 } from './proteinToGenomeMapping'
 import Structure from './structureModel'
@@ -113,6 +112,21 @@ function mappingModel(model: ReturnType<typeof makeModel>) {
   }
 }
 
+// The genome span one structure residue's codon covers, first base to last
+function codonSpan(
+  model: ReturnType<typeof mappingModel>,
+  structureSeqPos: number,
+) {
+  const regions = structureRangeToGenomeRegions({
+    range: { start: structureSeqPos, end: structureSeqPos + 1 },
+    assemblyName: 'hg38',
+    model,
+  })
+  const first = regions[0]
+  const last = regions.at(-1)
+  return first && last ? ([first.start, last.end] as const) : undefined
+}
+
 test('TP53 CDS builds a genome<->transcript mapping spanning the whole protein', () => {
   const model = makeModel()
   const m = model.genomeToTranscriptSeqMapping
@@ -126,10 +140,7 @@ test('TP53 CDS builds a genome<->transcript mapping spanning the whole protein',
 test('structure residue maps to an in-CDS genome codon', () => {
   const model = makeModel()
   const mid = Math.floor(PROTEIN_LEN / 2)
-  const r = proteinToGenomeMapping({
-    model: mappingModel(model),
-    structureSeqPos: mid,
-  })
+  const r = codonSpan(mappingModel(model), mid)
   expect(r).toBeDefined()
   const [start, end] = r!
   expect(end - start).toBe(3) // one codon
@@ -140,8 +151,8 @@ test('structure residue maps to an in-CDS genome codon', () => {
 test('adjacent residues are exactly one codon apart, in minus-strand order', () => {
   const model = makeModel()
   const m = mappingModel(model)
-  const a = proteinToGenomeMapping({ model: m, structureSeqPos: 100 })!
-  const b = proteinToGenomeMapping({ model: m, structureSeqPos: 101 })!
+  const a = codonSpan(m, 100)!
+  const b = codonSpan(m, 101)!
   expect(Math.abs(a[0] - b[0])).toBe(3)
   // minus strand: the next residue sits at a lower genome coordinate
   expect(b[0]).toBeLessThan(a[0])
@@ -149,10 +160,7 @@ test('adjacent residues are exactly one codon apart, in minus-strand order', () 
 
 test('the start codon maps to the top of the CDS (minus strand)', () => {
   const model = makeModel()
-  const first = proteinToGenomeMapping({
-    model: mappingModel(model),
-    structureSeqPos: 0,
-  })!
+  const first = codonSpan(mappingModel(model), 0)!
   // residue 0 (Met) is the 3'-most genome position for a minus-strand gene
   expect(first[1]).toBe(CDS_MAX)
 })
@@ -160,10 +168,7 @@ test('the start codon maps to the top of the CDS (minus strand)', () => {
 test('zoomToBaseLevel navigation emits a 1-based locString for the codon', async () => {
   const model = makeModel()
   const mid = Math.floor(PROTEIN_LEN / 2)
-  const [start, end] = proteinToGenomeMapping({
-    model: mappingModel(model),
-    structureSeqPos: mid,
-  })!
+  const [start, end] = codonSpan(mappingModel(model), mid)!
 
   let locString: string | undefined
   const connectedView = {
@@ -195,10 +200,7 @@ test('genome<->protein hover directions are mutual inverses', () => {
   // Guards against either direction drifting by a base independently.
   for (const genomePos of Object.keys(m.g2p).map(Number)) {
     const proteinPos = m.g2p[genomePos]!
-    const [start, end] = proteinToGenomeMapping({
-      model: mappingModel(model),
-      structureSeqPos: proteinPos,
-    })!
+    const [start, end] = codonSpan(mappingModel(model), proteinPos)!
     expect(genomePos).toBeGreaterThanOrEqual(start)
     expect(genomePos).toBeLessThan(end)
   }
@@ -209,7 +211,7 @@ test('every structure residue round-trips to a unique in-CDS codon', () => {
   const m = mappingModel(model)
   const seen = new Set<number>()
   for (let pos = 0; pos < PROTEIN_LEN; pos++) {
-    const r = proteinToGenomeMapping({ model: m, structureSeqPos: pos })
+    const r = codonSpan(m, pos)
     expect(r).toBeDefined()
     const [start, end] = r!
     expect(start).toBeGreaterThanOrEqual(CDS_MIN)

@@ -6,7 +6,7 @@ import { observer } from 'mobx-react'
 import Highlight from './Highlight'
 import {
   findProteinLinkedView,
-  genomeHighlightForProteinPosition,
+  genomeHighlightsForProteinPosition,
   getProteinLinkage,
 } from '../Protein1DLinkage'
 import { checkHovered } from '../ProteinView/util'
@@ -37,24 +37,16 @@ const Protein1DToGenomeHoverHighlight = observer(
       return null
     }
 
-    const genomeHighlight = genomeHighlightForProteinPosition(
-      linkage,
-      coord - 1,
-    )
-    if (!genomeHighlight) {
-      return null
-    }
-
     return (
-      <Highlight
-        model={model}
-        region={{
-          start: genomeHighlight.start,
-          end: genomeHighlight.end,
-          refName: genomeHighlight.refName,
-          assemblyName,
-        }}
-      />
+      <>
+        {genomeHighlightsForProteinPosition(linkage, coord - 1).map(r => (
+          <Highlight
+            key={r.start}
+            model={model}
+            region={{ ...r, assemblyName }}
+          />
+        ))}
+      </>
     )
   },
 )

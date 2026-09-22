@@ -12,7 +12,6 @@ import {
   alignmentCol,
   alignmentQuality,
   chooseMappedEntity,
-  codonGenomeSpan,
   entityLabel,
   fetchUniProtStructureMappings,
   fusionPartnerPositions,
@@ -51,7 +50,7 @@ import {
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { errorMessage } from './util'
-import { genomeToTranscriptSeqMapping } from '../mappings'
+import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { EntityConfidence, StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
@@ -679,8 +678,12 @@ const Structure = types
       if (!mapping || transcriptPos === undefined) {
         return undefined
       }
-      const span = codonGenomeSpan(mapping.p2gCodon, transcriptPos)
-      return span ? `${mapping.refName}:${span[0] + 1}-${span[1]}` : undefined
+      const spans = codingSpans(mapping.p2gCodon, [transcriptPos])
+      const start = spans[0]?.[0]
+      const end = spans.at(-1)?.[1]
+      return start === undefined || end === undefined
+        ? undefined
+        : `${mapping.refName}:${start + 1}-${end}`
     },
     /**
      * #getter
