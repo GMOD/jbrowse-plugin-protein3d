@@ -1,3 +1,36 @@
+## [0.14.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.2...v0.14.0) (2026-09-22)
+
+### Bug Fixes
+
+- Translate alternative initiators as M and honour transl_except ([c682930](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c6829307a88294545f41842a49ed7d3f7a1ea090))
+- Highlight a codon split by an intron as its two halves ([e7bac43](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e7bac43d84192b6048d2f10a63cfb8efb069e0ba))
+- Find Ensembl transcripts in the short launch, and ask only feature tracks ([e99fe16](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e99fe1619aef386c4173a6fee5e8270c4b107c5c))
+- Open examples on the nightly JBrowse, not a July build ([118efb6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/118efb64ff820568b638b2a98bb773a75c64b731))
+
+### Documentation
+
+- Link the protein browser from the README instead of the mapping harness ([0c8a2a1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0c8a2a196210d9375bc73ee3398b7118210380b3))
+- An hourly puppeteer-rendered README figure, and a README rewrite ([a585f80](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a585f80be5f3ec475ec7ef54cf58e9095f3122af))
+- README as a portal; split DEVELOPERS.md into launching, snapshots and a dev guide; add a guide for opening your own predicted structures ([e7e6193](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e7e6193a5384d9126ffeeabdd49507b0bffa731a))
+- Split UniProt tracks, launch parameters, testing and host compatibility into their own pages ([9b36db0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9b36db089a78879477fb090184ba1bd4dc96a489))
+- Link the jbrowse.org protein tutorials from the README ([1c14f81](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1c14f8117f67f96a1f7d98da22c8ffa22194e218))
+- Say the short launch asks feature tracks and matches transcript_id ([9654d62](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9654d62590149602acb153a1f8a2e7d8aec0fbe4))
+
+### Features
+
+- Preselect the right-clicked isoform in the launch dialog ([5fd8daf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5fd8daf380df6577c773cd51347be7a72cf58eba))
+
+### Other Changes
+
+- Misc ([a14fd51](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a14fd51300351fda9d147c810c9f45d7825ec53f))
+
+### Refactoring
+
+- One coding-span function for every genome highlight and jump ([de393df](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/de393df4282741ba986945cf5eb7595d93b8bab4))
+- Drop view and structure members nothing calls ([04d9bc4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/04d9bc4e63b4d9541bfec7676b22b26cd691b02c))
+- One genome highlight component for the click and hover bands ([21a6cd2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/21a6cd29865ca9b6ea18ef16093ee0f4574cf47f))
+- The 1D view's genome mapping is a computed on the view ([9b6b215](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9b6b21567094fed20a94bc3035a32cd74917e13a))
+
 ## [0.13.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.1...v0.13.2) (2026-09-18)
 
 ### Bug Fixes
