@@ -4,6 +4,7 @@ import { expect, test, vi } from 'vitest'
 import {
   navigateToProteinPosition,
   proteinToGenomeMapping,
+  structureRangeToGenomeRegions,
 } from './proteinToGenomeMapping'
 import Structure from './structureModel'
 
@@ -216,4 +217,35 @@ test('every structure residue round-trips to a unique in-CDS codon', () => {
     seen.add(start)
   }
   expect(seen.size).toBe(PROTEIN_LEN) // no two residues collide on a codon
+})
+
+function genomeRegions(range: { start: number; end: number }) {
+  return structureRangeToGenomeRegions({
+    range,
+    assemblyName: 'hg38',
+    model: mappingModel(makeModel()),
+  }).map(({ start, end }) => ({ start, end }))
+}
+
+const inCds = (r: { start: number; end: number }) =>
+  TP53_CDS.some(c => r.start >= c.start && r.end <= c.end)
+
+test('a codon split by an intron highlights both halves and not the intron', () => {
+  const split = Array.from({ length: PROTEIN_LEN }, (_, pos) =>
+    genomeRegions({ start: pos, end: pos + 1 }),
+  ).filter(regions => regions.length > 1)
+  // a CDS segment starting mid-codon (phase 1 or 2) splits that codon with the
+  // segment before it
+  expect(split.length).toBe(TP53_CDS.filter(c => c.phase !== 0).length)
+  for (const regions of split) {
+    expect(regions).toHaveLength(2)
+    expect(regions.every(inCds)).toBe(true)
+    expect(regions.reduce((n, r) => n + r.end - r.start, 0)).toBe(3)
+  }
+})
+
+test('a range across the whole protein highlights exactly the CDS', () => {
+  expect(genomeRegions({ start: 0, end: PROTEIN_LEN })).toEqual(
+    TP53_CDS.map(({ start, end }) => ({ start, end })),
+  )
 })

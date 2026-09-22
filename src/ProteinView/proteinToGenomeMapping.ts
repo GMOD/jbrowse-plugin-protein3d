@@ -1,4 +1,5 @@
 import { getSession } from '@jbrowse/core/util'
+import { getCodonRanges } from 'g2p_mapper'
 import { codonGenomeSpan } from 'p2s_mapper'
 
 import type { Region } from '@jbrowse/core/util/types'
@@ -93,11 +94,26 @@ export function proteinRangeToGenomeMapping({
   return undefined
 }
 
+function mergeAbutting(pieces: [number, number][]) {
+  const merged: [number, number][] = []
+  for (const [start, end] of pieces.toSorted((a, b) => a[0] - b[0])) {
+    const last = merged.at(-1)
+    if (last && start <= last[1]) {
+      last[1] = Math.max(last[1], end)
+    } else {
+      merged.push([start, end])
+    }
+  }
+  return merged
+}
+
 /**
- * The genome region a structure-residue range covers, as the one-element list
- * a JBrowse highlight takes. Pure: the caller supplies the assembly and the
- * mapping, so the same conversion serves the hover band, the click band and a
- * test with neither a session nor a connected view.
+ * The genome a structure-residue range covers, one region per stretch of
+ * contiguous coding bases. A codon split by an intron is two regions, as is a
+ * range across one, so no band paints the intron between. Pure: the caller
+ * supplies the assembly and the mapping, so the same conversion serves the
+ * hover band, the click band and a test with neither a session nor a
+ * connected view.
  */
 export function structureRangeToGenomeRegions({
   range,
@@ -109,22 +125,22 @@ export function structureRangeToGenomeRegions({
   model: ProteinGenomeMappingModel
 }): Region[] {
   const mapping = model.genomeToTranscriptSeqMapping
-  if (!range || !assemblyName || !mapping) {
+  if (!range || !assemblyName || !mapping || !model.pairwiseAlignment) {
     return []
   }
-  const mapped =
-    range.end > range.start + 1
-      ? proteinRangeToGenomeMapping({
-          model,
-          structureSeqPos: range.start,
-          structureSeqEndPos: range.end,
-        })
-      : proteinToGenomeMapping({ model, structureSeqPos: range.start })
-  if (!mapped) {
-    return []
+  const pieces: [number, number][] = []
+  for (let pos = range.start; pos < range.end; pos++) {
+    const transcriptPos = model.structureSeqToTranscriptSeqPosition?.[pos]
+    if (transcriptPos !== undefined) {
+      pieces.push(...(getCodonRanges(mapping.p2gCodon, transcriptPos) ?? []))
+    }
   }
-  const [start, end] = mapped
-  return [{ assemblyName, refName: mapping.refName, start, end }]
+  return mergeAbutting(pieces).map(([start, end]) => ({
+    assemblyName,
+    refName: mapping.refName,
+    start,
+    end,
+  }))
 }
 
 export async function navigateToProteinPosition({

@@ -825,8 +825,8 @@ const Structure = types
 
     /**
      * #getter
-     * Maps a structure-residue range to genome coordinates as a single
-     * IRegion. Handles single-residue and multi-residue ranges.
+     * The genome regions a structure-residue range covers, one per stretch of
+     * contiguous coding bases.
      */
     structureRangeToGenomeHighlight(
       range: { start: number; end: number } | undefined,
