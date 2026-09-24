@@ -1,13 +1,7 @@
-/**
- * Pixel geometry for the alignment panel's scrolling, in the coordinates of its
- * horizontally scrolling container.
- */
+import { reaction } from 'mobx'
 
-/**
- * Where to scroll so a hovered column is centred, or undefined while all of it
- * is already visible. A sweep along the genome therefore turns a page each time
- * it reaches an edge, with half a viewport of what comes next in view.
- */
+import { CHAR_WIDTH } from './constants'
+
 export function followHoverTarget({
   x,
   width,
@@ -23,12 +17,6 @@ export function followHoverTarget({
   return visible ? undefined : x + width / 2 - clientWidth / 2
 }
 
-/**
- * Target scrollLeft to bring a selected [start, end) pixel range into view,
- * centering it, but only when it currently lies entirely off-screen. Returns
- * undefined when any part of the range is already visible, so a selection the
- * user can already see is left where it is.
- */
 export function offScreenCenterTarget({
   start,
   end,
@@ -43,4 +31,43 @@ export function offScreenCenterTarget({
   const viewEnd = scrollLeft + clientWidth
   const visible = end >= scrollLeft && start <= viewEnd
   return visible ? undefined : (start + end) / 2 - clientWidth / 2
+}
+
+interface HoverFollower {
+  alignmentHoverPos: number | undefined
+  autoScrollAlignment: boolean
+  isMouseInAlignment: boolean
+}
+
+interface ScrollContainer {
+  scrollLeft: number
+  clientWidth: number
+}
+
+export function followHover(
+  model: HoverFollower,
+  getContainer: () => ScrollContainer | null,
+) {
+  return reaction(
+    () => model.alignmentHoverPos,
+    pos => {
+      const container = getContainer()
+      if (
+        pos !== undefined &&
+        container &&
+        model.autoScrollAlignment &&
+        !model.isMouseInAlignment
+      ) {
+        const target = followHoverTarget({
+          x: pos * CHAR_WIDTH,
+          width: CHAR_WIDTH,
+          scrollLeft: container.scrollLeft,
+          clientWidth: container.clientWidth,
+        })
+        if (target !== undefined) {
+          container.scrollLeft = target
+        }
+      }
+    },
+  )
 }

@@ -23,7 +23,7 @@ import {
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
 import ExternalLink from '../../components/ExternalLink'
-import { followHoverTarget, offScreenCenterTarget } from '../autoScroll'
+import { followHover, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
@@ -159,29 +159,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
       }: ${errorMessage(featureError)}`
     : undefined
 
-  useEffect(
-    () =>
-      autorun(() => {
-        const container = containerRef.current
-        if (
-          model.autoScrollAlignment &&
-          !model.isMouseInAlignment &&
-          model.alignmentHoverPos !== undefined &&
-          container
-        ) {
-          const target = followHoverTarget({
-            x: model.alignmentHoverPos * CHAR_WIDTH,
-            width: CHAR_WIDTH,
-            scrollLeft: container.scrollLeft,
-            clientWidth: container.clientWidth,
-          })
-          if (target !== undefined) {
-            container.scrollLeft = target
-          }
-        }
-      }),
-    [model],
-  )
+  useEffect(() => followHover(model, () => containerRef.current), [model])
 
   // Scroll a selection into view when it changes to an off-screen range — both
   // the declarative `initialSelection` on open and a later click on a distant
@@ -205,7 +183,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
                 clientWidth: container.clientWidth,
               })
               if (target !== undefined) {
-                container.scrollTo({ left: target, behavior: 'smooth' })
+                container.scrollLeft = target
               }
             }
           } else {
@@ -277,8 +255,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
           model.setIsMouseInAlignment(true)
         }}
         onMouseLeave={() => {
-          model.setIsMouseInAlignment(false)
-          model.setHoveredPosition(undefined)
+          model.leaveAlignment()
         }}
       >
         <div

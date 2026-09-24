@@ -1,6 +1,11 @@
+import { observable, runInAction } from 'mobx'
 import { describe, expect, it } from 'vitest'
 
-import { followHoverTarget, offScreenCenterTarget } from './autoScroll'
+import {
+  followHover,
+  followHoverTarget,
+  offScreenCenterTarget,
+} from './autoScroll'
 
 describe('followHoverTarget', () => {
   const view = { width: 6, scrollLeft: 1000, clientWidth: 800 }
@@ -17,6 +22,61 @@ describe('followHoverTarget', () => {
 
   it('centres a column far off screen', () => {
     expect(followHoverTarget({ x: 3000, ...view })).toBe(3003 - 400)
+  })
+})
+
+describe('followHover', () => {
+  function setup(initial: {
+    alignmentHoverPos?: number
+    autoScrollAlignment?: boolean
+    isMouseInAlignment?: boolean
+  }) {
+    const model = observable({
+      alignmentHoverPos: undefined as number | undefined,
+      autoScrollAlignment: true,
+      isMouseInAlignment: false,
+      ...initial,
+    })
+    const container = { scrollLeft: 0, clientWidth: 600 }
+    const dispose = followHover(model, () => container)
+    return { model, container, dispose }
+  }
+
+  it('centres a hover from elsewhere that lands off screen', () => {
+    const { model, container, dispose } = setup({})
+    runInAction(() => {
+      model.alignmentHoverPos = 200
+    })
+    expect(container.scrollLeft).toBe(1203 - 300)
+    dispose()
+  })
+
+  it('leaves the panel alone when the pointer exits past a clipped edge column', () => {
+    const { model, container, dispose } = setup({
+      alignmentHoverPos: 100,
+      isMouseInAlignment: true,
+    })
+    container.scrollLeft = 3
+    runInAction(() => {
+      model.isMouseInAlignment = false
+    })
+    runInAction(() => {
+      model.alignmentHoverPos = undefined
+    })
+    expect(container.scrollLeft).toBe(3)
+    dispose()
+  })
+
+  it('does not jump to a stale hover when auto-scroll is switched on', () => {
+    const { model, container, dispose } = setup({
+      alignmentHoverPos: 300,
+      autoScrollAlignment: false,
+    })
+    runInAction(() => {
+      model.autoScrollAlignment = true
+    })
+    expect(container.scrollLeft).toBe(0)
+    dispose()
   })
 })
 

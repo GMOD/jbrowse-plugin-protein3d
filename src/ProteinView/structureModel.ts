@@ -458,6 +458,13 @@ const Structure = types
     setIsMouseInAlignment(val: boolean) {
       self.isMouseInAlignment = val
     },
+    /**
+     * #action
+     */
+    leaveAlignment() {
+      self.hoverPosition = undefined
+      self.isMouseInAlignment = false
+    },
   }))
   .views(self => ({
     /**
