@@ -42,6 +42,7 @@ import {
   NORMAL_TRACK_GAP,
   NORMAL_TRACK_HEIGHT,
 } from './constants'
+import { entityAlignedTo } from './entityAlignedTo'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
@@ -108,6 +109,10 @@ const Structure = types
     connectedViewId: types.maybe(types.string),
     /**
      * #property
+     * Transcript row first, structure row second, each spelling its whole
+     * sequence. Once the entities load, one that spells no chain is replaced
+     * by a computed alignment, and `mappedEntityId` moves to the chain it
+     * spells (see entityAlignedTo).
      */
     pairwiseAlignment: types.frozen<MaybePairwiseAlignment>(),
     /**
@@ -1212,17 +1217,31 @@ const Structure = types
               userProvidedTranscriptSequence,
               entities,
               alignmentAlgorithm,
+              pairwiseAlignment,
             } = self
 
-            if (
-              self.pairwiseAlignment ||
-              !userProvidedTranscriptSequence ||
-              !entities?.length
-            ) {
+            if (!userProvidedTranscriptSequence || !entities?.length) {
               return
             }
-            // Resolve which entity the transcript belongs to (not always [0])
-            // and align against it in one pass.
+            if (pairwiseAlignment) {
+              const fit = entityAlignedTo(
+                pairwiseAlignment,
+                userProvidedTranscriptSequence,
+                entities,
+                self.mappedEntityId,
+              )
+              if ('entityId' in fit) {
+                self.setMappedEntityId(fit.entityId)
+                return
+              }
+              self.setViewError(
+                new Error(
+                  `Ignored the alignment supplied for ${self.label} and aligned the transcript instead: ${fit.problem}`,
+                ),
+              )
+              self.setAlignment(undefined)
+              return
+            }
             const selection = chooseMappedEntity(
               userProvidedTranscriptSequence,
               entities,

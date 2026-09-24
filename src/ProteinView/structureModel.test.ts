@@ -45,8 +45,11 @@ const TestParent = types
       return undefined
     },
   }))
-  .actions(() => ({
-    setError(_: unknown) {},
+  .volatile(() => ({ viewErrors: new Array<unknown>() }))
+  .actions(self => ({
+    setError(e: unknown) {
+      self.viewErrors.push(e)
+    },
   }))
 
 const pairwiseAlignment = {
@@ -559,4 +562,95 @@ test('initialTranscriptResidues seeds the selection through the alignment once t
   expect(model.clickedStructureRange).toEqual({ start: 1, end: 3 })
   model.setClickedStructureRange(undefined)
   expect(model.clickedStructureRange).toBeUndefined()
+})
+
+// 1TUP's entities as its mmCIF declares them: two DNA strands, then the p53
+// core domain, author-numbered 94-312
+const P53_CORE =
+  'SSSVPSQKTYQGSYGFRLGFLHSGTAKSVTCTYSPALNKMFCQLAKTCPVQLWVDSTPPPGTRVRAMAIYKQSQHMTEVVRRCPHHERCSDSDGLAPPQHLIRVEGNLRVEYLDDRNTFRHSVVVPYEPPEVGSDCTTIHYNYMCNSSCMGGMNRRPILTIITLEDSSGNLLGRNSFEVRVCACPGRDRRTEEENLRKKGEPHHELPPGSTKRALPNNT'
+const range = (from: number, n: number) =>
+  Array.from({ length: n }, (_, i) => from + i)
+const ONE_TUP_ENTITIES = [
+  {
+    entityId: '1',
+    seq: 'TTTCCTAGACTTGCCCAATTA',
+    seqIds: range(1, 21),
+    chains: ['E'],
+    nucleicAcid: true,
+  },
+  {
+    entityId: '2',
+    seq: 'ATAATTGGGCAAGTCTAGGAA',
+    seqIds: range(1, 21),
+    chains: ['F'],
+    nucleicAcid: true,
+  },
+  {
+    entityId: '3',
+    seq: P53_CORE,
+    seqIds: range(1, P53_CORE.length),
+    authSeqIds: range(94, P53_CORE.length),
+    chains: ['A', 'B', 'C'],
+  },
+]
+
+function load1tup(snapshot: {
+  pairwiseAlignment: {
+    consensus: string
+    alns: readonly [{ id: string; seq: string }, { id: string; seq: string }]
+  }
+  mappedEntityId?: string
+}) {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: P53_CORE,
+        initialResidues: { start: 248, end: 248 },
+        ...snapshot,
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({ entities: ONE_TUP_ENTITIES })
+  return { parent, model }
+}
+
+const coreAlignment = (structureRow = P53_CORE) => ({
+  consensus: '',
+  alns: [
+    { id: 'a', seq: P53_CORE },
+    { id: 'b', seq: structureRow },
+  ] as const,
+})
+
+// Reproduced 2026-09-24 on the real 1TUP.cif: a spec alignment with no
+// mappedEntityId mapped the transcript onto DNA strand E, and R248 never lit.
+test('a spec alignment without an entity maps onto the chain it spells, not entity 1', () => {
+  const { parent, model } = load1tup({ pairwiseAlignment: coreAlignment() })
+  expect(model.mappedEntityId).toBe('3')
+  expect(model.alignmentImported).toBe(true)
+  expect(model.clickedStructureRange).toEqual({ start: 154, end: 155 })
+  expect(parent.viewErrors).toEqual([])
+})
+
+test('an alignment saved against another chain moves to the chain it spells', () => {
+  const { model } = load1tup({
+    pairwiseAlignment: coreAlignment(),
+    mappedEntityId: '1',
+  })
+  expect(model.mappedEntityId).toBe('3')
+})
+
+test('an alignment that spells no chain is set aside, reported, and replaced by one computed here', () => {
+  const { parent, model } = load1tup({
+    pairwiseAlignment: coreAlignment(
+      `${P53_CORE.slice(0, 100)}W${P53_CORE.slice(101)}`,
+    ),
+  })
+  expect(String(parent.viewErrors)).toContain(
+    'is not the sequence of any chain in this structure',
+  )
+  expect(model.alignmentImported).toBe(false)
+  expect(model.mappedEntityId).toBe('3')
+  expect(model.structureSeqToTranscriptSeqPosition?.[100]).toBe(100)
 })
