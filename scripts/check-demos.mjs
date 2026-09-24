@@ -178,7 +178,10 @@ function readView() {
       identity: s.alignmentQuality?.identity,
       aligned: s.alignmentQuality?.aligned,
       models: s.molstarStructures?.length,
-      selected: s.clickedStructureRange,
+      // clickedStructureRange is the published plugin's, up to 0.14.x
+      selected:
+        s.clickedStructureRanges ??
+        (s.clickedStructureRange ? [s.clickedStructureRange] : []),
     })),
   }
 }
@@ -239,10 +242,14 @@ function problems(state, expect) {
   if (expect.selected) {
     const { auth, transcriptPos } = expect.selected
     const pos = state.authSeqIds?.indexOf(auth)
-    const range = state.selected
-    if (range?.start !== pos || range?.end !== pos + 1) {
+    const ranges = state.selected
+    if (
+      ranges.length !== 1 ||
+      ranges[0].start !== pos ||
+      ranges[0].end !== pos + 1
+    ) {
       found.push(
-        `selection ${JSON.stringify(range)}, expected residue ${auth} at position ${pos}`,
+        `selection ${JSON.stringify(ranges)}, expected residue ${auth} at position ${pos}`,
       )
     }
     const got = transcriptPosOfAuth(state, auth)
