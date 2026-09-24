@@ -230,7 +230,7 @@ test('chooseEntity realigns to the chosen chain and drops stale highlights', () 
   })
   // the load autorun picks the exact match
   expect(model.mappedEntity?.entityId).toBe('2')
-  model.setClickedStructureRange({ start: 0, end: 2 })
+  model.setClickedStructureRanges([{ start: 0, end: 2 }])
 
   model.chooseEntity('1')
   expect(model.mappedEntityId).toBe('1')
@@ -238,7 +238,7 @@ test('chooseEntity realigns to the chosen chain and drops stale highlights', () 
   expect(model.pairwiseAlignment?.alns[1].seq.replaceAll('-', '')).toBe(
     'GGGGGG',
   )
-  expect(model.clickedStructureRange).toBeUndefined()
+  expect(model.clickedStructureRanges).toEqual([])
 })
 
 test('a persisted mappedEntityId survives a reload alongside its alignment', () => {
@@ -272,7 +272,10 @@ const FUSED_ALIGNMENT = {
   ],
 }
 
-async function loadFusedReceptor(snapshot: { alignmentImported?: boolean }) {
+async function loadFusedReceptor(snapshot: {
+  alignmentImported?: boolean
+  initialTranscriptResidues?: { start: number; end: number }
+}) {
   const segment = (start: number, end: number, unpStart: number) => ({
     entity_id: 1,
     chain_id: 'A',
@@ -358,7 +361,7 @@ test('initialResidues seeds the selection by author numbering once the mapped en
   })
   const model = parent.structures[0]!
   // nothing to resolve against yet
-  expect(model.clickedStructureRange).toBeUndefined()
+  expect(model.clickedStructureRanges).toEqual([])
   model.setStructureData({
     entities: [
       // a decoy first entity numbered the same way, as 1TUP's DNA strands are
@@ -380,10 +383,10 @@ test('initialResidues seeds the selection by author numbering once the mapped en
   })
   // the alignment autorun has picked entity 2, and the seed resolved on it
   expect(model.mappedEntityId).toBe('2')
-  expect(model.clickedStructureRange).toEqual({ start: 2, end: 4 })
+  expect(model.clickedStructureRanges).toEqual([{ start: 2, end: 4 }])
   // the seed fires once: clearing the selection afterwards sticks
-  model.setClickedStructureRange(undefined)
-  expect(model.clickedStructureRange).toBeUndefined()
+  model.setClickedStructureRanges([])
+  expect(model.clickedStructureRanges).toEqual([])
 })
 
 test('a structure is loading until it is in Mol*, aligned, and SIFTS has answered for a PDB entry', async () => {
@@ -556,12 +559,108 @@ test('initialTranscriptResidues seeds the selection through the alignment once t
     ],
   })
   expect(model.alignment).toBeDefined()
-  expect(model.clickedStructureRange).toBeUndefined()
+  expect(model.clickedStructureRanges).toEqual([])
   model.setLoadedToMolstar(true)
   // L and A are positions 1 and 2; the V between them is not modeled
-  expect(model.clickedStructureRange).toEqual({ start: 1, end: 3 })
-  model.setClickedStructureRange(undefined)
-  expect(model.clickedStructureRange).toBeUndefined()
+  expect(model.clickedStructureRanges).toEqual([{ start: 1, end: 3 }])
+  model.setClickedStructureRanges([])
+  expect(model.clickedStructureRanges).toEqual([])
+})
+
+// 2RH1's shape: a range across the loop the partner is fused into used to
+// select min..max of the matched positions, the partner included
+test('initialTranscriptResidues across a fusion selects the receptor either side, not the partner', async () => {
+  const model = await loadFusedReceptor({
+    alignmentImported: false,
+    initialTranscriptResidues: { start: 3, end: 10 },
+  })
+  model.setLoadedToMolstar(true)
+  expect(model.clickedStructureRanges).toEqual([
+    { start: 2, end: 4 },
+    { start: 8, end: 10 },
+  ])
+  expect(model.selectLabelSeqIds).toEqual([3, 4, 9, 10])
+})
+
+test('a seed takes several ranges, and a saved single range keeps its shape', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'MKAA',
+        pairwiseAlignment,
+        initialSelection: { start: 0, end: 1 },
+        initialResidues: [
+          { start: 96, end: 96 },
+          { start: 94, end: 94 },
+        ],
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'MKAA',
+        seqIds: [1, 2, 3, 4],
+        authSeqIds: [94, 95, 96, 97],
+        chains: ['A'],
+      },
+    ],
+  })
+  model.setMappedEntityId('1')
+  expect(model.clickedStructureRanges).toEqual([
+    { start: 0, end: 1 },
+    { start: 2, end: 3 },
+  ])
+  expect(model.clickAlignmentRanges).toEqual([
+    { start: 0, end: 0 },
+    { start: 2, end: 2 },
+  ])
+  expect(getSnapshot(model).initialSelection).toEqual({ start: 0, end: 1 })
+})
+
+test('focusResidues selects by any numbering once the structure can resolve it', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'MKAA',
+        pairwiseAlignment,
+        mappedEntityId: '1',
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  expect(() =>
+    model.focusResidues({ residues: { start: 95, end: 95 } }),
+  ).toThrow(/not finished loading/)
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'MKAA',
+        seqIds: [1, 2, 3, 4],
+        authSeqIds: [94, 95, 96, 97],
+        chains: ['A'],
+      },
+    ],
+  })
+  model.setSelectedFeatureId('domain-1')
+  expect(model.focusResidues({ residues: { start: 95, end: 95 } })).toEqual([
+    { start: 1, end: 2 },
+  ])
+  expect(model.selectedFeatureId).toBeUndefined()
+  model.setLoadedToMolstar(true)
+  model.focusResidues({
+    transcriptResidues: [
+      { start: 1, end: 1 },
+      { start: 4, end: 4 },
+    ],
+  })
+  expect(model.clickedStructureRanges).toEqual([
+    { start: 0, end: 1 },
+    { start: 3, end: 4 },
+  ])
 })
 
 // 1TUP's entities as its mmCIF declares them: two DNA strands, then the p53
@@ -629,7 +728,7 @@ test('a spec alignment without an entity maps onto the chain it spells, not enti
   const { parent, model } = load1tup({ pairwiseAlignment: coreAlignment() })
   expect(model.mappedEntityId).toBe('3')
   expect(model.alignmentImported).toBe(true)
-  expect(model.clickedStructureRange).toEqual({ start: 154, end: 155 })
+  expect(model.clickedStructureRanges).toEqual([{ start: 154, end: 155 }])
   expect(parent.viewErrors).toEqual([])
 })
 
@@ -639,7 +738,7 @@ test('an alignment saved against another chain moves to the chain it spells', ()
     mappedEntityId: '1',
   })
   expect(model.mappedEntityId).toBe('3')
-  expect(model.clickedStructureRange).toEqual({ start: 154, end: 155 })
+  expect(model.clickedStructureRanges).toEqual([{ start: 154, end: 155 }])
 })
 
 test('an alignment that spells no chain is set aside, reported, and replaced by one computed here', () => {

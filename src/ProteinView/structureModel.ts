@@ -24,13 +24,11 @@ import {
   mappedStructureIdentity,
   rangeToLabelSeqIds,
   residueNumber,
-  residueRangeToPositions,
   resolveStructureUrl,
   stripStopCodon,
   structureDisplayLabel,
   structurePos,
   toLabelSeqIds,
-  transcriptRangeToStructureRange,
   unmapStructurePositions,
 } from 'p2s_mapper'
 
@@ -43,11 +41,19 @@ import {
   NORMAL_TRACK_HEIGHT,
 } from './constants'
 import { entityAlignedTo } from './entityAlignedTo'
+import { frameResidues } from './frameSelection'
 import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
-  structureRangeToGenomeRegions,
+  navigateToProteinPosition,
+  structureRangesToGenomeRegions,
 } from './proteinToGenomeMapping'
+import {
+  positionRangeRuns,
+  rangeList,
+  residueRuns,
+  transcriptRuns,
+} from './residueRanges'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { errorMessage } from './util'
@@ -55,6 +61,11 @@ import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { EntityConfidence, StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
+import type {
+  ResidueRange,
+  ResidueRanges,
+  SelectionTarget,
+} from './residueRanges'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -128,35 +139,30 @@ const Structure = types
     userProvidedTranscriptSequence: types.optional(types.string, ''),
     /**
      * #property
-     * Declarative seed for the persistent domain selection: a 0-based,
-     * half-open structure-residue range `{ start, end }` lit on load exactly as
-     * if the user had clicked that domain — magenta in the 3D structure, a band
-     * on the connected genome view, and the range in the alignment. Lets a
-     * session spec open with a domain pre-highlighted, with no click.
+     * Declarative seed for the persistent selection: 0-based, half-open
+     * structure-residue ranges `{ start, end }`, one or an array of them, lit
+     * on load as if clicked — magenta in the 3D structure, a band per run on
+     * the connected genome view, and the ranges in the alignment.
      */
-    initialSelection: types.frozen<
-      { start: number; end: number } | undefined
-    >(),
+    initialSelection: types.frozen<ResidueRanges | undefined>(),
     /**
      * #property
      * The same seed named by author residue numbers, inclusive, as a paper
      * cites a site: `{ start: 248, end: 248 }` for p53's R248 whichever
-     * fragment the crystal holds. Resolved to positions through the mapped
-     * entity's numbering once the structure loads, so it needs no knowledge of
-     * where the construct starts.
+     * fragment the crystal holds. Resolved through the mapped entity's
+     * numbering once the structure loads; selects only residues numbered in
+     * range, so a fusion partner numbered apart stays unselected.
      */
-    initialResidues: types.frozen<{ start: number; end: number } | undefined>(),
+    initialResidues: types.frozen<ResidueRanges | undefined>(),
     /**
      * #property
      * The seed named by 1-based inclusive residues of the transcript's own
      * translation, the numbering a UniProt feature or a domain map counts in.
-     * Resolved through the alignment once it exists, so it lands on the right
-     * residues of any structure the transcript aligns to, whatever the file's
-     * numbering, and clamps to the residues the structure models.
+     * Resolved through the alignment once it exists, selecting the runs of
+     * structure residues the transcript pairs with, so it lands on the right
+     * residues of any structure the transcript aligns to.
      */
-    initialTranscriptResidues: types.frozen<
-      { start: number; end: number } | undefined
-    >(),
+    initialTranscriptResidues: types.frozen<ResidueRanges | undefined>(),
     /**
      * #property
      * mmCIF entity the transcript maps to. Chosen by alignment when the
@@ -203,11 +209,11 @@ const Structure = types
   .volatile(() => ({
     /**
      * #volatile
-     * Inclusive-exclusive structure-residue range from a click; drives the
-     * derived clickGenomeHighlights getter.
+     * The persistent selection as sorted, disjoint 0-based half-open
+     * structure-position runs, empty when nothing is selected. A click sets
+     * one; a spec or focusResidues may set several.
      */
-    clickedStructureRange: undefined as
-      { start: number; end: number } | undefined,
+    clickedStructureRanges: [] as readonly ResidueRange[],
 
     /**
      * #volatile
@@ -409,8 +415,8 @@ const Structure = types
     /**
      * #action
      */
-    setClickedStructureRange(range?: { start: number; end: number }) {
-      self.clickedStructureRange = range
+    setClickedStructureRanges(ranges: readonly ResidueRange[]) {
+      self.clickedStructureRanges = ranges
     },
     /**
      * #action
@@ -730,7 +736,7 @@ const Structure = types
      * #getter
      * Structure-residue range from a feature-bar hover, derived by mapping
      * alignmentHoverRange through pairwiseAlignmentToStructurePosition.
-     * End is exclusive, matching clickedStructureRange.
+     * End is exclusive, matching clickedStructureRanges.
      */
     get hoverStructureRange() {
       const { alignmentHoverRange } = self
@@ -795,9 +801,9 @@ const Structure = types
      */
     get selectLabelSeqIds() {
       const entity = this.mappedEntity
-      const range = self.clickedStructureRange
-      if (range) {
-        return rangeToLabelSeqIds(entity, range)
+      const ranges = self.clickedStructureRanges
+      if (ranges.length) {
+        return ranges.flatMap(range => rangeToLabelSeqIds(entity, range))
       }
       const covered = this.structureSeqToTranscriptSeqPosition
       return this.showHighlight && covered
@@ -826,32 +832,32 @@ const Structure = types
 
     /**
      * #getter
-     * Persistent click selection in alignment coordinates, derived from
-     * clickedStructureRange via structurePositionToAlignmentMap.
+     * The persistent selection in alignment columns, inclusive, one range per
+     * run of clickedStructureRanges.
      */
-    get clickAlignmentRange() {
-      const range = self.clickedStructureRange
+    get clickAlignmentRanges() {
       const s2a = this.structurePositionToAlignmentMap
-      if (!range || !s2a) {
-        return undefined
-      }
-      const start = s2a[range.start]
-      const end = s2a[range.end - 1]
-      return start === undefined || end === undefined
-        ? undefined
-        : { start, end }
+      return s2a
+        ? self.clickedStructureRanges.flatMap(range => {
+            const start = s2a[range.start]
+            const end = s2a[range.end - 1]
+            return start === undefined || end === undefined
+              ? []
+              : [{ start, end }]
+          })
+        : []
     },
 
     /**
-     * #getter
-     * The genome regions a structure-residue range covers, one per stretch of
+     * #method
+     * The genome regions structure-residue ranges cover, one per stretch of
      * contiguous coding bases.
      */
-    structureRangeToGenomeHighlight(
-      range: { start: number; end: number } | undefined,
+    structureRangesToGenomeHighlight(
+      ranges: readonly ResidueRange[],
     ): IRegion[] {
-      return structureRangeToGenomeRegions({
-        range,
+      return structureRangesToGenomeRegions({
+        ranges,
         assemblyName: self.connectedView?.assemblyNames[0],
         model: {
           genomeToTranscriptSeqMapping: this.genomeToTranscriptSeqMapping,
@@ -872,16 +878,18 @@ const Structure = types
       const source = self.hoverPosition?.source
       return source === 'genome' || source === 'msa'
         ? []
-        : this.structureRangeToGenomeHighlight(this.hoverHighlightRange)
+        : this.structureRangesToGenomeHighlight(
+            rangeList(this.hoverHighlightRange),
+          )
     },
 
     /**
      * #getter
      * Genome regions to highlight in the LGV from the persistent click
-     * selection. Derived from clickedStructureRange.
+     * selection, one per run of coding bases across every selected range.
      */
     get clickGenomeHighlights(): IRegion[] {
-      return this.structureRangeToGenomeHighlight(self.clickedStructureRange)
+      return this.structureRangesToGenomeHighlight(self.clickedStructureRanges)
     },
 
     /**
@@ -1079,6 +1087,40 @@ const Structure = types
       return this.parentView.molstarPluginContext
     },
   }))
+  .views(self => ({
+    /**
+     * #method
+     * The position runs a selection target names on this structure, or
+     * undefined until the structure has what resolving it needs: the mapped
+     * entity for author numbers, the settled alignment for transcript
+     * residues. Before the entity is chosen or checked, mappedEntity may be
+     * entities[0] or a stored id, which in 1TUP is a DNA strand; for a fusion
+     * the alignment also waits on SIFTS.
+     */
+    resolveSelection({
+      positions,
+      residues,
+      transcriptResidues,
+    }: SelectionTarget): ResidueRange[] | undefined {
+      const entityChosen =
+        !!self.entities &&
+        (self.entityChosen || !self.userProvidedTranscriptSequence)
+      const mapper = self.coordinateMapper
+      if (residues && !entityChosen) {
+        return undefined
+      }
+      if (transcriptResidues && (!mapper || self.loading)) {
+        return undefined
+      }
+      return positionRangeRuns([
+        ...positionRangeRuns(positions ?? []),
+        ...(residues ? residueRuns(self.mappedEntity, residues) : []),
+        ...(mapper && transcriptResidues
+          ? transcriptRuns(mapper, transcriptResidues)
+          : []),
+      ])
+    },
+  }))
   .actions(self => ({
     /**
      * #action
@@ -1126,7 +1168,7 @@ const Structure = types
       }
       self.setMappedEntityId(entityId)
       self.setAlignment(scored.alignment)
-      self.setClickedStructureRange(undefined)
+      self.setClickedStructureRanges([])
       self.setAlignmentHoverRange(undefined)
       self.setSelectedFeatureId(undefined)
       self.setHoveredPosition(undefined)
@@ -1148,22 +1190,56 @@ const Structure = types
           self.parentView.setError(e)
         })
       } else {
-        self.setClickedStructureRange(undefined)
+        self.setClickedStructureRanges([])
       }
     },
   }))
   .actions(self => ({
-    afterAttach() {
-      // Seed the persistent selection from a declarative `initialSelection`, so
-      // a session spec can open with a domain pre-lit. clickedStructureRange is
-      // the single source of truth the 3D/genome/alignment highlights derive
-      // from; the genome-band and alignment getters recompute reactively once
-      // the connected view + mapping resolve, and the molstar select autorun
-      // below lights it once the structure loads. A later user click overwrites
-      // it normally.
-      if (self.initialSelection) {
-        self.setClickedStructureRange(self.initialSelection)
+    /**
+     * #action
+     * Select residues and bring them into view: the camera frames them, as it
+     * does a spec's seed, and the connected genome view moves to them, as it
+     * does on a click. For whatever drives the view from outside, an agent
+     * saying "show me R248" among them. Throws while the structure is still
+     * loading, rather than selecting against a numbering it does not have yet.
+     */
+    focusResidues(target: SelectionTarget) {
+      const runs = self.resolveSelection(target)
+      if (!runs) {
+        throw new Error(`${self.label} has not finished loading`)
       }
+      self.setClickedStructureRanges(runs)
+      self.setSelectedFeatureId(undefined)
+      const first = runs[0]
+      const last = runs.at(-1)
+      const plugin = self.molstarPluginContext
+      const structure = self.molstarStructure
+      const labelSeqIds = self.selectLabelSeqIds
+      if (plugin && structure && labelSeqIds.length) {
+        frameResidues(
+          plugin,
+          [{ structure, entityId: self.mappedEntity?.entityId, labelSeqIds }],
+          () => self.molstarPluginContext === plugin,
+        ).catch((e: unknown) => {
+          console.error(e)
+        })
+      }
+      if (first && last) {
+        navigateToProteinPosition({
+          model: self,
+          structureSeqPos: first.start,
+          structureSeqEndPos: last.end,
+          zoomToBaseLevel: self.zoomToBaseLevel,
+        }).catch((e: unknown) => {
+          console.error(e)
+          self.parentView.setError(e)
+        })
+      }
+      return runs
+    },
+  }))
+  .actions(self => ({
+    afterAttach() {
       const { pdbId } = self
       if (pdbId) {
         fetchUniProtStructureMappings(pdbId).then(
@@ -1179,41 +1255,21 @@ const Structure = types
           },
         )
       }
-      // The author-numbered seed can only resolve once the entities are read
-      // and the transcript's entity is chosen or checked: before that,
-      // mappedEntity may be entities[0] or a stored id, which in 1TUP is a DNA
-      // strand. Fires once, so a user clearing the selection afterwards is not
-      // overruled.
-      const { initialResidues, initialTranscriptResidues } = self
-      if (initialResidues) {
-        addDisposer(
-          self,
-          when(
-            () =>
-              !!self.entities &&
-              (self.entityChosen || !self.userProvidedTranscriptSequence),
-            () => {
-              self.setClickedStructureRange(
-                residueRangeToPositions(self.mappedEntity, initialResidues),
-              )
-            },
-          ),
-        )
+      // Resolves once, when the structure has what the seed's numbering needs,
+      // so a user clearing the selection afterwards is not overruled. A seed of
+      // positions alone resolves here and now.
+      const seed: SelectionTarget = {
+        positions: self.initialSelection,
+        residues: self.initialResidues,
+        transcriptResidues: self.initialTranscriptResidues,
       }
-      // The transcript-numbered seed needs the alignment, which for a fusion
-      // is also waiting on SIFTS, so it fires once the structure has settled.
-      if (initialTranscriptResidues) {
+      if (self.seededSelection) {
         addDisposer(
           self,
           when(
-            () => !!self.coordinateMapper && !self.loading,
+            () => self.resolveSelection(seed) !== undefined,
             () => {
-              self.setClickedStructureRange(
-                transcriptRangeToStructureRange(
-                  self.coordinateMapper!,
-                  initialTranscriptResidues,
-                ),
-              )
+              self.setClickedStructureRanges(self.resolveSelection(seed) ?? [])
             },
           ),
         )

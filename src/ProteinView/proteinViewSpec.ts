@@ -1,6 +1,7 @@
 import { resolveStructureUrl, structureDisplayLabel } from 'p2s_mapper'
 
 import type { ProteinColorScheme } from './applyColorTheme'
+import type { ResidueRanges } from './residueRanges'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { AlignmentAlgorithm, PairwiseAlignment } from 'p2s_mapper'
 
@@ -22,16 +23,17 @@ export interface ProteinStructureSpec {
   feature?: SimpleFeatureSerialized
   // protein sequence to align against; '' means use the structure's own
   userProvidedTranscriptSequence?: string
-  // 0-based half-open structure-residue range lit on load, as if clicked
-  initialSelection?: { start: number; end: number }
+  // Each selection field takes one range or an array of them.
+  // 0-based half-open structure-residue ranges lit on load, as if clicked
+  initialSelection?: ResidueRanges
   // the same selection named by author residue numbers, inclusive, the way a
   // paper cites a site (R248 is { start: 248, end: 248 }); resolved through the
   // structure's own numbering once it loads
-  initialResidues?: { start: number; end: number }
+  initialResidues?: ResidueRanges
   // the same selection as 1-based inclusive residues of the transcript's own
   // translation, resolved through the alignment; exact for any structure the
   // transcript aligns to, so a domain map needs no per-entry numbering
-  initialTranscriptResidues?: { start: number; end: number }
+  initialTranscriptResidues?: ResidueRanges
   pairwiseAlignment?: PairwiseAlignment
   // whether pairwiseAlignment came from outside and is used exactly as given;
   // defaults to true when a pairwiseAlignment is present

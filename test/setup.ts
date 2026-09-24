@@ -39,7 +39,7 @@ interface ProteinViewStructure {
   }
   mappedEntityId?: string
   url?: string
-  clickedStructureRange?: { start: number; end: number }
+  clickedStructureRanges?: { start: number; end: number }[]
   residueNumber?: (pos: number) => number
 }
 interface SessionView {

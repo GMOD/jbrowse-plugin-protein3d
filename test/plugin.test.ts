@@ -4,6 +4,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import {
   LAUNCH_DIALOG,
+  MOLSTAR_CANVAS,
   PAINTED_FEATURES,
   TRACK_ID,
   captureScreenshot,
@@ -231,7 +232,14 @@ describe('Protein3d Plugin E2E', () => {
             // R248 by the authors' numbering; the construct starts at 94, so
             // this has to resolve to position 154 without the spec saying so
             { pdbId: '1TUP', initialResidues: { start: 248, end: 248 } },
-            { pdbId: '1YCR' },
+            // two stretches of the MDM2-bound p53 peptide, residues 15-29
+            {
+              pdbId: '1YCR',
+              initialTranscriptResidues: [
+                { start: 17, end: 19 },
+                { start: 22, end: 24 },
+              ],
+            },
           ],
           transcriptId: 'ENST00000269305.9',
           connectedView: {
@@ -276,17 +284,71 @@ describe('Protein3d Plugin E2E', () => {
       const panel = document.querySelector('[data-structure="1TUP"]')!
       panel.scrollIntoView()
       return {
-        clickedStructureRange: s.clickedStructureRange,
+        clickedStructureRanges: s.clickedStructureRanges,
         residueNumber: s.residueNumber?.(154),
         rulerLabels: [...panel.querySelectorAll('span')]
           .map(el => el.textContent)
           .filter(t => /^\d+$/.test(t)),
       }
     })
-    expect(hotspot.clickedStructureRange).toEqual({ start: 154, end: 155 })
+    expect(hotspot.clickedStructureRanges).toEqual([{ start: 154, end: 155 }])
     expect(hotspot.residueNumber).toBe(248)
     expect(hotspot.rulerLabels).toContain('250')
     await captureScreenshot(page, screenshot('08-hotspot-panel'))
+
+    const peptideRuns = await page.evaluate(
+      () =>
+        window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+          .structures![2]!.clickedStructureRanges,
+    )
+    expect(peptideRuns?.map(r => r.end - r.start)).toEqual([3, 3])
+
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // A declared selection is the user's to put down like a clicked one. This
+  // leg is what shows Mol* reports a click on empty canvas at all; the unit
+  // tests take that as given.
+  it('puts a declared selection down on a click on empty canvas', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [
+            { pdbId: '1TUP', initialResidues: { start: 248, end: 248 } },
+          ],
+          transcriptId: 'ENST00000269305.9',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,668,421-7,687,550',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const ranges = () =>
+      page.evaluate(() =>
+        window
+          .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+          .structures!.map(s => s.clickedStructureRanges),
+      )
+    await page.waitForFunction(
+      () =>
+        window
+          .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+          .structures!.every(s => s.clickedStructureRanges?.length),
+      { timeout: 60_000 },
+    )
+    expect(await ranges()).toEqual([[{ start: 154, end: 155 }]])
+    const canvas = (await page.$(MOLSTAR_CANVAS))!
+    const box = (await canvas.boundingBox())!
+    await canvas.click({ offset: { x: 5, y: box.height / 2 } })
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    expect(await ranges()).toEqual([[]])
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 

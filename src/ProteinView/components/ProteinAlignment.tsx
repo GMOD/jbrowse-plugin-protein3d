@@ -161,19 +161,20 @@ const ProteinAlignment = observer(function ProteinAlignment({
 
   useEffect(() => followHover(model, () => containerRef.current), [model])
 
-  // Scroll a selection into view when it changes to an off-screen range — both
-  // the declarative `initialSelection` on open and a later click on a distant
-  // feature bar, which would otherwise select something the user can't see.
-  // Keyed on the range so it fires once per distinct selection and doesn't fight
-  // the user's own scrolling afterward.
+  // Scroll a selection into view when it changes to an off-screen one — both
+  // a declared seed on open and a later click on a distant feature bar, which
+  // would otherwise select something the user can't see. Several ranges scroll
+  // to their first. Keyed on the ranges so it fires once per distinct
+  // selection and doesn't fight the user's own scrolling afterward.
   useEffect(
     () =>
       autorun(() => {
         const container = containerRef.current
-        const range = model.clickAlignmentRange
+        const ranges = model.clickAlignmentRanges
+        const range = ranges[0]
         if (container) {
           if (range) {
-            const key = `${range.start}-${range.end}`
+            const key = ranges.map(r => `${r.start}-${r.end}`).join(',')
             if (key !== lastScrolledSelectionRef.current) {
               lastScrolledSelectionRef.current = key
               const target = offScreenCenterTarget({

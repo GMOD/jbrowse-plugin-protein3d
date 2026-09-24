@@ -1,7 +1,7 @@
 import { autorun, observable, runInAction } from 'mobx'
 import { expect, test, vi } from 'vitest'
 
-import { makeSelectionFramer } from './frameSelection'
+import { frameResidues, makeSelectionFramer } from './frameSelection'
 import { parseStructure } from '../test_data/molstarStructure'
 
 import type { Loci } from 'molstar/lib/mol-model/loci'
@@ -191,4 +191,18 @@ test('a seeded range is framed but not focused', async () => {
   })
   expect(sticks).toHaveLength(0)
   dispose()
+})
+
+test('frameResidues frames its targets, unless the plugin moved on meanwhile', async () => {
+  const { plugin, focused } = recordingPlugin()
+  const { molstarStructure } = await structure(false)
+  const target = {
+    structure: molstarStructure,
+    entityId: '1',
+    labelSeqIds: [2],
+  }
+  await frameResidues(plugin, [target], () => false)
+  expect(focused).toHaveLength(0)
+  await frameResidues(plugin, [target])
+  expect(focused).toHaveLength(1)
 })

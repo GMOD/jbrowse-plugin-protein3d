@@ -3,6 +3,7 @@ import React from 'react'
 import { observer } from 'mobx-react'
 
 import { CHAR_WIDTH } from '../constants'
+import { positionRuns } from '../residueRanges'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -25,25 +26,6 @@ const CharacterSpans = observer(function CharacterSpans({
   ))
 })
 
-/**
- * Collapse a set of matching columns into contiguous [start, end) runs. A
- * well-matched alignment is nearly all one run, so this turns one DOM node per
- * residue into a handful for the whole overlay.
- */
-export function matchRuns(columns: Iterable<number>) {
-  const sorted = [...columns].sort((a, b) => a - b)
-  const runs: { start: number; end: number }[] = []
-  for (const col of sorted) {
-    const last = runs.at(-1)
-    if (last?.end === col) {
-      last.end = col + 1
-    } else {
-      runs.push({ start: col, end: col + 1 })
-    }
-  }
-  return runs
-}
-
 const MatchOverlays = observer(function MatchOverlays({
   model,
   height,
@@ -54,7 +36,7 @@ const MatchOverlays = observer(function MatchOverlays({
   const { showHighlight, alignmentMatchSet } = model
   return !showHighlight || !alignmentMatchSet
     ? null
-    : matchRuns(alignmentMatchSet).map(run => (
+    : positionRuns(alignmentMatchSet).map(run => (
         <span
           key={run.start}
           style={{
@@ -162,13 +144,16 @@ export const AlignmentHighlights = observer(function AlignmentHighlights({
       }}
     >
       <MatchOverlays model={model} height={height} />
-      <RangeHighlight
-        range={model.clickAlignmentRange}
-        strLength={strLength}
-        background="rgba(0, 120, 255, 0.3)"
-        border="1px solid rgba(0, 120, 255, 0.6)"
-        height={height}
-      />
+      {model.clickAlignmentRanges.map(range => (
+        <RangeHighlight
+          key={range.start}
+          range={range}
+          strLength={strLength}
+          background="rgba(0, 120, 255, 0.3)"
+          border="1px solid rgba(0, 120, 255, 0.6)"
+          height={height}
+        />
+      ))}
       <RangeHighlight
         range={model.alignmentHoverRange}
         strLength={strLength}

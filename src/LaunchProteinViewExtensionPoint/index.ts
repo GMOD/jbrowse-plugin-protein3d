@@ -10,6 +10,7 @@ import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 
 import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
+import type { ResidueRanges } from '../ProteinView/residueRanges'
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type {
   AbstractSessionModel,
@@ -25,9 +26,9 @@ interface LaunchStructure {
   data?: string
   uniprotId?: string
   pdbId?: string
-  initialSelection?: { start: number; end: number }
-  initialResidues?: { start: number; end: number }
-  initialTranscriptResidues?: { start: number; end: number }
+  initialSelection?: ResidueRanges
+  initialResidues?: ResidueRanges
+  initialTranscriptResidues?: ResidueRanges
   mappedEntityId?: string
   // per-structure mapping, overriding the launch-wide one below
   userProvidedTranscriptSequence?: string
@@ -83,14 +84,14 @@ export default function LaunchProteinViewExtensionPointF(
       // protein view side-by-side (left genome | right protein). Explicit
       // override; falls back to the launch-dialog localStorage preference.
       sideBySide?: boolean
-      // 0-based half-open structure-residue range to pre-select on load, lit
-      // across the 3D structure, connected genome view, and alignment exactly
-      // as a domain click would — so a spec can open with a domain highlighted.
-      initialSelection?: { start: number; end: number }
+      // 0-based half-open structure-residue ranges, one or an array, to
+      // pre-select on load, lit across the 3D structure, connected genome view
+      // and alignment as a domain click would
+      initialSelection?: ResidueRanges
       // the same, by inclusive author residue numbers (R248 is 248-248)
-      initialResidues?: { start: number; end: number }
+      initialResidues?: ResidueRanges
       // the same, by 1-based inclusive residues of the transcript's translation
-      initialTranscriptResidues?: { start: number; end: number }
+      initialTranscriptResidues?: ResidueRanges
     }) => {
       const {
         session,

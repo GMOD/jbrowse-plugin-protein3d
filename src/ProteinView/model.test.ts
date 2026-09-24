@@ -30,15 +30,17 @@ function makeView() {
 test('removing a structure leaves the others as they were', () => {
   const view = makeView()
   const [first, second] = view.structures
-  second!.setClickedStructureRange({ start: 3, end: 7 })
+  second!.setClickedStructureRanges([{ start: 3, end: 7 }])
 
   view.removeStructure(first!)
   expect(view.structures.length).toBe(1)
   expect(view.structures[0]!.url).toBe('b.cif')
-  expect(view.structures[0]!.clickedStructureRange).toEqual({
-    start: 3,
-    end: 7,
-  })
+  expect(view.structures[0]!.clickedStructureRanges).toEqual([
+    {
+      start: 3,
+      end: 7,
+    },
+  ])
   // the pivot a superposition aligned against is gone, so the rest re-align
   expect(view.superposedCount).toBe(0)
 })
@@ -119,13 +121,13 @@ test('two structures loading the same file get one overlay line each', () => {
 test('clearing the selection puts every structure down', () => {
   const view = makeView()
   for (const structure of view.structures) {
-    structure.setClickedStructureRange({ start: 1, end: 2 })
+    structure.setClickedStructureRanges([{ start: 1, end: 2 }])
     structure.setSelectedFeatureId('feature-1')
   }
 
   view.clearSelection()
   for (const structure of view.structures) {
-    expect(structure.clickedStructureRange).toBeUndefined()
+    expect(structure.clickedStructureRanges).toEqual([])
     expect(structure.selectedFeatureId).toBeUndefined()
   }
 })

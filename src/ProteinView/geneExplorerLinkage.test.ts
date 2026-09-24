@@ -3,7 +3,7 @@ import { expect, test, vi } from 'vitest'
 
 import {
   navigateToProteinPosition,
-  structureRangeToGenomeRegions,
+  structureRangesToGenomeRegions,
 } from './proteinToGenomeMapping'
 import Structure from './structureModel'
 
@@ -117,8 +117,8 @@ function codonSpan(
   model: ReturnType<typeof mappingModel>,
   structureSeqPos: number,
 ) {
-  const regions = structureRangeToGenomeRegions({
-    range: { start: structureSeqPos, end: structureSeqPos + 1 },
+  const regions = structureRangesToGenomeRegions({
+    ranges: [{ start: structureSeqPos, end: structureSeqPos + 1 }],
     assemblyName: 'hg38',
     model,
   })
@@ -221,9 +221,9 @@ test('every structure residue round-trips to a unique in-CDS codon', () => {
   expect(seen.size).toBe(PROTEIN_LEN) // no two residues collide on a codon
 })
 
-function genomeRegions(range: { start: number; end: number }) {
-  return structureRangeToGenomeRegions({
-    range,
+function genomeRegions(...ranges: { start: number; end: number }[]) {
+  return structureRangesToGenomeRegions({
+    ranges,
     assemblyName: 'hg38',
     model: mappingModel(makeModel()),
   }).map(({ start, end }) => ({ start, end }))
@@ -249,5 +249,15 @@ test('a codon split by an intron highlights both halves and not the intron', () 
 test('a range across the whole protein highlights exactly the CDS', () => {
   expect(genomeRegions({ start: 0, end: PROTEIN_LEN })).toEqual(
     TP53_CDS.map(({ start, end }) => ({ start, end })),
+  )
+})
+
+test('several ranges highlight their own codons and nothing between', () => {
+  const a = { start: 10, end: 11 }
+  const b = { start: 20, end: 21 }
+  const both = genomeRegions(a, b)
+  expect(both.reduce((n, r) => n + r.end - r.start, 0)).toBe(6)
+  expect(both).toEqual(
+    expect.arrayContaining([...genomeRegions(a), ...genomeRegions(b)]),
   )
 })

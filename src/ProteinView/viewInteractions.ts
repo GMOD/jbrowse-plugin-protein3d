@@ -41,16 +41,10 @@ function onClick(
   structure: StructureInteractionHost,
   info?: MolstarLocationInfo,
 ) {
-  if (!info) {
-    // clicking the background is how a user puts a selection down; a click
-    // that landed on another structure is that structure's
-    structure.setClickedStructureRange(undefined)
-    structure.setSelectedFeatureId(undefined)
-  }
   const hit = forStructure(structure, info)
+  structure.setSelectedFeatureId(undefined)
   if (hit) {
     structure.setHoveredPosition(hit)
-    structure.setSelectedFeatureId(undefined)
     clickProteinToGenome({
       model: structure,
       structureSeqPos: hit.structureSeqPos,
@@ -58,6 +52,8 @@ function onClick(
       console.error(e)
       structure.setViewError(e)
     })
+  } else {
+    structure.setClickedStructureRanges([])
   }
 }
 
@@ -71,6 +67,11 @@ function onClick(
  * Every event goes to every structure, since the plugin is shared, and each
  * asks `interactionPosition` whether the event was on it. A structure added
  * later hears the next event with nothing to subscribe.
+ *
+ * A click is one selection for the whole view, as Mol*'s own is: it selects
+ * the residue it lands on and puts down every other structure's selection,
+ * a declared one included. The background, another chain and another
+ * structure all count as elsewhere.
  */
 export function attachViewInteractions(view: ViewInteractionHost) {
   const listen = (

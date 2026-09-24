@@ -246,7 +246,7 @@ function stateModelFactory() {
        */
       clearSelection() {
         for (const structure of self.structures) {
-          structure.setClickedStructureRange(undefined)
+          structure.setClickedStructureRanges([])
           structure.setSelectedFeatureId(undefined)
         }
       },

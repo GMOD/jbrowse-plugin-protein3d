@@ -71,15 +71,10 @@ const FeatureBar = observer(function FeatureBar({
     model.setAlignmentHoverRange(undefined)
   }
 
-  // The model's `select` autorun owns the magenta molstar selection, deriving
-  // it from clickedStructureRange. Setting/clearing that range here (rather than
-  // also driving molstar imperatively) keeps a single source of truth: on
-  // deselect the autorun correctly falls back to the whole-alignment highlight
-  // when showHighlight is on, instead of blanking the selection.
   const handleClick = () => {
     if (isSelected) {
       model.setSelectedFeatureId(undefined)
-      model.setClickedStructureRange(undefined)
+      model.setClickedStructureRanges([])
     } else {
       model.setSelectedFeatureId(feature.uniqueId)
       clickProteinToGenome({

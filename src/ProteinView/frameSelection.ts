@@ -12,17 +12,45 @@ interface FramedStructure {
   readonly selectLabelSeqIds: number[]
 }
 
+export interface FramingPlugin {
+  managers: {
+    camera: { focusLoci(loci: Loci[]): void }
+    structure: { focus: { setFromLoci(loci: Loci): void } }
+  }
+}
+
 export interface SelectionFramerHost {
-  readonly molstarPluginContext:
-    | {
-        managers: {
-          camera: { focusLoci(loci: Loci[]): void }
-          structure: { focus: { setFromLoci(loci: Loci): void } }
-        }
-      }
-    | undefined
+  readonly molstarPluginContext: FramingPlugin | undefined
   readonly structures: readonly FramedStructure[]
   readonly superposedCount: number
+}
+
+interface FrameTarget {
+  structure: Structure
+  entityId: string | undefined
+  labelSeqIds: number[]
+}
+
+/**
+ * Moves the camera to the residues. A single residue is also focused, which
+ * draws it, its neighbours and their contacts as sticks, as clicking it in 3D
+ * does; Mol* focuses one structure at a time, so that is the first target's.
+ * `stillCurrent` is asked after Mol* loads, so a plugin replaced meanwhile is
+ * left alone.
+ */
+export async function frameResidues(
+  plugin: FramingPlugin,
+  targets: FrameTarget[],
+  stillCurrent = () => true,
+) {
+  const molstar = await loadMolstar()
+  if (stillCurrent()) {
+    const loci = targets.map(t => residueLoci(molstar, t))
+    plugin.managers.camera.focusLoci(loci)
+    if (loci[0] && targets[0]?.labelSeqIds.length === 1) {
+      plugin.managers.structure.focus.setFromLoci(loci[0])
+    }
+  }
 }
 
 /**
@@ -31,10 +59,8 @@ export interface SelectionFramerHost {
  * out of sight. It waits until every structure has settled and, with several,
  * until they are superposed, because the reset that ends a superposition would
  * undo it; then it frames the seeded residues once per plugin. Only a spec's
- * seed moves the camera: a click is the user's, and the view they chose stays.
- * A one-residue seed is also focused, which draws it, its neighbours and their
- * contacts as sticks, as clicking it in 3D does. Mol* focuses one structure at
- * a time, so that is the first seeded one.
+ * seed or focusResidues moves the camera: a click is the user's, and the view
+ * they chose stays.
  */
 export function makeSelectionFramer(host: SelectionFramerHost) {
   let framedPlugin: SelectionFramerHost['molstarPluginContext']
@@ -65,18 +91,12 @@ export function makeSelectionFramer(host: SelectionFramerHost) {
       return
     }
     framedPlugin = plugin
-    loadMolstar()
-      .then(molstar => {
-        if (host.molstarPluginContext === plugin) {
-          const loci = targets.map(t => residueLoci(molstar, t))
-          plugin.managers.camera.focusLoci(loci)
-          if (loci[0] && targets[0]?.labelSeqIds.length === 1) {
-            plugin.managers.structure.focus.setFromLoci(loci[0])
-          }
-        }
-      })
-      .catch((e: unknown) => {
-        console.error(e)
-      })
+    frameResidues(
+      plugin,
+      targets,
+      () => host.molstarPluginContext === plugin,
+    ).catch((e: unknown) => {
+      console.error(e)
+    })
   }
 }

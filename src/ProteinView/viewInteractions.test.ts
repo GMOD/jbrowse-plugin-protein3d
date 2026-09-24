@@ -17,8 +17,7 @@ const mockSubscribe = vi.mocked(subscribeMolstarInteraction)
 const TestStructure = types
   .model('TestStructure', { modelId: types.string })
   .volatile(() => ({
-    clickedStructureRange: undefined as
-      { start: number; end: number } | undefined,
+    clickedStructureRanges: [] as readonly { start: number; end: number }[],
     selectedFeatureId: undefined as string | undefined,
     hovered: undefined as { structureSeqPos?: number } | undefined,
     genomeToTranscriptSeqMapping: undefined,
@@ -28,8 +27,10 @@ const TestStructure = types
     zoomToBaseLevel: false,
   }))
   .actions(self => ({
-    setClickedStructureRange(range?: { start: number; end: number }) {
-      self.clickedStructureRange = range
+    setClickedStructureRanges(
+      ranges: readonly { start: number; end: number }[],
+    ) {
+      self.clickedStructureRanges = ranges
     },
     setSelectedFeatureId(uniqueId?: string) {
       self.selectedFeatureId = uniqueId
@@ -110,32 +111,48 @@ test('a view subscribes once per kind, however many structures it holds', async 
 test('a click on the background clears the selection of every structure', async () => {
   const { view, click } = await attach('a', 'b')
   for (const structure of view.structures) {
-    structure.setClickedStructureRange({ start: 3, end: 9 })
+    structure.setClickedStructureRanges([{ start: 3, end: 9 }])
     structure.setSelectedFeatureId('domain-1')
   }
 
   click(undefined)
 
   for (const structure of view.structures) {
-    expect(structure.clickedStructureRange).toBeUndefined()
+    expect(structure.clickedStructureRanges).toEqual([])
     expect(structure.selectedFeatureId).toBeUndefined()
   }
 })
 
-// A click that landed on a neighbouring structure is that structure's to
-// answer: clearing here would mean opening a second structure silently
-// unselects the first.
-test('a click on one structure leaves its neighbour selected', async () => {
+// A click is one selection for the view. Keeping the neighbour's left two
+// structures lit after the user picked a residue on one, and a declared seed
+// on a superposed structure could only be put down from the menu.
+test('a click on one structure puts its neighbour down', async () => {
   const { view, click } = await attach('a', 'b')
   const [a, b] = view.structures
-  b!.setClickedStructureRange({ start: 3, end: 9 })
+  b!.setClickedStructureRanges([{ start: 3, end: 9 }])
   b!.setSelectedFeatureId('domain-1')
 
   click(location('a'))
 
   expect(a!.hovered?.structureSeqPos).toBe(7)
-  expect(b!.clickedStructureRange).toEqual({ start: 3, end: 9 })
-  expect(b!.selectedFeatureId).toBe('domain-1')
+  expect(a!.clickedStructureRanges).toEqual([{ start: 7, end: 8 }])
+  expect(b!.clickedStructureRanges).toEqual([])
+  expect(b!.selectedFeatureId).toBeUndefined()
+})
+
+// 1TUP's DNA wraps the residues a p53 seed lights, so a click there is the
+// likeliest click on the canvas, and it names no mapped residue.
+test('a click on a chain no structure maps puts every selection down', async () => {
+  const { view, click } = await attach('a', 'b')
+  for (const structure of view.structures) {
+    structure.setClickedStructureRanges([{ start: 3, end: 9 }])
+  }
+
+  click(location('dna'))
+
+  for (const structure of view.structures) {
+    expect(structure.clickedStructureRanges).toEqual([])
+  }
 })
 
 test('a hover reports its position on its own structure only, and off it clears', async () => {
