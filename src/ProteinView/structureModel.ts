@@ -110,9 +110,10 @@ const Structure = types
     /**
      * #property
      * Transcript row first, structure row second, each spelling its whole
-     * sequence. Once the entities load, an imported one that spells no chain
-     * is replaced by a computed alignment, and `mappedEntityId` moves to the
-     * chain it spells (see entityAlignedTo).
+     * sequence. Once the entities load, an imported one moves
+     * `mappedEntityId` to the chain it spells (see entityAlignedTo); one that
+     * spells no chain is recomputed, against the stored chain when that is a
+     * protein.
      */
     pairwiseAlignment: types.frozen<MaybePairwiseAlignment>(),
     /**
@@ -245,6 +246,12 @@ const Structure = types
      * alignment" forever and the ready signal never fires.
      */
     alignmentSkipped: undefined as string | undefined,
+    /**
+     * #volatile
+     * Whether `mappedEntityId` has been chosen by alignment or checked
+     * against an imported alignment since the entities loaded
+     */
+    entityChosen: false,
     /**
      * #volatile
      * Tracks whether this structure has been loaded into Molstar
@@ -450,6 +457,9 @@ const Structure = types
     },
     setAlignmentSkipped(reason?: string) {
       self.alignmentSkipped = reason
+    },
+    setEntityChosen() {
+      self.entityChosen = true
     },
     /**
      * #action
@@ -1170,9 +1180,10 @@ const Structure = types
         )
       }
       // The author-numbered seed can only resolve once the entities are read
-      // and the transcript's entity is chosen: before that, mappedEntity falls
-      // back to entities[0], which in 1TUP is a DNA strand. Fires once, so a
-      // user clearing the selection afterwards is not overruled.
+      // and the transcript's entity is chosen or checked: before that,
+      // mappedEntity may be entities[0] or a stored id, which in 1TUP is a DNA
+      // strand. Fires once, so a user clearing the selection afterwards is not
+      // overruled.
       const { initialResidues, initialTranscriptResidues } = self
       if (initialResidues) {
         addDisposer(
@@ -1180,8 +1191,7 @@ const Structure = types
           when(
             () =>
               !!self.entities &&
-              (self.mappedEntityId !== undefined ||
-                !self.userProvidedTranscriptSequence),
+              (self.entityChosen || !self.userProvidedTranscriptSequence),
             () => {
               self.setClickedStructureRange(
                 residueRangeToPositions(self.mappedEntity, initialResidues),
@@ -1225,6 +1235,7 @@ const Structure = types
             }
             if (pairwiseAlignment) {
               if (!self.alignmentImported) {
+                self.setEntityChosen()
                 return
               }
               const fit = entityAlignedTo(
@@ -1235,14 +1246,28 @@ const Structure = types
               )
               if ('entityId' in fit) {
                 self.setMappedEntityId(fit.entityId)
+                self.setEntityChosen()
                 return
               }
               self.setViewError(
                 new Error(
-                  `Ignored the alignment supplied for ${self.label} and aligned the transcript instead: ${fit.problem}`,
+                  `The alignment stored for ${self.label} no longer matches its chain and was recomputed: ${fit.problem}`,
                 ),
               )
-              self.setAlignment(undefined)
+              const saved = entities.find(
+                e => e.entityId === self.mappedEntityId && !e.nucleicAcid,
+              )
+              const realigned =
+                saved &&
+                alignTranscriptToEntity(
+                  userProvidedTranscriptSequence,
+                  saved.seq,
+                  alignmentAlgorithm,
+                )
+              self.setAlignment(realigned ? realigned.alignment : undefined)
+              if (realigned) {
+                self.setEntityChosen()
+              }
               return
             }
             const selection = chooseMappedEntity(
@@ -1269,6 +1294,7 @@ const Structure = types
             }
             self.setMappedEntityId(entities[selection.index]?.entityId)
             self.setAlignment(selection.alignment)
+            self.setEntityChosen()
           } catch (e) {
             console.error(e)
             self.setError(e)

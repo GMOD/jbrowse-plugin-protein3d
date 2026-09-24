@@ -46,3 +46,11 @@ test('names the row that does not fit', () => {
     problem: expect.stringContaining('same length'),
   })
 })
+
+test('a stop codon aligned to a gap at the end is not a residue', () => {
+  expect(
+    entityAlignedTo(alignment('MKAA*', 'MKAA-'), 'MKAA*', [
+      entity('1', 'MKAA'),
+    ]),
+  ).toEqual({ entityId: '1' })
+})

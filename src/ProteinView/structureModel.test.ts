@@ -639,6 +639,7 @@ test('an alignment saved against another chain moves to the chain it spells', ()
     mappedEntityId: '1',
   })
   expect(model.mappedEntityId).toBe('3')
+  expect(model.clickedStructureRange).toEqual({ start: 154, end: 155 })
 })
 
 test('an alignment that spells no chain is set aside, reported, and replaced by one computed here', () => {
@@ -653,4 +654,32 @@ test('an alignment that spells no chain is set aside, reported, and replaced by 
   expect(model.alignmentImported).toBe(false)
   expect(model.mappedEntityId).toBe('3')
   expect(model.structureSeqToTranscriptSeqPosition?.[100]).toBe(100)
+})
+
+// An older session's alignment was computed from Mol*'s `label`, which a
+// modified residue lengthens; it is recomputed on the chain the user picked,
+// not re-chosen, so a paralog picked by hand stays picked.
+test('a stale stored alignment is recomputed against its stored protein chain', () => {
+  const paralog = `${P53_CORE.slice(0, 50)}AAAA${P53_CORE.slice(54)}`
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: P53_CORE,
+        pairwiseAlignment: coreAlignment(`${P53_CORE.slice(0, 100)}(S|P)`),
+        mappedEntityId: '4',
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      ...ONE_TUP_ENTITIES,
+      { entityId: '4', seq: paralog, seqIds: [], chains: ['D'] },
+    ],
+  })
+  expect(String(parent.viewErrors)).toContain(
+    'no longer matches its chain and was recomputed',
+  )
+  expect(model.mappedEntityId).toBe('4')
+  expect(model.pairwiseAlignment?.alns[1].seq.replaceAll('-', '')).toBe(paralog)
 })

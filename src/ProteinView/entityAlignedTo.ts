@@ -3,24 +3,33 @@ import {
   pairwiseAlignmentSequenceProblem,
   stripStopCodon,
   structureAlignedSeq,
+  transcriptAlignedSeq,
 } from 'p2s_mapper'
 
 import type { Entity, PairwiseAlignment } from 'p2s_mapper'
 
-/**
- * The entity whose sequence an alignment's second row spells, or why none
- * does. A saved session names its entity beside its alignment, but a spec or a
- * hand-written snapshot may not, and an alignment read against the wrong
- * chain addresses residues of another molecule — 1TUP's entity 1 is a DNA
- * strand. `preferredId` wins among several chains of one sequence, and
- * protein chains win over nucleic-acid ones.
- */
+function withoutStopColumn(alignment: PairwiseAlignment): PairwiseAlignment {
+  const t = transcriptAlignedSeq(alignment)
+  const s = structureAlignedSeq(alignment)
+  const [a, b] = alignment.alns
+  return t.endsWith('*') && s.endsWith('-')
+    ? {
+        consensus: alignment.consensus.slice(0, -1),
+        alns: [
+          { ...a, seq: t.slice(0, -1) },
+          { ...b, seq: s.slice(0, -1) },
+        ],
+      }
+    : alignment
+}
+
 export function entityAlignedTo(
-  alignment: PairwiseAlignment,
+  supplied: PairwiseAlignment,
   transcript: string,
   entities: readonly Entity[],
   preferredId?: string,
 ): { entityId: string } | { problem: string } {
+  const alignment = withoutStopColumn(supplied)
   const t = stripStopCodon(transcript)
   const shape = pairwiseAlignmentProblem(alignment)
   if (shape) {

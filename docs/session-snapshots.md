@@ -78,7 +78,10 @@ A snapshot can also carry its own `pairwiseAlignment`, transcript row first,
 each row spelling its whole sequence with `-` for gaps. The plugin maps it to
 the chain whose sequence the second row spells; `mappedEntityId` then only picks
 among chains that share that sequence. When no chain matches, the view reports
-that on its banner and computes an alignment instead.
+that on its banner and recomputes the alignment, against the `mappedEntityId`
+chain when that is a protein chain and by the rule above otherwise. A session
+saved before 0.11.1 can hit this, because its alignment was computed from a
+sequence that spelled modified residues out.
 
 [Genome to structure alignment](genome-to-structure-alignment.md) has the
 measurements behind the rule.
