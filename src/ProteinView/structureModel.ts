@@ -92,7 +92,9 @@ export interface ParentProteinView {
   showAllFeatureTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
+  settled: boolean
   setError: (e: unknown) => void
+  clearSelection: () => void
 }
 
 const Structure = types
@@ -214,6 +216,18 @@ const Structure = types
      * one; a spec or focusResidues may set several.
      */
     clickedStructureRanges: [] as readonly ResidueRange[],
+    /**
+     * #volatile
+     * Whether the selection is a spec's seed the user has not since replaced
+     * or put down, which is what the camera frames on load.
+     */
+    seedLit: false,
+    /**
+     * #volatile
+     * Whether the user has set or cleared the selection, after which a seed
+     * that resolves late is dropped rather than overruling them.
+     */
+    selectionTouched: false,
 
     /**
      * #volatile
@@ -417,6 +431,18 @@ const Structure = types
      */
     setClickedStructureRanges(ranges: readonly ResidueRange[]) {
       self.clickedStructureRanges = ranges
+      self.selectionTouched = true
+      self.seedLit = false
+    },
+    /**
+     * #action
+     * Lights a resolved seed, unless the user got to the selection first.
+     */
+    applySeed(ranges: readonly ResidueRange[]) {
+      if (!self.selectionTouched) {
+        self.clickedStructureRanges = ranges
+        self.seedLit = ranges.length > 0
+      }
     },
     /**
      * #action
@@ -801,9 +827,8 @@ const Structure = types
      */
     get selectLabelSeqIds() {
       const entity = this.mappedEntity
-      const ranges = self.clickedStructureRanges
-      if (ranges.length) {
-        return ranges.flatMap(range => rangeToLabelSeqIds(entity, range))
+      if (self.clickedStructureRanges.length) {
+        return this.clickedLabelSeqIds
       }
       const covered = this.structureSeqToTranscriptSeqPosition
       return this.showHighlight && covered
@@ -813,14 +838,26 @@ const Structure = types
 
     /**
      * #getter
-     * Whether a spec seeded the selection, which is what the camera frames.
+     * The selected residues as label_seq_ids, without the whole-alignment
+     * fallback selectLabelSeqIds lights when nothing is selected: what the
+     * camera frames.
+     */
+    get clickedLabelSeqIds() {
+      const entity = this.mappedEntity
+      return self.clickedStructureRanges.flatMap(range =>
+        rangeToLabelSeqIds(entity, range),
+      )
+    },
+    /**
+     * #getter
+     * Whether a spec declares a selection. An empty array declares none.
      */
     get seededSelection() {
-      return !!(
-        self.initialSelection ??
-        self.initialResidues ??
-        self.initialTranscriptResidues
-      )
+      return [
+        self.initialSelection,
+        self.initialResidues,
+        self.initialTranscriptResidues,
+      ].some(ranges => rangeList(ranges).length > 0)
     },
     /**
      * #getter
@@ -1199,22 +1236,39 @@ const Structure = types
      * #action
      * Select residues and bring them into view: the camera frames them, as it
      * does a spec's seed, and the connected genome view moves to them, as it
-     * does on a click. For whatever drives the view from outside, an agent
-     * saying "show me R248" among them. Throws while the structure is still
-     * loading, rather than selecting against a numbering it does not have yet.
+     * does on a click. Every other structure's selection goes down, as with a
+     * click in Mol*. For whatever drives the view from outside, an agent
+     * saying "show me R248" among them.
+     *
+     * Waits until the view has settled, as the seed's framing does: the
+     * transcript's entity chosen, the alignment made and, with several
+     * structures, superposition done, so neither the numbering nor the camera
+     * is read before it means anything. Rejects if that takes longer than
+     * `timeout` ms. A target naming no residue of the structure selects
+     * nothing and leaves the camera where it is.
      */
-    focusResidues(target: SelectionTarget) {
-      const runs = self.resolveSelection(target)
-      if (!runs) {
-        throw new Error(`${self.label} has not finished loading`)
+    async focusResidues(target: SelectionTarget, { timeout = 120_000 } = {}) {
+      const ready = () =>
+        !!self.coordinateMapper &&
+        (self.entityChosen || !self.userProvidedTranscriptSequence) &&
+        self.parentView.settled &&
+        self.resolveSelection(target) !== undefined
+      try {
+        await when(() => !isAlive(self) || ready(), { timeout })
+      } catch {
+        throw new Error(`${self.label} did not finish loading`)
       }
+      if (!isAlive(self)) {
+        return []
+      }
+      const runs = self.resolveSelection(target) ?? []
+      self.parentView.clearSelection()
       self.setClickedStructureRanges(runs)
-      self.setSelectedFeatureId(undefined)
       const first = runs[0]
       const last = runs.at(-1)
       const plugin = self.molstarPluginContext
       const structure = self.molstarStructure
-      const labelSeqIds = self.selectLabelSeqIds
+      const labelSeqIds = self.clickedLabelSeqIds
       if (plugin && structure && labelSeqIds.length) {
         frameResidues(
           plugin,
@@ -1256,7 +1310,7 @@ const Structure = types
         )
       }
       // Resolves once, when the structure has what the seed's numbering needs,
-      // so a user clearing the selection afterwards is not overruled. A seed of
+      // unless the user has set or cleared the selection by then. A seed of
       // positions alone resolves here and now.
       const seed: SelectionTarget = {
         positions: self.initialSelection,
@@ -1267,9 +1321,11 @@ const Structure = types
         addDisposer(
           self,
           when(
-            () => self.resolveSelection(seed) !== undefined,
+            () =>
+              self.selectionTouched ||
+              self.resolveSelection(seed) !== undefined,
             () => {
-              self.setClickedStructureRanges(self.resolveSelection(seed) ?? [])
+              self.applySeed(self.resolveSelection(seed) ?? [])
             },
           ),
         )

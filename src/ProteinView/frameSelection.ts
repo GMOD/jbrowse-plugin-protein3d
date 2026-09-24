@@ -6,10 +6,10 @@ import type { Structure } from 'molstar/lib/mol-model/structure'
 
 interface FramedStructure {
   readonly loading: boolean
-  readonly seededSelection: boolean
+  readonly seedLit: boolean
   readonly molstarStructure: Structure | undefined
   readonly mappedEntity: { entityId: string } | undefined
-  readonly selectLabelSeqIds: number[]
+  readonly clickedLabelSeqIds: number[]
 }
 
 export interface FramingPlugin {
@@ -23,6 +23,22 @@ export interface SelectionFramerHost {
   readonly molstarPluginContext: FramingPlugin | undefined
   readonly structures: readonly FramedStructure[]
   readonly superposedCount: number
+}
+
+/**
+ * Every structure loaded and aligned and, with several, superposed: the
+ * reset that ends a superposition would undo any framing done before it.
+ */
+export function structuresSettled(host: {
+  readonly structures: readonly { readonly loading: boolean }[]
+  readonly superposedCount: number
+}) {
+  const { structures, superposedCount } = host
+  return (
+    structures.length > 0 &&
+    structures.every(s => !s.loading) &&
+    (structures.length < 2 || superposedCount === structures.length)
+  )
 }
 
 interface FrameTarget {
@@ -66,23 +82,19 @@ export function makeSelectionFramer(host: SelectionFramerHost) {
   let framedPlugin: SelectionFramerHost['molstarPluginContext']
 
   return function frameSeededSelection() {
-    const { molstarPluginContext: plugin, structures, superposedCount } = host
-    const settled =
-      structures.length > 0 &&
-      structures.every(s => !s.loading) &&
-      (structures.length < 2 || superposedCount === structures.length)
-    if (!plugin || plugin === framedPlugin || !settled) {
+    const { molstarPluginContext: plugin, structures } = host
+    if (!plugin || plugin === framedPlugin || !structuresSettled(host)) {
       return
     }
     // a seed resolved by the same change that settles the structure may land
     // after this run, so the plugin counts as framed only once it has targets
     const targets = structures.flatMap(s =>
-      s.seededSelection && s.molstarStructure && s.selectLabelSeqIds.length
+      s.seedLit && s.molstarStructure && s.clickedLabelSeqIds.length
         ? [
             {
               structure: s.molstarStructure,
               entityId: s.mappedEntity?.entityId,
-              labelSeqIds: s.selectLabelSeqIds,
+              labelSeqIds: s.clickedLabelSeqIds,
             },
           ]
         : [],

@@ -37,16 +37,16 @@ function recordingPlugin() {
   }
 }
 
-async function structure(seeded: boolean, selectLabelSeqIds: number[] = []) {
+async function structure(seeded: boolean, clickedLabelSeqIds: number[] = []) {
   const molstarStructure = await parseStructure([
     { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] },
   ])
   return observable({
     loading: true,
-    seededSelection: seeded,
+    seedLit: seeded,
     molstarStructure,
     mappedEntity: { entityId: '1' },
-    selectLabelSeqIds,
+    clickedLabelSeqIds,
   })
 }
 
@@ -80,7 +80,7 @@ test('frames a seeded selection once every structure has settled and superposed'
 
   // a later click does not move the camera again
   runInAction(() => {
-    human.selectLabelSeqIds = [1]
+    human.clickedLabelSeqIds = [1]
   })
   await tick()
   expect(focused).toHaveLength(1)
@@ -104,7 +104,7 @@ test('a seed that resolves after the structure settles is still framed', async (
   await tick()
   expect(focused).toHaveLength(0)
   runInAction(() => {
-    only.selectLabelSeqIds = [2]
+    only.clickedLabelSeqIds = [2]
   })
   await vi.waitFor(() => {
     expect(focused).toHaveLength(1)

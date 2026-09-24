@@ -12,7 +12,7 @@ import {
   type ProteinColorScheme,
   applyColorTheme,
 } from './applyColorTheme'
-import { makeSelectionFramer } from './frameSelection'
+import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
 import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
@@ -372,6 +372,13 @@ function stateModelFactory() {
        */
       get showLoading() {
         return showLoading(self)
+      },
+      /**
+       * #getter
+       * Every structure loaded, aligned and, with several, superposed.
+       */
+      get settled() {
+        return structuresSettled(self)
       },
       /**
        * #getter

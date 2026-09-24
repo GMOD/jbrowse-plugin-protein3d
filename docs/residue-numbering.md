@@ -115,21 +115,26 @@ nothing rather than something else.
 
 Whatever drives a live view, a page script or an agent, selects the same way
 through a structure's `focusResidues` action, which takes the three numberings
-as one object and also moves the camera and the connected genome view:
+as one object, puts every other structure's selection down, and moves the camera
+and the connected genome view:
 
 ```js
-view.structures[1].focusResidues({ residues: { start: 248, end: 248 } })
-view.structures[0].focusResidues({
+await view.structures[1].focusResidues({ residues: { start: 248, end: 248 } })
+await view.structures[0].focusResidues({
   transcriptResidues: [{ start: 94, end: 102 }],
 })
-view.structures[0].focusResidues({ positions: { start: 154, end: 155 } })
+await view.structures[0].focusResidues({ positions: { start: 154, end: 155 } })
 ```
 
-It returns the position runs it selected, and throws while the structure has not
-loaded what the numbering needs, rather than selecting against a numbering it
-does not have yet. A click is still the user's: a click in the alignment or on a
-feature bar selects without moving the camera, and a click in Mol\* gets Mol\*'s
-own focus.
+`focusResidues` waits until the view has settled, as the seed's framing does:
+the transcript's chain chosen, the alignment made and, with several structures,
+superposition done. It resolves to the position runs it selected, and rejects if
+the view has not settled within `{ timeout }` ms (two minutes by default). A
+target naming no residue of the structure selects nothing and leaves the camera
+alone. A click is still the user's: a click in the alignment or on a feature bar
+selects without moving the camera, and a click in Mol\* gets Mol\*'s own focus.
+Once the user has set or cleared a selection, a seed that resolves later is
+dropped.
 
 ## Placing UniProt features on a fragment
 

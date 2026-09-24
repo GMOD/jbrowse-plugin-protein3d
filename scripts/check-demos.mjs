@@ -178,7 +178,6 @@ function readView() {
       identity: s.alignmentQuality?.identity,
       aligned: s.alignmentQuality?.aligned,
       models: s.molstarStructures?.length,
-      // clickedStructureRange is the published plugin's, up to 0.14.x
       selected:
         s.clickedStructureRanges ??
         (s.clickedStructureRange ? [s.clickedStructureRange] : []),

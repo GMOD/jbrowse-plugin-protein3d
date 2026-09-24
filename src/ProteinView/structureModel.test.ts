@@ -1,6 +1,7 @@
 import { getSnapshot, types } from '@jbrowse/mobx-state-tree'
 import { beforeEach, expect, test, vi } from 'vitest'
 
+import { structuresSettled } from './frameSelection'
 import Structure from './structureModel'
 import { parseStructure } from '../test_data/molstarStructure'
 
@@ -45,10 +46,24 @@ const TestParent = types
       return undefined
     },
   }))
-  .volatile(() => ({ viewErrors: new Array<unknown>() }))
+  .volatile(() => ({ viewErrors: new Array<unknown>(), superposedCount: 0 }))
+  .views(self => ({
+    get settled() {
+      return structuresSettled(self)
+    },
+  }))
   .actions(self => ({
     setError(e: unknown) {
       self.viewErrors.push(e)
+    },
+    setSuperposedCount(n: number) {
+      self.superposedCount = n
+    },
+    clearSelection() {
+      for (const structure of self.structures) {
+        structure.setClickedStructureRanges([])
+        structure.setSelectedFeatureId(undefined)
+      }
     },
   }))
 
@@ -620,47 +635,118 @@ test('a seed takes several ranges, and a saved single range keeps its shape', ()
   expect(getSnapshot(model).initialSelection).toEqual({ start: 0, end: 1 })
 })
 
-test('focusResidues selects by any numbering once the structure can resolve it', () => {
-  const parent = TestParent.create({
-    structures: [
-      {
-        userProvidedTranscriptSequence: 'MKAA',
-        pairwiseAlignment,
-        mappedEntityId: '1',
-      },
-    ],
-  })
-  const model = parent.structures[0]!
-  expect(() =>
-    model.focusResidues({ residues: { start: 95, end: 95 } }),
-  ).toThrow(/not finished loading/)
-  model.setStructureData({
-    entities: [
-      {
-        entityId: '1',
-        seq: 'MKAA',
-        seqIds: [1, 2, 3, 4],
-        authSeqIds: [94, 95, 96, 97],
-        chains: ['A'],
-      },
-    ],
-  })
-  model.setSelectedFeatureId('domain-1')
-  expect(model.focusResidues({ residues: { start: 95, end: 95 } })).toEqual([
-    { start: 1, end: 2 },
-  ])
-  expect(model.selectedFeatureId).toBeUndefined()
-  model.setLoadedToMolstar(true)
-  model.focusResidues({
+const NUMBERED_FROM_94 = [
+  {
+    entityId: '1',
+    seq: 'MKAA',
+    seqIds: [1, 2, 3, 4],
+    authSeqIds: [94, 95, 96, 97],
+    chains: ['A'],
+  },
+]
+
+function twoNumberedStructures() {
+  const spec = {
+    userProvidedTranscriptSequence: 'MKAA',
+    pairwiseAlignment,
+    mappedEntityId: '1',
+  }
+  return TestParent.create({ structures: [spec, spec] })
+}
+
+function settle(parent: ReturnType<typeof twoNumberedStructures>) {
+  for (const s of parent.structures) {
+    s.setStructureData({ entities: NUMBERED_FROM_94 })
+    s.setLoadedToMolstar(true)
+  }
+  parent.setSuperposedCount(parent.structures.length)
+}
+
+test('focusResidues waits for the view to settle, superposition included', async () => {
+  const parent = twoNumberedStructures()
+  const [a, b] = parent.structures
+  let runs: unknown
+  const pending = a!.focusResidues({ residues: { start: 95, end: 95 } })
+  pending.then(r => (runs = r)).catch(() => {})
+  for (const s of parent.structures) {
+    s.setStructureData({ entities: NUMBERED_FROM_94 })
+    s.setLoadedToMolstar(true)
+  }
+  await Promise.resolve()
+  expect(runs).toBeUndefined()
+  expect(a!.clickedStructureRanges).toEqual([])
+  parent.setSuperposedCount(2)
+  expect(await pending).toEqual([{ start: 1, end: 2 }])
+  expect(b!.clickedStructureRanges).toEqual([])
+})
+
+test('focusResidues rejects when the structure never settles', async () => {
+  const parent = twoNumberedStructures()
+  await expect(
+    parent.structures[0]!.focusResidues(
+      { residues: { start: 95, end: 95 } },
+      { timeout: 10 },
+    ),
+  ).rejects.toThrow(/did not finish loading/)
+})
+
+// "show me this one" is one selection for the view, as a click in Mol* is
+test('focusResidues puts every other structure down', async () => {
+  const parent = twoNumberedStructures()
+  settle(parent)
+  const [a, b] = parent.structures
+  b!.setClickedStructureRanges([{ start: 0, end: 2 }])
+  b!.setSelectedFeatureId('domain-1')
+  await a!.focusResidues({
     transcriptResidues: [
       { start: 1, end: 1 },
       { start: 4, end: 4 },
     ],
   })
-  expect(model.clickedStructureRanges).toEqual([
+  expect(a!.clickedStructureRanges).toEqual([
     { start: 0, end: 1 },
     { start: 3, end: 4 },
   ])
+  expect(b!.clickedStructureRanges).toEqual([])
+  expect(b!.selectedFeatureId).toBeUndefined()
+})
+
+// selectLabelSeqIds lights the whole alignment when nothing is selected;
+// framing that would show the whole chain for a residue the entry lacks
+test('a target naming no residue selects nothing and frames nothing', async () => {
+  const parent = twoNumberedStructures()
+  settle(parent)
+  const [a] = parent.structures
+  a!.setClickedStructureRanges([{ start: 0, end: 1 }])
+  expect(
+    await a!.focusResidues({ residues: { start: 500, end: 600 } }),
+  ).toEqual([])
+  expect(a!.clickedStructureRanges).toEqual([])
+  expect(a!.clickedLabelSeqIds).toEqual([])
+})
+
+test('an empty seed declares no selection', () => {
+  const parent = TestParent.create({
+    structures: [{ url: 'x.cif', initialSelection: [] }],
+  })
+  expect(parent.structures[0]!.seededSelection).toBe(false)
+})
+
+test('a seed that resolves after the user has touched the selection is dropped', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        userProvidedTranscriptSequence: 'MKAA',
+        initialResidues: { start: 96, end: 96 },
+      },
+    ],
+  })
+  const model = parent.structures[0]!
+  model.setClickedStructureRanges([{ start: 0, end: 1 }])
+  model.setStructureData({ entities: NUMBERED_FROM_94 })
+  expect(model.mappedEntityId).toBe('1')
+  expect(model.clickedStructureRanges).toEqual([{ start: 0, end: 1 }])
+  expect(model.seedLit).toBe(false)
 })
 
 // 1TUP's entities as its mmCIF declares them: two DNA strands, then the p53
