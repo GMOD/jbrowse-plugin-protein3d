@@ -19,16 +19,14 @@ regression alarm instead of a known bug.
 
 - **Fast verdict (this page):** click an example to run the plugin's mapping
   code in isolation and get the entity table + verdicts immediately.
-- **Real plugin end-to-end:** each example's **↗ JBrowse** link opens its gene
-  in the live `webgl-poc` JBrowse build (`jbrowse.org/code/jb2/webgl-poc`) using
-  the `config.json` served next to this page (`public/config.json`). Right-click
-  the gene → _Launch protein view_ → **PDB search** → enter the PDB ID to watch
-  the linked genome↔structure mouseover in the actual plugin.
-
-  A structure can also be launched declaratively, without the dialog, via the
-  `LaunchView-ProteinView` extension point — `pdbId` for an RCSB entry or
-  `uniprotId` for an AlphaFold model, plus a `transcriptId` and a
-  `connectedView`. See [docs/launching.md](../docs/launching.md).
+- **Real plugin end-to-end:** each example's **↗ JBrowse** link opens the
+  nightly JBrowse (`jbrowse.org/code/jb2/main`) on the `config.json` served next
+  to this page (`public/config.json`), with a session spec that launches the
+  structure already mapped to its gene's GENCODE transcript, so the linked
+  genome↔structure mouseover works straight away. The spec is the same
+  `pdbId`/`uniprotId` + `transcriptId` + `connectedView` form
+  [docs/launching.md](../docs/launching.md) describes; an example's `launch` can
+  also select residues by author number or superpose further AlphaFold models.
 
 ## Run
 

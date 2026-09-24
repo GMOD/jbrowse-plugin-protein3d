@@ -5,7 +5,7 @@ import { EXAMPLES } from './examples'
 import { createPlugin, loadAndIntrospect } from './molstar'
 
 import type { Diagnosis, Severity } from './diagnostics'
-import type { Example } from './examples'
+import type { Example, Launch } from './examples'
 import type { LoadedStructure } from './molstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import {
@@ -20,19 +20,51 @@ import {
 // plugin and the page that is supposed to reproduce it.
 const pdbFormatUrl = (id: string) => `https://files.rcsb.org/download/${id}.pdb`
 
-// Deep-link into the real plugin on the nightly JBrowse build, using the
-// config.json published alongside this page.
 const CODE_APP = 'https://jbrowse.org/code/jb2/main/'
 const GENCODE_TRACK = 'gencode.v44.annotation.sorted.gff3'
-function jbrowseUrl(gene: string) {
-  const config = new URL('config.json', window.location.href).href
+
+function launchedStructure(ex: Example) {
+  if (ex.source === 'alphafold') {
+    return { uniprotId: ex.structureId }
+  }
+  return ex.format === 'pdb'
+    ? { url: pdbFormatUrl(ex.structureId) }
+    : { pdbId: ex.structureId }
+}
+
+function jbrowseUrl(ex: Example, launch: Launch) {
+  const spec = {
+    views: [
+      {
+        type: 'ProteinView',
+        structures: [
+          { ...launchedStructure(ex), initialResidues: launch.initialResidues },
+          ...(launch.superpose ?? []).map(uniprotId => ({ uniprotId })),
+        ],
+        transcriptId: launch.transcriptId,
+        connectedView: {
+          assembly: 'hg38',
+          loc: launch.loc,
+          tracks: [GENCODE_TRACK],
+        },
+      },
+    ],
+  }
   const params = new URLSearchParams({
-    config,
-    assembly: 'hg38',
-    loc: gene,
-    tracks: GENCODE_TRACK,
+    config: new URL('config.json', window.location.href).href,
+    session: `spec-${JSON.stringify(spec)}`,
   })
   return `${CODE_APP}?${params.toString()}`
+}
+
+function launchTitle(ex: Example, launch: Launch) {
+  const also = launch.superpose?.length
+    ? ` superposed with ${launch.superpose.join(', ')}`
+    : ''
+  const residues = launch.initialResidues
+    ? `, residue ${launch.initialResidues.start} selected`
+    : ''
+  return `Open ${ex.structureId}${also} beside ${launch.gene} ${launch.transcriptId} in JBrowse${residues}`
 }
 
 type Source = 'pdb' | 'alphafold' | 'url'
@@ -177,8 +209,7 @@ export default function App() {
           Runs the plugin's real entity resolution and alignment over a
           structure and reports what it would map, flagging multi-chain, partial
           and oddly-numbered cases. Run it here for a fast verdict, or open any
-          example gene in the real plugin via its <strong>↗ JBrowse</strong>{' '}
-          link.
+          example in the real plugin via its <strong>↗ JBrowse</strong> link.
         </div>
 
         <div
@@ -249,8 +280,7 @@ export default function App() {
         </div>
         <div style={{ fontSize: 10, color: '#666', marginBottom: 4 }}>
           <strong>name</strong> = fast verdict here · <strong>↗ JBrowse</strong>{' '}
-          = open the gene in the real plugin, then right-click → Launch protein
-          view → PDB search → enter the PDB ID.
+          = open the structure mapped to its gene in the real plugin.
         </div>
         {EXAMPLES.map(ex => (
           <div
@@ -302,16 +332,12 @@ export default function App() {
                 {ex.label}
               </span>
             </button>
-            {ex.gene ? (
+            {ex.launch ? (
               <a
-                href={jbrowseUrl(ex.gene)}
+                href={jbrowseUrl(ex, ex.launch)}
                 target="_blank"
                 rel="noreferrer"
-                title={
-                  ex.source === 'pdb'
-                    ? `Open ${ex.gene} in JBrowse → right-click → Launch protein view → PDB search → PDB ID ${ex.structureId}`
-                    : `Open ${ex.gene} in JBrowse → right-click → Launch protein view (AlphaFold)`
-                }
+                title={launchTitle(ex, ex.launch)}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
