@@ -44,3 +44,6 @@ worth doing:
 - page side (jb2hubs): once a release carries `initialTranscriptResidues`, the
   "opens on…" sessions should send the domain map's own numbering and drop
   `siftsNumbering.ts` and most of the "approximate" captions.
+
+Still open: moving both plugins onto core's translateTranscript needs a core
+release first.
