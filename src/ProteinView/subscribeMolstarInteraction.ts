@@ -1,6 +1,6 @@
 import loadMolstar from './loadMolstar'
 
-import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { Loci } from 'molstar/lib/mol-model/loci'
 
 export interface MolstarLocationInfo {
   /**
@@ -47,19 +47,40 @@ function extractLocationInfo(
  * the cursor is over a structure element, or `undefined` otherwise (so e.g.
  * hover handlers can clear state when the cursor leaves).
  *
+ * Mol*'s interaction streams are behaviors, which replay their last event to
+ * a new subscriber: an empty click at startup, or the previous click after a
+ * remount. That replay is dropped, since read as a click on the background
+ * it put down a spec's seed before it had resolved.
+ *
  * Returns a cleanup function suitable for use with mobx's addDisposer.
  */
+interface InteractionStream {
+  subscribe(listener: (e: { current: { loci: Loci } }) => void): {
+    unsubscribe(): void
+  }
+}
+
+export interface InteractionSource {
+  behaviors: {
+    interaction: { click: InteractionStream; hover: InteractionStream }
+  }
+}
+
 export default async function subscribeMolstarInteraction({
   plugin,
   kind,
   onUpdate,
 }: {
-  plugin: PluginContext
+  plugin: InteractionSource
   kind: 'click' | 'hover'
   onUpdate: (info: MolstarLocationInfo | undefined) => void
 }): Promise<() => void> {
   const molstar = await loadMolstar()
+  let subscribed = false
   const subscription = plugin.behaviors.interaction[kind].subscribe(e => {
+    if (!subscribed) {
+      return
+    }
     if (molstar.StructureElement.Loci.is(e.current.loci)) {
       const loc = molstar.StructureElement.Loci.getFirstLocation(e.current.loci)
       onUpdate(loc ? extractLocationInfo(molstar, loc) : undefined)
@@ -67,6 +88,7 @@ export default async function subscribeMolstarInteraction({
       onUpdate(undefined)
     }
   })
+  subscribed = true
   return () => {
     subscription.unsubscribe()
   }
