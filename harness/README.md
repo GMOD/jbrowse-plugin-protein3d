@@ -71,12 +71,17 @@ and tagged with the verdict it should produce:
 | example                                   | what it shows                                               |
 | ----------------------------------------- | ----------------------------------------------------------- |
 | AF p53                                    | `CLEAN` — single chain, full length                         |
+| AF p53 + mouse p53                        | `CLEAN`; the JBrowse link superposes the mouse model        |
 | 4HHB → β / 1FIN → cyclin A / 6M0J → spike | `RESOLVED_CHAIN` — protein of interest isn't entity [0]     |
 | 1TUP → p53                                | `RESOLVED_CHAIN` — entity [0] and [1] are DNA strands       |
+| 2L14 → p53 TAD                            | `RESOLVED_CHAIN`; an NMR ensemble of twenty models          |
 | 1TUP.pdb → p53                            | PDB format rather than mmCIF; the author-numbering path     |
 | 6M0J → ACE2                               | `MULTI_ENTITY` contrast — [0] is right, but still a complex |
 | 1TIT / 1N11 / 4INS                        | `PARTIAL_OR_REPEAT` — domain/fragment & repeat anchoring    |
-| AF BRCA2                                  | `AF_FRAGMENT` — >2700 aa, only F1 loaded                    |
+
+No example shows `AF_FRAGMENT`: AlphaFold DB serves no model at all for the
+proteins over 2,700 residues it used to split into fragments (BRCA2, P51587,
+returns 404 for both its prediction API entry and `F1`, checked 2026-09-24).
 
 To add one: find a PDB's entities at
 `https://data.rcsb.org/rest/v1/core/polymer_entity/<PDBID>/<n>`, note which is

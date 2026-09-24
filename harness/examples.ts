@@ -197,18 +197,4 @@ export const EXAMPLES: Example[] = [
     expectSeverity: 'ok',
     note: 'Same entry served as PDB format rather than mmCIF. p53 chains are numbered from UniProt 94; molstar keeps SEQRES here so ids still run 1..N, but strip SEQRES (any trimmed/modeled file) and they become 94.. — which is why residue ids are looked up rather than derived as position+1.',
   },
-  {
-    label: 'AF BRCA2 (>2700aa)',
-    source: 'alphafold',
-    structureId: 'P51587',
-    uniprot: 'P51587',
-    launch: {
-      gene: 'BRCA2',
-      transcriptId: 'ENST00000380152.8',
-      loc: 'chr13:32,315,086-32,400,268',
-    },
-    expect: 'AF_FRAGMENT',
-    expectSeverity: 'warn',
-    note: 'BRCA2 is 3,418aa; AlphaFold serves it in fragments but the plugin only ever loads F1 (~1,400aa). (large — alignment takes a moment)',
-  },
 ]
