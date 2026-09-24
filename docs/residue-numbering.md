@@ -32,7 +32,7 @@ p53 it contains. The plugin never assumes they agree; it asks SIFTS.
 ## What the plugin computes with
 
 Every stored or derived coordinate is a **position**: `initialSelection`, the
-clicked range, the hover, the pairwise alignment maps, feature layouts. That is
+clicked ranges, the hover, the pairwise alignment maps, feature layouts. That is
 the one numbering that is guaranteed dense and zero-based whatever the file, so
 it is the only one arithmetic is done in. p2s_mapper's `coordinates.ts` brands
 the three internal spaces (structure position, transcript position, alignment
@@ -67,37 +67,69 @@ selected or sent to Mol\*.
 
 ## Naming a residue in a session spec
 
-A spec can seed the selection three ways, per structure:
+A spec can seed the selection three ways, per structure, each taking one range
+or an array of them:
 
 ```json
 { "pdbId": "1TUP", "initialTranscriptResidues": { "start": 248, "end": 248 } }
 { "pdbId": "1TUP", "initialResidues": { "start": 248, "end": 248 } }
 { "pdbId": "1TUP", "initialSelection": { "start": 154, "end": 155 } }
+{ "pdbId": "1TUP", "initialTranscriptResidues": [
+    { "start": 120, "end": 122 }, { "start": 241, "end": 248 }, { "start": 273, "end": 280 }
+] }
 ```
+
+The array form lights each range on its own, as an interface or a set of contact
+sites needs; the single-range form is what sessions saved before it carry, and a
+snapshot keeps whichever form it was given.
 
 `initialTranscriptResidues` is 1-based inclusive numbering of the transcript's
 own translation, the numbering a UniProt feature or a domain map counts in. It
 resolves through the pairwise alignment, so it lands on the right residues of
-any structure the transcript aligns to, whatever the file calls them, and it
-clamps to the residues the structure models: a domain running past a fragment's
-end selects what the fragment holds. It waits for the structure to settle
-(loaded, aligned, SIFTS answered), because for a fusion the alignment changes
-once SIFTS unmaps the partner. `initialResidues` is inclusive author numbering,
-the way a site is cited, which for 1TUP happens to agree with UniProt but for
-haemoglobin's mature-numbered chains is off by one. `initialSelection` is the
-0-based half-open position range, for callers that already computed one. All
-three light the same residue: magenta in Mol\*, a band on the connected genome
-view, a box in the alignment. The view then frames the selection in the 3D
-canvas once every structure has loaded and superposed.
+any structure the transcript aligns to, whatever the file calls them, and
+selects only the structure residues the transcript pairs with: a domain running
+past a fragment's end selects what the fragment holds, and a range across 2RH1's
+receptor loop selects the receptor either side and not the T4 lysozyme fused
+between, which the alignment unmaps once SIFTS answers. It waits for the
+structure to settle (loaded, aligned, SIFTS answered), because for a fusion the
+alignment changes once SIFTS unmaps the partner. `initialResidues` is inclusive
+author numbering, the way a site is cited, which for 1TUP happens to agree with
+UniProt but for haemoglobin's mature-numbered chains is off by one; it selects
+only residues numbered in range, so 2RH1's lysozyme, numbered 1002–1161, stays
+out of a receptor range. `initialSelection` is 0-based half-open positions, for
+callers that already computed them. All three light the same residues: magenta
+in Mol\*, a band per run of coding bases on the connected genome view, a box per
+run in the alignment. The view then frames the selection in the 3D canvas once
+every structure has loaded and superposed.
 
 `initialResidues` cannot be resolved when the snapshot is read, because the
 numbering lives in the file. The structure model waits (a MobX `when`) until the
 entities are loaded **and** the transcript's entity has been chosen, then
-converts through `residueRangeToPositions`. The second condition matters: before
-the alignment picks the p53 chain, the fallback entity is `entities[0]`, which
-in 1TUP is a DNA strand. The seed fires once, so a user who clears the selection
+converts through `residueRuns`. The second condition matters: before the
+alignment picks the p53 chain, the fallback entity is `entities[0]`, which in
+1TUP is a DNA strand. The seed fires once, so a user who clears the selection
 afterwards is not overruled. A range the fragment does not contain selects
 nothing rather than something else.
+
+## Selecting a residue from outside
+
+Whatever drives a live view, a page script or an agent, selects the same way
+through a structure's `focusResidues` action, which takes the three numberings
+as one object and also moves the camera and the connected genome view:
+
+```js
+view.structures[1].focusResidues({ residues: { start: 248, end: 248 } })
+view.structures[0].focusResidues({
+  transcriptResidues: [{ start: 94, end: 102 }],
+})
+view.structures[0].focusResidues({ positions: { start: 154, end: 155 } })
+```
+
+It returns the position runs it selected, and throws while the structure has not
+loaded what the numbering needs, rather than selecting against a numbering it
+does not have yet. A click is still the user's: a click in the alignment or on a
+feature bar selects without moving the camera, and a click in Mol\* gets Mol\*'s
+own focus.
 
 ## Placing UniProt features on a fragment
 

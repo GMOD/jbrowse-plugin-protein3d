@@ -29,9 +29,9 @@ working links.
 | `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue                                       |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
 | `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view               |
-| `initialTranscriptResidues`      | No       | `{ start, end }` 1-based inclusive residues of the transcript, selected on load   |
+| `initialTranscriptResidues`      | No       | `{ start, end }` or an array of them: 1-based transcript residues lit on load     |
 | `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)     |
-| `initialSelection`               | No       | The same as a 0-based half-open position range, for callers that already have it  |
+| `initialSelection`               | No       | The same as 0-based half-open position ranges, for callers that already have them |
 
 \* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
 form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same

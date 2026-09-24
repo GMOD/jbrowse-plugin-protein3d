@@ -209,7 +209,7 @@ the e2e's multi-structure leg passed only because of that.
   position 154 reads 248) and what Mol\*'s own hover shows. `Entity.authSeqIds`
   carries it, `residueNumber()` reads it, and it is display-only: the ruler and
   the hover line. Every stored or computed coordinate (`initialSelection`,
-  `clickedStructureRange`, the alignment maps) stays a 0-based position, and
+  `clickedStructureRanges`, the alignment maps) stays a 0-based position, and
   molstar is addressed by `label_seq_id` through `Entity.seqIds`. Unobserved
   residues borrow the nearest observed residue's offset, so a disordered loop
   keeps counting. A spec that wants to name a site the literature's way uses
