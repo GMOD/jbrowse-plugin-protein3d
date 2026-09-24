@@ -19,7 +19,10 @@ import PartialFailureNotice from './PartialFailureNotice'
 import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
-import { DEFAULT_DATABASES } from '../services/foldseekApi'
+import {
+  DEFAULT_DATABASES,
+  foldseekLengthProblem,
+} from '../services/foldseekApi'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -114,8 +117,12 @@ const FoldseekSearch = observer(function FoldseekSearch({
   }
 
   const isBusy = isLoading || isPredicting
+  const lengthProblem = foldseekLengthProblem(sequence)
   const canSearch =
-    sequence.trim().length > 0 && selectedDatabases.length > 0 && !isBusy
+    sequence.trim().length > 0 &&
+    !lengthProblem &&
+    selectedDatabases.length > 0 &&
+    !isBusy
 
   // One button: predicting the 3Di alphabet is a step of the search, not a
   // decision, and making the user click twice only invited a stale prediction.
@@ -172,6 +179,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
               }}
               placeholder={`MKTVRQERLKSIVRILERSKEPVSGAQLAEEL...`}
               disabled={isBusy}
+              error={!!lengthProblem}
+              helperText={lengthProblem}
               slotProps={{
                 input: { className: classes.sequenceInput },
               }}

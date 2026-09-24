@@ -61,6 +61,24 @@ export interface FoldseekResult {
   results: FoldseekDatabaseResult[]
 }
 
+export const FOLDSEEK_MAX_RESIDUES = 1200
+
+export function cleanFoldseekSequence(aaSequence: string) {
+  return aaSequence
+    .split('\n')
+    .filter(line => !line.startsWith('>'))
+    .join('')
+    .toUpperCase()
+    .replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '')
+}
+
+export function foldseekLengthProblem(aaSequence: string) {
+  const { length } = cleanFoldseekSequence(aaSequence)
+  return length > FOLDSEEK_MAX_RESIDUES
+    ? `Foldseek's 3Di predictor takes at most ${FOLDSEEK_MAX_RESIDUES.toLocaleString('en-US')} residues and this sequence has ${length.toLocaleString('en-US')}. Trim it to the region you want to search.`
+    : undefined
+}
+
 export async function predict3Di({
   aaSequence,
   signal,
@@ -68,16 +86,11 @@ export async function predict3Di({
   aaSequence: string
   signal?: AbortSignal
 }) {
-  // Clean the sequence - remove FASTA header, whitespace, stop codons, and non-AA chars
-  const cleanSequence = aaSequence
-    .split('\n')
-    .filter(line => !line.startsWith('>'))
-    .join('')
-    .replace(/\s/g, '')
-    .replace(/\*/g, '') // Remove stop codons before querying 3Di
-    .toUpperCase()
-    .replace(/[^ACDEFGHIKLMNPQRSTVWY]/g, '') // Keep only valid amino acids
-
+  const problem = foldseekLengthProblem(aaSequence)
+  if (problem) {
+    throw new Error(problem)
+  }
+  const cleanSequence = cleanFoldseekSequence(aaSequence)
   const url = `https://3di.foldseek.com/predict/${encodeURIComponent(cleanSequence)}`
   const response = await rawfetch(url, { signal })
   if (!response.ok) {
