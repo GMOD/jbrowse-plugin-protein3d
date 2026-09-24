@@ -249,6 +249,15 @@ the typing: `addToExtensionPoint` rather than `contributeToExtensionPoint`,
 adapter cache), and a local `SessionWithAddTracks` over `addTrackConf`, the only
 method v4.3.0 sessions have.
 
+**A menu of ours opens off screen on its first click on v4 hosts.** v4.3.0
+serves `Menu`, `MenuItem`, `Checkbox` and the rest as `React.lazy` behind a null
+Suspense fallback, and the `@mui/material` barrel is no different, so no import
+path avoids it. MUI's Popover measures the paper once on open; empty, it is 16px
+wide, the right-edge clamp never fires, and the items arrive 400 ms later off
+the right edge. The second open finds the chunks loaded. `keepMounted` renders
+the items when the view mounts, which is the fix the Tune menu carries; core
+`main` serves these components eagerly, so the nightly never shows it.
+
 **The canvas context-menu API is `main`-only.** `contextMenuInfo`, `isGeneLike`
 and `fetchFullFeature` do not exist at `v4.3.0`, where `LinearBasicDisplay`
 still lives in `plugins/linear-genome-view` with the synchronous

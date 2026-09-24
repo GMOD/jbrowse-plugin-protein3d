@@ -1,8 +1,3 @@
-- autoscrolling weird, hard to know best behavior
-
-- first click on the cascadingmenubutton for autoscrolling goes off screen to
-  right, second click loads menu correctly
-
 - a declared selection is framed on load (`frameSelection.ts`, 2026-09-13), a
   clicked one still is not: `setClickedStructureRange` lights it and leaves the
   camera where it was. A `focusResidue(n)` that sets the selection and moves the
@@ -34,8 +29,7 @@ worth doing:
   select min..max of the matched positions, so a range across 2RH1's receptor
   loop would take the T4 lysozyme between; a click in the Mol\* canvas cannot
   clear a declared selection, and a click on one structure leaves another's
-  selection lit; the feature-track label column truncates to "Doma…", "Bind…" at
-  45 px.
+  selection lit.
 
 - page side (jb2hubs): once a release carries `initialTranscriptResidues`, the
   "opens on…" sessions should send the domain map's own numbering and drop
