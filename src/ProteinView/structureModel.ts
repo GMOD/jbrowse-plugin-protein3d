@@ -110,9 +110,9 @@ const Structure = types
     /**
      * #property
      * Transcript row first, structure row second, each spelling its whole
-     * sequence. Once the entities load, one that spells no chain is replaced
-     * by a computed alignment, and `mappedEntityId` moves to the chain it
-     * spells (see entityAlignedTo).
+     * sequence. Once the entities load, an imported one that spells no chain
+     * is replaced by a computed alignment, and `mappedEntityId` moves to the
+     * chain it spells (see entityAlignedTo).
      */
     pairwiseAlignment: types.frozen<MaybePairwiseAlignment>(),
     /**
@@ -1224,6 +1224,9 @@ const Structure = types
               return
             }
             if (pairwiseAlignment) {
+              if (!self.alignmentImported) {
+                return
+              }
               const fit = entityAlignedTo(
                 pairwiseAlignment,
                 userProvidedTranscriptSequence,
