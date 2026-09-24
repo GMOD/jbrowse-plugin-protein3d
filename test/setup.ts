@@ -10,7 +10,7 @@ import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
 
 import type { Browser, Page } from 'puppeteer'
 
-export const JBROWSE_PORT = 9876
+export const JBROWSE_PORT = Number(process.env.JBROWSE_PORT ?? 9876)
 export const VIEW_ID = 'test_lgv'
 export const TRACK_ID = 'gencode.v44.annotation.sorted.gff3'
 
