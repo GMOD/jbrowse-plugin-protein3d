@@ -287,7 +287,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
         <div
           style={{
             flexShrink: 0,
-            width: LABEL_WIDTH,
+            minWidth: LABEL_WIDTH,
             textAlign: 'right',
             paddingRight: 4,
           }}
@@ -316,11 +316,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
                 <div className={classes.gutterError}>Error</div>
               </Tooltip>
             ) : featureData ? (
-              <ProteinFeatureTrackLabels
-                data={featureData}
-                labelWidth={LABEL_WIDTH}
-                model={model}
-              />
+              <ProteinFeatureTrackLabels data={featureData} model={model} />
             ) : null
           ) : null}
           {showProteinTracks && confidenceCells.length > 0 ? (

@@ -50,11 +50,9 @@ const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
 export const ProteinFeatureTrackLabels = observer(
   function ProteinFeatureTrackLabels({
     data,
-    labelWidth,
     model,
   }: {
     data: FeatureTrackData
-    labelWidth: number
     model: JBrowsePluginProteinStructureModel
   }) {
     return (
@@ -65,7 +63,6 @@ export const ProteinFeatureTrackLabels = observer(
             type={group.type}
             laneCount={group.laneCount}
             expanded={model.expandedFeatureTypes.has(group.type)}
-            labelWidth={labelWidth}
             model={model}
           />
         ))}

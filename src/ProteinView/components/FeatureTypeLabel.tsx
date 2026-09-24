@@ -14,13 +14,11 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
   type,
   laneCount,
   expanded,
-  labelWidth,
   model,
 }: {
   type: string
   laneCount: number
   expanded: boolean
-  labelWidth: number
   model: JBrowsePluginProteinStructureModel
 }) {
   const lanes = expanded ? laneCount : 1
@@ -30,13 +28,10 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
       <div
         style={{
           height: lanes * (model.trackHeight + model.trackGap),
-          width: labelWidth - 4,
           fontSize: 9,
           fontFamily: 'monospace',
           textAlign: 'right',
           paddingRight: 4,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           display: 'flex',
           alignItems: expanded ? 'flex-start' : 'center',
@@ -74,9 +69,7 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
             )}
           </IconButton>
         ) : null}
-        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {type}
-        </span>
+        <span>{type}</span>
       </div>
     </Tooltip>
   )
