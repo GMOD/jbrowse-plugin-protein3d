@@ -23,7 +23,7 @@ import {
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString, { AlignmentHighlights } from './SplitString'
 import ExternalLink from '../../components/ExternalLink'
-import { largeJumpScrollTarget, offScreenCenterTarget } from '../autoScroll'
+import { followHoverTarget, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
@@ -159,10 +159,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
       }: ${errorMessage(featureError)}`
     : undefined
 
-  // Recenter only on a large jump — when the hovered column lands well outside
-  // the viewport (e.g. hovering a distant residue in the 3D structure). A column
-  // that has merely edged just off-screen during a continuous hover sweep is
-  // left alone, so the panel doesn't feel like it's constantly re-centering.
   useEffect(
     () =>
       autorun(() => {
@@ -173,13 +169,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
           model.alignmentHoverPos !== undefined &&
           container
         ) {
-          const target = largeJumpScrollTarget({
+          const target = followHoverTarget({
             x: model.alignmentHoverPos * CHAR_WIDTH,
+            width: CHAR_WIDTH,
             scrollLeft: container.scrollLeft,
             clientWidth: container.clientWidth,
           })
           if (target !== undefined) {
-            container.scrollTo({ left: target, behavior: 'smooth' })
+            container.scrollLeft = target
           }
         }
       }),

@@ -1,27 +1,22 @@
 import { describe, expect, it } from 'vitest'
 
-import { largeJumpScrollTarget, offScreenCenterTarget } from './autoScroll'
+import { followHoverTarget, offScreenCenterTarget } from './autoScroll'
 
-describe('largeJumpScrollTarget', () => {
-  const view = { scrollLeft: 1000, clientWidth: 800 }
+describe('followHoverTarget', () => {
+  const view = { width: 6, scrollLeft: 1000, clientWidth: 800 }
 
   it('stays put for a column already visible', () => {
-    expect(largeJumpScrollTarget({ x: 1400, ...view })).toBeUndefined()
+    expect(followHoverTarget({ x: 1000, ...view })).toBeUndefined()
+    expect(followHoverTarget({ x: 1794, ...view })).toBeUndefined()
   })
 
-  it('stays put for a small overshoot off either edge', () => {
-    expect(largeJumpScrollTarget({ x: 1850, ...view })).toBeUndefined()
-    expect(largeJumpScrollTarget({ x: 900, ...view })).toBeUndefined()
+  it('centres a column that has just crossed either edge', () => {
+    expect(followHoverTarget({ x: 1797, ...view })).toBe(1800 - 400)
+    expect(followHoverTarget({ x: 996, ...view })).toBe(999 - 400)
   })
 
-  it('centers on a large jump past the right edge', () => {
-    // gap = 3000 - 1800 = 1200 > 800
-    expect(largeJumpScrollTarget({ x: 3000, ...view })).toBe(3000 - 400)
-  })
-
-  it('centers on a large jump past the left edge', () => {
-    // gap = 1000 - (-200) = 1200 > 800
-    expect(largeJumpScrollTarget({ x: -200, ...view })).toBe(-200 - 400)
+  it('centres a column far off screen', () => {
+    expect(followHoverTarget({ x: 3000, ...view })).toBe(3003 - 400)
   })
 })
 

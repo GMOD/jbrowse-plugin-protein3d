@@ -1,29 +1,26 @@
 /**
- * Pure geometry for the alignment panel's auto-scrolling, extracted so it can be
- * unit-tested independently of the DOM/mobx effects that drive it. All values
- * are in pixels within the horizontally-scrolling alignment container.
+ * Pixel geometry for the alignment panel's scrolling, in the coordinates of its
+ * horizontally scrolling container.
  */
 
 /**
- * Target scrollLeft for following a hovered column, but only on a *large jump* —
- * a column that lands more than a full viewport outside the view (e.g. hovering
- * a distant residue in the 3D structure). A column that has merely edged just
- * off-screen during a continuous hover sweep returns undefined, so the panel
- * doesn't feel like it's constantly re-centering. Centers the column when it
- * does jump.
+ * Where to scroll so a hovered column is centred, or undefined while all of it
+ * is already visible. A sweep along the genome therefore turns a page each time
+ * it reaches an edge, with half a viewport of what comes next in view.
  */
-export function largeJumpScrollTarget({
+export function followHoverTarget({
   x,
+  width,
   scrollLeft,
   clientWidth,
 }: {
   x: number
+  width: number
   scrollLeft: number
   clientWidth: number
 }): number | undefined {
-  const viewEnd = scrollLeft + clientWidth
-  const gap = Math.max(scrollLeft - x, x - viewEnd)
-  return gap > clientWidth ? x - clientWidth / 2 : undefined
+  const visible = x >= scrollLeft && x + width <= scrollLeft + clientWidth
+  return visible ? undefined : x + width / 2 - clientWidth / 2
 }
 
 /**
