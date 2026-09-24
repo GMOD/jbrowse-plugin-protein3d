@@ -2,9 +2,9 @@
 
 Each link opens JBrowse on hg38 with a gene and a structure side by side, linked
 residue to codon. Hover the gene to light the residue, or a residue to light the
-codon. Every case below was mapped wrongly by some earlier version of the
-plugin; [genome to structure alignment](genome-to-structure-alignment.md)
-records how each was measured.
+codon. Every case below was mapped or shown wrongly by some earlier version of
+the plugin; [genome to structure alignment](genome-to-structure-alignment.md)
+records how the mapping cases were measured.
 
 The links load the plugin published at `jbrowse.org/plugins/…/latest`, so a fix
 shows here once it is released. After `pnpm build`, `pnpm check-demos` opens
@@ -67,3 +67,42 @@ exposes an assembly's genetic codes.
 [COX1 on 5Z62](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%225Z62%22%2C%22transcriptId%22%3A%22YP_003024028.1%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chrM%3A5%2C800-7%2C500%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","noInteriorStop":true,"minIdentity":0.95} -->
+
+## Two species superposed
+
+This link opens the AlphaFold models of human p53 and mouse p53 (P02340) in one
+view. TM-align superposes the mouse model on the human one, and the plugin maps
+both to the human transcript, the mouse at about 79% identity. Every AlphaFold
+model is entity 1 of its file, so hovering mouse residue 100 used to light human
+residue 100 and its codon as well. The plugin now tells the two apart by Mol\*
+model id, and a hover on either lights only that model's own residue and codon.
+
+[TP53 on human and mouse AlphaFold](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22uniprotId%22%3A%22P02340%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99,"minAligned":390},{"chain":"A","minIdentity":0.75,"minAligned":380}]} -->
+
+## A residue named the way a paper names it
+
+The p53 hotspot every cancer paper calls R248 is author residue 248 in 1TUP,
+whose chain starts at UniProt residue 94, so it is the chain's 155th residue.
+This link's spec asks for `initialResidues: { start: 248, end: 248 }`, and the
+view opens with R248 selected in Mol\* and its codon marked on the genome.
+[Residue numbering](residue-numbering.md) follows that number from the paper to
+the codon.
+
+[TP53 R248 on 1TUP](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22initialResidues%22%3A%7B%22start%22%3A248%2C%22end%22%3A248%7D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"chain":"A","selected":{"auth":248,"transcriptPos":247}} -->
+
+## An NMR ensemble
+
+2L14 is a solution NMR structure of p53's transactivation domain (residues
+13–61) bound to the coactivator-binding domain of mouse CBP, deposited as twenty
+models. The plugin loads each model as its own Mol\* structure, and colour,
+hover and selection reach all twenty; until 2026-09-18 a colour scheme reached
+only the first. CBP is entity 1, and the plugin maps TP53 to the p53 chain, B.
+Twenty models take noticeably longer to load than one crystal structure.
+
+[TP53 on 2L14](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222L14%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"chain":"B","models":20,"minIdentity":0.95,"minAligned":49} -->

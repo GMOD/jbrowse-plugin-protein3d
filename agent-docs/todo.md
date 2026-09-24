@@ -20,13 +20,9 @@ worth doing:
   (`initialTranscriptResidues: [...]`) agreed with the page, which has no way to
   send several ranges yet.
 
-- demos: `docs/demos.md` has no superposition (AF P04637 + mouse P02340), no
-  author-numbered residue (`initialResidues` 248 on 1TUP) and no NMR ensemble
-  (2L14, twenty models). jbrowse.org's `tp53_structures` tutorial already opens
-  a superposition (AF P04637, 1TUP, 1YCR) and `initialResidues` 248 on 1TUP, so
-  only the ensemble is missing everywhere; the harness's examples open the gene
-  on `main` and leave the launch to the reader, where a spec would open the
-  structure directly if each example carried a transcript id.
+- jbrowse.org's `tp53_structures` tutorial opens a superposition and
+  `initialResidues` 248 on 1TUP but no NMR ensemble; `docs/demos.md` now has
+  2L14 (twenty models), which the tutorial could borrow.
 
 - launch dialog: Foldseek reports a 400 or 414 raw for a protein over its length
   limit; the snapshot `uniprotId` shorthand (`resolveStructureUrl`) still

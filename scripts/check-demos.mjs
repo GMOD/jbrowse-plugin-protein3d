@@ -5,15 +5,24 @@
 // local build in place of the published plugin, so a mapping change can be
 // checked on the demos before release.
 //
-// Every link needs an expectation. Its fields, each optional:
+// Every link needs an expectation. Its fields, each optional, describe the
+// view's first structure:
 //   chain           author chain id the transcript maps to
 //   minIdentity     identical over aligned columns, at least
 //   minAligned      aligned columns, at least; catches unmapping too much
 //   unmapped        [start, end) 0-based structure positions that must not map
 //   residue         { auth, transcriptPos }: the residue with that author
 //                   number maps to that 0-based transcript position
+//   selected        { auth, transcriptPos }: the view opens with exactly that
+//                   residue selected, and it maps as `residue` would
 //   noInteriorStop  the translation has no `*` before its end
-// Every demo is also checked for one sequence letter per structure position.
+//   models          Mol* structures the load made; an NMR ensemble makes one
+//                   per model
+// A view of several structures takes `structures`, one such object per
+// structure in order, and `superposed`, how many TM-align must cover. Every
+// demo is also checked for one sequence letter per structure position, and
+// fails on anything the page logs at warn or error that browserConsole.mjs
+// does not excuse for the link's host.
 //
 // Usage:
 //   pnpm check-demos
@@ -25,11 +34,13 @@ import { parseArgs } from 'node:util'
 
 import puppeteer from 'puppeteer'
 
+import { isBrowserConsoleNoise } from './browserConsole.mjs'
+
 const { values } = parseArgs({
   options: {
     bundle: { type: 'string' },
     file: { type: 'string', default: 'docs/demos.md' },
-    timeout: { type: 'string', default: '120000' },
+    timeout: { type: 'string', default: '300000' },
   },
 })
 const timeout = Number(values.timeout)
@@ -137,35 +148,54 @@ async function serveCandidateBundle(page) {
 }
 
 // SIFTS arrives after the view settles, and the fusion unmapping waits on it
-function readStructure() {
+function readView() {
   const w = /** @type {Record<string, any>} */ (window)
   const session = w.JBrowseSession ?? w.__jbrowse_session
   const view = session?.views?.find(v => v.type === 'ProteinView')
-  const s = view?.structures?.[0]
+  const structures = view?.structures ?? []
   if (
-    !s?.mappedEntity ||
-    (s.pdbId &&
-      s.uniProtMappings === undefined &&
-      s.uniProtMappingsError === undefined)
+    structures.length === 0 ||
+    structures.some(
+      s =>
+        !s.mappedEntity ||
+        s.loading ||
+        (s.pdbId &&
+          s.uniProtMappings === undefined &&
+          s.uniProtMappingsError === undefined),
+    )
   ) {
     return undefined
   }
   return {
-    chains: s.mappedEntity.chains,
-    seqLength: s.mappedEntity.seq.length,
-    seqIdsLength: s.mappedEntity.seqIds.length,
-    authSeqIds: s.mappedEntity.authSeqIds,
-    structureToTranscript: s.structureSeqToTranscriptSeqPosition,
-    transcript: s.userProvidedTranscriptSequence,
-    identity: s.alignmentQuality?.identity,
-    aligned: s.alignmentQuality?.aligned,
+    superposed: view.superposedCount,
+    structures: structures.map(s => ({
+      chains: s.mappedEntity.chains,
+      seqLength: s.mappedEntity.seq.length,
+      seqIdsLength: s.mappedEntity.seqIds.length,
+      authSeqIds: s.mappedEntity.authSeqIds,
+      structureToTranscript: s.structureSeqToTranscriptSeqPosition,
+      transcript: s.userProvidedTranscriptSequence,
+      identity: s.alignmentQuality?.identity,
+      aligned: s.alignmentQuality?.aligned,
+      models: s.molstarStructures?.length,
+      selected: s.clickedStructureRange,
+    })),
   }
 }
 
+function superposedAtLeast(n) {
+  const w = /** @type {Record<string, any>} */ (window)
+  const session = w.JBrowseSession ?? w.__jbrowse_session
+  const view = session?.views?.find(v => v.type === 'ProteinView')
+  return view?.superposedCount >= n
+}
+
+function transcriptPosOfAuth(state, auth) {
+  const pos = state.authSeqIds?.indexOf(auth)
+  return pos >= 0 ? state.structureToTranscript[pos] : undefined
+}
+
 function problems(state, expect) {
-  if (!expect) {
-    return ['no <!-- expect {...} --> for this link']
-  }
   const found = []
   if (state.seqLength !== state.seqIdsLength) {
     found.push(
@@ -199,13 +229,31 @@ function problems(state, expect) {
     }
   }
   if (expect.residue) {
-    const pos = state.authSeqIds?.indexOf(expect.residue.auth)
-    const got = pos >= 0 ? state.structureToTranscript[pos] : undefined
+    const got = transcriptPosOfAuth(state, expect.residue.auth)
     if (got !== expect.residue.transcriptPos) {
       found.push(
         `residue ${expect.residue.auth} maps to transcript ${got}, expected ${expect.residue.transcriptPos}`,
       )
     }
+  }
+  if (expect.selected) {
+    const { auth, transcriptPos } = expect.selected
+    const pos = state.authSeqIds?.indexOf(auth)
+    const range = state.selected
+    if (range?.start !== pos || range?.end !== pos + 1) {
+      found.push(
+        `selection ${JSON.stringify(range)}, expected residue ${auth} at position ${pos}`,
+      )
+    }
+    const got = transcriptPosOfAuth(state, auth)
+    if (got !== transcriptPos) {
+      found.push(
+        `selected residue ${auth} maps to transcript ${got}, expected ${transcriptPos}`,
+      )
+    }
+  }
+  if (expect.models !== undefined && state.models !== expect.models) {
+    found.push(`${state.models} Mol* structures, expected ${expect.models}`)
   }
   if (
     expect.noInteriorStop &&
@@ -216,48 +264,124 @@ function problems(state, expect) {
   return found
 }
 
+function viewProblems(view, expect) {
+  if (!expect) {
+    return ['no <!-- expect {...} --> for this link']
+  }
+  const perStructure = expect.structures ?? [expect]
+  const found = []
+  if (view.structures.length !== perStructure.length) {
+    found.push(
+      `${view.structures.length} structures, expected ${perStructure.length}`,
+    )
+  }
+  view.structures.forEach((state, i) => {
+    const label = view.structures.length > 1 ? `structure ${i}: ` : ''
+    found.push(
+      ...problems(state, perStructure[i] ?? {}).map(p => `${label}${p}`),
+    )
+  })
+  if (
+    expect.superposed !== undefined &&
+    !(view.superposed >= expect.superposed)
+  ) {
+    found.push(
+      `superposition covered ${view.superposed}, expected ${expect.superposed}`,
+    )
+  }
+  return found
+}
+
+function hostOf(url) {
+  return /\/code\/jb2\/([^/]+)\//.exec(url)?.[1] ?? 'unknown'
+}
+
 const demos = parseDemos(fs.readFileSync(values.file, 'utf8'))
 if (demos.length === 0) {
   throw new Error(`no demo links in ${values.file}`)
 }
 const browser = await puppeteer.launch({
   headless: true,
-  args: ['--no-sandbox', '--use-gl=swiftshader'],
+  args: ['--no-sandbox', '--disable-setuid-sandbox'],
   defaultViewport: { width: 1400, height: 900 },
 })
 let failed = 0
 for (const demo of demos) {
   const page = await browser.newPage()
+  const host = hostOf(demo.url)
+  const complaints = []
+  const heard = (type, text) => {
+    if (!isBrowserConsoleNoise(text, host)) {
+      complaints.push(`[${type}] ${text.slice(0, 200)}`)
+    }
+  }
+  page.on('console', m => {
+    if (m.type() === 'error' || m.type() === 'warn') {
+      heard(m.type(), m.text())
+    }
+  })
+  page.on('pageerror', e => {
+    heard('pageerror', String(e))
+  })
   if (values.bundle) {
     await serveCandidateBundle(page)
   }
   let found
-  let state
+  let view
   try {
     await page.goto(demo.url, {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
     })
-    const handle = await page.waitForFunction(readStructure, {
+    const handle = await page.waitForFunction(readView, {
       timeout,
       polling: 500,
     })
-    state = await handle.jsonValue()
-    found = problems(state, demo.expect)
+    view = await handle.jsonValue()
+    if (demo.expect?.superposed !== undefined) {
+      view.superposed = await page
+        .waitForFunction(
+          superposedAtLeast,
+          { timeout, polling: 500 },
+          demo.expect.superposed,
+        )
+        .then(
+          () => demo.expect.superposed,
+          () => page.evaluate(readView).then(v => v?.superposed),
+        )
+    }
+    found = viewProblems(view, demo.expect)
   } catch (e) {
     const text = await page
-      .evaluate(() =>
-        document.body.innerText.replace(/\s+/g, ' ').slice(0, 300),
-      )
+      .evaluate(() => {
+        const w = /** @type {Record<string, any>} */ (window)
+        const session = w.JBrowseSession ?? w.__jbrowse_session
+        const view = session?.views?.find(v => v.type === 'ProteinView')
+        const waiting = view?.structures?.map(s =>
+          s.error
+            ? `error: ${s.error}`
+            : (s.loadingMessage ??
+              (s.mappedEntity ? 'settled' : 'no mapped entity')),
+        )
+        return waiting
+          ? `structures: ${waiting.join('; ')}`
+          : `page: ${document.body.innerText.replace(/\s+/g, ' ').slice(0, 300)}`
+      })
       .catch(() => '')
-    found = [`did not settle: ${String(e).slice(0, 120)} | page: ${text}`]
+    found = [`did not settle: ${String(e).slice(0, 120)} | ${text}`]
   }
+  found.push(...[...new Set(complaints)].map(c => `the page said ${c}`))
   await page.close()
   if (found.length > 0) {
     failed++
   }
-  const summary = state
-    ? ` (${state.aligned} aligned, ${Math.round((state.identity ?? 0) * 100)}% identity)`
+  const summary = view
+    ? ` (${view.structures
+        .map(
+          s =>
+            `${s.aligned} aligned, ${Math.round((s.identity ?? 0) * 100)}% identity`,
+        )
+        .join('; ')})`
     : ''
   console.log(
     `${found.length ? 'FAIL' : 'ok  '} ${demo.name}${summary}${found.length ? `\n     ${found.join('\n     ')}` : ''}`,
