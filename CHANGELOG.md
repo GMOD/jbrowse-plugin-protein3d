@@ -1,3 +1,39 @@
+## [0.15.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.14.0...v0.15.0) (2026-09-24)
+
+### Bug Fixes
+
+- Drop the BRCA2 example, which AlphaFold DB no longer serves ([5f695c3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5f695c3d167a3450bbefba01faadcaf2a83265bb))
+- Open the display settings menu in place on its first click ([89e22f2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/89e22f2be55847a8cfbb0dcb7ddb1592923e3e68))
+- Size the track label column to its widest label ([d76151f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d76151f10e21292728d76752584335af0a5c82c5))
+- Auto-scroll keeps the hovered residue in view ([d3c5a51](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d3c5a5183da5097fdc6963d23c5dd9acb9024961))
+- Auto-scroll follows only new hovers, and leaving the panel never scrolls it ([e6d0fd6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e6d0fd6e0ca79a28d66653d87d3f5acf40d2d574))
+- Refuse a sequence over the 3Di predictor's 1200-residue limit before sending it ([680641b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/680641b3426e852e930a968d2b44d4ec9d1f6c19))
+- Map a supplied alignment onto the chain it spells, or replace it ([a0c06ff](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a0c06ff20d378979101b60fc517297eedf092683))
+- Check only imported alignments against the entities ([011645e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/011645ed61c872d651d68463100a97eef29907b6))
+- Seed initialResidues only once the stored alignment is checked ([16ff86b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/16ff86b5bf8e82312f864cc4fd73d4d101cdf9f9))
+- Read the selection as ranges, and the published plugin's single range ([1ed0f69](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1ed0f69a6f08002b69b98050b2108779d501cd47))
+- FocusResidues waits for the view to settle and is the view's one selection ([5d08b54](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5d08b545f197c4cbe5099efa83517c0fb5420bf5))
+- Drop the event Mol*'s interaction behaviors replay on subscribe ([abc5b19](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/abc5b194a81d7be4bd5078ccaed0da271dc56771))
+
+### Documentation
+
+- Note translateTranscript waits on a core release ([bbabc47](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bbabc471f5560f7063d4fc3f1452c5bbfb13eb67))
+- A superposition, R248 by author number, and an NMR ensemble ([08800fa](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/08800fac31b9a14ed7329c352d7632fd7b852455))
+- Why a v4 host opens our menus off screen; close three todo items ([587f3a2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/587f3a2e82d1b8de3ef87c4fe995f309931e30f9))
+- A snapshot's own pairwiseAlignment, and close the finished todo items ([ff1b3fc](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff1b3fc6f64c6e49b3f3ca706dd9a9d29da6914b))
+- Selection ranges, focusResidues, and the todo items they close ([cc7cadb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cc7cadb552b11db54df5b5e74e588bf1930e14ff))
+
+### Features
+
+- Each example's JBrowse link opens its structure mapped ([eef3fd2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/eef3fd2207b60abef6304ddbf091b5f002ce1dfe))
+- Several selection ranges, runs not min..max, focusResidues, one click selection per view ([e5dbc79](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e5dbc79eddb595b2b9004617c0bf60e896475fed))
+
+### Tests
+
+- Take the JBrowse port from JBROWSE_PORT ([85a7513](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/85a7513395aec9791b3ee54d8561316ab00d1de6))
+- Multi-structure screenshot with 1YCR's two seeded peptide runs lit ([c64476e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c64476e7f3f8ce7d60721ead50d14edb51e84ceb))
+- V4.3.0 screenshots for the seeded multi-structure runs and the NMR ensemble ([9a61fd4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9a61fd49ac5af7f0dafcf37b482fa9c63fe0b135))
+
 ## [0.14.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.13.2...v0.14.0) (2026-09-22)
 
 ### Bug Fixes
