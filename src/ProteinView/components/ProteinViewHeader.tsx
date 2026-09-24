@@ -96,6 +96,7 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
         </IconButton>
       </Tooltip>
       <Menu
+        keepMounted
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => {
