@@ -19,17 +19,11 @@ worth doing:
   `initialResidues` 248 on 1TUP but no NMR ensemble; `docs/demos.md` now has
   2L14 (twenty models), which the tutorial could borrow.
 
-- launch dialog: Foldseek reports a 400 or 414 raw for a protein over its length
-  limit; the snapshot `uniprotId` shorthand (`resolveStructureUrl`) still
-  guesses `AF-<acc>-F1-model_v6`, because hydration is synchronous.
-
-- traced by review, not reproduced: a spec-supplied `pairwiseAlignment` is never
-  validated and skips entity choice, so `mappedEntity` falls back to entity 1 (a
-  DNA strand in 1TUP); `initialResidues` and `initialTranscriptResidues` both
-  select min..max of the matched positions, so a range across 2RH1's receptor
-  loop would take the T4 lysozyme between; a click in the Mol\* canvas cannot
-  clear a declared selection, and a click on one structure leaves another's
-  selection lit.
+- traced by review, not reproduced: `initialResidues` and
+  `initialTranscriptResidues` both select min..max of the matched positions, so
+  a range across 2RH1's receptor loop would take the T4 lysozyme between; a
+  click in the Mol\* canvas cannot clear a declared selection, and a click on
+  one structure leaves another's selection lit.
 
 - page side (jb2hubs): once a release carries `initialTranscriptResidues`, the
   "opens on…" sessions should send the domain map's own numbering and drop

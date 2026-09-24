@@ -73,6 +73,13 @@ candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …) overrides
 that choice and is what the alignment panel's **Mapped chain** picker writes, so
 a saved session restores the chain the user chose along with the alignment
 computed against it.
+
+A snapshot can also carry its own `pairwiseAlignment`, transcript row first,
+each row spelling its whole sequence with `-` for gaps. The plugin maps it to
+the chain whose sequence the second row spells; `mappedEntityId` then only picks
+among chains that share that sequence. When no chain matches, the view reports
+that on its banner and computes an alignment instead.
+
 [Genome to structure alignment](genome-to-structure-alignment.md) has the
 measurements behind the rule.
 
