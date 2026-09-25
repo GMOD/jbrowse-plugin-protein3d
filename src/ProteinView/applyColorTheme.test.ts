@@ -3,11 +3,17 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
 import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
-import { COLOR_SCHEME_VALUES, applyColorTheme } from './applyColorTheme'
+import {
+  COLOR_SCHEME_VALUES,
+  applyColorTheme,
+  colorSchemeLegend,
+} from './applyColorTheme'
 import { registerColorThemes } from './colorThemes'
+import { MAPPED_CHAIN_COLOR, OTHER_CHAIN_COLOR } from './mappedChainColorTheme'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 
+import type { ProteinColorScheme } from './applyColorTheme'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 const chain = { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }
@@ -148,5 +154,30 @@ test('skips a structure molstar no longer holds', async () => {
       ),
     })
     expect(themes(plugin).map(t => t?.name)).toEqual(['secondary-structure'])
+  })
+})
+
+test("each scheme's legend is the key of the theme that draws it", async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    registerColorThemes(plugin)
+    const [structure] = (await loadCaOnly(plugin, [chain])).structures
+    if (!structure) {
+      throw new Error('no structure loaded')
+    }
+    const legend = (colorScheme: ProteinColorScheme) =>
+      colorSchemeLegend({ plugin, colorScheme, structure, entityId: '1' })
+    expect(legend('default')).toBeUndefined()
+    expect(legend('hydrophobicity')).toMatchObject({
+      kind: 'scale-legend',
+      minLabel: 'Hydrophilic',
+      maxLabel: 'Hydrophobic',
+    })
+    expect(legend('mapped-chain')).toEqual({
+      kind: 'table-legend',
+      table: [
+        ['Mapped chain', MAPPED_CHAIN_COLOR],
+        ['Other', OTHER_CHAIN_COLOR],
+      ],
+    })
   })
 })

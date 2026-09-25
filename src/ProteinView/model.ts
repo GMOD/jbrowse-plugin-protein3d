@@ -11,6 +11,7 @@ import {
   COLOR_SCHEME_VALUES,
   type ProteinColorScheme,
   applyColorTheme,
+  colorSchemeLegend,
 } from './applyColorTheme'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
@@ -408,6 +409,23 @@ function stateModelFactory() {
           structures.find(s => s.seededSelection) ??
           structures[0]
         )
+      },
+      /**
+       * #getter
+       * The colour scheme's key, from the first structure that has loaded.
+       */
+      get colorLegend() {
+        const plugin = self.molstarPluginContext
+        const loaded = self.structures.find(s => s.structureSequences)
+        const structure = loaded?.molstarStructures[0]
+        return plugin && structure
+          ? colorSchemeLegend({
+              plugin,
+              colorScheme: self.colorScheme,
+              structure,
+              entityId: loaded.mappedEntity?.entityId,
+            })
+          : undefined
       },
       /**
        * #getter

@@ -1,0 +1,138 @@
+import React from 'react'
+
+import Typography from '@mui/material/Typography'
+
+import type { Legend } from 'molstar/lib/mol-util/legend'
+
+export interface ColorKeyEntry {
+  label: string
+  color: string
+}
+
+const swatch = {
+  width: 8,
+  height: 8,
+  border: '1px solid rgba(0,0,0,0.3)',
+}
+
+function KeyRow({
+  title,
+  testId,
+  children,
+}: {
+  title: string
+  testId: string
+  children: React.ReactNode
+}) {
+  return (
+    <Typography
+      variant="caption"
+      color="textSecondary"
+      component="div"
+      data-testid={testId}
+      style={{
+        display: 'flex',
+        flexWrap: 'wrap',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 9,
+        paddingLeft: 8,
+      }}
+    >
+      {title}:{children}
+    </Typography>
+  )
+}
+
+export function ColorKey({
+  title,
+  entries,
+  testId = 'track-legend',
+}: {
+  title: string
+  entries: ColorKeyEntry[]
+  testId?: string
+}) {
+  return (
+    <KeyRow title={title} testId={testId}>
+      {entries.map(({ label, color }) => (
+        <span
+          key={label}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}
+        >
+          <span style={{ ...swatch, background: color }} />
+          {label}
+        </span>
+      ))}
+    </KeyRow>
+  )
+}
+
+export function GradientKey({
+  title,
+  minLabel,
+  maxLabel,
+  colors,
+  testId = 'track-legend',
+}: {
+  title: string
+  minLabel: string
+  maxLabel: string
+  colors: string[]
+  testId?: string
+}) {
+  return (
+    <KeyRow title={title} testId={testId}>
+      {minLabel}
+      <span
+        style={{
+          ...swatch,
+          width: 60,
+          background: `linear-gradient(to right, ${colors.join(', ')})`,
+        }}
+      />
+      {maxLabel}
+    </KeyRow>
+  )
+}
+
+// Mol*'s Color is a 0xRRGGBB number; formatted here so the header does not
+// pull Mol* into the bundle every host evaluates on boot.
+function cssColor(color: number) {
+  return `#${color.toString(16).padStart(6, '0')}`
+}
+
+function words(name: string) {
+  return name.replaceAll(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()
+}
+
+export function MolstarLegendKey({
+  title,
+  legend,
+}: {
+  title: string
+  legend: Legend
+}) {
+  return legend.kind === 'table-legend' ? (
+    <ColorKey
+      title={title}
+      testId="structure-legend"
+      entries={legend.table.map(([name, color]) => ({
+        label: words(name),
+        color: cssColor(color),
+      }))}
+    />
+  ) : (
+    <GradientKey
+      title={title}
+      testId="structure-legend"
+      minLabel={legend.minLabel}
+      maxLabel={legend.maxLabel}
+      colors={legend.colors.map(entry =>
+        Array.isArray(entry)
+          ? `${cssColor(entry[0])} ${100 * entry[1]}%`
+          : cssColor(entry),
+      )}
+    />
+  )
+}

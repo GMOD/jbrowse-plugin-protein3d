@@ -11,7 +11,7 @@ import { ScaleLegend } from 'molstar/lib/mol-util/legend'
 import { ParamDefinition as PD } from 'molstar/lib/mol-util/param-definition'
 
 import {
-  HYDROPHOBICITY_LEGEND,
+  HYDROPHOBICITY_KEY_SCORES,
   hydrophobicityRgb,
   kyteDoolittle,
 } from './residueTracks'
@@ -74,7 +74,7 @@ function KyteDoolittleColorTheme(
     legend: ScaleLegend(
       'Hydrophilic',
       'Hydrophobic',
-      HYDROPHOBICITY_LEGEND.map(({ score }) => scoreColor(score)),
+      HYDROPHOBICITY_KEY_SCORES.map(score => scoreColor(score)),
     ),
   }
 }

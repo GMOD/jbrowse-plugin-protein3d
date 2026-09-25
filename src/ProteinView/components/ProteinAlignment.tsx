@@ -13,8 +13,8 @@ import { makeStyles } from 'tss-react/mui'
 
 import AlignmentRuler from './AlignmentRuler'
 import ChainSelect from './ChainSelect'
+import { ColorKey, GradientKey } from './ColorKey'
 import HoverMarker from './HoverMarker'
-import PlddtLegend from './PlddtLegend'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   ProteinFeatureTrackContent,
@@ -27,7 +27,12 @@ import { followHover, offScreenCenterTarget } from '../autoScroll'
 import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
-import { hydrophobicityColor, plddtColor } from '../residueTracks'
+import {
+  HYDROPHOBICITY_KEY_SCORES,
+  PLDDT_BINS,
+  hydrophobicityColor,
+  plddtColor,
+} from '../residueTracks'
 import { errorMessage } from '../util'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
@@ -359,7 +364,26 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ) : null}
         </div>
       </div>
-      {showProteinTracks && confidenceCells.length > 0 ? <PlddtLegend /> : null}
+      {showProteinTracks && confidenceCells.length > 0 ? (
+        <ColorKey
+          title="pLDDT"
+          entries={PLDDT_BINS.map(bin => ({
+            label: bin.label,
+            color: plddtColor(bin.score),
+          }))}
+        />
+      ) : null}
+      {showProteinTracks && hydrophobicityCells.length > 0 ? (
+        <GradientKey
+          title="Kyte-Doolittle"
+          testId="hydrophobicity-legend"
+          minLabel="hydrophilic"
+          maxLabel="hydrophobic"
+          colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
+            hydrophobicityColor(score),
+          )}
+        />
+      ) : null}
     </div>
   )
 })

@@ -14,6 +14,7 @@ import Tooltip from '@mui/material/Tooltip'
 import { observer } from 'mobx-react'
 
 import AddStructureDialog from './AddStructureDialog'
+import { MolstarLegendKey } from './ColorKey'
 import HeaderStructureInfo from './HeaderStructureInfo'
 import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
@@ -130,7 +131,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { alignmentStructure, showAlignment } = model
+  const { alignmentStructure, showAlignment, colorLegend } = model
   return (
     <div>
       <div
@@ -153,6 +154,9 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           <DisplaySettingsMenu model={model} />
         </div>
       </div>
+      {colorLegend ? (
+        <MolstarLegendKey title="Structure colors" legend={colorLegend} />
+      ) : null}
       <HeaderStructureRows model={model} />
       {showAlignment && alignmentStructure?.pairwiseAlignment ? (
         <ProteinAlignment model={alignmentStructure} />

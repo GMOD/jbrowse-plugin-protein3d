@@ -3,6 +3,7 @@ import { structureRootCell } from './structureCells'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import type { Legend } from 'molstar/lib/mol-util/legend'
 
 /**
  * Color schemes offered in the protein view menu. A `value` is persisted in
@@ -94,4 +95,29 @@ export async function applyColorTheme({
   if (recolored > 0) {
     await update.commit()
   }
+}
+
+/**
+ * The key Mol* itself would show for a scheme, which its viewport never draws
+ * and its hidden-by-default controls panel buries. Built on one structure, so a
+ * data-dependent table (chain ids) names that structure's entries.
+ */
+export function colorSchemeLegend({
+  plugin,
+  colorScheme,
+  structure,
+  entityId,
+}: {
+  plugin: PluginContext
+  colorScheme: ProteinColorScheme
+  structure: Structure
+  entityId?: string
+}): Legend | undefined {
+  return colorScheme === 'default'
+    ? undefined
+    : plugin.representation.structure.themes.colorThemeRegistry.create(
+        molstarThemeName(colorScheme),
+        { structure },
+        colorScheme === 'mapped-chain' ? { entityId: entityId ?? '' } : {},
+      ).legend
 }

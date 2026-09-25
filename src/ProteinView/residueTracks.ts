@@ -86,10 +86,10 @@ export function hydrophobicityColor(score: number): string {
   return `rgb(${r}, ${g}, ${b})`
 }
 
-export const HYDROPHOBICITY_LEGEND = [
-  { label: 'hydrophilic', score: KYTE_DOOLITTLE_MIN },
-  { label: 'neutral', score: 0 },
-  { label: 'hydrophobic', score: KYTE_DOOLITTLE_MAX },
+export const HYDROPHOBICITY_KEY_SCORES = [
+  KYTE_DOOLITTLE_MIN,
+  0,
+  KYTE_DOOLITTLE_MAX,
 ]
 
 /**
