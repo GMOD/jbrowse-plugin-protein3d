@@ -51,11 +51,15 @@ const DEFAULT_VERSIONS = [
 const CONFIG =
   'https://jbrowse.org/code/jb2/main/test_data/protein3d_config.json'
 
+// The AlphaFold model matches the transcript exactly and aligns in place. 1YCR
+// does not, so its alignment runs in the host's RPC worker, which is the only
+// thing here that proves the worker loaded this bundle and dispatches its
+// method: p53 is the 13-residue peptide, entity 2, beside MDM2.
 const LAUNCH_SPEC = {
   views: [
     {
       type: 'ProteinView',
-      uniprotId: 'P04637',
+      structures: [{ uniprotId: 'P04637' }, { pdbId: '1YCR' }],
       transcriptId: 'NM_000546.6',
       connectedView: {
         assembly: 'hg38',
@@ -311,6 +315,14 @@ async function probeOne(browser, version) {
       .then(() => true)
       .catch(() => false)
 
+    result.mappedEntityIds = await page.evaluate(() => {
+      const w = /** @type {Record<string, any>} */ (window)
+      const session = w.JBrowseSession ?? w.__jbrowse_session
+      return session?.views
+        ?.find(v => v.type === 'ProteinView')
+        ?.structures?.map(s => s.mappedEntityId)
+    })
+
     result.sessionViews = await page.evaluate(() => {
       const w = /** @type {Record<string, any>} */ (window)
       const session = w.JBrowseSession ?? w.__jbrowse_session
@@ -379,15 +391,17 @@ function failure(r) {
         ? 'no view launched, so nothing was asserted'
         : !r.viewReady
           ? 'view did NOT settle'
-          : !r.contextMenu?.reached
-            ? `no context menu: ${r.contextMenu?.why}`
-            : !r.contextMenu.hostRows
-              ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
-              : r.contextMenu.ours
-                ? r.consoleComplaints.length > 0
-                  ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
-                  : undefined
-                : 'no "Launch protein view" row in the feature context menu'
+          : r.mappedEntityIds?.[1] !== '2'
+            ? `1YCR mapped the transcript to entity ${r.mappedEntityIds?.[1]}, not the p53 peptide`
+            : !r.contextMenu?.reached
+              ? `no context menu: ${r.contextMenu?.why}`
+              : !r.contextMenu.hostRows
+                ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
+                : r.contextMenu.ours
+                  ? r.consoleComplaints.length > 0
+                    ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
+                    : undefined
+                  : 'no "Launch protein view" row in the feature context menu'
 }
 
 async function probeWithRetry(version) {

@@ -1,9 +1,11 @@
 Open, in the order worth doing. Each was checked against the code on 2026-09-25.
 
-- The pairwise alignment runs on the main thread, capped at 40M cells
-  (`MAX_ALIGNMENT_CELLS` in p2s_mapper), so a titin-sized transcript against a
-  long chain is refused rather than aligned. A worker is the only way to lift
-  the cap.
+- The launch dialog ranks isoforms on the main thread (`classifyIsoforms` in
+  `TranscriptSelector`, `selectBestTranscript` in `useTranscriptSelection`), one
+  DP per non-identical isoform. The view's own alignment moved to the RPC worker
+  on 2026-09-25; this is the last main-thread DP. The 40M-cell cap only bites
+  titin against a chain over ~1,160 residues, so lifting it is not worth a
+  p2s_mapper release on its own.
 
 - Colour the 3D structure by AlphaMissense pathogenicity: a custom Mol\*
   `ColorTheme` reading per-residue scores through the alignment, registered the

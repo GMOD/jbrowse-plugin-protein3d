@@ -1,6 +1,7 @@
 import Plugin from '@jbrowse/core/Plugin'
 
 import AddHighlightModelF from './AddHighlightModel'
+import AlignTranscriptRpcF from './AlignTranscriptRpc'
 import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
 import AlphaMissensePathogenicityAdapterF from './AlphaMissensePathogenicityAdapter'
 import LaunchProteinViewF from './LaunchProteinView'
@@ -25,6 +26,7 @@ export default class ProteinViewer extends Plugin {
     AlphaFoldConfidenceAdapterF(pluginManager)
     AlphaMissensePathogenicityAdapterF(pluginManager)
     UniProtVariationAdapterF(pluginManager)
+    AlignTranscriptRpcF(pluginManager)
   }
 
   configure(_pluginManager: PluginManager) {}

@@ -10,12 +10,17 @@ import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 const testSession = vi.hoisted(() => ({
-  current: (): unknown => ({ hovered: undefined, views: [] }),
+  current: (): Record<string, unknown> => ({ hovered: undefined, views: [] }),
 }))
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
-  return { ...actual, getSession: () => testSession.current() }
+  const { localRpcManager } = await import('../test_data/localRpcManager')
+  const rpcManager = localRpcManager()
+  return {
+    ...actual,
+    getSession: () => ({ rpcManager, ...testSession.current() }),
+  }
 })
 
 // an RCSB url makes the model ask PDBe for SIFTS; an empty answer, so nothing
@@ -310,7 +315,7 @@ test('alignmentHoverPos reflects hoverPosition via structurePositionToAlignmentM
   expect(model.alignmentHoverPos).toBe(2)
 })
 
-test('chooseEntity realigns to the chosen chain and drops stale highlights', () => {
+test('chooseEntity realigns to the chosen chain and drops stale highlights', async () => {
   const parent = TestParent.create({
     structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
   })
@@ -331,12 +336,47 @@ test('chooseEntity realigns to the chosen chain and drops stale highlights', () 
   model.setClickedStructureRanges([{ start: 0, end: 2 }])
 
   model.chooseEntity('1')
+  expect(model.alignmentPending).toBe(true)
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
   expect(model.mappedEntityId).toBe('1')
   expect(model.mappedEntity?.chains).toEqual(['A'])
   expect(model.pairwiseAlignment?.alns[1].seq.replaceAll('-', '')).toBe(
     'GGGGGG',
   )
   expect(model.clickedStructureRanges).toEqual([])
+})
+
+test('a chain picked while another is still aligning wins over the late answer', async () => {
+  const parent = TestParent.create({
+    structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'GGGGGG',
+        seqIds: [1, 2, 3, 4, 5, 6],
+        chains: ['A'],
+      },
+      { entityId: '2', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['B'] },
+      { entityId: '3', seq: 'MKAG', seqIds: [1, 2, 3, 4], chains: ['C'] },
+    ],
+  })
+  model.chooseEntity('1')
+  model.chooseEntity('3')
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
+  // the identical chain aligns in place, superseding the one in the worker
+  model.chooseEntity('1')
+  model.chooseEntity('2')
+  expect(model.alignmentPending).toBe(false)
+  await new Promise(resolve => setTimeout(resolve, 50))
+  expect(model.mappedEntityId).toBe('2')
+  expect(model.pairwiseAlignment?.alns[1].seq).toBe('MKAA')
 })
 
 test('a persisted mappedEntityId survives a reload alongside its alignment', () => {
@@ -633,7 +673,7 @@ test('hoverString uses the author number and drops the transcript residue when t
   expect(model.hoverString).toBe('4, Structure: K')
 })
 
-test('initialTranscriptResidues seeds the selection through the alignment once the structure settles', () => {
+test('initialTranscriptResidues seeds the selection through the alignment once the structure settles', async () => {
   const parent = TestParent.create({
     structures: [
       {
@@ -656,7 +696,10 @@ test('initialTranscriptResidues seeds the selection through the alignment once t
       },
     ],
   })
-  expect(model.alignment).toBeDefined()
+  expect(model.alignmentPending).toBe(true)
+  await vi.waitFor(() => {
+    expect(model.alignment).toBeDefined()
+  })
   expect(model.clickedStructureRanges).toEqual([])
   model.setLoadedToMolstar(true)
   // L and A are positions 1 and 2; the V between them is not modeled
@@ -927,7 +970,7 @@ test('an alignment that spells no chain is set aside, reported, and replaced by 
 // An older session's alignment was computed from Mol*'s `label`, which a
 // modified residue lengthens; it is recomputed on the chain the user picked,
 // not re-chosen, so a paralog picked by hand stays picked.
-test('a stale stored alignment is recomputed against its stored protein chain', () => {
+test('a stale stored alignment is recomputed against its stored protein chain', async () => {
   const paralog = `${P53_CORE.slice(0, 50)}AAAA${P53_CORE.slice(54)}`
   const parent = TestParent.create({
     structures: [
@@ -948,6 +991,10 @@ test('a stale stored alignment is recomputed against its stored protein chain', 
   expect(String(parent.viewErrors)).toContain(
     'no longer matches its chain and was recomputed',
   )
+  expect(model.alignmentPending).toBe(true)
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
   expect(model.mappedEntityId).toBe('4')
   expect(model.pairwiseAlignment?.alns[1].seq.replaceAll('-', '')).toBe(paralog)
 })

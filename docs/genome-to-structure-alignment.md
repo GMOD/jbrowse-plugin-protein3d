@@ -69,7 +69,12 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
    Smith-Waterman is the default; Needleman-Wunsch is offered. Only mapped
    columns, those with a residue on both rows, become coordinate maps, so a
    residue in a gap never highlights. Mismatched columns are mapped, which is
-   what keeps a point-mutant structure usable.
+   what keeps a point-mutant structure usable. The DP costs about 50 ns a cell,
+   so a 4,000-residue protein takes most of a second and a complex of long
+   chains several seconds. Steps 3 and 4 therefore run in the host's RPC worker
+   (`src/AlignTranscriptRpc`). A chain identical to the transcript skips the DP
+   and is mapped in place, without waiting behind the track renders queued in
+   the worker at launch.
 5. **Report.** The alignment panel header shows identity over the aligned
    columns and how many of the structure's residues they cover, and warns when
    fewer than 30% of the shorter sequence's residues are identical, or fewer
@@ -258,9 +263,16 @@ accession is known and its sequence matches the transcript's.
   so a fragment against a full-length transcript pays for the unaligned termini.
   It still lands contiguously in tests, but semi-global scoring would make it
   the natural choice for fragments.
-- The dynamic-programming table is capped at 40 million cells. A transcript the
-  size of titin (34,350 aa) cannot be aligned to any chain over about 1,160
-  residues; the view reports this instead of aligning.
+- The dynamic-programming table is capped at 40 million cells, about 2 s and 40
+  MB of traceback. A transcript the size of titin (34,350 aa) cannot be aligned
+  to any chain over about 1,160 residues; the view reports this instead of
+  aligning. Nothing real comes near the cap otherwise: RYR1 (5,038 aa) against
+  its own chain is 25 million cells. Now that the DP runs in the worker, the cap
+  bounds memory rather than a frozen tab, so raising it is a p2s_mapper change
+  and a question of how long a user will wait.
+- The launch dialog still ranks isoforms on the main thread (`classifyIsoforms`,
+  cached per sequence pair), so a long gene with many isoforms freezes the
+  dialog while it opens.
 - A modified residue in a PDB-format file reads as `X`, since the format has no
   canonical sequence to name its parent, so a selenomethionine scores as a
   mismatch against the transcript's M. It still aligns through.

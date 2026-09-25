@@ -32,6 +32,7 @@ import {
   unmapStructurePositions,
 } from 'p2s_mapper'
 
+import { alignOffThread, isIdentical } from './alignOffThread'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   COMPACT_TRACK_GAP,
@@ -59,6 +60,7 @@ import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { assemblyNaming, errorMessage } from './util'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
+import type { AlignmentMethod } from './alignOffThread'
 import type { EntityConfidence, StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type {
@@ -66,6 +68,7 @@ import type {
   ResidueRanges,
   SelectionTarget,
 } from './residueRanges'
+import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -75,7 +78,9 @@ import type {
   AlignmentAlgorithm,
   CoordinateMapper,
   Entity,
+  EntitySelection,
   PairwiseAlignment,
+  ScoredAlignment,
   UniProtStructureMapping,
 } from 'p2s_mapper'
 
@@ -276,6 +281,11 @@ const Structure = types
      * against an imported alignment since the entities loaded
      */
     entityChosen: false,
+    /**
+     * #volatile
+     * An alignment is running in the RPC worker
+     */
+    aligning: false,
     /**
      * #volatile
      * Tracks whether this structure has been loaded into Molstar
@@ -507,6 +517,9 @@ const Structure = types
     },
     setEntityChosen() {
       self.entityChosen = true
+    },
+    setAligning(aligning: boolean) {
+      self.aligning = aligning
     },
     /**
      * #action
@@ -997,18 +1010,19 @@ const Structure = types
 
     /**
      * #getter
-     * True while a pairwise alignment can still be produced but hasn't been
-     * computed yet (both the transcript and structure sequences are present).
+     * True while an alignment is running, or can still be produced but hasn't
+     * been started (both the transcript and structure sequences are present).
      * A standalone structure with no connected transcript has no sequence to
      * align against, so this stays false — the header shows no loader rather
      * than a perpetual "Loading pairwise alignment".
      */
     get alignmentPending() {
       return (
-        !self.pairwiseAlignment &&
-        !self.alignmentSkipped &&
-        !!self.userProvidedTranscriptSequence &&
-        !!this.structureSequences?.length
+        self.aligning ||
+        (!self.pairwiseAlignment &&
+          !self.alignmentSkipped &&
+          !!self.userProvidedTranscriptSequence &&
+          !!this.structureSequences?.length)
       )
     },
     /**
@@ -1173,6 +1187,97 @@ const Structure = types
       ])
     },
   }))
+  .extend(self => {
+    // An answer is applied only if no alignment has started since it was
+    // asked for: a changed transcript or entity list, or another chain the
+    // user picked, supersedes whatever is still running in the worker.
+    let latestRequest = 0
+    return {
+      actions: {
+        supersedeAlignment() {
+          latestRequest++
+          self.setAligning(false)
+        },
+        alignInWorker<M extends AlignmentMethod>(
+          name: M,
+          args: RpcCallArgs<M>,
+          apply: (result: RpcCallReturn<M>) => void,
+          fail: (e: unknown) => void,
+        ) {
+          const request = ++latestRequest
+          const current = () => request === latestRequest && isAlive(self)
+          self.setAligning(true)
+          alignOffThread(getSession(self).rpcManager, name, args)
+            .then(
+              result => {
+                if (current()) {
+                  self.setAligning(false)
+                  apply(result)
+                }
+              },
+              (e: unknown) => {
+                if (current()) {
+                  self.setAligning(false)
+                  fail(e)
+                }
+              },
+            )
+            .catch((e: unknown) => {
+              console.error(e)
+            })
+        },
+      },
+    }
+  })
+  .actions(self => ({
+    /**
+     * #action
+     * Take the chain `chooseMappedEntity` picked, or say why there is none:
+     * no protein chain, or every one over the DP ceiling. Without a reason
+     * the header loads forever.
+     */
+    applyEntitySelection(selection: EntitySelection | undefined) {
+      const entities = self.entities ?? []
+      if (!selection) {
+        const proteins = entities.filter(
+          e => !e.nucleicAcid && e.seq.length > 0,
+        )
+        self.setAlignmentSkipped(
+          proteins.length
+            ? `No chain could be aligned: ${proteins
+                .map(e => entityLabel(e))
+                .join(', ')} exceed the alignment size limit against this ${
+                stripStopCodon(self.userProvidedTranscriptSequence).length
+              } aa transcript`
+            : 'This structure has no protein chain to align the transcript to',
+        )
+        return
+      }
+      self.setMappedEntityId(entities[selection.index]?.entityId)
+      self.setAlignment(selection.alignment)
+      self.setEntityChosen()
+    },
+    /**
+     * #action
+     */
+    applyRealignment(realigned: ScoredAlignment | undefined) {
+      self.setAlignment(realigned?.alignment)
+      if (realigned) {
+        self.setEntityChosen()
+      }
+    },
+    /**
+     * #action
+     */
+    applyChosenEntity(entityId: string, alignment: PairwiseAlignment) {
+      self.setMappedEntityId(entityId)
+      self.setAlignment(alignment)
+      self.setClickedStructureRanges([])
+      self.setAlignmentHoverRange(undefined)
+      self.setSelectedFeatureId(undefined)
+      self.setHoveredPosition(undefined)
+    },
+  }))
   .actions(self => ({
     /**
      * #action
@@ -1208,22 +1313,33 @@ const Structure = types
       if (!entity || entity.entityId === self.mappedEntity?.entityId) {
         return
       }
-      const scored = alignTranscriptToEntity(
-        self.userProvidedTranscriptSequence,
-        entity.seq,
-        self.alignmentAlgorithm,
-      )
-      if (!scored) {
-        throw new Error(
-          `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
+      const transcript = self.userProvidedTranscriptSequence
+      const algorithm = self.alignmentAlgorithm
+      const apply = (scored: ScoredAlignment | undefined) => {
+        if (scored) {
+          self.applyChosenEntity(entityId, scored.alignment)
+        } else {
+          self.parentView.setError(
+            new Error(
+              `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
+            ),
+          )
+        }
+      }
+      if (isIdentical(transcript, entity.seq)) {
+        self.supersedeAlignment()
+        apply(alignTranscriptToEntity(transcript, entity.seq, algorithm))
+      } else {
+        self.alignInWorker(
+          'ProteinAlignTranscriptToEntity',
+          { transcript, entitySeq: entity.seq, algorithm },
+          apply,
+          (e: unknown) => {
+            console.error(e)
+            self.parentView.setError(e)
+          },
         )
       }
-      self.setMappedEntityId(entityId)
-      self.setAlignment(scored.alignment)
-      self.setClickedStructureRanges([])
-      self.setAlignmentHoverRange(undefined)
-      self.setSelectedFeatureId(undefined)
-      self.setHoveredPosition(undefined)
     },
     /**
      * #action
@@ -1351,13 +1467,14 @@ const Structure = types
         autorun(() => {
           try {
             const {
-              userProvidedTranscriptSequence,
+              userProvidedTranscriptSequence: transcript,
               entities,
-              alignmentAlgorithm,
+              alignmentAlgorithm: algorithm,
               pairwiseAlignment,
             } = self
+            self.supersedeAlignment()
 
-            if (!userProvidedTranscriptSequence || !entities?.length) {
+            if (!transcript || !entities?.length) {
               return
             }
             if (pairwiseAlignment) {
@@ -1367,7 +1484,7 @@ const Structure = types
               }
               const fit = entityAlignedTo(
                 pairwiseAlignment,
-                userProvidedTranscriptSequence,
+                transcript,
                 entities,
                 self.mappedEntityId,
               )
@@ -1384,44 +1501,53 @@ const Structure = types
               const saved = entities.find(
                 e => e.entityId === self.mappedEntityId && !e.nucleicAcid,
               )
-              const realigned =
-                saved &&
-                alignTranscriptToEntity(
-                  userProvidedTranscriptSequence,
-                  saved.seq,
-                  alignmentAlgorithm,
+              if (!saved) {
+                self.applyRealignment(undefined)
+              } else if (isIdentical(transcript, saved.seq)) {
+                self.applyRealignment(
+                  alignTranscriptToEntity(transcript, saved.seq, algorithm),
                 )
-              self.setAlignment(realigned ? realigned.alignment : undefined)
-              if (realigned) {
-                self.setEntityChosen()
+              } else {
+                self.alignInWorker(
+                  'ProteinAlignTranscriptToEntity',
+                  { transcript, entitySeq: saved.seq, algorithm },
+                  realigned => {
+                    self.applyRealignment(realigned)
+                  },
+                  e => {
+                    self.setError(e)
+                  },
+                )
               }
               return
             }
-            const selection = chooseMappedEntity(
-              userProvidedTranscriptSequence,
-              entities,
-              alignmentAlgorithm,
-            )
-            if (!selection) {
-              // chooseMappedEntity returns undefined for both "no protein
-              // chain" and "every protein chain over the DP ceiling"; either
-              // way the user has to hear it, or the header loads forever.
-              const proteins = entities.filter(
-                e => !e.nucleicAcid && e.seq.length > 0,
+            if (
+              entities.some(
+                e => !e.nucleicAcid && isIdentical(transcript, e.seq),
               )
-              const reason = proteins.length
-                ? `No chain could be aligned: ${proteins
-                    .map(e => entityLabel(e))
-                    .join(', ')} exceed the alignment size limit against this ${
-                    stripStopCodon(userProvidedTranscriptSequence).length
-                  } aa transcript`
-                : 'This structure has no protein chain to align the transcript to'
-              self.setAlignmentSkipped(reason)
-              return
+            ) {
+              self.applyEntitySelection(
+                chooseMappedEntity(transcript, entities, algorithm),
+              )
+            } else {
+              self.alignInWorker(
+                'ProteinChooseMappedEntity',
+                {
+                  transcript,
+                  entities: entities.map(({ seq, nucleicAcid }) => ({
+                    seq,
+                    nucleicAcid,
+                  })),
+                  algorithm,
+                },
+                selection => {
+                  self.applyEntitySelection(selection)
+                },
+                e => {
+                  self.setError(e)
+                },
+              )
             }
-            self.setMappedEntityId(entities[selection.index]?.entityId)
-            self.setAlignment(selection.alignment)
-            self.setEntityChosen()
           } catch (e) {
             console.error(e)
             self.setError(e)

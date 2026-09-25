@@ -26,12 +26,26 @@ view under `init` so the v4 legs can read it, which is why
 `scripts/browserConsole.mjs` excuses v5's deprecation warning until v4 support
 goes.
 
+The alignment runs as a plugin RPC method, `ProteinChooseMappedEntity` and
+`ProteinAlignTranscriptToEntity`, extending the `RpcMethodType` that the
+`@jbrowse/core/pluggableElementTypes` barrel re-exports on every host. v4
+workers call `execute(args, driverName)` directly, and main's call `invoke`,
+which deserializes first. The methods take plain strings, so neither path has
+anything to deserialize, and the same class works on both. The worker loads this
+plugin from the same url as the page, so the method is there whenever the view
+is.
+
 `pnpm host-compat` boots the bundle on hosted releases
 (`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), with a
 declarative connected launch and a right-click on a gene. It waits on
 `[data-testid="protein-view-ready"]` and reports per version whether the session
 survived, the global appeared, the view settled, the context menu kept the
-host's own rows, and the console stayed clean.
+host's own rows, and the console stayed clean. The launch opens 1YCR beside the
+AlphaFold model because 1YCR is not identical to the transcript, so its
+alignment is the one that goes through the worker; the probe asserts it lands on
+the p53 peptide. The probe's CDP interception serves the candidate to the RPC
+worker as well as the page (measured 2026-09-25 on v4.0.0, v4.3.0 and main by
+marking the served bundle and reading the mark inside the worker).
 
 ```bash
 pnpm host-compat                              # the published bundle, v2.15.0 to main
