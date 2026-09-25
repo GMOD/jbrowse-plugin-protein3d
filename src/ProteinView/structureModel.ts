@@ -293,6 +293,12 @@ const Structure = types
     pendingEntityId: undefined as string | undefined,
     /**
      * #volatile
+     * Bumped to have the load autorun decide the alignment again, after a
+     * chain pick that superseded its request was cancelled or failed
+     */
+    alignmentRedecisions: 0,
+    /**
+     * #volatile
      * Tracks whether this structure has been loaded into Molstar
      */
     loadedToMolstar: false,
@@ -1215,6 +1221,12 @@ const Structure = types
           latestRequest++
           self.setAligning(false)
         },
+        redecideAlignment() {
+          latestRequest++
+          self.aligning = false
+          self.pendingEntityId = undefined
+          self.alignmentRedecisions++
+        },
         alignInWorker<M extends AlignmentMethod>({
           name,
           args,
@@ -1233,7 +1245,13 @@ const Structure = types
           const request = ++latestRequest
           const current = () => request === latestRequest && isAlive(self)
           self.setAligning(true, pendingEntityId)
-          alignOffThread(getSession(self).rpcManager, name, args, inPlace).then(
+          alignOffThread({
+            rpcManager: getSession(self).rpcManager,
+            name,
+            args,
+            inPlace,
+            current,
+          }).then(
             result => {
               if (current()) {
                 try {
@@ -1298,6 +1316,15 @@ const Structure = types
     },
     /**
      * #action
+     * A user's own alignment, which no answer still running in the worker
+     * may replace.
+     */
+    importAlignment(alignment: PairwiseAlignment) {
+      self.supersedeAlignment()
+      self.setAlignment(alignment, true)
+    },
+    /**
+     * #action
      */
     applyChosenEntity(entityId: string, alignment: PairwiseAlignment) {
       self.setMappedEntityId(entityId)
@@ -1345,8 +1372,9 @@ const Structure = types
         return
       }
       if (self.pendingEntityId !== undefined && entityId === shown) {
-        // back to the chain on screen, whose alignment is the one held
-        self.supersedeAlignment()
+        // back to the chain on screen: the pick may have superseded the
+        // automatic alignment, so that decides again
+        self.redecideAlignment()
         return
       }
       const transcript = self.userProvidedTranscriptSequence
@@ -1361,6 +1389,7 @@ const Structure = types
               `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
             ),
           )
+          self.redecideAlignment()
         }
       }
       if (isIdentical(transcript, entity.seq)) {
@@ -1378,6 +1407,7 @@ const Structure = types
           apply,
           fail: e => {
             self.parentView.setError(e)
+            self.redecideAlignment()
           },
           pendingEntityId: entityId,
         })
@@ -1514,6 +1544,9 @@ const Structure = types
               alignmentAlgorithm: algorithm,
               pairwiseAlignment,
             } = self
+            // read only so that a redecision reruns this
+            // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
+            void self.alignmentRedecisions
 
             // Every branch that decides the alignment anew supersedes what is
             // still running. One that keeps the alignment held does not, or a

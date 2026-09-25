@@ -93,8 +93,9 @@ const PdbSearch = observer(function PdbSearch({
 
   // The chosen entry's residues, so the isoform picker can say which transcript
   // matches it — the same annotation the AlphaFold tab shows. It is a label and
-  // nothing more: Launch never waits on it, and its failure costs the label
-  // rather than the launch, which reads the structure file itself.
+  // nothing more: its failure costs the label rather than the launch, which
+  // reads the structure file itself. Launch waits only while the isoforms are
+  // ranked against it, and not at all for the isoform the user right-clicked.
   //
   // While another entry's answer is in flight keepPreviousData still holds the
   // last one, so isValidating withholds it rather than labelling these rows

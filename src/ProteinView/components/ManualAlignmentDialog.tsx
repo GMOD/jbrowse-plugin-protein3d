@@ -60,7 +60,7 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
         } else if (problem) {
           setParseError(problem)
         } else {
-          primaryStructure.setAlignment(parsed, true)
+          primaryStructure.importAlignment(parsed)
           handleClose()
         }
       } catch (e) {

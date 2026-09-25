@@ -438,6 +438,35 @@ test('the structure reads settled only once the answer is in', async () => {
   expect(seenWhenSettled).toEqual(['1'])
 })
 
+test('an imported alignment is not replaced by a pick still aligning', async () => {
+  const { model } = loadThreeChains()
+  model.chooseEntity('1')
+  model.importAlignment(pairwiseAlignment)
+  await lateAnswers()
+  expect(model.alignmentImported).toBe(true)
+  expect(model.pairwiseAlignment).toEqual(pairwiseAlignment)
+  expect(model.mappedEntityId).toBe('2')
+})
+
+test('cancelling a pick that superseded the automatic alignment runs that again', async () => {
+  const parent = TestParent.create({
+    structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({
+    entities: [THREE_CHAINS[0]!, THREE_CHAINS[2]!],
+  })
+  expect(model.aligning).toBe(true)
+  const shown = model.mappedEntity?.entityId
+  model.chooseEntity(shown === '3' ? '1' : '3')
+  model.chooseEntity(shown!)
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
+  expect(model.pairwiseAlignment).toBeDefined()
+  expect(model.mappedEntityId).toBe('3')
+})
+
 test('a worker that cannot align leaves the DP to run in place, and says so', async () => {
   const { model } = loadThreeChains()
   const { rpcManager } = getSession(model)

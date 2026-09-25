@@ -8,7 +8,8 @@ import type { ClassifiedIsoforms } from 'p2s_mapper'
 
 /**
  * The isoform the user right-clicked when it translates, else the one whose
- * protein best matches the structure.
+ * protein best matches the structure, which is unknown until the worker has
+ * ranked them. The first needs no ranking, so Launch does not wait on one.
  */
 export function defaultTranscriptId({
   options,
@@ -18,14 +19,14 @@ export function defaultTranscriptId({
 }: {
   options: Feature[]
   isoformSequences: IsoformSequences
-  ranking: ClassifiedIsoforms
+  ranking?: ClassifiedIsoforms
   preferredTranscriptId?: string
 }) {
   return rankableIsoforms(options, isoformSequences).some(
     i => i.id === preferredTranscriptId && i.seq,
   )
     ? preferredTranscriptId
-    : (ranking.matches[0] ?? ranking.nonMatches[0])?.id
+    : ranking && (ranking.matches[0] ?? ranking.nonMatches[0])?.id
 }
 
 export default function useTranscriptSelection({
@@ -52,7 +53,7 @@ export default function useTranscriptSelection({
   }
 
   const autoSelection =
-    isoformSequences !== undefined && ranking !== undefined
+    isoformSequences !== undefined
       ? defaultTranscriptId({
           options,
           isoformSequences,

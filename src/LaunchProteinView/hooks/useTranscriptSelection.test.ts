@@ -43,3 +43,10 @@ test('a clicked isoform with no translation, or not in this gene, is passed over
   expect(choose('retained_intron')).toBe('full')
   expect(choose('another-gene-mrna')).toBe('full')
 })
+
+test('the right-clicked isoform needs no ranking, and nothing else is picked without one', () => {
+  const unranked = (preferredTranscriptId?: string) =>
+    defaultTranscriptId({ options, isoformSequences, preferredTranscriptId })
+  expect(unranked('short')).toBe('short')
+  expect(unranked()).toBeUndefined()
+})
