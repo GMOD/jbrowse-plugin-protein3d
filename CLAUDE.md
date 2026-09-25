@@ -262,12 +262,11 @@ serves `Menu`, `MenuItem`, `Checkbox` and the rest as `React.lazy` behind a null
 Suspense fallback, and the `@mui/material` barrel is no different, so no import
 path avoids it. MUI's Popover measures the paper once on open; empty, it is 16px
 wide, the right-edge clamp never fires, and the items arrive 400 ms later off
-the right edge. The second open finds the chunks loaded. The Tune menu in the
-view header carries `keepMounted`, which renders its items when the view mounts;
-the Color select's menu should open in place too, because by then the `MenuItem`
-chunk it shares has loaded (not measured). A new menu with components nothing
-mounted earlier needs its own `keepMounted`. Core `main` serves these components
-eagerly, so the nightly never shows it.
+the right edge. The second open finds the chunks loaded. The Tune and colour
+scheme menus in the view header carry `keepMounted`, which renders their items
+when the view mounts. A new menu with components nothing mounted earlier needs
+its own `keepMounted`. Core `main` serves these components eagerly, so the
+nightly never shows it.
 
 **The canvas context-menu API is `main`-only.** `contextMenuInfo`, `isGeneLike`
 and `fetchFullFeature` do not exist at `v4.3.0`, where `LinearBasicDisplay`
