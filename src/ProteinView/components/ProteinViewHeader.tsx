@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 
 import { LoadingEllipses } from '@jbrowse/core/ui'
+import PaletteIcon from '@mui/icons-material/Palette'
 import TuneIcon from '@mui/icons-material/Tune'
 import Checkbox from '@mui/material/Checkbox'
 import Divider from '@mui/material/Divider'
@@ -9,13 +10,11 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
-import TextField from '@mui/material/TextField'
 import Tooltip from '@mui/material/Tooltip'
 import { observer } from 'mobx-react'
 
 import AddStructureDialog from './AddStructureDialog'
 import { MolstarLegendKey } from './ColorKey'
-import HeaderStructureInfo from './HeaderStructureInfo'
 import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
@@ -23,37 +22,51 @@ import { COLOR_SCHEMES } from '../applyColorTheme'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 
-const ColorSchemeSelect = observer(function ColorSchemeSelect({
+// An icon rather than a select showing the scheme's name, which took the
+// width of a structure's coverage line on every row beside it
+const ColorSchemeMenu = observer(function ColorSchemeMenu({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
+  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
+  const current = COLOR_SCHEMES.find(s => s.value === model.colorScheme)
   return (
-    <Tooltip title="Color scheme" placement="left">
-      <TextField
-        select
-        size="small"
-        variant="standard"
-        value={model.colorScheme}
-        onChange={event => {
-          const scheme = COLOR_SCHEMES.find(s => s.value === event.target.value)
-          if (scheme) {
-            model.setColorScheme(scheme.value)
-          }
-        }}
-        slotProps={{
-          select: { native: false },
-          input: { disableUnderline: true, sx: { fontSize: 12 } },
-          htmlInput: { 'aria-label': 'Color scheme' },
+    <>
+      <Tooltip title={`Color scheme: ${current?.label ?? model.colorScheme}`}>
+        <IconButton
+          size="small"
+          aria-label="Color scheme"
+          onClick={event => {
+            setAnchorEl(event.currentTarget)
+          }}
+        >
+          <PaletteIcon fontSize="small" />
+        </IconButton>
+      </Tooltip>
+      <Menu
+        keepMounted
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => {
+          setAnchorEl(null)
         }}
       >
         {COLOR_SCHEMES.map(scheme => (
-          <MenuItem key={scheme.value} value={scheme.value} dense>
+          <MenuItem
+            key={scheme.value}
+            dense
+            selected={scheme.value === model.colorScheme}
+            onClick={() => {
+              model.setColorScheme(scheme.value)
+              setAnchorEl(null)
+            }}
+          >
             {scheme.label}
           </MenuItem>
         ))}
-      </TextField>
-    </Tooltip>
+      </Menu>
+    </>
   )
 })
 
@@ -140,23 +153,21 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
   const { alignmentStructure, showAlignment, colorLegend } = model
   return (
     <div>
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        <HeaderStructureInfo model={model} />
+      {/* The view's controls share the first structure row's line rather than
+          taking one of their own, which the hover readout used to fill only
+          while something was hovered. */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+        <HeaderStructureRows model={model} />
         <div
           style={{
             display: 'flex',
             gap: 4,
             alignItems: 'center',
             flexShrink: 0,
+            minHeight: 24,
           }}
         >
-          <ColorSchemeSelect model={model} />
+          <ColorSchemeMenu model={model} />
           <DisplaySettingsMenu model={model} />
           <ProteinAlignmentHelpButton model={model} />
         </div>
@@ -164,7 +175,6 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
       {colorLegend ? (
         <MolstarLegendKey title="Structure colors" legend={colorLegend} />
       ) : null}
-      <HeaderStructureRows model={model} />
       {showAlignment && alignmentStructure?.pairwiseAlignment ? (
         <ProteinAlignment model={alignmentStructure} />
       ) : showAlignment && alignmentStructure?.alignmentPending ? (

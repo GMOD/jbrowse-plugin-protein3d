@@ -63,9 +63,11 @@ const UniProtLink = observer(function UniProtLink({
 const StructureRow = observer(function StructureRow({
   model,
   structure,
+  readout,
 }: {
   model: JBrowsePluginProteinViewModel
   structure: JBrowsePluginProteinStructureModel
+  readout: string
 }) {
   const { label, alignmentQuality: quality, statusMessage } = structure
   const switchable = model.showAlignment && model.structures.length > 1
@@ -121,7 +123,16 @@ const StructureRow = observer(function StructureRow({
           {statusMessage}
         </Typography>
       ) : null}
-      {quality ? (
+      {readout ? (
+        <Typography
+          variant="caption"
+          noWrap
+          title={readout}
+          data-testid="structure-hover"
+        >
+          {readout}
+        </Typography>
+      ) : quality ? (
         <Tooltip
           title={`${describeTranscriptCoverage(quality)}${coveredRange ? `, ${coveredRange}` : ''}; ${describeAlignmentQuality(quality)}`}
         >
@@ -172,16 +183,35 @@ const StructureRow = observer(function StructureRow({
  * and whether the mapping is chance, were one click away from invisible. The
  * open structure's row also carries what used to head its alignment panel:
  * the mapped-chain picker.
+ *
+ * A hovered residue is read out on its structure's row, in place of the
+ * coverage line until the pointer leaves. A genome or MSA hover that reaches
+ * one mapped structure but not another says so, since a crystal that lacks
+ * the residue is the point of showing several.
  */
 const HeaderStructureRows = observer(function HeaderStructureRows({
   model,
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
+  const { structures } = model
+  const connectedHover = structures.some(
+    s => s.hoverPosition && s.hoverPosition.source !== 'structure',
+  )
   return (
-    <div>
-      {model.structures.map((structure, idx) => (
-        <StructureRow key={idx} model={model} structure={structure} />
+    <div style={{ flex: 1, minWidth: 0 }}>
+      {structures.map((structure, idx) => (
+        <StructureRow
+          key={idx}
+          model={model}
+          structure={structure}
+          readout={
+            structure.hoverString ||
+            (connectedHover && structure.genomeToTranscriptSeqMapping
+              ? 'not in structure'
+              : '')
+          }
+        />
       ))}
     </div>
   )
