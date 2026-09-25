@@ -55,9 +55,9 @@ export function ColorKey({
 }) {
   return (
     <KeyRow title={title} testId={testId}>
-      {entries.map(({ label, color }) => (
+      {entries.map(({ label, color }, i) => (
         <span
-          key={label}
+          key={`${i}-${label}`}
           style={{ display: 'inline-flex', alignItems: 'center', gap: 3 }}
         >
           <span style={{ ...swatch, background: color }} />
@@ -102,8 +102,13 @@ function cssColor(color: number) {
   return `#${color.toString(16).padStart(6, '0')}`
 }
 
-function words(name: string) {
-  return name.replaceAll(/([a-z])([A-Z])/g, '$1 $2').toLowerCase()
+// Mol* names secondary structure in camelCase (alphaHelix); chain ids and
+// residue names are case-sensitive and stay as given
+export function words(name: string) {
+  return name.replaceAll(
+    /([a-z])([A-Z])(?=[a-z])/g,
+    (_, a: string, b: string) => `${a} ${b.toLowerCase()}`,
+  )
 }
 
 export function MolstarLegendKey({

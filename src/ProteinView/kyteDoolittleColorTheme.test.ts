@@ -15,14 +15,24 @@ import { parseStructure } from '../test_data/molstarStructure'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
 let structure: Structure
+let withoutCanonical: Structure
 
 beforeAll(async () => {
   structure = await parseStructure([
-    { asym: 'A', entity: '1', residues: ['ILE', 'ARG', 'GLY', 'MSE'] },
+    {
+      asym: 'A',
+      entity: '1',
+      residues: ['ILE', 'ARG', 'GLY', 'MSE'],
+      canonical: 'IRGM',
+    },
+    { asym: 'B', entity: '2', residues: ['HOH'] },
+  ])
+  withoutCanonical = await parseStructure([
+    { asym: 'A', entity: '1', residues: ['ILE', 'MSE'] },
   ])
 })
 
-function colorByResidue() {
+function colorByResidue(structure: Structure) {
   const theme = KyteDoolittleColorThemeProvider.factory({ structure }, {})
   const byResidue: Record<string, string> = {}
   const l = StructureElement.Location.create(structure)
@@ -37,10 +47,18 @@ function colorByResidue() {
 }
 
 test('paints each residue the colour the alignment strip gives its score', () => {
-  expect(colorByResidue()).toEqual({
+  expect(colorByResidue(structure)).toEqual({
     ILE: hydrophobicityColor(4.5),
     ARG: hydrophobicityColor(-4.5),
     GLY: hydrophobicityColor(-0.4),
+    MSE: hydrophobicityColor(1.9),
+    HOH: Color.toStyle(NON_AMINO_ACID_COLOR),
+  })
+})
+
+test('greys a modified residue whose parent the file does not name', () => {
+  expect(colorByResidue(withoutCanonical)).toEqual({
+    ILE: hydrophobicityColor(4.5),
     MSE: Color.toStyle(NON_AMINO_ACID_COLOR),
   })
 })

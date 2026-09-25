@@ -7,6 +7,27 @@ export interface TestChain {
   asym: string
   entity: string
   residues: string[]
+  /** entity_poly.pdbx_seq_one_letter_code_can, which names a modified
+   * residue's parent (MSE is M) */
+  canonical?: string
+}
+
+function entityPolyLoop(chains: TestChain[]) {
+  const byEntity = new Map<string, string>()
+  for (const { entity, canonical } of chains) {
+    if (canonical) {
+      byEntity.set(entity, `${entity} 'polypeptide(L)' ${canonical}`)
+    }
+  }
+  const rows = [...byEntity.values()]
+  return rows.length > 0
+    ? `loop_
+_entity_poly.entity_id
+_entity_poly.type
+_entity_poly.pdbx_seq_one_letter_code_can
+${rows.join('\n')}
+`
+    : ''
 }
 
 /**
@@ -30,7 +51,7 @@ export function caOnlyMmcif(chains: TestChain[], { models = 1 } = {}) {
     })
   }
   return `data_TEST
-loop_
+${entityPolyLoop(chains)}loop_
 _atom_site.group_PDB
 _atom_site.id
 _atom_site.type_symbol

@@ -5,6 +5,7 @@ import {
   StructureProperties,
   Unit,
 } from 'molstar/lib/mol-model/structure'
+import { MmcifFormat } from 'molstar/lib/mol-model-formats/structure/mmcif'
 import { ColorThemeCategory } from 'molstar/lib/mol-theme/color/categories'
 import { Color } from 'molstar/lib/mol-util/color'
 import { ScaleLegend } from 'molstar/lib/mol-util/legend'
@@ -17,6 +18,7 @@ import {
 } from './residueTracks'
 
 import type { Location } from 'molstar/lib/mol-model/location'
+import type { Model } from 'molstar/lib/mol-model/structure'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
 import type { ThemeDataContext } from 'molstar/lib/mol-theme/theme'
 
@@ -25,6 +27,46 @@ export const NON_AMINO_ACID_COLOR = Color(0xcccccc)
 const KyteDoolittleColorThemeParams = {}
 
 type Params = typeof KyteDoolittleColorThemeParams
+
+const canonicalByModel = new WeakMap<Model, Map<string, string>>()
+
+function canonicalSequences(model: Model) {
+  let byEntity = canonicalByModel.get(model)
+  if (!byEntity) {
+    byEntity = new Map()
+    const entityPoly = MmcifFormat.is(model.sourceData)
+      ? model.sourceData.data.db.entity_poly
+      : undefined
+    for (let i = 0; entityPoly && i < entityPoly.entity_id.rowCount; i++) {
+      byEntity.set(
+        entityPoly.entity_id.value(i),
+        entityPoly.pdbx_seq_one_letter_code_can.value(i).replaceAll(/\s/g, ''),
+      )
+    }
+    canonicalByModel.set(model, byEntity)
+  }
+  return byEntity
+}
+
+// Mol* codes a modified residue (MSE, TPO) as X; the mmCIF canonical sequence
+// names its parent, which is where the alignment strip's letters come from.
+function oneLetterCode(l: StructureElement.Location) {
+  const code = getProteinOneLetterCode(StructureProperties.atom.label_comp_id(l))
+  if (code !== 'X') {
+    return code
+  }
+  const { model } = l.unit
+  const entityId = StructureProperties.chain.label_entity_id(l)
+  const sequence =
+    model.sequence.byEntityKey[model.entities.getEntityIndex(entityId)]
+      ?.sequence
+  const canonical = canonicalSequences(model).get(entityId)
+  return sequence && canonical?.length === sequence.length
+    ? canonical[
+        sequence.index(StructureProperties.residue.label_seq_id(l))
+      ] ?? code
+    : code
+}
 
 function scoreColor(score: number) {
   const [r, g, b] = hydrophobicityRgb(score)
@@ -40,7 +82,7 @@ function KyteDoolittleColorTheme(
   const bondEnd = ctx.structure
     ? StructureElement.Location.create(ctx.structure.root)
     : undefined
-  function compIdOf(location: Location) {
+  function atomicLocation(location: Location) {
     let l: StructureElement.Location | undefined
     if (StructureElement.Location.is(location)) {
       l = location
@@ -52,20 +94,15 @@ function KyteDoolittleColorTheme(
         l = bondEnd
       }
     }
-    return l && Unit.isAtomic(l.unit)
-      ? StructureProperties.atom.label_comp_id(l)
-      : undefined
+    return l && Unit.isAtomic(l.unit) ? l : undefined
   }
   return {
     factory: KyteDoolittleColorTheme,
     granularity: 'group',
     preferSmoothing: true,
     color: location => {
-      const compId = compIdOf(location)
-      const score =
-        compId === undefined
-          ? undefined
-          : kyteDoolittle(getProteinOneLetterCode(compId))
+      const l = atomicLocation(location)
+      const score = l ? kyteDoolittle(oneLetterCode(l)) : undefined
       return score === undefined ? NON_AMINO_ACID_COLOR : scoreColor(score)
     },
     props,
