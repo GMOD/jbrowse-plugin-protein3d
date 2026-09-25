@@ -1,23 +1,37 @@
 import { stripStopCodon } from 'p2s_mapper'
 
 import type RpcManager from '@jbrowse/core/rpc/RpcManager'
-import type { RpcCallArgs } from '@jbrowse/core/rpc/RpcRegistry'
+import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 
 export type AlignmentMethod =
-  'ProteinChooseMappedEntity' | 'ProteinAlignTranscriptToEntity'
+  | 'ProteinChooseMappedEntity'
+  | 'ProteinAlignTranscriptToEntity'
+  | 'ProteinRankIsoforms'
 
 const ALIGNMENT_RPC_SESSION = 'protein3d-alignment'
 
-export function alignOffThread<M extends AlignmentMethod>(
+/**
+ * Run an alignment in the host's RPC worker. A worker that cannot, say one an
+ * embedding app started without this plugin, gets the DP run in place instead
+ * of failing the structure, and the warning is what the e2e and host-compat
+ * gates fail on.
+ */
+export async function alignOffThread<M extends AlignmentMethod>(
   rpcManager: Pick<RpcManager, 'call'>,
   name: M,
   args: RpcCallArgs<M>,
-) {
-  // v4 hosts read sessionId from the args as well as the call
-  return rpcManager.call(ALIGNMENT_RPC_SESSION, name, {
-    ...args,
-    sessionId: ALIGNMENT_RPC_SESSION,
-  })
+  inPlace: () => RpcCallReturn<M>,
+): Promise<RpcCallReturn<M>> {
+  try {
+    // v4 hosts read sessionId from the args as well as the call
+    return await rpcManager.call(ALIGNMENT_RPC_SESSION, name, {
+      ...args,
+      sessionId: ALIGNMENT_RPC_SESSION,
+    })
+  } catch (e) {
+    console.warn(`${name} failed in the RPC worker, aligning in place`, e)
+    return inPlace()
+  }
 }
 
 /**

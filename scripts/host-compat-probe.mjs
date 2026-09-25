@@ -315,12 +315,15 @@ async function probeOne(browser, version) {
       .then(() => true)
       .catch(() => false)
 
-    result.mappedEntityIds = await page.evaluate(() => {
+    result.structures = await page.evaluate(() => {
       const w = /** @type {Record<string, any>} */ (window)
       const session = w.JBrowseSession ?? w.__jbrowse_session
       return session?.views
         ?.find(v => v.type === 'ProteinView')
-        ?.structures?.map(s => s.mappedEntityId)
+        ?.structures?.map(s => ({
+          mappedEntityId: s.mappedEntityId,
+          error: s.error ? String(s.error) : undefined,
+        }))
     })
 
     result.sessionViews = await page.evaluate(() => {
@@ -391,8 +394,8 @@ function failure(r) {
         ? 'no view launched, so nothing was asserted'
         : !r.viewReady
           ? 'view did NOT settle'
-          : r.mappedEntityIds?.[1] !== '2'
-            ? `1YCR mapped the transcript to entity ${r.mappedEntityIds?.[1]}, not the p53 peptide`
+          : r.structures?.[1]?.mappedEntityId !== '2'
+            ? `1YCR mapped the transcript to entity ${r.structures?.[1]?.mappedEntityId}, not the p53 peptide${r.structures?.[1]?.error ? `: ${r.structures[1].error}` : ''}`
             : !r.contextMenu?.reached
               ? `no context menu: ${r.contextMenu?.why}`
               : !r.contextMenu.hostRows

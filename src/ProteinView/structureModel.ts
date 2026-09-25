@@ -288,6 +288,11 @@ const Structure = types
     aligning: false,
     /**
      * #volatile
+     * The chain the user picked whose alignment is still running
+     */
+    pendingEntityId: undefined as string | undefined,
+    /**
+     * #volatile
      * Tracks whether this structure has been loaded into Molstar
      */
     loadedToMolstar: false,
@@ -518,8 +523,19 @@ const Structure = types
     setEntityChosen() {
       self.entityChosen = true
     },
-    setAligning(aligning: boolean) {
+    setAligning(aligning: boolean, pendingEntityId?: string) {
       self.aligning = aligning
+      self.pendingEntityId = pendingEntityId
+    },
+    /**
+     * #action
+     * Clear the running flag and take the answer in one action, so no
+     * reaction sees the structure settled on the alignment it replaces.
+     */
+    settleAlignment(apply: () => void) {
+      self.aligning = false
+      self.pendingEntityId = undefined
+      apply()
     },
     /**
      * #action
@@ -1190,7 +1206,8 @@ const Structure = types
   .extend(self => {
     // An answer is applied only if no alignment has started since it was
     // asked for: a changed transcript or entity list, or another chain the
-    // user picked, supersedes whatever is still running in the worker.
+    // user picked, supersedes whatever is still running in the worker. The
+    // worker finishes a superseded DP regardless; only its answer is dropped.
     let latestRequest = 0
     return {
       actions: {
@@ -1198,33 +1215,46 @@ const Structure = types
           latestRequest++
           self.setAligning(false)
         },
-        alignInWorker<M extends AlignmentMethod>(
-          name: M,
-          args: RpcCallArgs<M>,
-          apply: (result: RpcCallReturn<M>) => void,
-          fail: (e: unknown) => void,
-        ) {
+        alignInWorker<M extends AlignmentMethod>({
+          name,
+          args,
+          inPlace,
+          apply,
+          fail,
+          pendingEntityId,
+        }: {
+          name: M
+          args: RpcCallArgs<M>
+          inPlace: () => RpcCallReturn<M>
+          apply: (result: RpcCallReturn<M>) => void
+          fail: (e: unknown) => void
+          pendingEntityId?: string
+        }) {
           const request = ++latestRequest
           const current = () => request === latestRequest && isAlive(self)
-          self.setAligning(true)
-          alignOffThread(getSession(self).rpcManager, name, args)
-            .then(
-              result => {
-                if (current()) {
-                  self.setAligning(false)
-                  apply(result)
+          self.setAligning(true, pendingEntityId)
+          alignOffThread(getSession(self).rpcManager, name, args, inPlace).then(
+            result => {
+              if (current()) {
+                try {
+                  self.settleAlignment(() => {
+                    apply(result)
+                  })
+                } catch (e) {
+                  console.error(e)
+                  self.setError(e)
                 }
-              },
-              (e: unknown) => {
-                if (current()) {
-                  self.setAligning(false)
+              }
+            },
+            (e: unknown) => {
+              if (current()) {
+                console.error(e)
+                self.settleAlignment(() => {
                   fail(e)
-                }
-              },
-            )
-            .catch((e: unknown) => {
-              console.error(e)
-            })
+                })
+              }
+            },
+          )
         },
       },
     }
@@ -1310,11 +1340,18 @@ const Structure = types
      */
     chooseEntity(entityId: string) {
       const entity = self.entities?.find(e => e.entityId === entityId)
-      if (!entity || entity.entityId === self.mappedEntity?.entityId) {
+      const shown = self.mappedEntity?.entityId
+      if (!entity || entityId === (self.pendingEntityId ?? shown)) {
+        return
+      }
+      if (self.pendingEntityId !== undefined && entityId === shown) {
+        // back to the chain on screen, whose alignment is the one held
+        self.supersedeAlignment()
         return
       }
       const transcript = self.userProvidedTranscriptSequence
-      const algorithm = self.alignmentAlgorithm
+      const align = () =>
+        alignTranscriptToEntity(transcript, entity.seq, self.alignmentAlgorithm)
       const apply = (scored: ScoredAlignment | undefined) => {
         if (scored) {
           self.applyChosenEntity(entityId, scored.alignment)
@@ -1328,17 +1365,22 @@ const Structure = types
       }
       if (isIdentical(transcript, entity.seq)) {
         self.supersedeAlignment()
-        apply(alignTranscriptToEntity(transcript, entity.seq, algorithm))
+        apply(align())
       } else {
-        self.alignInWorker(
-          'ProteinAlignTranscriptToEntity',
-          { transcript, entitySeq: entity.seq, algorithm },
+        self.alignInWorker({
+          name: 'ProteinAlignTranscriptToEntity',
+          args: {
+            transcript,
+            entitySeq: entity.seq,
+            algorithm: self.alignmentAlgorithm,
+          },
+          inPlace: align,
           apply,
-          (e: unknown) => {
-            console.error(e)
+          fail: e => {
             self.parentView.setError(e)
           },
-        )
+          pendingEntityId: entityId,
+        })
       }
     },
     /**
@@ -1472,9 +1514,12 @@ const Structure = types
               alignmentAlgorithm: algorithm,
               pairwiseAlignment,
             } = self
-            self.supersedeAlignment()
 
+            // Every branch that decides the alignment anew supersedes what is
+            // still running. One that keeps the alignment held does not, or a
+            // reload of the same entities would drop a chain pick in flight.
             if (!transcript || !entities?.length) {
+              self.supersedeAlignment()
               return
             }
             if (pairwiseAlignment) {
@@ -1501,38 +1546,39 @@ const Structure = types
               const saved = entities.find(
                 e => e.entityId === self.mappedEntityId && !e.nucleicAcid,
               )
-              if (!saved) {
-                self.applyRealignment(undefined)
-              } else if (isIdentical(transcript, saved.seq)) {
-                self.applyRealignment(
-                  alignTranscriptToEntity(transcript, saved.seq, algorithm),
-                )
+              const realign = (seq: string) => () =>
+                alignTranscriptToEntity(transcript, seq, algorithm)
+              if (!saved || isIdentical(transcript, saved.seq)) {
+                self.supersedeAlignment()
+                self.applyRealignment(saved && realign(saved.seq)())
               } else {
-                self.alignInWorker(
-                  'ProteinAlignTranscriptToEntity',
-                  { transcript, entitySeq: saved.seq, algorithm },
-                  realigned => {
+                self.alignInWorker({
+                  name: 'ProteinAlignTranscriptToEntity',
+                  args: { transcript, entitySeq: saved.seq, algorithm },
+                  inPlace: realign(saved.seq),
+                  apply: realigned => {
                     self.applyRealignment(realigned)
                   },
-                  e => {
+                  fail: e => {
                     self.setError(e)
                   },
-                )
+                })
               }
               return
             }
+            const choose = () =>
+              chooseMappedEntity(transcript, entities, algorithm)
             if (
               entities.some(
                 e => !e.nucleicAcid && isIdentical(transcript, e.seq),
               )
             ) {
-              self.applyEntitySelection(
-                chooseMappedEntity(transcript, entities, algorithm),
-              )
+              self.supersedeAlignment()
+              self.applyEntitySelection(choose())
             } else {
-              self.alignInWorker(
-                'ProteinChooseMappedEntity',
-                {
+              self.alignInWorker({
+                name: 'ProteinChooseMappedEntity',
+                args: {
                   transcript,
                   entities: entities.map(({ seq, nucleicAcid }) => ({
                     seq,
@@ -1540,13 +1586,14 @@ const Structure = types
                   })),
                   algorithm,
                 },
-                selection => {
+                inPlace: choose,
+                apply: selection => {
                   self.applyEntitySelection(selection)
                 },
-                e => {
+                fail: e => {
                   self.setError(e)
                 },
-              )
+              })
             }
           } catch (e) {
             console.error(e)

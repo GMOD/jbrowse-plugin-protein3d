@@ -1,3 +1,4 @@
+import { getSession } from '@jbrowse/core/util'
 import { getSnapshot, types } from '@jbrowse/mobx-state-tree'
 import { observable, reaction } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
@@ -377,6 +378,79 @@ test('a chain picked while another is still aligning wins over the late answer',
   await new Promise(resolve => setTimeout(resolve, 50))
   expect(model.mappedEntityId).toBe('2')
   expect(model.pairwiseAlignment?.alns[1].seq).toBe('MKAA')
+})
+
+const THREE_CHAINS = [
+  { entityId: '1', seq: 'GGGGGG', seqIds: [1, 2, 3, 4, 5, 6], chains: ['A'] },
+  { entityId: '2', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['B'] },
+  { entityId: '3', seq: 'MKAG', seqIds: [1, 2, 3, 4], chains: ['C'] },
+]
+
+function loadThreeChains() {
+  const parent = TestParent.create({
+    structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const model = parent.structures[0]!
+  model.setStructureData({ entities: THREE_CHAINS })
+  expect(model.mappedEntityId).toBe('2')
+  return { parent, model }
+}
+
+const lateAnswers = () => new Promise(resolve => setTimeout(resolve, 50))
+
+test('picking the chain on screen again cancels a pick still aligning', async () => {
+  const { model } = loadThreeChains()
+  model.chooseEntity('1')
+  expect(model.pendingEntityId).toBe('1')
+  model.chooseEntity('2')
+  expect(model.pendingEntityId).toBeUndefined()
+  expect(model.alignmentPending).toBe(false)
+  await lateAnswers()
+  expect(model.mappedEntityId).toBe('2')
+})
+
+test('reloading the same entities keeps a chain pick that is still aligning', async () => {
+  const { model } = loadThreeChains()
+  model.chooseEntity('1')
+  model.setStructureData({ entities: THREE_CHAINS.map(e => ({ ...e })) })
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
+  expect(model.mappedEntityId).toBe('1')
+})
+
+test('the structure reads settled only once the answer is in', async () => {
+  const { model } = loadThreeChains()
+  const seenWhenSettled: (string | undefined)[] = []
+  const dispose = reaction(
+    () => model.alignmentPending,
+    pending => {
+      if (!pending) {
+        seenWhenSettled.push(model.mappedEntityId)
+      }
+    },
+  )
+  model.chooseEntity('1')
+  await vi.waitFor(() => {
+    expect(model.alignmentPending).toBe(false)
+  })
+  dispose()
+  expect(seenWhenSettled).toEqual(['1'])
+})
+
+test('a worker that cannot align leaves the DP to run in place, and says so', async () => {
+  const { model } = loadThreeChains()
+  const { rpcManager } = getSession(model)
+  vi.spyOn(rpcManager, 'call').mockRejectedValueOnce(
+    new Error('no such method'),
+  )
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  model.chooseEntity('1')
+  await vi.waitFor(() => {
+    expect(model.mappedEntityId).toBe('1')
+  })
+  expect(String(warn.mock.calls[0]?.[0])).toContain('aligning in place')
+  warn.mockRestore()
 })
 
 test('a persisted mappedEntityId survives a reload alongside its alignment', () => {

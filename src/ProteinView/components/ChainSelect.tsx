@@ -25,7 +25,7 @@ const ChainSelect = observer(function ChainSelect({
       size="small"
       label="Mapped chain"
       data-testid="protein-mapped-chain"
-      value={mappedEntity?.entityId ?? ''}
+      value={model.pendingEntityId ?? mappedEntity?.entityId ?? ''}
       onChange={event => {
         model.chooseEntity(event.target.value)
       }}
