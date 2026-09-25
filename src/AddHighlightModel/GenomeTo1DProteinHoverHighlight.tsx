@@ -6,33 +6,21 @@ import { observer } from 'mobx-react'
 import Highlight from './Highlight'
 import {
   getProteinLinkage,
-  getProteinLinkageMapping,
+  hovered1DProteinPosition,
 } from '../Protein1DLinkage'
-import { genomeHoverToTranscriptPos } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
+// Marks, on a 1D protein-annotation view, the residue under a genome hover.
 const GenomeTo1DProteinHoverHighlight = observer(
   function GenomeTo1DProteinHoverHighlight({
     model,
   }: {
     model: LinearGenomeViewModel
   }) {
-    const session = getSession(model)
-    const { hovered } = session
-    const { assemblyNames } = model
-
-    const assemblyName = assemblyNames[0]
     const linkage = getProteinLinkage(model)
-    if (!assemblyName || !linkage) {
-      return null
-    }
-
-    const proteinPos = genomeHoverToTranscriptPos(
-      hovered,
-      getProteinLinkageMapping(model),
-    )
-    if (proteinPos === undefined) {
+    const proteinPos = hovered1DProteinPosition(getSession(model), model)
+    if (!linkage || proteinPos === undefined) {
       return null
     }
 

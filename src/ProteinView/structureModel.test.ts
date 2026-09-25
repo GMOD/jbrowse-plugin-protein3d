@@ -1,4 +1,5 @@
 import { getSnapshot, types } from '@jbrowse/mobx-state-tree'
+import { observable, reaction } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { structuresSettled } from './frameSelection'
@@ -8,9 +9,13 @@ import { parseStructure } from '../test_data/molstarStructure'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { AlignmentAlgorithm } from 'p2s_mapper'
 
+const testSession = vi.hoisted(() => ({
+  current: (): unknown => ({ hovered: undefined, views: [] }),
+}))
+
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
-  return { ...actual, getSession: () => ({ hovered: undefined, views: [] }) }
+  return { ...actual, getSession: () => testSession.current() }
 })
 
 // an RCSB url makes the model ask PDBe for SIFTS; an empty answer, so nothing
@@ -205,6 +210,84 @@ test('hoverAlignmentPosition resumes after alignmentHoverRange is cleared', () =
   model.setAlignmentHoverRange(undefined)
   model.hoverAlignmentPosition(1)
   expect(model.hoverPosition?.structureSeqPos).toBe(1)
+})
+
+// The genome view publishes a hover per mouse move, many per base, spelling
+// the chromosome the assembly's way (`1`) where the transcript says `chr1`.
+test('a genome hover moving within one codon writes the residue once', () => {
+  const hovered = observable.box<unknown>(undefined)
+  const hg38 = {
+    name: 'hg38',
+    initialized: true,
+    getCanonicalRefName: (r: string) => r.replace(/^chr/, ''),
+  }
+  testSession.current = () => ({
+    hovered: hovered.get(),
+    views: [
+      {
+        id: 'lgv',
+        type: 'LinearGenomeView',
+        initialized: true,
+        assemblyNames: ['hg38'],
+      },
+    ],
+    assemblyManager: {
+      get: (name: string) => (name === 'hg38' ? hg38 : { ...hg38, name }),
+    },
+  })
+  try {
+    const parent = TestParent.create({
+      structures: [
+        {
+          userProvidedTranscriptSequence: 'MKAA',
+          pairwiseAlignment,
+          connectedViewId: 'lgv',
+          feature: {
+            uniqueId: 'tx',
+            refName: 'chr1',
+            start: 0,
+            end: 12,
+            strand: 1,
+            type: 'mRNA',
+            subfeatures: [
+              {
+                uniqueId: 'cds',
+                refName: 'chr1',
+                start: 0,
+                end: 12,
+                type: 'CDS',
+                phase: 0,
+              },
+            ],
+          },
+        },
+      ],
+    })
+    const model = parent.structures[0]!
+    const writes: unknown[] = []
+    const dispose = reaction(
+      () => model.hoverPosition,
+      p => writes.push(p),
+    )
+    for (const coord of [1, 2, 3, 4]) {
+      hovered.set({
+        hoverPosition: { refName: '1', coord, assemblyName: 'hg38' },
+      })
+    }
+    // the same number on another assembly's chromosome 1 is another base
+    hovered.set({
+      hoverPosition: { refName: '1', coord: 2, assemblyName: 'hg19' },
+    })
+    hovered.set(undefined)
+    dispose()
+    expect(writes).toEqual([
+      { structureSeqPos: 0, source: 'genome' },
+      { structureSeqPos: 1, source: 'genome' },
+      undefined,
+    ])
+  } finally {
+    testSession.current = () => ({ hovered: undefined, views: [] })
+  }
 })
 
 test('setAlignmentHoverRange manages state', () => {

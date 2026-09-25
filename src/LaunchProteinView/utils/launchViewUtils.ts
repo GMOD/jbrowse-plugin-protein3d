@@ -104,6 +104,7 @@ async function launch1DProteinView({
     uniprotId,
     confidenceUrl,
     connectedViewId: view.id,
+    connectedAssemblyName: view.assemblyNames[0],
   })
 }
 

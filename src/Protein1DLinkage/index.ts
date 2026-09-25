@@ -15,6 +15,7 @@ export {
   genomeHighlightsForProteinPosition,
   getProteinLinkage,
   getProteinLinkageMapping,
+  hovered1DProteinPosition,
 } from './linkage'
 
 function isLinearGenomeView(elt: { name: string }): elt is ViewType {

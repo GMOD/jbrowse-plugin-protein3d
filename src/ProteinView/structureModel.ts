@@ -56,7 +56,7 @@ import {
 } from './residueRanges'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
-import { errorMessage } from './util'
+import { assemblyNaming, errorMessage } from './util'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { EntityConfidence, StructureData } from './loadStructureData'
@@ -96,6 +96,10 @@ export interface ParentProteinView {
   setError: (e: unknown) => void
   clearSelection: () => void
 }
+
+// one instance, so a residue change under a genome or MSA hover leaves
+// hoverGenomeHighlights' consumers alone
+const NO_REGIONS: IRegion[] = []
 
 const Structure = types
   .model({
@@ -471,13 +475,24 @@ const Structure = types
      * Records a hover from the connected genome view or alignment. Drives the
      * 3D structure and feature-track highlight, but is excluded from
      * hoverGenomeHighlights: that view already marks its own pointer.
+     *
+     * The genome view publishes a new hover on every mouse move, many per
+     * base, so an unchanged residue writes nothing: each write re-renders the
+     * header and every consumer of hoverGenomeHighlights.
      */
     setConnectedHoveredPosition(
       structureSeqPos?: number,
       source: 'genome' | 'msa' = 'genome',
     ) {
-      self.hoverPosition =
+      const next =
         structureSeqPos === undefined ? undefined : { structureSeqPos, source }
+      const current = self.hoverPosition
+      if (
+        next?.structureSeqPos !== current?.structureSeqPos ||
+        next?.source !== current?.source
+      ) {
+        self.hoverPosition = next
+      }
     },
     /**
      * #action
@@ -914,7 +929,7 @@ const Structure = types
     get hoverGenomeHighlights(): IRegion[] {
       const source = self.hoverPosition?.source
       return source === 'genome' || source === 'msa'
-        ? []
+        ? NO_REGIONS
         : this.structureRangesToGenomeHighlight(
             rangeList(this.hoverHighlightRange),
           )
@@ -1418,16 +1433,16 @@ const Structure = types
         self,
         autorun(() => {
           const { hovered, views, assemblyManager } = getSession(self)
-          const assembly = assemblyManager.get(
-            self.connectedView?.assemblyNames[0] ?? '',
-          )
           const hover = connectedHoverTranscriptPos({
             hovered,
             views,
             mapping: self.genomeToTranscriptSeqMapping,
             connectedViewId: self.connectedViewId,
             genomeViewReady: !!self.connectedView?.initialized,
-            canonical: r => assembly?.getCanonicalRefName(r) ?? r,
+            naming: assemblyNaming(
+              assemblyManager,
+              self.connectedView?.assemblyNames[0],
+            ),
           })
           if (hover) {
             self.setConnectedHoveredPosition(

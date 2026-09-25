@@ -7,6 +7,7 @@ import {
   genomeHighlightsForProteinPosition,
   getProteinLinkage,
   getProteinLinkageMapping,
+  hovered1DProteinPosition,
   linkageGenomeMapping,
 } from './linkage'
 
@@ -95,4 +96,60 @@ test('a linked view carries its genome mapping, an unlinked one none', () => {
     [3, 4],
     [10, 12],
   ])
+})
+
+const hg38 = {
+  name: 'hg38',
+  initialized: true,
+  getCanonicalRefName: (r: string) => r.replace(/^chr/, ''),
+}
+const assemblyManager = {
+  get: (name: string) =>
+    name === 'hg38' || name === 'GRCh38'
+      ? hg38
+      : { ...hg38, name, getCanonicalRefName: (r: string) => r },
+}
+const View = withProteinLinkage(types.model({ id: types.identifier }))
+// base 3 is the first base of the codon split across the intron
+const hoverAt = (refName: string, assemblyName: string) => ({
+  hoverPosition: { refName, coord: 4, assemblyName },
+})
+
+// jbrowse.org's hg38 names the chromosome `1` where GENCODE says `chr1`
+test('a genome hover lights the 1D view through the assembly it was launched from', () => {
+  const p1d = View.create({
+    id: 'p1d',
+    proteinLinkage: { ...linkage, assemblyName: 'hg38' },
+  })
+  const session = (hovered: unknown) => ({
+    hovered,
+    views: [p1d],
+    assemblyManager,
+  })
+  expect(hovered1DProteinPosition(session(hoverAt('1', 'hg38')), p1d)).toBe(1)
+  expect(hovered1DProteinPosition(session(hoverAt('1', 'GRCh38')), p1d)).toBe(1)
+  expect(
+    hovered1DProteinPosition(session(hoverAt('chr1', 'hg19')), p1d),
+  ).toBeUndefined()
+})
+
+test('a 1D view saved without its assembly finds it through the genome view', () => {
+  const p1d = View.create({ id: 'p1d', proteinLinkage: linkage })
+  const genomeView = { id: 'cv-split', assemblyNames: ['hg38'] }
+  expect(
+    hovered1DProteinPosition(
+      {
+        hovered: hoverAt('1', 'hg38'),
+        views: [genomeView, p1d],
+        assemblyManager,
+      },
+      p1d,
+    ),
+  ).toBe(1)
+  expect(
+    hovered1DProteinPosition(
+      { hovered: hoverAt('1', 'hg38'), views: [p1d], assemblyManager },
+      p1d,
+    ),
+  ).toBeUndefined()
 })

@@ -2,6 +2,52 @@ interface HoveredState {
   hoverPosition: {
     coord: number
     refName: string
+    assemblyName?: string
+  }
+}
+
+/**
+ * How one assembly spells what a hover names. The hover and the transcript
+ * spell a chromosome independently, and the hover can come from a genome view
+ * on another assembly, so every comparison goes through the assembly.
+ */
+export interface GenomeNaming {
+  canonicalRefName: (refName: string) => string
+  isAssembly: (assemblyName: string | undefined) => boolean
+}
+
+export const literalNaming: GenomeNaming = {
+  canonicalRefName: r => r,
+  isAssembly: () => true,
+}
+
+interface NamingAssembly {
+  name: string
+  initialized?: boolean
+  getCanonicalRefName: (refName: string) => string | undefined
+}
+
+export interface NamingAssemblyManager {
+  get: (name: string) => NamingAssembly | undefined
+}
+
+/**
+ * `initialized` gates getCanonicalRefName, which throws on every host until
+ * the aliases load; until then the raw name is the whole answer. An unknown
+ * assembly accepts no named hover, since nothing says which genome it meant.
+ */
+export function assemblyNaming(
+  assemblyManager: NamingAssemblyManager,
+  assemblyName: string | undefined,
+): GenomeNaming {
+  const assembly = assemblyName ? assemblyManager.get(assemblyName) : undefined
+  return {
+    canonicalRefName: r =>
+      (assembly?.initialized ? assembly.getCanonicalRefName(r) : undefined) ??
+      r,
+    isAssembly: name =>
+      name === undefined ||
+      (!!assembly && assemblyManager.get(name)?.name === assembly.name),
   }
 }
 
@@ -33,19 +79,21 @@ export function checkHovered(hovered: unknown): hovered is HoveredState {
  * (`chr1` in GENCODE) — equal strings only by luck of which pair of files a
  * config happens to use. Compared raw, every hover on such a config silently
  * missed, which is how it shipped: nothing throws, the residue just never
- * lights up. `canonical` defaults to identity so the pure function stays
- * testable; the model passes the assembly's resolver.
+ * lights up. The same coordinate on another assembly's same-named chromosome
+ * is a different locus, so the hover's assembly is gated too.
  */
 export function genomeHoverToTranscriptPos(
   hovered: unknown,
   mapping: { g2p: Record<number, number>; refName: string } | undefined,
-  canonical: (refName: string) => string = r => r,
+  naming: GenomeNaming = literalNaming,
 ): number | undefined {
   if (!mapping || !checkHovered(hovered)) {
     return undefined
   }
-  const { coord, refName } = hovered.hoverPosition
-  return canonical(refName) === canonical(mapping.refName)
+  const { coord, refName, assemblyName } = hovered.hoverPosition
+  const { canonicalRefName, isAssembly } = naming
+  return isAssembly(assemblyName) &&
+    canonicalRefName(refName) === canonicalRefName(mapping.refName)
     ? mapping.g2p[coord - 1]
     : undefined
 }

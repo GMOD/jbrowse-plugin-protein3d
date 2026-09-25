@@ -1,5 +1,6 @@
-import { genomeHoverToTranscriptPos } from './util'
+import { genomeHoverToTranscriptPos, literalNaming } from './util'
 
+import type { GenomeNaming } from './util'
 import type { Region } from '@jbrowse/core/util/types'
 
 interface SessionView {
@@ -17,7 +18,7 @@ interface MsaViewLike extends SessionView {
 
 /**
  * The transcript residue a pointer elsewhere in the session is on: the genome
- * view's hover first, else the hovered column of an alignment connected to the
+ * view's hover first, else the hovered column of any alignment connected to the
  * same genome view, which is how msaview pairs with a structure too.
  *
  * The alignment is read as the codon msaview maps its column to, never as a
@@ -31,30 +32,35 @@ export function connectedHoverTranscriptPos({
   mapping,
   connectedViewId,
   genomeViewReady,
-  canonical = r => r,
+  naming = literalNaming,
 }: {
   hovered: unknown
   views: MsaViewLike[]
   mapping: { g2p: Record<number, number>; refName: string } | undefined
   connectedViewId: string | undefined
   genomeViewReady: boolean
-  /** the assembly's refName resolver; both sources name the chromosome their
-   * own way, so every comparison here goes through it */
-  canonical?: (refName: string) => string
+  /** the connected genome view's assembly */
+  naming?: GenomeNaming
 }): { transcriptPos: number; source: 'genome' | 'msa' } | undefined {
   const fromGenome = genomeViewReady
-    ? genomeHoverToTranscriptPos(hovered, mapping, canonical)
+    ? genomeHoverToTranscriptPos(hovered, mapping, naming)
     : undefined
   if (fromGenome !== undefined) {
     return { transcriptPos: fromGenome, source: 'genome' }
   }
   const codon = connectedViewId
     ? views.find(
-        v => v.type === 'MsaView' && v.connectedViewId === connectedViewId,
+        v =>
+          v.type === 'MsaView' &&
+          v.connectedViewId === connectedViewId &&
+          !!v.connectedHoverHighlights?.length,
       )?.connectedHoverHighlights?.[0]
     : undefined
+  const { canonicalRefName } = naming
   const fromMsa =
-    mapping && codon && canonical(codon.refName) === canonical(mapping.refName)
+    mapping &&
+    codon &&
+    canonicalRefName(codon.refName) === canonicalRefName(mapping.refName)
       ? mapping.g2p[codon.start]
       : undefined
   return fromMsa === undefined

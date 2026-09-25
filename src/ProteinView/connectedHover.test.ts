@@ -94,3 +94,38 @@ test('a structure with no connected genome view hears no alignment', () => {
     }),
   ).toBeUndefined()
 })
+
+// A Pfam seed and an ortholog alignment can both hang off one genome view; the
+// pointer is on at most one of them.
+test('an alignment hover reaches the structure from any connected alignment', () => {
+  expect(
+    connectedHoverTranscriptPos({
+      hovered: undefined,
+      views: [msa('lgv'), msa('lgv', 100)],
+      mapping,
+      connectedViewId: 'lgv',
+      genomeViewReady: true,
+    }),
+  ).toEqual({ transcriptPos: 1, source: 'msa' })
+})
+
+test('an alignment codon spelled the annotation way still maps', () => {
+  expect(
+    connectedHoverTranscriptPos({
+      hovered: undefined,
+      views: [
+        {
+          ...msa('lgv', 103),
+          connectedHoverHighlights: [{ refName: '17', start: 103, end: 106 }],
+        },
+      ],
+      mapping,
+      connectedViewId: 'lgv',
+      genomeViewReady: true,
+      naming: {
+        canonicalRefName: r => r.replace(/^chr/, ''),
+        isAssembly: () => true,
+      },
+    }),
+  ).toEqual({ transcriptPos: 0, source: 'msa' })
+})

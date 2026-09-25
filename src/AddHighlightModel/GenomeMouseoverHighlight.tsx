@@ -5,7 +5,7 @@ import { observer } from 'mobx-react'
 
 import Highlight from './Highlight'
 import { getProteinViews, getStructuresConnectedTo } from './proteinViewLookup'
-import { checkHovered } from '../ProteinView/util'
+import { assemblyNaming, checkHovered } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
@@ -18,11 +18,17 @@ const GenomeMouseoverHighlight = observer(function GenomeMouseoverHighlight({
   model: LinearGenomeViewModel
 }) {
   const session = getSession(model)
-  const { hovered } = session
+  const { hovered, assemblyManager } = session
   const { assemblyNames, id } = model
   const connected =
     getStructuresConnectedTo(getProteinViews(session), id).length > 0
-  if (connected && checkHovered(hovered)) {
+  if (
+    connected &&
+    checkHovered(hovered) &&
+    assemblyNaming(assemblyManager, assemblyNames[0]).isAssembly(
+      hovered.hoverPosition.assemblyName,
+    )
+  ) {
     const { coord, refName } = hovered.hoverPosition
     return (
       <Highlight

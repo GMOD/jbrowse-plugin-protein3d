@@ -14,6 +14,7 @@ export async function launchProteinAnnotationView({
   uniprotId,
   confidenceUrl,
   connectedViewId,
+  connectedAssemblyName,
 }: {
   session: SessionWithAddTracks
   feature: Feature
@@ -21,6 +22,7 @@ export async function launchProteinAnnotationView({
   uniprotId: string
   confidenceUrl?: string
   connectedViewId?: string
+  connectedAssemblyName?: string
 }) {
   setupProteinAssembly(session, uniprotId)
 
@@ -34,7 +36,12 @@ export async function launchProteinAnnotationView({
   // the view (see Protein1DLinkage) so it is saved with the session.
   const proteinLinkage: Protein1DLinkage | undefined =
     connectedViewId && selectedTranscript
-      ? { connectedViewId, feature: selectedTranscript.toJSON(), uniprotId }
+      ? {
+          connectedViewId,
+          assemblyName: connectedAssemblyName,
+          feature: selectedTranscript.toJSON(),
+          uniprotId,
+        }
       : undefined
 
   // a named object, because proteinLinkage comes from this plugin's own
