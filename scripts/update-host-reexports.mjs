@@ -18,7 +18,7 @@
 // `main` are hosted app builds rather than npm versions of @jbrowse/core, so
 // name the closest published core: the prerelease cut from main.
 //
-// Usage: node scripts/update-host-reexports.mjs [4.0.0 4.3.0 5.0.0-beta.8]
+// Usage: node scripts/update-host-reexports.mjs [4.0.0 4.3.0 5.0.0-beta.9]
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import os from 'node:os'
@@ -27,7 +27,7 @@ import path from 'node:path'
 const versions =
   process.argv.length > 2
     ? process.argv.slice(2)
-    : ['4.0.0', '4.3.0', '5.0.0-beta.8']
+    : ['4.0.0', '4.3.0', '5.0.0-beta.9']
 const out = path.join(import.meta.dirname, 'host-reexports.json')
 
 async function reExportsOf(version) {
