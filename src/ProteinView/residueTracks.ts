@@ -36,33 +36,32 @@ export function kyteDoolittleScores(seq: string): (number | undefined)[] {
 }
 
 /**
- * The bands the pLDDT palette draws, for the legend: a track of four blues and
- * oranges means nothing without the scale it encodes. Each names a score
- * inside its band rather than a colour, so the legend cannot drift from the
- * palette.
+ * A threshold scale: a value up to and including `upTo` takes that band's
+ * colour. The last band's `upTo` is Infinity.
  */
-export const PLDDT_BINS = [
-  { label: 'very high >90', score: 95 },
-  { label: 'confident 70-90', score: 80 },
-  { label: 'low 50-70', score: 60 },
-  { label: 'very low <50', score: 40 },
-]
+export interface Band {
+  upTo: number
+  color: string
+  label: string
+}
 
 /**
- * AlphaFold pLDDT confidence palette (matches molstar's plddt-confidence
- * color theme): very low (<=50) orange, low (<=70) yellow, confident (<=90)
- * light blue, very high (>90) blue.
+ * AlphaFold's pLDDT bands, as Mol*'s plddt-confidence theme paints them. The
+ * alignment strip, its legend and the linear confidence track all read these.
  */
+export const PLDDT_BANDS: Band[] = [
+  { upTo: 50, color: '#ff7d45', label: 'very low <50' },
+  { upTo: 70, color: '#ffdb13', label: 'low 50-70' },
+  { upTo: 90, color: '#65cbf3', label: 'confident 70-90' },
+  { upTo: Infinity, color: '#0053d6', label: 'very high >90' },
+]
+
+export function bandColor(bands: Band[], value: number) {
+  return bands.find(band => value <= band.upTo)?.color
+}
+
 export function plddtColor(score: number): string {
-  return score < 0
-    ? '#cccccc'
-    : score <= 50
-      ? '#ff7d45'
-      : score <= 70
-        ? '#ffdb13'
-        : score <= 90
-          ? '#65cbf3'
-          : '#0053d6'
+  return (score < 0 ? undefined : bandColor(PLDDT_BANDS, score)) ?? '#cccccc'
 }
 
 const HYDROPHILIC_RGB = [51, 102, 204] as const

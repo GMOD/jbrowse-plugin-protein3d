@@ -29,7 +29,7 @@ import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
 import {
   HYDROPHOBICITY_KEY_SCORES,
-  PLDDT_BINS,
+  PLDDT_BANDS,
   hydrophobicityColor,
   plddtColor,
 } from '../residueTracks'
@@ -365,13 +365,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
         </div>
       </div>
       {showProteinTracks && confidenceCells.length > 0 ? (
-        <ColorKey
-          title="pLDDT"
-          entries={PLDDT_BINS.map(bin => ({
-            label: bin.label,
-            color: plddtColor(bin.score),
-          }))}
-        />
+        <ColorKey title="pLDDT" entries={PLDDT_BANDS} />
       ) : null}
       {showProteinTracks && hydrophobicityCells.length > 0 ? (
         <GradientKey

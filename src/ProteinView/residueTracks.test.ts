@@ -1,21 +1,18 @@
 import { expect, test } from 'vitest'
 
 import {
-  PLDDT_BINS,
+  PLDDT_BANDS,
+  bandColor,
   hydrophobicityColor,
   kyteDoolittleScores,
   mapResidueValuesToColumns,
   plddtColor,
 } from './residueTracks'
 
-test('every pLDDT legend bin draws the colour its band is painted in', () => {
-  expect(PLDDT_BINS.map(bin => plddtColor(bin.score))).toEqual([
-    plddtColor(100),
-    plddtColor(90),
-    plddtColor(70),
-    plddtColor(50),
-  ])
-  expect(new Set(PLDDT_BINS.map(bin => plddtColor(bin.score))).size).toBe(4)
+test('bandColor includes each band’s upper bound', () => {
+  expect(bandColor(PLDDT_BANDS, 70)).toBe('#ffdb13')
+  expect(bandColor(PLDDT_BANDS, 70.01)).toBe('#65cbf3')
+  expect(bandColor(PLDDT_BANDS, 1000)).toBe('#0053d6')
 })
 
 test('kyteDoolittleScores returns per-residue hydropathy, undefined for gaps', () => {
