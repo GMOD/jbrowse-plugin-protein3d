@@ -35,6 +35,7 @@ import {
 import { alignOffThread, isIdentical } from './alignOffThread'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
+  CHAR_WIDTH,
   COMPACT_TRACK_GAP,
   COMPACT_TRACK_HEIGHT,
   MINOR_FEATURE_TYPES,
@@ -1149,6 +1150,14 @@ const Structure = types
       return this.showAllFeatureTracks
         ? self.hiddenFeatureTypes
         : new Set([...MINOR_FEATURE_TYPES, ...self.hiddenFeatureTypes])
+    },
+    /**
+     * #getter
+     * Pixels per alignment column: the x scale every row of the panel draws
+     * with and every pointer position is read back through.
+     */
+    get columnWidth(): number {
+      return CHAR_WIDTH
     },
     get trackHeight(): number {
       return this.parentView.compactTracks

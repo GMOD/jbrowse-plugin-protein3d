@@ -1,23 +1,21 @@
 import { useMemo } from 'react'
 
-import { alignmentLength } from 'p2s_mapper'
-
-import { CHAR_WIDTH } from '../constants'
 import useUniProtFeatures from './useUniProtFeatures'
 
 import type { UniProtFeature } from './useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 import type { MapUniProtPosition } from 'p2s_mapper'
 
+/** A UniProt feature placed in alignment columns; drawing it is the view's
+ * business, through the model's column width. */
 export interface FeatureLayout {
   feature: UniProtFeature
   /** 0-based half-open structure-residue range the feature covers */
   structureStart: number
   structureEnd: number
+  /** inclusive alignment columns */
   alignmentStart: number
   alignmentEnd: number
-  left: number
-  width: number
   lane: number
 }
 
@@ -27,17 +25,12 @@ export interface FeatureGroup {
   laneCount: number
 }
 
-export interface FeatureTrackData {
-  visibleGroups: FeatureGroup[]
-  sequenceLength: number
-}
-
 /**
  * Places a UniProt feature: its 1-based inclusive UniProt range becomes a
  * 0-based half-open structure range (identity for AlphaFold, SIFTS-offset for
- * PDB — see useStructureUniProt), then alignment columns and pixel geometry.
- * This is the only UniProt->structure coordinate conversion in the tracks; every
- * consumer reads `structureStart`/`structureEnd` off the layout.
+ * PDB — see useStructureUniProt), then alignment columns. This is the only
+ * UniProt->structure coordinate conversion in the tracks; every consumer reads
+ * `structureStart`/`structureEnd` off the layout.
  *
  * Returns undefined when either endpoint falls outside the structure or has no
  * alignment column, so an unmappable feature is dropped rather than drawn at a
@@ -63,8 +56,6 @@ export function layoutFeature(
         structureEnd: structureLast + 1,
         alignmentStart,
         alignmentEnd,
-        left: alignmentStart * CHAR_WIDTH,
-        width: Math.max((alignmentEnd - alignmentStart + 1) * CHAR_WIDTH, 3),
         lane: 0,
       }
 }
@@ -98,22 +89,18 @@ export default function useProteinFeatureTrackData(
   uniprotId: string | undefined,
   mapUniProtPosition: MapUniProtPosition,
 ): {
-  data: FeatureTrackData | undefined
+  groups: FeatureGroup[] | undefined
   isLoading: boolean
   error: unknown
 } {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const {
-    alignment: pairwiseAlignment,
-    omittedFeatureTypes,
-    structurePositionToAlignmentMap,
-  } = model
+  const { omittedFeatureTypes, structurePositionToAlignmentMap } = model
 
-  const data = useMemo(() => {
-    if (!features || !pairwiseAlignment || !structurePositionToAlignmentMap) {
+  const groups = useMemo(() => {
+    if (!features || !structurePositionToAlignmentMap) {
       return undefined
     }
-    const groups = new Map<string, FeatureLayout[]>()
+    const byType = new Map<string, FeatureLayout[]>()
     for (const feature of features) {
       if (!omittedFeatureTypes.has(feature.type)) {
         const layout = layoutFeature(
@@ -122,31 +109,26 @@ export default function useProteinFeatureTrackData(
           mapUniProtPosition,
         )
         if (layout) {
-          const list = groups.get(feature.type)
+          const list = byType.get(feature.type)
           if (list) {
             list.push(layout)
           } else {
-            groups.set(feature.type, [layout])
+            byType.set(feature.type, [layout])
           }
         }
       }
     }
-    const visibleGroups = [...groups].map(([type, layouts]) => ({
+    return [...byType].map(([type, layouts]) => ({
       type,
       layouts,
       laneCount: packLanes(layouts),
     }))
-    return {
-      visibleGroups,
-      sequenceLength: alignmentLength(pairwiseAlignment),
-    }
   }, [
     features,
-    pairwiseAlignment,
     omittedFeatureTypes,
     structurePositionToAlignmentMap,
     mapUniProtPosition,
   ])
 
-  return { data, isLoading, error }
+  return { groups, isLoading, error }
 }

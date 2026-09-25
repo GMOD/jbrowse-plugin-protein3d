@@ -1,7 +1,5 @@
 import { reaction } from 'mobx'
 
-import { CHAR_WIDTH } from './constants'
-
 export function followHoverTarget({
   x,
   width,
@@ -37,6 +35,7 @@ interface HoverFollower {
   alignmentHoverPos: number | undefined
   autoScrollAlignment: boolean
   isMouseInAlignment: boolean
+  columnWidth: number
 }
 
 interface ScrollContainer {
@@ -59,8 +58,8 @@ export function followHover(
         !model.isMouseInAlignment
       ) {
         const target = followHoverTarget({
-          x: pos * CHAR_WIDTH,
-          width: CHAR_WIDTH,
+          x: pos * model.columnWidth,
+          width: model.columnWidth,
           scrollLeft: container.scrollLeft,
           clientWidth: container.clientWidth,
         })

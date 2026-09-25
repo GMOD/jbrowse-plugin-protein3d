@@ -2,7 +2,7 @@ import React from 'react'
 
 import { observer } from 'mobx-react'
 
-import { CHAR_WIDTH, ROW_HEIGHT } from '../constants'
+import { ROW_HEIGHT } from '../constants'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -41,6 +41,7 @@ const AlignmentRuler = observer(function AlignmentRuler({
   model: JBrowsePluginProteinStructureModel
   columns: number
 }) {
+  const { columnWidth } = model
   const ticks = rulerTicks(
     model.pairwiseAlignmentToStructurePosition,
     columns,
@@ -50,8 +51,7 @@ const AlignmentRuler = observer(function AlignmentRuler({
     <div
       style={{
         position: 'relative',
-        height: ROW_HEIGHT,
-        width: columns * CHAR_WIDTH,
+        height: '100%',
         color: '#888',
         fontSize: 8,
       }}
@@ -61,9 +61,9 @@ const AlignmentRuler = observer(function AlignmentRuler({
           key={col}
           style={{
             position: 'absolute',
-            left: col * CHAR_WIDTH,
+            left: col * columnWidth,
             top: 0,
-            height: ROW_HEIGHT,
+            bottom: 0,
             borderLeft: '1px solid #aaa',
             paddingLeft: 2,
             lineHeight: `${ROW_HEIGHT}px`,

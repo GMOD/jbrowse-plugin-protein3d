@@ -44,51 +44,23 @@ function FeatureTooltipContent({
   )
 }
 
+// `selected` comes from the track rather than each bar reading the model's
+// selection itself, so a click re-renders the two bars it changes instead of
+// every bar of every track (p53 has 1,363 natural variants).
 const FeatureBar = observer(function FeatureBar({
   layout,
   top,
+  selected,
   model,
 }: {
   layout: FeatureLayout
   top: number
+  selected: boolean
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
-  const { selectedFeatureId } = model
-  const { feature, left, width } = layout
-  const isSelected = selectedFeatureId === feature.uniqueId
-
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-    model.setAlignmentHoverRange({
-      start: layout.alignmentStart,
-      end: layout.alignmentEnd,
-    })
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-    model.setAlignmentHoverRange(undefined)
-  }
-
-  const handleClick = () => {
-    if (isSelected) {
-      model.setSelectedFeatureId(undefined)
-      model.setClickedStructureRanges([])
-    } else {
-      model.setSelectedFeatureId(feature.uniqueId)
-      clickProteinToGenome({
-        model,
-        structureSeqPos: layout.structureStart,
-        structureSeqEndPos: layout.structureEnd,
-      }).catch((e: unknown) => {
-        console.error(e)
-        model.setError(e)
-      })
-    }
-  }
-
-  const color = getFeatureColor(feature.type)
+  const { feature, alignmentStart, alignmentEnd } = layout
+  const { columnWidth, trackHeight } = model
 
   return (
     <Tooltip
@@ -106,26 +78,45 @@ const FeatureBar = observer(function FeatureBar({
         data-feature-id={feature.uniqueId}
         data-feature-start={feature.start}
         data-feature-end={feature.end}
-        onClick={() => {
-          handleClick()
+        onClick={event => {
+          event.stopPropagation()
+          if (selected) {
+            model.setSelectedFeatureId(undefined)
+            model.setClickedStructureRanges([])
+          } else {
+            model.setSelectedFeatureId(feature.uniqueId)
+            clickProteinToGenome({
+              model,
+              structureSeqPos: layout.structureStart,
+              structureSeqEndPos: layout.structureEnd,
+            }).catch((e: unknown) => {
+              console.error(e)
+              model.setError(e)
+            })
+          }
         }}
         onMouseEnter={() => {
-          handleMouseEnter()
+          setIsHovered(true)
+          model.setAlignmentHoverRange({
+            start: alignmentStart,
+            end: alignmentEnd,
+          })
         }}
         onMouseLeave={() => {
-          handleMouseLeave()
+          setIsHovered(false)
+          model.setAlignmentHoverRange(undefined)
         }}
         style={{
           position: 'absolute',
-          left,
+          left: alignmentStart * columnWidth,
           top,
-          width,
-          height: model.trackHeight,
-          backgroundColor: color,
-          opacity: isHovered || isSelected ? 0.9 : 0.6,
+          width: (alignmentEnd - alignmentStart + 1) * columnWidth,
+          height: trackHeight,
+          backgroundColor: getFeatureColor(feature.type),
+          opacity: isHovered || selected ? 0.9 : 0.6,
           cursor: 'pointer',
           borderRadius: 2,
-          border: isSelected
+          border: selected
             ? SELECTED_BORDER
             : isHovered
               ? HOVERED_BORDER

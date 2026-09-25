@@ -13,10 +13,10 @@ function layout(alignmentStart: number, alignmentEnd: number): FeatureLayout {
       description: '',
       uniqueId: `${alignmentStart}-${alignmentEnd}`,
     },
+    structureStart: alignmentStart,
+    structureEnd: alignmentEnd + 1,
     alignmentStart,
     alignmentEnd,
-    left: 0,
-    width: 0,
     lane: -1,
   }
 }

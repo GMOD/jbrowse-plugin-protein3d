@@ -4,6 +4,7 @@ import { Tooltip, Typography } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 import {
+  alignmentLength,
   describeAlignmentQuality,
   structureAlignedSeq,
   transcriptAlignedSeq,
@@ -14,17 +15,15 @@ import { makeStyles } from 'tss-react/mui'
 import AlignmentRuler from './AlignmentRuler'
 import ChainSelect from './ChainSelect'
 import { ColorKey, GradientKey } from './ColorKey'
-import HoverMarker from './HoverMarker'
+import ColumnOverlays, { SelectionBackdrop } from './ColumnOverlays'
+import FeatureTypeLabel from './FeatureTypeLabel'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
-import {
-  ProteinFeatureTrackContent,
-  ProteinFeatureTrackLabels,
-} from './ProteinFeatureTrack'
+import ProteinFeatureTrack, { featureTrackHeight } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
-import SplitString, { AlignmentHighlights } from './SplitString'
+import SplitString, { MatchOverlays } from './SplitString'
 import ExternalLink from '../../components/ExternalLink'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
-import { CHAR_WIDTH, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
+import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import useStructureUniProt from '../hooks/useStructureUniProt'
 import {
@@ -48,17 +47,29 @@ const useStyles = makeStyles()(theme => ({
     paddingBottom: 10,
     backgroundColor: theme.palette.background.paper,
   },
-  gutterStatus: {
-    height: ROW_HEIGHT,
-    fontSize: 8,
+  trackMessage: {
+    position: 'sticky',
+    left: 0,
+    lineHeight: `${ROW_HEIGHT}px`,
     color: theme.palette.text.secondary,
   },
-  gutterError: {
-    height: ROW_HEIGHT,
-    fontSize: 8,
+  trackError: {
     color: theme.palette.error.main,
   },
 }))
+
+/**
+ * One row of the panel. The label column and the scrolling tracks both draw
+ * every row at its `height`, so a label cannot drift from its track: they used
+ * to be two lists kept the same height by hand, and a "Loading..." cell that
+ * only the label column drew pushed every label below it off its track.
+ */
+interface TrackRow {
+  key: string
+  height: number
+  label: React.ReactNode
+  content: React.ReactNode
+}
 
 // Which UniProt entry the feature tracks came from. For an AlphaFold model that
 // is in the filename, but for a PDB entry it is resolved via SIFTS and is
@@ -80,29 +91,15 @@ function UniProtProvenance({
   ) : null
 }
 
-function GutterLabel({
-  label,
-  title,
-  height,
-}: {
-  label: string
-  title: string
-  height: number
-}) {
+function GutterLabel({ label, title }: { label: string; title: string }) {
   return (
     <Tooltip title={title} placement="left">
       <div
         style={{
-          height,
-          fontSize: 9,
-          fontFamily: 'monospace',
-          textAlign: 'right',
-          paddingRight: 4,
+          height: '100%',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'flex-end',
-          overflow: 'hidden',
-          whiteSpace: 'nowrap',
         }}
       >
         {label}
@@ -117,18 +114,21 @@ const ProteinAlignment = observer(function ProteinAlignment({
   model: JBrowsePluginProteinStructureModel
 }) {
   const {
-    alignment: pairwiseAlignment,
+    alignment,
     alignmentQuality: quality,
     showHighlight,
     showProteinTracks,
     showAllFeatureTracks,
     label,
     confidenceCells,
+    columnWidth,
+    trackHeight,
+    trackGap,
   } = model
   const hydrophobicityCells = showAllFeatureTracks
     ? model.hydrophobicityCells
     : []
-  const { classes } = useStyles()
+  const { classes, cx } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
   // AlphaFold models carry their accession in the URL; PDB entries need a SIFTS
@@ -147,13 +147,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
     mappedEntity: model.mappedEntity,
   })
   const {
-    data: featureData,
+    groups,
     isLoading: trackLoading,
     error: trackError,
   } = useProteinFeatureTrackData(model, uniprotId, mapUniProtPosition)
   const featureLoading = uniprotLoading || trackLoading
-  // Two different failures reach one gutter cell, and "Error" alone leaves the
-  // reader guessing whether the structure has no UniProt entry or the entry's
+  // Two different failures reach one row, and "Error" alone leaves the reader
+  // guessing whether the structure has no UniProt entry or the entry's
   // features would not download.
   const featureError = uniprotError ?? trackError
   const featureErrorMessage = featureError
@@ -183,8 +183,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
             if (key !== lastScrolledSelectionRef.current) {
               lastScrolledSelectionRef.current = key
               const target = offScreenCenterTarget({
-                start: range.start * CHAR_WIDTH,
-                end: (range.end + 1) * CHAR_WIDTH,
+                start: range.start * model.columnWidth,
+                end: (range.end + 1) * model.columnWidth,
                 scrollLeft: container.scrollLeft,
                 clientWidth: container.clientWidth,
               })
@@ -200,13 +200,136 @@ const ProteinAlignment = observer(function ProteinAlignment({
     [model],
   )
 
-  if (!pairwiseAlignment) {
-    return <div>No pairwiseAlignment</div>
+  if (!alignment) {
+    return null
   }
 
-  const a0 = transcriptAlignedSeq(pairwiseAlignment)
-  const a1 = structureAlignedSeq(pairwiseAlignment)
-  const con = pairwiseAlignment.consensus
+  const columns = alignmentLength(alignment)
+  const valueRowHeight = trackHeight + trackGap
+  const sequenceRow = (
+    key: string,
+    rowLabel: string,
+    title: string,
+    str: string,
+  ): TrackRow => ({
+    key,
+    height: ROW_HEIGHT,
+    label: rowLabel ? <GutterLabel label={rowLabel} title={title} /> : null,
+    content: (
+      <div style={{ lineHeight: `${ROW_HEIGHT}px` }}>
+        <MatchOverlays model={model} />
+        <SplitString model={model} str={str} />
+      </div>
+    ),
+  })
+  const featureStatus =
+    featureErrorMessage ?? (featureLoading ? 'Loading UniProt features...' : '')
+
+  const rows: TrackRow[] = [
+    sequenceRow(
+      'transcript',
+      'GENOME',
+      'This is the sequence of the protein from the reference genome transcript',
+      transcriptAlignedSeq(alignment),
+    ),
+    sequenceRow('consensus', '', '', alignment.consensus),
+    sequenceRow(
+      'structure',
+      'STRUCT',
+      'This is the sequence of the protein from the structure file',
+      structureAlignedSeq(alignment),
+    ),
+    {
+      key: 'ruler',
+      height: ROW_HEIGHT,
+      label: (
+        <GutterLabel
+          label="residue"
+          title="Residue numbers as the structure's authors assigned them, the numbering papers and the 3D view's hover label use"
+        />
+      ),
+      content: <AlignmentRuler model={model} columns={columns} />,
+    },
+  ]
+  if (showProteinTracks) {
+    if (featureStatus) {
+      rows.push({
+        key: 'uniprot-status',
+        height: ROW_HEIGHT,
+        label: <GutterLabel label="UniProt" title={featureStatus} />,
+        content: (
+          <span
+            className={cx(
+              classes.trackMessage,
+              featureErrorMessage && classes.trackError,
+            )}
+          >
+            {featureStatus}
+          </span>
+        ),
+      })
+    }
+    for (const group of groups ?? []) {
+      rows.push({
+        key: `feature-${group.type}`,
+        height: featureTrackHeight(model, group),
+        label: (
+          <FeatureTypeLabel
+            type={group.type}
+            laneCount={group.laneCount}
+            model={model}
+          />
+        ),
+        content: <ProteinFeatureTrack group={group} model={model} />,
+      })
+    }
+    if (confidenceCells.length > 0) {
+      rows.push({
+        key: 'plddt',
+        height: valueRowHeight,
+        label: (
+          <GutterLabel
+            label="pLDDT"
+            title="AlphaFold per-residue confidence (pLDDT)"
+          />
+        ),
+        content: (
+          <ResidueValueTrack
+            cells={confidenceCells}
+            colorFor={plddtColor}
+            formatValue={v => `pLDDT ${v.toFixed(0)}`}
+            model={model}
+          />
+        ),
+      })
+    }
+    if (hydrophobicityCells.length > 0) {
+      rows.push({
+        key: 'hydrophobicity',
+        height: valueRowHeight,
+        label: (
+          <GutterLabel
+            label="hydro"
+            title="Kyte-Doolittle hydrophobicity (orange hydrophobic, blue hydrophilic)"
+          />
+        ),
+        content: (
+          <ResidueValueTrack
+            cells={hydrophobicityCells}
+            colorFor={hydrophobicityColor}
+            formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
+            model={model}
+          />
+        ),
+      })
+    }
+  }
+
+  const columnAt = (event: React.MouseEvent<HTMLDivElement>) => {
+    const { left } = event.currentTarget.getBoundingClientRect()
+    const col = Math.floor((event.clientX - left) / columnWidth)
+    return col >= 0 && col < columns ? col : undefined
+  }
 
   return (
     <div data-testid="protein-alignment-panel" data-structure={label}>
@@ -253,7 +376,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
           display: 'flex',
           fontSize: 9,
           fontFamily: 'monospace',
-          cursor: 'pointer',
           margin: 8,
           paddingBottom: 8,
         }}
@@ -268,100 +390,62 @@ const ProteinAlignment = observer(function ProteinAlignment({
           style={{
             flexShrink: 0,
             minWidth: LABEL_WIDTH,
-            textAlign: 'right',
             paddingRight: 4,
+            whiteSpace: 'nowrap',
+            lineHeight: 1,
           }}
         >
-          <div style={{ height: ROW_HEIGHT }}>
-            <Tooltip title="This is the sequence of the protein from the reference genome transcript">
-              <span>GENOME</span>
-            </Tooltip>
-          </div>
-          <div style={{ height: ROW_HEIGHT }}>&nbsp;</div>
-          <div style={{ height: ROW_HEIGHT }}>
-            <Tooltip title="This is the sequence of the protein from the structure file">
-              <span>STRUCT</span>
-            </Tooltip>
-          </div>
-          <GutterLabel
-            label="residue"
-            title="Residue numbers as the structure's authors assigned them, the numbering papers and the 3D view's hover label use"
-            height={ROW_HEIGHT}
-          />
-          {showProteinTracks ? (
-            featureLoading ? (
-              <div className={classes.gutterStatus}>Loading...</div>
-            ) : featureErrorMessage ? (
-              <Tooltip title={featureErrorMessage}>
-                <div className={classes.gutterError}>Error</div>
-              </Tooltip>
-            ) : featureData ? (
-              <ProteinFeatureTrackLabels data={featureData} model={model} />
-            ) : null
-          ) : null}
-          {showProteinTracks && confidenceCells.length > 0 ? (
-            <GutterLabel
-              label="pLDDT"
-              title="AlphaFold per-residue confidence (pLDDT)"
-              height={model.trackHeight + model.trackGap}
-            />
-          ) : null}
-          {showProteinTracks && hydrophobicityCells.length > 0 ? (
-            <GutterLabel
-              label="hydro"
-              title="Kyte-Doolittle hydrophobicity (orange hydrophobic, blue hydrophilic)"
-              height={model.trackHeight + model.trackGap}
-            />
-          ) : null}
+          {rows.map(row => (
+            <div
+              key={row.key}
+              data-row-label={row.key}
+              style={{ height: row.height, overflow: 'hidden' }}
+            >
+              {row.label}
+            </div>
+          ))}
         </div>
         <div ref={containerRef} className={classes.scroll}>
-          <div style={{ position: 'relative' }}>
-            <AlignmentHighlights
-              model={model}
-              strLength={a0.length}
-              height={ROW_HEIGHT * 3}
-            />
-            <div style={{ height: ROW_HEIGHT }}>
-              <SplitString model={model} str={a0} />
-            </div>
-            <div style={{ height: ROW_HEIGHT }}>
-              <SplitString model={model} str={con} />
-            </div>
-            <div style={{ height: ROW_HEIGHT }}>
-              <SplitString model={model} str={a1} />
-            </div>
+          {/* One pointer handler for every row: a column is a column whichever
+              row the pointer is on. A feature bar stops its own click, since
+              it selects the feature rather than the residue. */}
+          <div
+            data-testid="alignment-rows"
+            style={{
+              position: 'relative',
+              width: columns * columnWidth,
+              cursor: 'pointer',
+            }}
+            onMouseMove={event => {
+              const col = columnAt(event)
+              if (col === undefined) {
+                model.setHoveredPosition(undefined)
+              } else {
+                model.hoverAlignmentPosition(col)
+              }
+            }}
+            onMouseLeave={() => {
+              model.setHoveredPosition(undefined)
+            }}
+            onClick={event => {
+              const col = columnAt(event)
+              if (col !== undefined) {
+                model.clickAlignmentPosition(col)
+              }
+            }}
+          >
+            <SelectionBackdrop model={model} />
+            {rows.map(row => (
+              <div
+                key={row.key}
+                data-row={row.key}
+                style={{ position: 'relative', height: row.height }}
+              >
+                {row.content}
+              </div>
+            ))}
+            <ColumnOverlays model={model} />
           </div>
-          <AlignmentRuler model={model} columns={a0.length} />
-          {/* One relative parent for every track, so the hover marker spans all
-              of them — nested inside the feature tracks it stopped short of the
-              pLDDT/hydrophobicity rows, and vanished entirely when a structure
-              had no UniProt features. */}
-          {showProteinTracks ? (
-            <div style={{ position: 'relative' }}>
-              {featureData ? (
-                <ProteinFeatureTrackContent data={featureData} model={model} />
-              ) : null}
-              {confidenceCells.length > 0 ? (
-                <ResidueValueTrack
-                  cells={confidenceCells}
-                  colorFor={plddtColor}
-                  formatValue={v => `pLDDT ${v.toFixed(0)}`}
-                  sequenceLength={a0.length}
-                  model={model}
-                />
-              ) : null}
-              {hydrophobicityCells.length > 0 ? (
-                <ResidueValueTrack
-                  cells={hydrophobicityCells}
-                  colorFor={hydrophobicityColor}
-                  formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
-                  sequenceLength={a0.length}
-                  model={model}
-                />
-              ) : null}
-              <HoverMarker model={model} />
-            </div>
-          ) : null}
         </div>
       </div>
       {showProteinTracks && confidenceCells.length > 0 ? (

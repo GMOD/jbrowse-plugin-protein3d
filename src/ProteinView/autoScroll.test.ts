@@ -35,6 +35,7 @@ describe('followHover', () => {
       alignmentHoverPos: undefined as number | undefined,
       autoScrollAlignment: true,
       isMouseInAlignment: false,
+      columnWidth: 6,
       ...initial,
     })
     const container = { scrollLeft: 0, clientWidth: 600 }

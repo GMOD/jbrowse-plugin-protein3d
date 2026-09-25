@@ -21,7 +21,13 @@ export const MINOR_FEATURE_TYPES = new Set([
   'Initiator methionine',
 ])
 
-export const HOVER_MARKER_COLOR = 'rgba(255, 105, 180, 0.5)'
+// one colour per interaction state, drawn across every row of the panel
+export const HOVER_COLOR = 'rgba(255, 105, 180, 0.5)'
+export const HOVER_RANGE_COLOR = 'rgba(255, 165, 0, 0.35)'
+export const SELECTION_COLOR = 'rgba(0, 120, 255, 0.25)'
+export const SELECTION_OUTLINE = '1px solid rgba(0, 120, 255, 0.6)'
+export const MATCH_COLOR = '#33ff19a0'
+
 export const SELECTED_BORDER = '2px solid #333'
 export const HOVERED_BORDER = '1px solid black'
 export const HIDE_BUTTON_COLOR = '#999'

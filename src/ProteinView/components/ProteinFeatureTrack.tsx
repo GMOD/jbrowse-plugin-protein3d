@@ -3,95 +3,36 @@ import React from 'react'
 import { observer } from 'mobx-react'
 
 import FeatureBar from './FeatureBar'
-import FeatureTypeLabel from './FeatureTypeLabel'
-import { CHAR_WIDTH } from '../constants'
-import useAlignmentColumnHover from '../hooks/useAlignmentColumnHover'
 
-import type {
-  FeatureGroup,
-  FeatureTrackData,
-} from '../hooks/useProteinFeatureTrackData'
+import type { FeatureGroup } from '../hooks/useProteinFeatureTrackData'
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
-const FeatureTypeTrackContent = observer(function FeatureTypeTrackContent({
+export function featureTrackHeight(
+  model: JBrowsePluginProteinStructureModel,
+  group: FeatureGroup,
+) {
+  const lanes = model.expandedFeatureTypes.has(group.type) ? group.laneCount : 1
+  return lanes * (model.trackHeight + model.trackGap)
+}
+
+const ProteinFeatureTrack = observer(function ProteinFeatureTrack({
   group,
   model,
-  sequenceLength,
-  expanded,
 }: {
   group: FeatureGroup
   model: JBrowsePluginProteinStructureModel
-  sequenceLength: number
-  expanded: boolean
 }) {
-  const lanes = expanded ? group.laneCount : 1
-  const laneUnit = model.trackHeight + model.trackGap
-  return (
-    <div
-      style={{
-        position: 'relative',
-        height: lanes * model.trackHeight + (lanes - 1) * model.trackGap,
-        width: sequenceLength * CHAR_WIDTH,
-        marginBottom: model.trackGap,
-      }}
-    >
-      {group.layouts.map(layout => (
-        <FeatureBar
-          key={layout.feature.uniqueId}
-          layout={layout}
-          top={(expanded ? layout.lane : 0) * laneUnit}
-          model={model}
-        />
-      ))}
-    </div>
-  )
+  const { selectedFeatureId, trackHeight, trackGap } = model
+  const expanded = model.expandedFeatureTypes.has(group.type)
+  return group.layouts.map(layout => (
+    <FeatureBar
+      key={layout.feature.uniqueId}
+      layout={layout}
+      top={(expanded ? layout.lane : 0) * (trackHeight + trackGap)}
+      selected={selectedFeatureId === layout.feature.uniqueId}
+      model={model}
+    />
+  ))
 })
 
-export const ProteinFeatureTrackLabels = observer(
-  function ProteinFeatureTrackLabels({
-    data,
-    model,
-  }: {
-    data: FeatureTrackData
-    model: JBrowsePluginProteinStructureModel
-  }) {
-    return (
-      <>
-        {data.visibleGroups.map(group => (
-          <FeatureTypeLabel
-            key={group.type}
-            type={group.type}
-            laneCount={group.laneCount}
-            expanded={model.expandedFeatureTypes.has(group.type)}
-            model={model}
-          />
-        ))}
-      </>
-    )
-  },
-)
-
-export const ProteinFeatureTrackContent = observer(
-  function ProteinFeatureTrackContent({
-    data,
-    model,
-  }: {
-    data: FeatureTrackData
-    model: JBrowsePluginProteinStructureModel
-  }) {
-    const hoverHandlers = useAlignmentColumnHover(model, data.sequenceLength)
-    return (
-      <div {...hoverHandlers}>
-        {data.visibleGroups.map(group => (
-          <FeatureTypeTrackContent
-            key={group.type}
-            group={group}
-            model={model}
-            sequenceLength={data.sequenceLength}
-            expanded={model.expandedFeatureTypes.has(group.type)}
-          />
-        ))}
-      </div>
-    )
-  },
-)
+export default ProteinFeatureTrack

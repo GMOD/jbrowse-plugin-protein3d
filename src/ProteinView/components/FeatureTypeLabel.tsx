@@ -13,25 +13,19 @@ import type { JBrowsePluginProteinStructureModel } from '../model'
 const FeatureTypeLabel = observer(function FeatureTypeLabel({
   type,
   laneCount,
-  expanded,
   model,
 }: {
   type: string
   laneCount: number
-  expanded: boolean
   model: JBrowsePluginProteinStructureModel
 }) {
-  const lanes = expanded ? laneCount : 1
-  const canExpand = laneCount > 1
+  const expanded = model.expandedFeatureTypes.has(type)
+  const iconSize = model.trackHeight
   return (
     <Tooltip title={type} placement="left">
       <div
         style={{
-          height: lanes * (model.trackHeight + model.trackGap),
-          fontSize: 9,
-          fontFamily: 'monospace',
-          textAlign: 'right',
-          paddingRight: 4,
+          height: '100%',
           whiteSpace: 'nowrap',
           display: 'flex',
           alignItems: expanded ? 'flex-start' : 'center',
@@ -40,19 +34,17 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
         }}
       >
         <IconButton
-          onClick={e => {
-            e.stopPropagation()
+          onClick={() => {
             model.hideFeatureType(type)
           }}
           title={`Hide ${type} track`}
           sx={{ p: 0, color: HIDE_BUTTON_COLOR }}
         >
-          <CloseIcon sx={{ fontSize: model.trackHeight }} />
+          <CloseIcon sx={{ fontSize: iconSize }} />
         </IconButton>
-        {canExpand ? (
+        {laneCount > 1 ? (
           <IconButton
-            onClick={e => {
-              e.stopPropagation()
+            onClick={() => {
               model.toggleFeatureTypeExpanded(type)
             }}
             title={
@@ -63,9 +55,9 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
             sx={{ p: 0, color: HIDE_BUTTON_COLOR }}
           >
             {expanded ? (
-              <UnfoldLessIcon sx={{ fontSize: model.trackHeight }} />
+              <UnfoldLessIcon sx={{ fontSize: iconSize }} />
             ) : (
-              <UnfoldMoreIcon sx={{ fontSize: model.trackHeight }} />
+              <UnfoldMoreIcon sx={{ fontSize: iconSize }} />
             )}
           </IconButton>
         ) : null}
