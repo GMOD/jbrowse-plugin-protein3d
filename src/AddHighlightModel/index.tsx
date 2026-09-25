@@ -9,9 +9,13 @@ export default function AddHighlightModelF(pluginManager: PluginManager) {
   pluginManager.addToExtensionPoint(
     // @ts-expect-error v4 hosts have no contributeToExtensionPoint
     'LinearGenomeView-TracksContainerComponent',
-    (rest: React.ReactNode[], { model }: { model: LinearGenomeViewModel }) => {
+    // v4 hosts seed this point with undefined rather than []
+    (
+      rest: React.ReactNode[] | undefined,
+      { model }: { model: LinearGenomeViewModel },
+    ) => {
       return [
-        ...rest,
+        ...(rest ?? []),
         <HighlightComponents
           key="highlight_protein_viewer_protein3d"
           model={model}
