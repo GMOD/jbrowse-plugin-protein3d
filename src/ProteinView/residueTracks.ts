@@ -27,8 +27,12 @@ const KYTE_DOOLITTLE: Record<string, number> = {
 const KYTE_DOOLITTLE_MIN = -4.5
 const KYTE_DOOLITTLE_MAX = 4.5
 
+export function kyteDoolittle(aa: string): number | undefined {
+  return KYTE_DOOLITTLE[aa]
+}
+
 export function kyteDoolittleScores(seq: string): (number | undefined)[] {
-  return Array.from(seq, aa => KYTE_DOOLITTLE[aa])
+  return Array.from(seq, kyteDoolittle)
 }
 
 /**
@@ -61,24 +65,32 @@ export function plddtColor(score: number): string {
           : '#0053d6'
 }
 
+const HYDROPHILIC_RGB = [51, 102, 204] as const
+const NEUTRAL_RGB = [247, 247, 247] as const
+const HYDROPHOBIC_RGB = [230, 140, 40] as const
+
 /**
- * Diverging hydrophobicity color: hydrophobic (high Kyte-Doolittle) toward
- * orange, hydrophilic (low) toward blue, near-neutral white.
+ * Diverging Kyte-Doolittle palette shared by the alignment strip and the 3D
+ * theme: hydrophilic blue, neutral (0) near-white, hydrophobic orange.
  */
+export function hydrophobicityRgb(score: number): [number, number, number] {
+  const t = Math.max(-1, Math.min(1, score / KYTE_DOOLITTLE_MAX))
+  const end = t < 0 ? HYDROPHILIC_RGB : HYDROPHOBIC_RGB
+  const mix = (i: 0 | 1 | 2) =>
+    Math.round(NEUTRAL_RGB[i] + (end[i] - NEUTRAL_RGB[i]) * Math.abs(t))
+  return [mix(0), mix(1), mix(2)]
+}
+
 export function hydrophobicityColor(score: number): string {
-  const t = Math.max(
-    0,
-    Math.min(
-      1,
-      (score - KYTE_DOOLITTLE_MIN) / (KYTE_DOOLITTLE_MAX - KYTE_DOOLITTLE_MIN),
-    ),
-  )
-  // t=0 hydrophilic (blue 51,102,204) -> t=1 hydrophobic (orange 230,140,40)
-  const r = Math.round(51 + (230 - 51) * t)
-  const g = Math.round(102 + (140 - 102) * t)
-  const b = Math.round(204 + (40 - 204) * t)
+  const [r, g, b] = hydrophobicityRgb(score)
   return `rgb(${r}, ${g}, ${b})`
 }
+
+export const HYDROPHOBICITY_LEGEND = [
+  { label: 'hydrophilic', score: KYTE_DOOLITTLE_MIN },
+  { label: 'neutral', score: 0 },
+  { label: 'hydrophobic', score: KYTE_DOOLITTLE_MAX },
+]
 
 /**
  * Maps per-structure-residue values (indexed by 0-based structure sequence

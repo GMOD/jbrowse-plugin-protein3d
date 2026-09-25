@@ -4,7 +4,7 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
 import { COLOR_SCHEME_VALUES, applyColorTheme } from './applyColorTheme'
-import { MappedChainColorThemeProvider } from './mappedChainColorTheme'
+import { registerColorThemes } from './colorThemes'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 
@@ -36,22 +36,20 @@ test('applies the chosen theme to every loaded structure', async () => {
     const b = await loadCaOnly(plugin, [chain])
     await applyColorTheme({
       plugin,
-      colorScheme: 'hydrophobicity',
+      colorScheme: 'secondary-structure',
       structures: [...a.structures, ...b.structures].map(molstarStructure => ({
         molstarStructure,
       })),
     })
     const names = themes(plugin).map(t => t?.name)
     expect(names).toHaveLength(2)
-    expect(new Set(names)).toEqual(new Set(['hydrophobicity']))
+    expect(new Set(names)).toEqual(new Set(['secondary-structure']))
   })
 })
 
 test("colors each structure's own mapped chain", async () => {
   await withTemporaryMolstarPlugin(async plugin => {
-    plugin.representation.structure.themes.colorThemeRegistry.add(
-      MappedChainColorThemeProvider,
-    )
+    registerColorThemes(plugin)
     const a = await loadCaOnly(plugin, [chain])
     const b = await loadCaOnly(plugin, [chain])
     await applyColorTheme({
@@ -69,6 +67,21 @@ test("colors each structure's own mapped chain", async () => {
   })
 })
 
+// Sessions persist 'hydrophobicity', which used to name Mol*'s Wimley-White
+// theme while the menu and the alignment strip said Kyte-Doolittle.
+test("'hydrophobicity' draws with the Kyte-Doolittle theme", async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    registerColorThemes(plugin)
+    const { structures } = await loadCaOnly(plugin, [chain])
+    await applyColorTheme({
+      plugin,
+      colorScheme: 'hydrophobicity',
+      structures: structures.map(molstarStructure => ({ molstarStructure })),
+    })
+    expect(themes(plugin).map(t => t?.name)).toEqual(['kyte-doolittle'])
+  })
+})
+
 test("'default' puts each representation's own default theme back", async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     const { structures } = await loadCaOnly(plugin, [chain])
@@ -76,7 +89,7 @@ test("'default' puts each representation's own default theme back", async () => 
     const [original] = themes(plugin)
     await applyColorTheme({
       plugin,
-      colorScheme: 'hydrophobicity',
+      colorScheme: 'secondary-structure',
       structures: loaded,
     })
     await applyColorTheme({
@@ -96,12 +109,12 @@ test('recolors every model of an ensemble', async () => {
     const { structures } = await loadCaOnly(plugin, [chain], { models: 4 })
     await applyColorTheme({
       plugin,
-      colorScheme: 'hydrophobicity',
+      colorScheme: 'secondary-structure',
       structures: structures.map(molstarStructure => ({ molstarStructure })),
     })
     const names = themes(plugin).map(t => t?.name)
     expect(names).toHaveLength(4)
-    expect(new Set(names)).toEqual(new Set(['hydrophobicity']))
+    expect(new Set(names)).toEqual(new Set(['secondary-structure']))
   })
 })
 
@@ -114,11 +127,11 @@ test('recolors a structure the published hierarchy has not caught up with', asyn
       const { structures } = await loadCaOnly(plugin, [chain])
       await applyColorTheme({
         plugin,
-        colorScheme: 'hydrophobicity',
+        colorScheme: 'secondary-structure',
         structures: structures.map(molstarStructure => ({ molstarStructure })),
       })
     })
-    expect(themes(plugin).map(t => t?.name)).toEqual(['hydrophobicity'])
+    expect(themes(plugin).map(t => t?.name)).toEqual(['secondary-structure'])
   })
 })
 
@@ -129,11 +142,11 @@ test('skips a structure molstar no longer holds', async () => {
     const kept = await loadCaOnly(plugin, [chain])
     await applyColorTheme({
       plugin,
-      colorScheme: 'hydrophobicity',
+      colorScheme: 'secondary-structure',
       structures: [...gone.structures, ...kept.structures].map(
         molstarStructure => ({ molstarStructure }),
       ),
     })
-    expect(themes(plugin).map(t => t?.name)).toEqual(['hydrophobicity'])
+    expect(themes(plugin).map(t => t?.name)).toEqual(['secondary-structure'])
   })
 })

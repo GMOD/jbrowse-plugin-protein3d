@@ -49,11 +49,11 @@ export default function useProteinView({
           Color,
           GeometryExport,
           MAQualityAssessment,
-          MappedChainColorThemeProvider,
           PluginConfig,
           PluginSpec,
           DefaultPluginUISpec,
           createPluginUI,
+          registerColorThemes,
           renderReact18,
           css,
         } = await loadMolstar()
@@ -85,9 +85,7 @@ export default function useProteinView({
           },
         })
         await created.initialized
-        created.representation.structure.themes.colorThemeRegistry.add(
-          MappedChainColorThemeProvider,
-        )
+        registerColorThemes(created)
         // molstar's default selection is a faint green tint that a green or
         // pLDDT cartoon swallows; solid magenta reads over every scheme
         created.canvas3d?.setProps({

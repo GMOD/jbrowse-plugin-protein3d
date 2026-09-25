@@ -34,8 +34,9 @@ test('plddtColor bins match molstar pLDDT thresholds', () => {
   expect(plddtColor(95)).toBe('#0053d6') // very high
 })
 
-test('hydrophobicityColor endpoints and midpoint', () => {
+test('hydrophobicityColor diverges from near-white at zero', () => {
   expect(hydrophobicityColor(-4.5)).toBe('rgb(51, 102, 204)') // hydrophilic
+  expect(hydrophobicityColor(0)).toBe('rgb(247, 247, 247)')
   expect(hydrophobicityColor(4.5)).toBe('rgb(230, 140, 40)') // hydrophobic
   // clamps out-of-range
   expect(hydrophobicityColor(-100)).toBe('rgb(51, 102, 204)')

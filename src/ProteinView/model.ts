@@ -93,7 +93,7 @@ function stateModelFactory() {
         autoScrollAlignment: false,
         /**
          * #property
-         * molstar color-theme name applied to all loaded structures
+         * color scheme applied to all loaded structures (see COLOR_SCHEMES)
          */
         colorScheme: types.optional(
           types.enumeration<ProteinColorScheme>(

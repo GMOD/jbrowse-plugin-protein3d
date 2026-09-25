@@ -387,7 +387,7 @@ describe('Protein3d Plugin E2E', () => {
       .poll(themes, { timeout: 30_000 })
       .toSatisfy(
         (names: (string | undefined)[]) =>
-          names.length >= 10 && names.every(n => n === 'hydrophobicity'),
+          names.length >= 10 && names.every(n => n === 'kyte-doolittle'),
       )
     await captureScreenshot(page, screenshot('09-nmr-ensemble'))
     expect(pageComplaintsSince()).toEqual([])
