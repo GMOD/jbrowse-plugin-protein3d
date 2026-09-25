@@ -31,12 +31,13 @@ const ColorSchemeMenu = observer(function ColorSchemeMenu({
 }) {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null)
   const current = COLOR_SCHEMES.find(s => s.value === model.colorScheme)
+  const title = `Color scheme: ${current?.label ?? model.colorScheme}`
   return (
     <>
-      <Tooltip title={`Color scheme: ${current?.label ?? model.colorScheme}`}>
+      <Tooltip title={title}>
         <IconButton
           size="small"
-          aria-label="Color scheme"
+          aria-label={title}
           onClick={event => {
             setAnchorEl(event.currentTarget)
           }}

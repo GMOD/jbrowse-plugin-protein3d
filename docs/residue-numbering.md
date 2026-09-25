@@ -156,7 +156,8 @@ needs none: UniProt position `p` is position `p - 1`.
 4. `Entity.seqIds[position]` gives the `label_seq_id`, which `setMolstarLoci`
    selects on the mapped entity only, so a homodimer's other copies and any
    binding partner stay dark.
-5. The header reads `residueNumber(position)` and says `1TUP: 248, ...`.
+5. The structure's header row reads `residueNumber(position)` and says
+   `248, ...`.
 
 The click path runs the same chain in reverse from a Mol\* pick, whose
 `label_seq_id` is converted back to a position through `makeLabelSeqIdIndex`,

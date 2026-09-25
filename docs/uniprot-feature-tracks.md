@@ -20,11 +20,11 @@ and the offset is not even constant across a construct.
 
 The plugin resolves both from [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/)
 via PDBe's `mappings/uniprot/{pdbId}` API (p2s_mapper's `pdbUniProtMapping.ts`,
-read here by `hooks/useStructureUniProt.ts`), which gives a per-segment
-correspondence. It uses only the segments for the entity it mapped to the
-transcript: a heteromer maps each chain to a different accession, so the wrong
-one would annotate the wrong protein. `residue_number` in that API is the
-1-based SEQRES/`label_seq_id` index, i.e. this plugin's structure position + 1.
+read here by `structureUniProt.ts`), which gives a per-segment correspondence.
+It uses only the segments for the entity it mapped to the transcript: a
+heteromer maps each chain to a different accession, so the wrong one would
+annotate the wrong protein. `residue_number` in that API is the 1-based
+SEQRES/`label_seq_id` index, i.e. this plugin's structure position + 1.
 
 The plugin infers a PDB id only from URLs on the PDB archive hosts, so a
 user-supplied model named `1abc.cif` can't inherit that entry's annotations.

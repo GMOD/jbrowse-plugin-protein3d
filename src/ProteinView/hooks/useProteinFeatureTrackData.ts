@@ -28,7 +28,7 @@ export interface FeatureGroup {
 /**
  * Places a UniProt feature: its 1-based inclusive UniProt range becomes a
  * 0-based half-open structure range (identity for AlphaFold, SIFTS-offset for
- * PDB — see useStructureUniProt), then alignment columns. This is the only
+ * PDB — see structureUniProt), then alignment columns. This is the only
  * UniProt->structure coordinate conversion in the tracks; every consumer reads
  * `structureStart`/`structureEnd` off the layout.
  *

@@ -585,9 +585,8 @@ const Structure = types
     /**
      * #getter
      * The structure's name in the UI: PDB id, AlphaFold accession, else file
-     * name. Heads its alignment panel and prefixes its hover readout, so with
-     * several structures open a reader can tell which panel and which residue
-     * belongs to which structure.
+     * name. Heads its row in the view header, which also carries its hover
+     * readout and marks whose alignment panel is open.
      */
     get label() {
       return structureDisplayLabel(self)

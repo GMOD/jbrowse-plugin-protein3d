@@ -37,7 +37,7 @@ const ChainSelect = observer(function ChainSelect({
           input: { disableUnderline: true, sx: { fontSize: 12 } },
           htmlInput: { 'aria-label': 'Mapped chain' },
         }}
-        sx={{ flexShrink: 0 }}
+        sx={{ minWidth: 60 }}
       >
         {entities.map(entity => (
           <MenuItem key={entity.entityId} value={entity.entityId} dense>

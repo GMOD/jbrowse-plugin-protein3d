@@ -34,9 +34,9 @@ const LOW_SIMILARITY_EXPLANATION = `Under ${Math.round(
   SHORT_ALIGNMENT_IDENTITY * 100,
 )}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`
 
-// Which UniProt entry the feature tracks annotate. For an AlphaFold model that
-// is in the filename, but for a PDB entry it is resolved via SIFTS and is
-// otherwise invisible — leaving no way to tell which protein got annotated.
+// Which UniProt entry the structure's mapped chain is, and so which one its
+// feature tracks annotate. For an AlphaFold model that is in the filename, but
+// for a PDB entry it is resolved via SIFTS and is otherwise invisible.
 const UniProtLink = observer(function UniProtLink({
   structure,
 }: {
@@ -45,14 +45,15 @@ const UniProtLink = observer(function UniProtLink({
   const { uniprotId, uniprotName } = structure.uniProtEntry
   return uniprotId ? (
     <Tooltip
-      title={`Feature tracks from UniProt ${uniprotId}${uniprotName ? ` (${uniprotName})` : ''}`}
+      title={`The mapped chain is UniProt ${uniprotId}${uniprotName ? ` (${uniprotName})` : ''}, which its feature tracks annotate`}
     >
       <Link
         variant="caption"
         href={uniprotEntryUrl(uniprotId)}
         target="_blank"
         rel="noreferrer"
-        sx={{ flexShrink: 0 }}
+        noWrap
+        sx={{ minWidth: 40 }}
       >
         UniProt {uniprotId}
       </Link>
@@ -117,7 +118,6 @@ const StructureRow = observer(function StructureRow({
         <Typography
           variant="caption"
           color="error"
-          noWrap
           data-testid="structure-status"
         >
           {statusMessage}
@@ -134,7 +134,11 @@ const StructureRow = observer(function StructureRow({
         </Typography>
       ) : quality ? (
         <Tooltip
-          title={`${describeTranscriptCoverage(quality)}${coveredRange ? `, ${coveredRange}` : ''}; ${describeAlignmentQuality(quality)}`}
+          title={
+            quality.aligned === 0
+              ? ''
+              : `${describeTranscriptCoverage(quality)}${coveredRange ? `, ${coveredRange}` : ''}; ${describeAlignmentQuality(quality)}`
+          }
         >
           <Typography
             variant="caption"
