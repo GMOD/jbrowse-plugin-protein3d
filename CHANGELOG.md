@@ -1,3 +1,28 @@
+## [0.15.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.1...v0.15.2) (2026-09-25)
+
+### Bug Fixes
+
+- A launch spec's showAllFeatureTracks reaches the view ([93838c5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/93838c50d79ce2c657243404e3864b872d8a69cd))
+- Only the sequence rows and ruler select on click; the match highlight sits under the selection ([9741543](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9741543ea2473482a47cd2ce4003286e52daa601))
+- A structure's status wraps rather than truncating, and a narrow row shrinks its picker ([f5aa361](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f5aa361445a3ca445ac0bb2416a994ed5d8e4075))
+
+### Features
+
+- Fold the alignment panel's title rows into the view header ([be5f866](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/be5f8669493743d1db972d0dce5a31f38e1c6b2b))
+- The view's controls share the structure rows' line, and a hover reads out on its structure's row ([279f2c7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/279f2c7a2f98f9213bc0472ae03d2994bc6acd48))
+
+### Other Changes
+
+- More ideas ([a555441](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a5554413d39dc452040b91dd58c048c89ab0a451))
+
+### Refactoring
+
+- One row list draws the alignment panel's labels and tracks ([646c289](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/646c289834c4c4606b4315a70114fa0b6cfd1708))
+
+### Tests
+
+- Screenshots of the compact header, and the colour menu's keepMounted in CLAUDE.md ([2999e0a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2999e0a135114eded2f202ea696da854c29836ce))
+
 ## [0.15.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.0...v0.15.1) (2026-09-25)
 
 ### Bug Fixes
