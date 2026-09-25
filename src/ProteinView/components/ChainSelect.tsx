@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { MenuItem, TextField } from '@mui/material'
+import { MenuItem, TextField, Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 import { entityLabel } from 'p2s_mapper'
 
@@ -20,23 +20,32 @@ const ChainSelect = observer(function ChainSelect({
     return null
   }
   return (
-    <TextField
-      select
-      size="small"
-      label="Mapped chain"
-      data-testid="protein-mapped-chain"
-      value={model.pendingEntityId ?? mappedEntity?.entityId ?? ''}
-      onChange={event => {
-        model.chooseEntity(event.target.value)
-      }}
-      sx={{ minWidth: 200, mr: 1 }}
+    <Tooltip
+      title="Mapped chain: the one the transcript maps to"
+      placement="left"
     >
-      {entities.map(entity => (
-        <MenuItem key={entity.entityId} value={entity.entityId}>
-          {entityLabel(entity)}
-        </MenuItem>
-      ))}
-    </TextField>
+      <TextField
+        select
+        size="small"
+        variant="standard"
+        data-testid="protein-mapped-chain"
+        value={model.pendingEntityId ?? mappedEntity?.entityId ?? ''}
+        onChange={event => {
+          model.chooseEntity(event.target.value)
+        }}
+        slotProps={{
+          input: { disableUnderline: true, sx: { fontSize: 12 } },
+          htmlInput: { 'aria-label': 'Mapped chain' },
+        }}
+        sx={{ flexShrink: 0 }}
+      >
+        {entities.map(entity => (
+          <MenuItem key={entity.entityId} value={entity.entityId} dense>
+            {entityLabel(entity)}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Tooltip>
   )
 })
 

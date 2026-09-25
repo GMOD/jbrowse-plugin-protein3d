@@ -57,6 +57,7 @@ import {
   transcriptRuns,
 } from './residueRanges'
 import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
+import { structureUniProt } from './structureUniProt'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { assemblyNaming, errorMessage } from './util'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
@@ -600,6 +601,20 @@ const Structure = types
       return url && !getUniprotIdFromAlphaFoldTarget(url)
         ? getPdbIdFromUrl(url)
         : undefined
+    },
+    /**
+     * #getter
+     * The UniProt entry the feature tracks annotate and how its positions
+     * land on this structure's residues; see structureUniProt.
+     */
+    get uniProtEntry() {
+      return structureUniProt({
+        uniprotId: self.uniprotId,
+        pdbId: this.pdbId,
+        uniProtMappings: self.uniProtMappings,
+        uniProtMappingsError: self.uniProtMappingsError,
+        mappedEntity: this.mappedEntity,
+      })
     },
     /**
      * #getter

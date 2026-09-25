@@ -77,10 +77,10 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
    the worker at launch. The launch dialog's isoform ranking runs there too. A
    worker that rejects the call, as one an embedding app started without this
    plugin would, gets the DP run in place with a console warning.
-5. **Report.** The alignment panel header shows identity over the aligned
-   columns and how many of the structure's residues they cover, and warns when
-   fewer than 30% of the shorter sequence's residues are identical, or fewer
-   than 80% for an alignment under 20 residues.
+5. **Report.** Each structure's row in the view header shows identity over the
+   aligned columns and which of the transcript's residues they cover, and warns
+   when fewer than 30% of the shorter sequence's residues are identical, or
+   fewer than 80% for an alignment under 20 residues.
 
 ## Why the scores are what they are
 

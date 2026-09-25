@@ -15,19 +15,24 @@ const swatch = {
   border: '1px solid rgba(0,0,0,0.3)',
 }
 
+// 'inherit' for a key shown in a tooltip, whose text is light on dark
+type KeyColor = 'textSecondary' | 'inherit'
+
 function KeyRow({
   title,
   testId,
+  color,
   children,
 }: {
   title: string
   testId: string
+  color: KeyColor
   children: React.ReactNode
 }) {
   return (
     <Typography
       variant="caption"
-      color="textSecondary"
+      color={color}
       component="div"
       data-testid={testId}
       style={{
@@ -49,13 +54,15 @@ export function ColorKey({
   title,
   entries,
   testId = 'track-legend',
+  color = 'textSecondary',
 }: {
   title: string
   entries: ColorKeyEntry[]
   testId?: string
+  color?: KeyColor
 }) {
   return (
-    <KeyRow title={title} testId={testId}>
+    <KeyRow title={title} testId={testId} color={color}>
       {entries.map(({ label, color }, i) => (
         <span
           key={`${i}-${label}`}
@@ -75,15 +82,17 @@ export function GradientKey({
   maxLabel,
   colors,
   testId = 'track-legend',
+  color = 'textSecondary',
 }: {
   title: string
   minLabel: string
   maxLabel: string
   colors: string[]
   testId?: string
+  color?: KeyColor
 }) {
   return (
-    <KeyRow title={title} testId={testId}>
+    <KeyRow title={title} testId={testId} color={color}>
       {minLabel}
       <span
         style={{

@@ -1,31 +1,26 @@
 import React, { useEffect, useRef } from 'react'
 
-import { Tooltip, Typography } from '@mui/material'
+import { Tooltip } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
 import {
   alignmentLength,
-  describeAlignmentQuality,
   structureAlignedSeq,
   transcriptAlignedSeq,
-  uniprotEntryUrl,
 } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import AlignmentRuler from './AlignmentRuler'
-import ChainSelect from './ChainSelect'
 import { ColorKey, GradientKey } from './ColorKey'
 import ColumnOverlays, { SelectionBackdrop } from './ColumnOverlays'
 import FeatureTypeLabel from './FeatureTypeLabel'
-import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
+import MismatchShading from './MismatchShading'
 import ProteinFeatureTrack, { featureTrackHeight } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString from './SplitString'
-import ExternalLink from '../../components/ExternalLink'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
 import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
-import useStructureUniProt from '../hooks/useStructureUniProt'
 import {
   HYDROPHOBICITY_KEY_SCORES,
   PLDDT_BANDS,
@@ -44,7 +39,7 @@ const useStyles = makeStyles()(theme => ({
     overflow: 'auto',
     whiteSpace: 'nowrap',
     flex: 1,
-    paddingBottom: 10,
+    paddingBottom: 2,
     backgroundColor: theme.palette.background.paper,
   },
   trackMessage: {
@@ -74,27 +69,13 @@ interface TrackRow {
   selectsResidue?: boolean
 }
 
-// Which UniProt entry the feature tracks came from. For an AlphaFold model that
-// is in the filename, but for a PDB entry it is resolved via SIFTS and is
-// otherwise invisible — leaving no way to tell which protein got annotated.
-function UniProtProvenance({
-  uniprotId,
-  uniprotName,
+function GutterLabel({
+  label,
+  title,
 }: {
-  uniprotId: string | undefined
-  uniprotName: string | undefined
+  label: string
+  title: React.ReactNode
 }) {
-  return uniprotId ? (
-    <Typography variant="caption" color="textSecondary" component="div">
-      Feature tracks from UniProt{' '}
-      <ExternalLink href={uniprotEntryUrl(uniprotId)}>
-        {uniprotName ? `${uniprotId} (${uniprotName})` : uniprotId}
-      </ExternalLink>
-    </Typography>
-  ) : null
-}
-
-function GutterLabel({ label, title }: { label: string; title: string }) {
   return (
     <Tooltip title={title} placement="left">
       <div
@@ -118,8 +99,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
 }) {
   const {
     alignment,
-    alignmentQuality: quality,
-    showHighlight,
     showProteinTracks,
     showAllFeatureTracks,
     label,
@@ -134,21 +113,12 @@ const ProteinAlignment = observer(function ProteinAlignment({
   const { classes, cx } = useStyles()
   const containerRef = useRef<HTMLDivElement>(null)
   const lastScrolledSelectionRef = useRef<string | undefined>(undefined)
-  // AlphaFold models carry their accession in the URL; PDB entries need a SIFTS
-  // lookup, which also supplies the UniProt->structure residue offset.
   const {
     uniprotId,
-    uniprotName,
     mapUniProtPosition,
     isLoading: uniprotLoading,
     error: uniprotError,
-  } = useStructureUniProt({
-    uniprotId: model.uniprotId,
-    pdbId: model.pdbId,
-    uniProtMappings: model.uniProtMappings,
-    uniProtMappingsError: model.uniProtMappingsError,
-    mappedEntity: model.mappedEntity,
-  })
+  } = model.uniProtEntry
   const {
     groups,
     isLoading: trackLoading,
@@ -214,12 +184,14 @@ const ProteinAlignment = observer(function ProteinAlignment({
     rowLabel: string,
     title: string,
     str: string,
+    shading?: React.ReactNode,
   ): TrackRow => ({
     key,
     height: ROW_HEIGHT,
-    label: rowLabel ? <GutterLabel label={rowLabel} title={title} /> : null,
+    label: <GutterLabel label={rowLabel} title={title} />,
     content: (
       <div style={{ lineHeight: `${ROW_HEIGHT}px` }}>
+        {shading}
         <SplitString model={model} str={str} />
       </div>
     ),
@@ -228,19 +200,22 @@ const ProteinAlignment = observer(function ProteinAlignment({
   const featureStatus =
     featureErrorMessage ?? (featureLoading ? 'Loading UniProt features...' : '')
 
+  // Two rows rather than the pairwise `|`/`:` consensus between them: whether
+  // the residues agree is shaded onto the structure's own letters, so it costs
+  // no height and a mismatch stands out instead of being a missing bar.
   const sequenceRows = [
     sequenceRow(
       'transcript',
       'GENOME',
-      'This is the sequence of the protein from the reference genome transcript',
+      "The protein as the reference genome's transcript translates",
       transcriptAlignedSeq(alignment),
     ),
-    sequenceRow('consensus', '', '', alignment.consensus),
     sequenceRow(
       'structure',
       'STRUCT',
-      'This is the sequence of the protein from the structure file',
+      "The protein as the structure file spells it. Shaded where it differs from the transcript's: amber for a similar amino acid, red for a different one.",
       structureAlignedSeq(alignment),
+      <MismatchShading model={model} />,
     ),
   ]
   const rows: TrackRow[] = [
@@ -298,7 +273,13 @@ const ProteinAlignment = observer(function ProteinAlignment({
         label: (
           <GutterLabel
             label="pLDDT"
-            title="AlphaFold per-residue confidence (pLDDT)"
+            title={
+              <ColorKey
+                title="AlphaFold per-residue confidence (pLDDT)"
+                entries={PLDDT_BANDS}
+                color="inherit"
+              />
+            }
           />
         ),
         content: (
@@ -318,7 +299,18 @@ const ProteinAlignment = observer(function ProteinAlignment({
         label: (
           <GutterLabel
             label="hydro"
-            title="Kyte-Doolittle hydrophobicity (orange hydrophobic, blue hydrophilic)"
+            title={
+              <GradientKey
+                title="Kyte-Doolittle hydrophobicity"
+                testId="hydrophobicity-legend"
+                minLabel="hydrophilic"
+                maxLabel="hydrophobic"
+                colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
+                  hydrophobicityColor(score),
+                )}
+                color="inherit"
+              />
+            }
           />
         ),
         content: (
@@ -340,52 +332,15 @@ const ProteinAlignment = observer(function ProteinAlignment({
   }
 
   return (
+    // The structure's name, quality, chain and UniProt entry are on its header
+    // row, which marks this panel as the open one, so the panel has no title.
     <div data-testid="protein-alignment-panel" data-structure={label}>
-      {/* A header row rather than a float: a floated picker narrowed the whole
-          alignment below it, since a flex container will not overlap a float,
-          so a panel with a chain picker lost 200px of sequence to it. */}
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-        }}
-      >
-        {/* Names the structure this panel aligns, since several panels stack
-            over one canvas and nothing else tells 1TUP's from 1YCR's. What the
-            rows mean is in the help dialog. */}
-        <Typography variant="subtitle2">
-          {label}
-          {/* Identity and coverage live in the header, which stays visible when
-              this panel is hidden. What is left here is what only means
-              something inside the panel. */}
-          {quality ? (
-            <Typography
-              variant="caption"
-              color="textSecondary"
-              sx={{ ml: 1 }}
-              data-testid="alignment-quality"
-            >
-              {describeAlignmentQuality(quality)}
-              {showHighlight ? ', green is the aligned portion' : ''}
-            </Typography>
-          ) : null}
-        </Typography>
-        <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
-          <ChainSelect model={model} />
-          <ProteinAlignmentHelpButton model={model} />
-        </div>
-      </div>
-      {showProteinTracks ? (
-        <UniProtProvenance uniprotId={uniprotId} uniprotName={uniprotName} />
-      ) : null}
       <div
         style={{
           display: 'flex',
           fontSize: 9,
           fontFamily: 'monospace',
-          margin: 8,
-          paddingBottom: 8,
+          margin: '2px 8px 4px',
         }}
         onMouseEnter={() => {
           model.setIsMouseInAlignment(true)
@@ -459,20 +414,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
           </div>
         </div>
       </div>
-      {showProteinTracks && confidenceCells.length > 0 ? (
-        <ColorKey title="pLDDT" entries={PLDDT_BANDS} />
-      ) : null}
-      {showProteinTracks && hydrophobicityCells.length > 0 ? (
-        <GradientKey
-          title="Kyte-Doolittle"
-          testId="hydrophobicity-legend"
-          minLabel="hydrophilic"
-          maxLabel="hydrophobic"
-          colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
-            hydrophobicityColor(score),
-          )}
-        />
-      ) : null}
     </div>
   )
 })

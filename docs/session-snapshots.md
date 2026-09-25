@@ -70,8 +70,8 @@ with the most identical residues over the shorter of transcript and chain, so a
 short peptide beats the long partner it is bound to and a fusion construct still
 wins on the chain that holds the whole transcript. DNA and RNA chains are never
 candidates. `mappedEntityId` (an mmCIF entity id, `"1"`, `"2"`, …) overrides
-that choice and is what the alignment panel's **Mapped chain** picker writes, so
-a saved session restores the chain the user chose along with the alignment
+that choice and is what the chain picker on the structure's header row writes,
+so a saved session restores the chain the user chose along with the alignment
 computed against it.
 
 A snapshot can also carry its own `pairwiseAlignment`, transcript row first,

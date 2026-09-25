@@ -1,5 +1,3 @@
-import { useMemo } from 'react'
-
 import {
   chooseUniProtMappingForEntity,
   identityUniProtPositionMap,
@@ -24,8 +22,8 @@ export interface StructureUniProt {
 }
 
 /**
- * Resolves which UniProt entry a loaded structure represents, and how UniProt
- * positions line up with its structure-sequence positions.
+ * Which UniProt entry a loaded structure represents, and how UniProt positions
+ * line up with its structure-sequence positions.
  *
  * AlphaFold models are the UniProt sequence, so the accession comes straight
  * from the filename and positions map 1:1. Experimental PDB entries need SIFTS:
@@ -35,7 +33,7 @@ export interface StructureUniProt {
  * resolve would have been drawn at the wrong residues. The structure model
  * fetches SIFTS, since its mapping reads the same segments.
  */
-export default function useStructureUniProt({
+export function structureUniProt({
   uniprotId: alphaFoldUniprotId,
   pdbId,
   uniProtMappings,
@@ -48,36 +46,25 @@ export default function useStructureUniProt({
   uniProtMappingsError: unknown
   mappedEntity: SegmentEntity | undefined
 }): StructureUniProt {
-  // Memoized because the mapper is a fresh closure each time it's built, and
-  // consumers key their own layout memos on its identity.
-  const siftsMapping = useMemo(
-    () =>
-      uniProtMappings
-        ? chooseUniProtMappingForEntity(uniProtMappings, mappedEntity)
-        : undefined,
-    [uniProtMappings, mappedEntity],
-  )
-  const siftsPositionMap = useMemo(
-    () =>
-      siftsMapping
-        ? makeUniProtPositionMap(siftsMapping.segments)
-        : identityUniProtPositionMap,
-    [siftsMapping],
-  )
-
-  return alphaFoldUniprotId
-    ? {
-        uniprotId: alphaFoldUniprotId,
-        uniprotName: undefined,
-        mapUniProtPosition: identityUniProtPositionMap,
-        isLoading: false,
-        error: undefined,
-      }
-    : {
-        uniprotId: siftsMapping?.accession,
-        uniprotName: siftsMapping?.name,
-        mapUniProtPosition: siftsPositionMap,
-        isLoading: !!pdbId && !uniProtMappings && !uniProtMappingsError,
-        error: uniProtMappingsError,
-      }
+  if (alphaFoldUniprotId) {
+    return {
+      uniprotId: alphaFoldUniprotId,
+      uniprotName: undefined,
+      mapUniProtPosition: identityUniProtPositionMap,
+      isLoading: false,
+      error: undefined,
+    }
+  }
+  const sifts = uniProtMappings
+    ? chooseUniProtMappingForEntity(uniProtMappings, mappedEntity)
+    : undefined
+  return {
+    uniprotId: sifts?.accession,
+    uniprotName: sifts?.name,
+    mapUniProtPosition: sifts
+      ? makeUniProtPositionMap(sifts.segments)
+      : identityUniProtPositionMap,
+    isLoading: !!pdbId && !uniProtMappings && !uniProtMappingsError,
+    error: uniProtMappingsError,
+  }
 }

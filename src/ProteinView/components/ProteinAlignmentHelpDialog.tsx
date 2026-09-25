@@ -38,21 +38,23 @@ export default function ProteinAlignmentHelpDialog({
           and EMBOSS-style gap penalties) to get a pairwise alignment of the
           genome&apos;s representation of the protein and the structure
           file&apos;s representation of the protein. Positions that fall in a
-          gap are unmapped and will not highlight. The header reports the
-          identity and how much of the structure the alignment covers; an
-          alignment always comes back with something, so a low-similarity
-          warning there means the mapped positions may be chance rather than
-          homology, and the chain picker or a different isoform is the first
-          thing to check.
+          gap are unmapped and will not highlight. Each structure&apos;s row in
+          the header reports the identity and how much of the transcript it
+          covers; an alignment always comes back with something, so a
+          low-similarity warning there means the mapped positions may be chance
+          rather than homology, and the chain picker or a different isoform is
+          the first thing to check.
         </Typography2>
         <Typography2>
           The GENOME row is the transcript&apos;s translation and the STRUCT row
-          is the structure file&apos;s own sequence. The ruler under them counts
-          residues the way the structure&apos;s authors numbered them, which for
-          a PDB entry is the numbering papers and UniProt cite (p53&apos;s R248
-          is residue 248 in 1TUP even though the crystallised fragment starts at
-          residue 94). Click a residue to select it and jump the genome view to
-          its codon; hover one to light it in the 3D view.
+          is the structure file&apos;s own sequence, shaded amber where it
+          differs from the transcript by a similar amino acid and red where it
+          differs by a dissimilar one. The ruler under them counts residues the
+          way the structure&apos;s authors numbered them, which for a PDB entry
+          is the numbering papers and UniProt cite (p53&apos;s R248 is residue
+          248 in 1TUP even though the crystallised fragment starts at residue
+          94). Click a residue to select it and jump the genome view to its
+          codon; hover one to light it in the 3D view.
         </Typography2>
         <Typography2>
           If you need a 100% fidelity protein, you can do a folding with e.g.

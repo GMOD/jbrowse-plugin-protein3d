@@ -112,8 +112,8 @@ either way.
 **Complexes.** A multi-chain prediction, such as an AlphaFold 3 or Boltz
 complex, maps the transcript to the protein chain with the highest identity over
 the shorter sequence, and never to a DNA or RNA chain. When two chains are
-copies or paralogs and the wrong one wins, the alignment panel's **Mapped
-chain** picker overrides it, and a spec can do the same with `mappedEntityId`.
+copies or paralogs and the wrong one wins, the chain picker on the structure's
+header row overrides it, and a spec can do the same with `mappedEntityId`.
 
 **Several models.** A prediction run usually writes each ranked model to its own
 file; list the ones you want in `structures`. A single file with several `MODEL`

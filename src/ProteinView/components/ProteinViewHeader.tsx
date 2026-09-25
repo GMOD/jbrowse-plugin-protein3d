@@ -18,6 +18,7 @@ import { MolstarLegendKey } from './ColorKey'
 import HeaderStructureInfo from './HeaderStructureInfo'
 import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
+import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import { COLOR_SCHEMES } from '../applyColorTheme'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
@@ -28,26 +29,31 @@ const ColorSchemeSelect = observer(function ColorSchemeSelect({
   model: JBrowsePluginProteinViewModel
 }) {
   return (
-    <TextField
-      select
-      size="small"
-      label="Color"
-      value={model.colorScheme}
-      onChange={event => {
-        const scheme = COLOR_SCHEMES.find(s => s.value === event.target.value)
-        if (scheme) {
-          model.setColorScheme(scheme.value)
-        }
-      }}
-      slotProps={{ select: { native: false } }}
-      sx={{ minWidth: 180 }}
-    >
-      {COLOR_SCHEMES.map(scheme => (
-        <MenuItem key={scheme.value} value={scheme.value}>
-          {scheme.label}
-        </MenuItem>
-      ))}
-    </TextField>
+    <Tooltip title="Color scheme" placement="left">
+      <TextField
+        select
+        size="small"
+        variant="standard"
+        value={model.colorScheme}
+        onChange={event => {
+          const scheme = COLOR_SCHEMES.find(s => s.value === event.target.value)
+          if (scheme) {
+            model.setColorScheme(scheme.value)
+          }
+        }}
+        slotProps={{
+          select: { native: false },
+          input: { disableUnderline: true, sx: { fontSize: 12 } },
+          htmlInput: { 'aria-label': 'Color scheme' },
+        }}
+      >
+        {COLOR_SCHEMES.map(scheme => (
+          <MenuItem key={scheme.value} value={scheme.value} dense>
+            {scheme.label}
+          </MenuItem>
+        ))}
+      </TextField>
+    </Tooltip>
   )
 })
 
@@ -145,13 +151,14 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
         <div
           style={{
             display: 'flex',
-            gap: '8px',
+            gap: 4,
             alignItems: 'center',
             flexShrink: 0,
           }}
         >
           <ColorSchemeSelect model={model} />
           <DisplaySettingsMenu model={model} />
+          <ProteinAlignmentHelpButton model={model} />
         </div>
       </div>
       {colorLegend ? (

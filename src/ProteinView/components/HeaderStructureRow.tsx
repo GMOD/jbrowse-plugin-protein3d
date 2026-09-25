@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
+import Link from '@mui/material/Link'
 import Tooltip from '@mui/material/Tooltip'
 import Typography from '@mui/material/Typography'
 import { observer } from 'mobx-react'
@@ -12,10 +13,15 @@ import {
   LOW_IDENTITY_OVER_SHORTER,
   SHORT_ALIGNMENT_IDENTITY,
   SHORT_ALIGNMENT_RESIDUES,
+  describeAlignmentQuality,
   describeCoveredRange,
   describeTranscriptCoverage,
   isLowSimilarity,
+  uniprotEntryUrl,
 } from 'p2s_mapper'
+
+import ChainSelect from './ChainSelect'
+import { describeCoverage } from '../describeCoverage'
 
 import type {
   JBrowsePluginProteinStructureModel,
@@ -28,6 +34,32 @@ const LOW_SIMILARITY_EXPLANATION = `Under ${Math.round(
   SHORT_ALIGNMENT_IDENTITY * 100,
 )}% for an alignment of fewer than ${SHORT_ALIGNMENT_RESIDUES} residues): an alignment this weak is what two unrelated proteins produce, so the positions it maps may be unrelated. Check the mapped chain, the transcript isoform, or import a curated alignment.`
 
+// Which UniProt entry the feature tracks annotate. For an AlphaFold model that
+// is in the filename, but for a PDB entry it is resolved via SIFTS and is
+// otherwise invisible — leaving no way to tell which protein got annotated.
+const UniProtLink = observer(function UniProtLink({
+  structure,
+}: {
+  structure: JBrowsePluginProteinStructureModel
+}) {
+  const { uniprotId, uniprotName } = structure.uniProtEntry
+  return uniprotId ? (
+    <Tooltip
+      title={`Feature tracks from UniProt ${uniprotId}${uniprotName ? ` (${uniprotName})` : ''}`}
+    >
+      <Link
+        variant="caption"
+        href={uniprotEntryUrl(uniprotId)}
+        target="_blank"
+        rel="noreferrer"
+        sx={{ flexShrink: 0 }}
+      >
+        UniProt {uniprotId}
+      </Link>
+    </Tooltip>
+  ) : null
+})
+
 const StructureRow = observer(function StructureRow({
   model,
   structure,
@@ -36,9 +68,9 @@ const StructureRow = observer(function StructureRow({
   structure: JBrowsePluginProteinStructureModel
 }) {
   const { label, alignmentQuality: quality, statusMessage } = structure
-  const coveredRange = quality ? describeCoveredRange(quality) : undefined
   const switchable = model.showAlignment && model.structures.length > 1
   const open = model.alignmentStructure === structure
+  const coveredRange = quality ? describeCoveredRange(quality) : undefined
   return (
     // data-label rather than data-structure: that one names the alignment
     // panel, and a selector matching both finds whichever the DOM has first
@@ -46,7 +78,13 @@ const StructureRow = observer(function StructureRow({
       data-testid="structure-row"
       data-label={label}
       data-open={switchable ? open : undefined}
-      style={{ display: 'flex', alignItems: 'center', gap: 8, minHeight: 24 }}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 8,
+        minHeight: 24,
+        minWidth: 0,
+      }}
     >
       {switchable ? (
         <Tooltip title={open ? 'Alignment shown below' : 'Show alignment'}>
@@ -70,29 +108,36 @@ const StructureRow = observer(function StructureRow({
           </span>
         </Tooltip>
       ) : null}
-      <Typography variant="caption" sx={{ fontWeight: 'bold' }}>
+      <Typography variant="caption" sx={{ fontWeight: 'bold', flexShrink: 0 }}>
         {label}
       </Typography>
       {statusMessage ? (
         <Typography
           variant="caption"
           color="error"
+          noWrap
           data-testid="structure-status"
         >
           {statusMessage}
         </Typography>
       ) : null}
       {quality ? (
-        <Typography
-          variant="caption"
-          color="textSecondary"
-          data-testid="header-alignment-quality"
+        <Tooltip
+          title={`${describeTranscriptCoverage(quality)}${coveredRange ? `, ${coveredRange}` : ''}; ${describeAlignmentQuality(quality)}`}
         >
-          {describeTranscriptCoverage(quality)}
-          {coveredRange ? `, ${coveredRange}` : ''}
-        </Typography>
+          <Typography
+            variant="caption"
+            color="textSecondary"
+            noWrap
+            data-testid="header-alignment-quality"
+          >
+            {describeCoverage(quality)}
+          </Typography>
+        </Tooltip>
       ) : null}
+      <UniProtLink structure={structure} />
       <div style={{ flex: 1 }} />
+      {open && model.showAlignment ? <ChainSelect model={structure} /> : null}
       {quality && isLowSimilarity(quality) ? (
         <Tooltip title={LOW_SIMILARITY_EXPLANATION}>
           <Chip
@@ -111,6 +156,7 @@ const StructureRow = observer(function StructureRow({
           onClick={() => {
             model.removeStructure(structure)
           }}
+          sx={{ p: 0.25 }}
         >
           <CloseIcon fontSize="small" />
         </IconButton>
@@ -123,7 +169,9 @@ const StructureRow = observer(function StructureRow({
  * One line per structure, in the header the reader always sees. The identity
  * and coverage readout used to live only inside the pairwise panel, which the
  * same reader can hide — so how much of the transcript a structure speaks for,
- * and whether the mapping is chance, were one click away from invisible.
+ * and whether the mapping is chance, were one click away from invisible. The
+ * open structure's row also carries what used to head its alignment panel:
+ * the mapped-chain picker.
  */
 const HeaderStructureRows = observer(function HeaderStructureRows({
   model,
