@@ -9,7 +9,10 @@ import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 
-import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
+import type {
+  ProteinStructureSpec,
+  ProteinViewSpec,
+} from '../ProteinView/proteinViewSpec'
 import type { ResidueRanges } from '../ProteinView/residueRanges'
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type {
@@ -36,6 +39,63 @@ interface LaunchStructure {
   connectedViewId?: string
 }
 
+// The view's own settings, which pass straight through to its snapshot, so a
+// setting ProteinViewSpec gains reaches a launch without being listed here too.
+// Listing them was how `showAllFeatureTracks` came to be dropped.
+interface LaunchViewSettings extends Omit<
+  ProteinViewSpec,
+  'structures' | 'colorScheme' | 'alignmentAlgorithm'
+> {
+  // untrusted text from a URL, coerced to the model's enumerations
+  alignmentAlgorithm?: string
+  colorScheme?: string
+}
+
+export function launchViewSnapshot(
+  { alignmentAlgorithm, colorScheme, ...settings }: LaunchViewSettings,
+  structures: ProteinStructureSpec[],
+) {
+  return proteinViewSnapshot({
+    ...settings,
+    alignmentAlgorithm:
+      alignmentAlgorithm === undefined
+        ? undefined
+        : coerceAlignmentAlgorithm(alignmentAlgorithm),
+    colorScheme:
+      colorScheme === undefined ? undefined : coerceColorScheme(colorScheme),
+    structures,
+  })
+}
+
+interface LaunchArgs extends LaunchViewSettings {
+  session: AbstractSessionModel
+  url?: string
+  uniprotId?: string
+  // RCSB entry id, the experimental-structure counterpart of uniprotId
+  pdbId?: string
+  // several structures in one view, each mapped to the same transcript and
+  // superposed; the top-level url/uniprotId/pdbId is the one-structure
+  // shorthand for this
+  structures?: LaunchStructure[]
+  transcriptId?: string
+  userProvidedTranscriptSequence?: string
+  feature?: SimpleFeatureSerialized
+  connectedViewId?: string
+  connectedView?: ConnectedViewSpec
+  // when this launch creates its own connected genome view, place the protein
+  // view side-by-side (left genome | right protein). Explicit override; falls
+  // back to the launch-dialog localStorage preference.
+  sideBySide?: boolean
+  // 0-based half-open structure-residue ranges, one or an array, to pre-select
+  // on load, lit across the 3D structure, connected genome view and alignment
+  // as a domain click would
+  initialSelection?: ResidueRanges
+  // the same, by inclusive author residue numbers (R248 is 248-248)
+  initialResidues?: ResidueRanges
+  // the same, by 1-based inclusive residues of the transcript's translation
+  initialTranscriptResidues?: ResidueRanges
+}
+
 export default function LaunchProteinViewExtensionPointF(
   pluginManager: PluginManager,
 ) {
@@ -54,73 +114,26 @@ export default function LaunchProteinViewExtensionPointF(
     // assumption that the result was ignored; it is not. The handler returns
     // its extendee at each exit now, like jbrowse-components' own
     // LaunchDotplotView does.
-    async (args: {
-      session: AbstractSessionModel
-      url?: string
-      uniprotId?: string
-      // RCSB entry id, the experimental-structure counterpart of uniprotId
-      pdbId?: string
-      // several structures in one view, each mapped to the same transcript
-      // and superposed; the top-level url/uniprotId/pdbId is the one-structure
-      // shorthand for this
-      structures?: LaunchStructure[]
-      transcriptId?: string
-      userProvidedTranscriptSequence?: string
-      feature?: SimpleFeatureSerialized
-      connectedViewId?: string
-      connectedView?: ConnectedViewSpec
-      alignmentAlgorithm?: string
-      colorScheme?: string
-      displayName?: string
-      height?: number
-      showControls?: boolean
-      showHighlight?: boolean
-      showAlignment?: boolean
-      showProteinTracks?: boolean
-      compactTracks?: boolean
-      autoScrollAlignment?: boolean
-      zoomToBaseLevel?: boolean
-      // when this launch creates its own connected genome view, place the
-      // protein view side-by-side (left genome | right protein). Explicit
-      // override; falls back to the launch-dialog localStorage preference.
-      sideBySide?: boolean
-      // 0-based half-open structure-residue ranges, one or an array, to
-      // pre-select on load, lit across the 3D structure, connected genome view
-      // and alignment as a domain click would
-      initialSelection?: ResidueRanges
-      // the same, by inclusive author residue numbers (R248 is 248-248)
-      initialResidues?: ResidueRanges
-      // the same, by 1-based inclusive residues of the transcript's translation
-      initialTranscriptResidues?: ResidueRanges
-    }) => {
+    async (args: LaunchArgs) => {
       const {
         session,
         url,
         uniprotId,
         pdbId,
+        structures: requestedStructures,
         transcriptId,
         userProvidedTranscriptSequence,
         feature,
         connectedViewId,
         connectedView,
-        alignmentAlgorithm,
-        colorScheme,
-        displayName,
-        height,
-        showControls,
-        showHighlight,
-        showAlignment,
-        showProteinTracks,
-        compactTracks,
-        autoScrollAlignment,
-        zoomToBaseLevel,
         sideBySide,
         initialSelection,
         initialResidues,
         initialTranscriptResidues,
+        ...settings
       } = args
-      const requested: LaunchStructure[] = args.structures?.length
-        ? args.structures
+      const requested: LaunchStructure[] = requestedStructures?.length
+        ? requestedStructures
         : [
             {
               url,
@@ -203,27 +216,7 @@ export default function LaunchProteinViewExtensionPointF(
 
       const proteinView = session.addView(
         'ProteinView',
-        proteinViewSnapshot({
-          // a URL param is untrusted text; the model properties are enumerations
-          alignmentAlgorithm:
-            alignmentAlgorithm === undefined
-              ? undefined
-              : coerceAlignmentAlgorithm(alignmentAlgorithm),
-          colorScheme:
-            colorScheme === undefined
-              ? undefined
-              : coerceColorScheme(colorScheme),
-          displayName,
-          height,
-          showControls,
-          showHighlight,
-          showAlignment,
-          showProteinTracks,
-          compactTracks,
-          autoScrollAlignment,
-          zoomToBaseLevel,
-          structures,
-        }),
+        launchViewSnapshot(settings, structures),
       )
 
       if (ownsConnectedView) {

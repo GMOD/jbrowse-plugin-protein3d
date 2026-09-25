@@ -397,14 +397,6 @@ const Structure = types
     /**
      * #action
      */
-    showFeatureType(type: string) {
-      const newSet = new Set(self.hiddenFeatureTypes)
-      newSet.delete(type)
-      self.hiddenFeatureTypes = newSet
-    },
-    /**
-     * #action
-     */
     showAllFeatureTypes() {
       self.hiddenFeatureTypes = new Set()
     },
