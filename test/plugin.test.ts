@@ -27,6 +27,7 @@ import {
   waitForLaunchEnabled,
   waitForStructureRendered,
   waitForTrackLoad,
+  waitForUniProtTablePainted,
 } from './setup'
 
 import type { ChildProcess } from 'node:child_process'
@@ -129,6 +130,7 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('04-protein-dialog'))
 
     await waitForLaunchEnabled(page)
+    await waitForUniProtTablePainted(page)
     await captureScreenshot(page, screenshot('05-dialog-ready'))
     await clickLaunch(page)
 

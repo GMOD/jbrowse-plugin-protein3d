@@ -597,6 +597,26 @@ export async function waitForLaunchEnabled(page: Page): Promise<void> {
   })
 }
 
+// Launch enables before a v4 host has painted the UniProt table: those hosts
+// serve MUI's components lazily behind a null fallback, so the rows, their
+// accession links and status chips arrive up to 4 s later. A capture taken on
+// the button alone shows an empty table.
+export async function waitForUniProtTablePainted(page: Page): Promise<void> {
+  await page.waitForFunction(
+    dialog => {
+      const rows = [...document.querySelectorAll(`${dialog} tbody tr`)]
+      return (
+        rows.length > 0 &&
+        rows.every(
+          row => row.querySelector('a') && row.querySelector('.MuiChip-root'),
+        )
+      )
+    },
+    { timeout: 30_000 },
+    LAUNCH_DIALOG,
+  )
+}
+
 export async function clickLaunch(page: Page): Promise<void> {
   const button = await page.$(LAUNCH_BUTTON)
   if (!button) {
