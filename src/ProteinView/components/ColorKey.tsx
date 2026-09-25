@@ -39,7 +39,8 @@ function KeyRow({
         paddingLeft: 8,
       }}
     >
-      {title}:{children}
+      <span>{title}:</span>
+      {children}
     </Typography>
   )
 }
