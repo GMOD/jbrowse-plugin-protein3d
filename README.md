@@ -64,6 +64,9 @@ screen means:
 - [UniProt feature tracks](docs/uniprot-feature-tracks.md): where the accession
   and the UniProt-to-structure offset come from for AlphaFold models, PDB
   entries and your own models.
+- [The secret sauce](docs/secret-sauce.md): one variable drawn with one scale in
+  the 3D view, the alignment strip and the genome track, and the ideas that
+  build on it, such as painting any genome track onto the structure.
 - [Residue numbering](docs/residue-numbering.md): how a paper's R248 becomes
   position 154 in the file, `label_seq_id` 155 for Mol\*, and the codon on
   chr17, and how a session spec names a residue the literature's way.
