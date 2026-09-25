@@ -221,15 +221,23 @@ async function probeContextMenu(page) {
   }
 
   await page.mouse.click(point.x, point.y, { button: 'right' })
+  // The view header's Tune menu is `keepMounted`, so its menuitems sit in the
+  // DOM (aria-hidden) before anything is right-clicked. Reading them as "the
+  // menu" failed v4.0.0 and v4.3.0 whenever the real menu lagged the first read.
   const deadline = Date.now() + 5000
+  const hasHostRow = ls => ls.some(l => l.includes('Open feature details'))
   let labels = []
-  while (Date.now() < deadline && labels.length === 0) {
+  while (Date.now() < deadline && !hasHostRow(labels)) {
+    await new Promise(r => setTimeout(r, 250))
     labels = await page.$$eval('[role="menuitem"]', els =>
-      els.map(el => el.textContent ?? ''),
+      els
+        .filter(
+          el =>
+            !el.closest('[aria-hidden="true"]') &&
+            el.getClientRects().length > 0,
+        )
+        .map(el => el.textContent ?? ''),
     )
-    if (labels.length === 0) {
-      await new Promise(r => setTimeout(r, 250))
-    }
   }
   await page.keyboard.press('Escape').catch(() => {})
   return {
@@ -239,7 +247,7 @@ async function probeContextMenu(page) {
     // the whole menu down with it, so asserting only on our row would call that
     // outage a missing feature.
     ours: labels.some(l => l.includes('Launch protein view')),
-    hostRows: labels.some(l => l.includes('Open feature details')),
+    hostRows: hasHostRow(labels),
   }
 }
 
