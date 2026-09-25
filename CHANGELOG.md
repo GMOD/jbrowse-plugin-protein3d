@@ -1,3 +1,50 @@
+## [0.15.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.0...v0.15.1) (2026-09-25)
+
+### Bug Fixes
+
+- Accept the undefined seed v4 hosts give TracksContainerComponent ([dac164e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/dac164e335e2927f2ba7d057a76c4ad80cad35a6))
+- Resolve linked hovers through the genome view's assembly ([0338157](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/033815793ab88e143e4c72264c9899fe4dcc0c3b))
+- Hydrophobicity is Kyte-Doolittle in 3D too, on a diverging palette ([a978c28](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a978c28e49c8a15109c000984b3e8e97d75e3cd7))
+- Colour the linear pLDDT and AlphaMissense tracks on the hosts that draw them ([f1c4094](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f1c409466f1701b48b7cd306f38518c8cc5db29e))
+- A modified residue takes its parent's hydropathy, and legends keep case ([77b305a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/77b305ac6e7f130006a894d41b07d052f9f477d5))
+- Space the legend's title from its first label ([a251527](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a251527579eff852b576232c020aa8a979f43ae7))
+- Settle a worker alignment in one action, and keep a pending chain pick ([a71b371](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a71b371c31f155e276d2a6504bfe322db5a8ea6d))
+- An import or a cancelled pick no longer strands the alignment ([2e0ed3a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2e0ed3af93783202a533353b8cb452509efa0d7c))
+- The right-clicked isoform launches while the others are still ranked ([1ae92e8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1ae92e8f5aed968ce1718a9233acde745bd1bdb6))
+- Read only the open context menu, not Tune's keepMounted items ([641d025](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/641d0259d1e6c36a8d23013102ae1721bd99f237))
+
+### Chores
+
+- Bump @jbrowse/* to 5.0.0-beta.9 ([b0df713](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b0df7134521b22f47f9ece24c6d28be9811a8c23))
+- Take 5.0.0-beta.9 as main's stand-in in host-reexports.json ([a86b27f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a86b27fb50082101e9a130bb6ceefc645a2596d0))
+
+### Documentation
+
+- What is still open, and the two plans that went stale ([e9b282a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e9b282a21b9a3fb48db2e8eb7274d6946ea7ff71))
+- Every genome-hover consumer goes through assemblyNaming ([7d9c5fe](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7d9c5fea27a0f2b1847bad1f455ec7c7ca61c236))
+- StructureModel's size, and superseded DPs the worker still runs ([bad752b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bad752b989e36d3d4563788d52d964cdeca5ac64))
+- The secret sauce, one encoding across every view, and the ideas it opens ([eb12d0f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/eb12d0f5455ee0fde14df9f52f499b28ad6d533a))
+
+### Features
+
+- Show the structure's colour key, and one for the hydrophobicity strip ([a88b37e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a88b37e922897777278d3ef57d76eb151c8f9fe1))
+- Align the transcript to the structure in the RPC worker ([c70176a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c70176a2d5bb26d12d1868f45a24a8cd29a60aab))
+- Rank the launch dialog's isoforms in the RPC worker ([c8f7568](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c8f756842a97a1a6e166f632ffde119a54fa38bc))
+
+### Refactoring
+
+- Translate transcripts with core's translateTranscript ([424f558](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/424f55835604d6f5691d185a5f0129ec447cf88d))
+
+### Styling
+
+- Prettier on kyteDoolittleColorTheme.ts ([e4a1ddf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e4a1ddfb2fd6e35d27b4e673df6b3f05cf3a247d))
+
+### Tests
+
+- Nightly screenshots with the Kyte-Doolittle ensemble and its colour key ([30beb6e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/30beb6e96ea5dc122294b374bc7a7bcbbd5c38bb))
+- Capture the launch dialog once its UniProt table has painted ([72bb530](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/72bb530c13acb2cb30a09de3849028bdd8125129))
+- V4.3.0 dialog capture with the UniProt table painted ([d7ffff5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d7ffff538b28f4628aa39bf2bc8aad778ab10a4a))
+
 ## [0.15.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.14.0...v0.15.0) (2026-09-24)
 
 ### Bug Fixes
