@@ -1,12 +1,24 @@
-From the 2026-09-13 review against the jb2hubs protein browser, in the order
-worth doing:
+Open, in the order worth doing. Each was checked against the code on 2026-09-25.
 
-- jbrowse.org's `tp53_structures` tutorial opens a superposition and
-  `initialResidues` 248 on 1TUP but no NMR ensemble; `docs/demos.md` now has
-  2L14 (twenty models), which the tutorial could borrow.
+- The pairwise alignment runs on the main thread, capped at 40M cells
+  (`MAX_ALIGNMENT_CELLS` in p2s_mapper), so a titin-sized transcript against a
+  long chain is refused rather than aligned. A worker is the only way to lift
+  the cap.
 
-- page side (jb2hubs): once a release carries `initialTranscriptResidues`, the
-  "opens on…" sessions should send the domain map's own numbering and drop
-  `siftsNumbering.ts` and most of the "approximate" captions. Every selection
-  field now takes an array of ranges too, so an interface focus can send its
-  contact stretches rather than 30–370.
+- Colour the 3D structure by AlphaMissense pathogenicity: a custom Mol\*
+  `ColorTheme` reading per-residue scores through the alignment, registered the
+  way `mappedChainColorTheme.ts` is.
+
+- `structureModel.ts` is 1,450 lines. The alignment-building autorun and the
+  per-residue track getters (`confidenceCells`, `hydrophobicityCells`) could
+  move out; the Mol\* side effects already live in per-concern factories
+  (`structureLoader`, `lociChannel`, `structureSuperposer`, `viewInteractions`).
+
+- The e2e's `05-dialog-ready` capture on v4.3.0 fires when Launch enables,
+  before the host's lazily served MUI chunks paint, so the UniProt table and
+  links are blank in it; they arrive within 4 s. A capture that waits for the
+  table row would keep a regenerated reference image honest.
+
+- p2s_mapper's `toAuthorRange` and `segmentsForAccession` have had no consumer
+  since jb2hubs switched to `initialTranscriptResidues` (2026-09-25). Drop them
+  at its next major version.

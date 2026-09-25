@@ -150,7 +150,7 @@ export default function LaunchProteinViewExtensionPointF(
       // explicit `feature` + sequence. resolveShortLaunch derives both from the
       // connected track, and the same mapping then applies to every structure
       // of the launch. Failures surface via notify and abort — we never leave a
-      // half-wired view (see agent-docs/urlparam_plan.md).
+      // half-wired view.
       let resolved: ResolvedShortLaunch | undefined
       if (!userProvidedTranscriptSequence && transcriptId) {
         try {
