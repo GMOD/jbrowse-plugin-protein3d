@@ -40,7 +40,9 @@ export default function useAlphaFoldDBSearch({
     transcripts: transcriptOptions,
     isoformSequences,
     structureSequence,
+    ranking,
     isLoading: isIsoformLoading,
+    isRanking,
     error: isoformError,
     partialFailure: isoformPartialFailure,
     selectedTranscriptId: userSelection,
@@ -58,6 +60,7 @@ export default function useAlphaFoldDBSearch({
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
+    isRanking && 'Aligning isoforms to the structure',
     isAlphaFoldLoading && 'Asking AlphaFold DB for models',
   ].filter(s => typeof s === 'string')
   const isLoading = loadingStatuses.length > 0
@@ -74,6 +77,7 @@ export default function useAlphaFoldDBSearch({
     transcriptOptions,
     selectedTranscript,
     isoformSequences,
+    ranking,
     isoformPartialFailure,
     userSelectedProteinSequence,
 

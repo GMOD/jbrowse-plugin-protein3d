@@ -113,7 +113,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
           </Typography>
         )}
 
-        {state.isoformSequences &&
+        {state.ranking &&
         state.selectedTranscript &&
         state.structureSequence &&
         state.uniprotId ? (
@@ -125,7 +125,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
                 structureSequence={state.structureSequence}
                 feature={feature}
                 isoforms={state.transcriptOptions}
-                isoformSequences={state.isoformSequences}
+                ranking={state.ranking}
               />
             </div>
             <AlphaFoldDBSearchStatus

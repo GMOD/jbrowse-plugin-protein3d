@@ -1,11 +1,18 @@
 import { RpcMethodType } from '@jbrowse/core/pluggableElementTypes'
-import { alignTranscriptToEntity, chooseMappedEntity } from 'p2s_mapper'
+import {
+  alignTranscriptToEntity,
+  chooseMappedEntity,
+  classifyIsoforms,
+  pickStructureSequence,
+} from 'p2s_mapper'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type {
   AlignmentAlgorithm,
+  ClassifiedIsoforms,
   EntityCandidate,
   EntitySelection,
+  Isoform,
   ScoredAlignment,
 } from 'p2s_mapper'
 
@@ -21,6 +28,30 @@ interface AlignArgs {
   algorithm: AlignmentAlgorithm
 }
 
+interface RankArgs {
+  isoforms: Isoform[]
+  structureSequences: string[]
+}
+
+export interface IsoformRanking {
+  /** the chain the isoforms are compared against; see pickStructureSequence */
+  structureSequence?: string
+  ranking: ClassifiedIsoforms
+}
+
+/** The launch dialog's isoform order: one alignment per chain to pick the
+ * chain, then one per isoform that does not match it exactly. */
+export function rankIsoforms(
+  isoforms: Isoform[],
+  structureSequences?: string[],
+): IsoformRanking {
+  const structureSequence = pickStructureSequence(structureSequences, isoforms)
+  return {
+    structureSequence,
+    ranking: classifyIsoforms({ isoforms, structureSequence }),
+  }
+}
+
 declare module '@jbrowse/core/rpc/RpcRegistry' {
   interface RpcRegistry {
     ProteinChooseMappedEntity: {
@@ -30,6 +61,10 @@ declare module '@jbrowse/core/rpc/RpcRegistry' {
     ProteinAlignTranscriptToEntity: {
       args: AlignArgs
       return: ScoredAlignment | undefined
+    }
+    ProteinRankIsoforms: {
+      args: RankArgs
+      return: IsoformRanking
     }
   }
 }
@@ -54,7 +89,16 @@ export class ProteinAlignTranscriptToEntity extends RpcMethodType<'ProteinAlignT
   }
 }
 
+export class ProteinRankIsoforms extends RpcMethodType<'ProteinRankIsoforms'> {
+  name = 'ProteinRankIsoforms' as const
+
+  async execute({ isoforms, structureSequences }: RankArgs) {
+    return rankIsoforms(isoforms, structureSequences)
+  }
+}
+
 export default function AlignTranscriptRpcF(pluginManager: PluginManager) {
   pluginManager.addRpcMethod(pm => new ProteinChooseMappedEntity(pm))
   pluginManager.addRpcMethod(pm => new ProteinAlignTranscriptToEntity(pm))
+  pluginManager.addRpcMethod(pm => new ProteinRankIsoforms(pm))
 }

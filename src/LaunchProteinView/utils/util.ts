@@ -200,14 +200,6 @@ export interface IsoformSequence {
 
 export type IsoformSequences = Record<string, IsoformSequence>
 
-/** The translations that have arrived, as the records p2s_mapper ranks. */
-export function isoformRecords(isoformSequences?: IsoformSequences): Isoform[] {
-  return Object.entries(isoformSequences ?? {}).map(([id, { seq }]) => ({
-    id,
-    seq,
-  }))
-}
-
 /** Every transcript the dialog lists, in its order, carrying whichever
  * translations have arrived — an isoform with none is ranked as `noData`. */
 export function rankableIsoforms(

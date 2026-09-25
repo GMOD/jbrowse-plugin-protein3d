@@ -1,11 +1,8 @@
-import { useMemo } from 'react'
-
-import { pickStructureSequence } from 'p2s_mapper'
-
 import useIsoformProteinSequences from './useIsoformProteinSequences'
+import useIsoformRanking from './useIsoformRanking'
 import useTranscriptSelection from './useTranscriptSelection'
 import { codingTranscripts } from '../codingFeature'
-import { getId, isoformRecords } from '../utils/util'
+import { getId, rankableIsoforms } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -35,19 +32,15 @@ export default function useTranscriptIsoformSelection({
       feature,
       view,
     })
-  // one alignment per chain, so not once per render
-  const structureSequence = useMemo(
-    () =>
-      pickStructureSequence(
-        structureSequences,
-        isoformRecords(isoformSequences),
-      ),
-    [structureSequences, isoformSequences],
-  )
+  const { ranking, error: rankingError } = useIsoformRanking({
+    view,
+    isoforms: rankableIsoforms(transcripts, isoformSequences),
+    structureSequences,
+  })
   const { userSelection, setUserSelection } = useTranscriptSelection({
     options: transcripts,
     isoformSequences,
-    structureSequence,
+    ranking: ranking?.ranking,
     preferredTranscriptId,
     resetKey,
   })
@@ -59,9 +52,11 @@ export default function useTranscriptIsoformSelection({
   return {
     transcripts,
     isoformSequences,
-    structureSequence,
+    structureSequence: ranking?.structureSequence,
+    ranking: ranking?.ranking,
     isLoading,
-    error,
+    isRanking: !!isoformSequences && !ranking && !rankingError,
+    error: error ?? rankingError,
     partialFailure,
     selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,

@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { SimpleFeature } from '@jbrowse/core/util'
-import { renderHook } from '@testing-library/react'
-import * as p2s from 'p2s_mapper'
+import { renderHook, waitFor } from '@testing-library/react'
 
 import * as codingFeature from '../src/LaunchProteinView/codingFeature'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
@@ -19,12 +18,13 @@ vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
-vi.mock('p2s_mapper', async importOriginal => {
+// the isoform ranking runs through the session's RPC manager; here the
+// registered methods run in place
+vi.mock('@jbrowse/core/util', async importOriginal => {
   const actual = await importOriginal()
-  return {
-    ...actual,
-    selectBestTranscript: vi.fn(),
-  }
+  const { localRpcManager } = await import('../src/test_data/localRpcManager')
+  const rpcManager = localRpcManager()
+  return { ...actual, getSession: () => ({ rpcManager }) }
 })
 vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   const actual = await importOriginal()
@@ -47,7 +47,6 @@ const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
 const mockGetTranscriptFeatures = codingFeature.codingTranscripts as vi.Mock
 const mockGetId = util.getId as vi.Mock
-const mockSelectBestTranscript = p2s.selectBestTranscript as vi.Mock
 
 describe('useAlphaFoldDBSearch', () => {
   let mockFeature: SimpleFeature
@@ -158,33 +157,28 @@ describe('useAlphaFoldDBSearch', () => {
     expect(result.current.selectedQueryId).toBe('auto')
   })
 
-  // Test case to ensure autoTranscriptId is computed correctly directly
-  it('should compute autoTranscriptId correctly directly', () => {
+  it('selects the isoform whose protein is the structure', async () => {
     const mockTranscript1 = new SimpleFeature({
       uniqueId: 'transcript1',
       start: 0,
       end: 100,
       refName: 'chr1',
-      seq: 'MALS...',
     })
     const mockTranscript2 = new SimpleFeature({
       uniqueId: 'transcript2',
       start: 0,
       end: 100,
       refName: 'chr1',
-      seq: 'MALS....*',
     })
-    const mockTranscriptOptions = [mockTranscript1, mockTranscript2]
-    const mockIsoformSequences = {
-      transcript1: { feature: mockTranscript1, seq: 'MALS...' },
-      transcript2: { feature: mockTranscript2, seq: 'MALS....*' },
-    }
-    const mockStructureSequence = 'MALS....' // Matches transcript2 after stripping stop codon
-
-    // Mock dependencies needed for autoTranscriptId computation
-    mockGetTranscriptFeatures.mockReturnValue(mockTranscriptOptions)
+    mockGetTranscriptFeatures.mockReturnValue([
+      mockTranscript1,
+      mockTranscript2,
+    ])
     mockUseIsoformProteinSequences.mockReturnValue({
-      isoformSequences: mockIsoformSequences,
+      isoformSequences: {
+        transcript1: { feature: mockTranscript1, seq: 'MKTAYIAK*' },
+        transcript2: { feature: mockTranscript2, seq: 'MKTAYIAKQRQISF*' },
+      },
       isLoading: false,
       error: null,
     })
@@ -192,29 +186,22 @@ describe('useAlphaFoldDBSearch', () => {
       isLoading: false,
       isValidating: false,
       error: undefined,
-      model: { accession: 'P1', url: 'u', sequence: mockStructureSequence },
+      // transcript2's translation, stop codon stripped
+      model: { accession: 'P1', url: 'u', sequence: 'MKTAYIAKQRQISF' },
       noModel: false,
     })
 
-    // Mock selectBestTranscript to return a predictable value
-    const mockSelectedTranscriptId = 'transcript2'
-    mockSelectBestTranscript.mockReturnValue(mockSelectedTranscriptId)
-
     const { result } = renderHook(() => useSearchUnderTest())
 
-    // Expect autoTranscriptId to be derived from selectBestTranscript
-    // selectBestTranscript should return transcript2 because its sequence matches structureSequence after stripping '*'
-    // userSelection is derived from autoTranscriptId
-    expect(result.current.userSelection).toBe(mockSelectedTranscriptId)
-
-    // Verify that selectBestTranscript was called with the correct arguments
-    expect(mockSelectBestTranscript).toHaveBeenCalledWith({
-      isoforms: [
-        { id: 'transcript1', seq: 'MALS...' },
-        { id: 'transcript2', seq: 'MALS....*' },
-      ],
-      structureSequence: mockStructureSequence,
+    await waitFor(() => {
+      expect(result.current.userSelection).toBe('transcript2')
     })
+    expect(result.current.ranking?.matches.map(m => m.id)).toEqual([
+      'transcript2',
+    ])
+    expect(result.current.ranking?.nonMatches.map(m => m.id)).toEqual([
+      'transcript1',
+    ])
   })
 
   // Add more tests for other aspects of the hook, e.g., state updates, error handling, etc.
@@ -359,18 +346,16 @@ describe('extractFeatureIdentifiers', () => {
 })
 
 // The seam between a JBrowse Feature and p2s_mapper's isoform records: the
-// package ranks `{ id, seq }`, so these two are the only place the conversion
+// package ranks `{ id, seq }`, so this is the only place the conversion
 // happens, and a dropped or reordered entry changes which isoform is chosen.
 describe('isoform records for p2s_mapper', () => {
   let rankableIsoforms!: typeof util.rankableIsoforms
-  let isoformRecords!: typeof util.isoformRecords
 
   beforeAll(async () => {
     const actualUtil = await vi.importActual<typeof util>(
       '../src/LaunchProteinView/utils/util',
     )
     rankableIsoforms = actualUtil.rankableIsoforms
-    isoformRecords = actualUtil.isoformRecords
   })
 
   const transcript = (id: string) =>
@@ -422,13 +407,5 @@ describe('isoform records for p2s_mapper', () => {
 
   it('ranks nothing when there are no transcripts and no translations', () => {
     expect(rankableIsoforms([], undefined)).toEqual([])
-    expect(isoformRecords(undefined)).toEqual([])
-  })
-
-  it('records only the translations that arrived, dropping the feature', () => {
-    expect(isoformRecords(sequences({ t2: 'MALS', t1: 'MAL' }))).toEqual([
-      { id: 't2', seq: 'MALS' },
-      { id: 't1', seq: 'MAL' },
-    ])
   })
 })

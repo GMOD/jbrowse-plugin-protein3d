@@ -1,11 +1,10 @@
 import { useState } from 'react'
 
-import { selectBestTranscript } from 'p2s_mapper'
-
 import { rankableIsoforms } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
+import type { ClassifiedIsoforms } from 'p2s_mapper'
 
 /**
  * The isoform the user right-clicked when it translates, else the one whose
@@ -14,30 +13,31 @@ import type { Feature } from '@jbrowse/core/util'
 export function defaultTranscriptId({
   options,
   isoformSequences,
-  structureSequence,
+  ranking,
   preferredTranscriptId,
 }: {
   options: Feature[]
   isoformSequences: IsoformSequences
-  structureSequence?: string
+  ranking: ClassifiedIsoforms
   preferredTranscriptId?: string
 }) {
-  const isoforms = rankableIsoforms(options, isoformSequences)
-  return isoforms.some(i => i.id === preferredTranscriptId && i.seq)
+  return rankableIsoforms(options, isoformSequences).some(
+    i => i.id === preferredTranscriptId && i.seq,
+  )
     ? preferredTranscriptId
-    : selectBestTranscript({ isoforms, structureSequence })
+    : (ranking.matches[0] ?? ranking.nonMatches[0])?.id
 }
 
 export default function useTranscriptSelection({
   options,
   isoformSequences,
-  structureSequence,
+  ranking,
   preferredTranscriptId,
   resetKey,
 }: {
   options: Feature[]
   isoformSequences?: IsoformSequences
-  structureSequence?: string
+  ranking?: ClassifiedIsoforms
   preferredTranscriptId?: string
   // When this value changes the manual selection is cleared, falling back to
   // the recomputed auto-selection (e.g. after the user picks a different
@@ -52,11 +52,11 @@ export default function useTranscriptSelection({
   }
 
   const autoSelection =
-    isoformSequences !== undefined
+    isoformSequences !== undefined && ranking !== undefined
       ? defaultTranscriptId({
           options,
           isoformSequences,
-          structureSequence,
+          ranking,
           preferredTranscriptId,
         })
       : undefined

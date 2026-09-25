@@ -105,9 +105,10 @@ const PdbSearch = observer(function PdbSearch({
 
   const {
     transcripts,
-    isoformSequences,
     structureSequence,
+    ranking,
     isLoading: isIsoformLoading,
+    isRanking,
     error: isoformError,
     partialFailure: isoformPartialFailure,
     selectedTranscriptId,
@@ -125,6 +126,7 @@ const PdbSearch = observer(function PdbSearch({
   const loadingStatuses = [
     isLookupLoading && 'Looking up UniProt ID',
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
+    isRanking && 'Aligning isoforms to the structure',
     isPdbLoading && 'Listing PDB entries from PDBe',
   ].filter((s): s is string => !!s)
   const isLoading = loadingStatuses.length > 0
@@ -205,14 +207,14 @@ const PdbSearch = observer(function PdbSearch({
           )
         ) : null}
 
-        {isoformSequences && selectedTranscript ? (
+        {ranking && selectedTranscript ? (
           <TranscriptSelector
             val={selectedTranscriptId}
             setVal={setSelectedTranscriptId}
             structureSequence={structureSequence}
             feature={feature}
             isoforms={transcripts}
-            isoformSequences={isoformSequences}
+            ranking={ranking}
           />
         ) : null}
       </DialogContent>

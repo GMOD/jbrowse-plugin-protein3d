@@ -1,23 +1,18 @@
 import React from 'react'
 
 import { MenuItem, TextField } from '@mui/material'
-import { classifyIsoforms, stripStopCodon } from 'p2s_mapper'
+import { stripStopCodon } from 'p2s_mapper'
 
-import {
-  getGeneDisplayName,
-  getTranscriptDisplayName,
-  rankableIsoforms,
-} from '../utils/util'
+import { getGeneDisplayName, getTranscriptDisplayName } from '../utils/util'
 
-import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'
-import type { RankedIsoform } from 'p2s_mapper'
+import type { ClassifiedIsoforms, RankedIsoform } from 'p2s_mapper'
 
 export default function TranscriptSelector({
   val,
   setVal,
   isoforms,
-  isoformSequences,
+  ranking,
   structureSequence,
   feature,
   disabled,
@@ -27,7 +22,7 @@ export default function TranscriptSelector({
   val: string | undefined
   setVal: (str: string) => void
   structureSequence?: string
-  isoformSequences: IsoformSequences
+  ranking: ClassifiedIsoforms
   disabled?: boolean
 }) {
   const geneName = getGeneDisplayName(feature)
@@ -35,10 +30,7 @@ export default function TranscriptSelector({
   // A ranked isoform carries an id rather than the feature, so the name is a
   // lookup, and a row with no name at all reads worse than a bare id.
   const nameOf = (id: string) => getTranscriptDisplayName(byId.get(id)) || id
-  const { matches, nonMatches, noData } = classifyIsoforms({
-    isoforms: rankableIsoforms(isoforms, isoformSequences),
-    structureSequence,
-  })
+  const { matches, nonMatches, noData } = ranking
 
   const structureLength = structureSequence
     ? stripStopCodon(structureSequence).length

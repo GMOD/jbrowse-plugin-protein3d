@@ -84,6 +84,8 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     // the chain the isoforms are compared against — not blindly chain 0, which
     // mismatched every heteromer the view itself went on to map correctly
     structureSequence,
+    ranking,
+    isRanking,
     selectedTranscriptId: userSelection,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
@@ -144,15 +146,21 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
             />
           ) : null}
           <PartialFailureNotice message={isoformPartialFailure} />
+          {isRanking ? (
+            <LoadingEllipses
+              variant="subtitle2"
+              message="Aligning isoforms to the structure"
+            />
+          ) : null}
           {isoformSequences ? (
-            structureSequence ? (
+            structureSequence && ranking ? (
               <TranscriptSelector
                 val={userSelection}
                 setVal={setUserSelection}
                 structureSequence={structureSequence}
                 isoforms={options}
                 feature={feature}
-                isoformSequences={isoformSequences}
+                ranking={ranking}
               />
             ) : null
           ) : (

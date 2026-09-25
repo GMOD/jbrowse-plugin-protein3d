@@ -2,6 +2,8 @@ import { SimpleFeature } from '@jbrowse/core/util'
 import { expect, test } from 'vitest'
 
 import { defaultTranscriptId } from './useTranscriptSelection'
+import { rankIsoforms } from '../../AlignTranscriptRpc'
+import { rankableIsoforms } from '../utils/util'
 
 const transcript = (id: string) =>
   new SimpleFeature({
@@ -17,13 +19,15 @@ const isoformSequences = {
   short: { feature: options[0]!, seq: 'MKTAYIAK*' },
   full: { feature: options[1]!, seq: 'MKTAYIAKQRQISFVKSHF*' },
 }
-const structureSequence = 'MKTAYIAKQRQISFVKSHF'
+const { ranking } = rankIsoforms(rankableIsoforms(options, isoformSequences), [
+  'MKTAYIAKQRQISFVKSHF',
+])
 
 const choose = (preferredTranscriptId?: string) =>
   defaultTranscriptId({
     options,
     isoformSequences,
-    structureSequence,
+    ranking,
     preferredTranscriptId,
   })
 

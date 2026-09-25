@@ -83,6 +83,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const {
     transcripts,
     isoformSequences,
+    ranking,
     isLoading: isLoadingIsoforms,
     error: isoformError,
     partialFailure: isoformPartialFailure,
@@ -158,13 +159,13 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
         <PartialFailureNotice message={isoformPartialFailure} />
 
-        {isoformSequences ? (
+        {isoformSequences && ranking ? (
           <>
             <TranscriptSelector
               val={effectiveSelectedTranscriptId}
               setVal={setUserSelectionWithReset}
               isoforms={transcripts}
-              isoformSequences={isoformSequences}
+              ranking={ranking}
               feature={feature}
               disabled={isBusy}
             />
