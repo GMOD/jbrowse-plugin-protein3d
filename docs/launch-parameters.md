@@ -26,6 +26,7 @@ working links.
 | `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                 |
 | `showProteinTracks`              | No       | Show the feature tracks (default: true)                                           |
 | `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true)                         |
+| `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track                    |
 | `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue                                       |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
 | `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view               |

@@ -78,8 +78,7 @@ const FeatureBar = observer(function FeatureBar({
         data-feature-id={feature.uniqueId}
         data-feature-start={feature.start}
         data-feature-end={feature.end}
-        onClick={event => {
-          event.stopPropagation()
+        onClick={() => {
           if (selected) {
             model.setSelectedFeatureId(undefined)
             model.setClickedStructureRanges([])

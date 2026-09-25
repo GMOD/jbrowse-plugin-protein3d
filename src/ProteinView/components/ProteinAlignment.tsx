@@ -20,7 +20,7 @@ import FeatureTypeLabel from './FeatureTypeLabel'
 import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import ProteinFeatureTrack, { featureTrackHeight } from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
-import SplitString, { MatchOverlays } from './SplitString'
+import SplitString from './SplitString'
 import ExternalLink from '../../components/ExternalLink'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
 import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
@@ -69,6 +69,9 @@ interface TrackRow {
   height: number
   label: React.ReactNode
   content: React.ReactNode
+  // a click selects the residue under the pointer; the tracks only hover, so
+  // a click that misses a feature bar leaves the selection alone
+  selectsResidue?: boolean
 }
 
 // Which UniProt entry the feature tracks came from. For an AlphaFold model that
@@ -217,15 +220,15 @@ const ProteinAlignment = observer(function ProteinAlignment({
     label: rowLabel ? <GutterLabel label={rowLabel} title={title} /> : null,
     content: (
       <div style={{ lineHeight: `${ROW_HEIGHT}px` }}>
-        <MatchOverlays model={model} />
         <SplitString model={model} str={str} />
       </div>
     ),
+    selectsResidue: true,
   })
   const featureStatus =
     featureErrorMessage ?? (featureLoading ? 'Loading UniProt features...' : '')
 
-  const rows: TrackRow[] = [
+  const sequenceRows = [
     sequenceRow(
       'transcript',
       'GENOME',
@@ -239,6 +242,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
       'This is the sequence of the protein from the structure file',
       structureAlignedSeq(alignment),
     ),
+  ]
+  const rows: TrackRow[] = [
+    ...sequenceRows,
     {
       key: 'ruler',
       height: ROW_HEIGHT,
@@ -249,8 +255,10 @@ const ProteinAlignment = observer(function ProteinAlignment({
         />
       ),
       content: <AlignmentRuler model={model} columns={columns} />,
+      selectsResidue: true,
     },
   ]
+  const sequenceHeight = sequenceRows.length * ROW_HEIGHT
   if (showProteinTracks) {
     if (featureStatus) {
       rows.push({
@@ -406,16 +414,11 @@ const ProteinAlignment = observer(function ProteinAlignment({
           ))}
         </div>
         <div ref={containerRef} className={classes.scroll}>
-          {/* One pointer handler for every row: a column is a column whichever
-              row the pointer is on. A feature bar stops its own click, since
-              it selects the feature rather than the residue. */}
+          {/* One hover handler for every row: a column is a column whichever
+              row the pointer is on. */}
           <div
             data-testid="alignment-rows"
-            style={{
-              position: 'relative',
-              width: columns * columnWidth,
-              cursor: 'pointer',
-            }}
+            style={{ position: 'relative', width: columns * columnWidth }}
             onMouseMove={event => {
               const col = columnAt(event)
               if (col === undefined) {
@@ -427,19 +430,27 @@ const ProteinAlignment = observer(function ProteinAlignment({
             onMouseLeave={() => {
               model.setHoveredPosition(undefined)
             }}
-            onClick={event => {
-              const col = columnAt(event)
-              if (col !== undefined) {
-                model.clickAlignmentPosition(col)
-              }
-            }}
           >
-            <SelectionBackdrop model={model} />
+            <SelectionBackdrop model={model} matchHeight={sequenceHeight} />
             {rows.map(row => (
               <div
                 key={row.key}
                 data-row={row.key}
-                style={{ position: 'relative', height: row.height }}
+                style={{
+                  position: 'relative',
+                  height: row.height,
+                  cursor: row.selectsResidue ? 'pointer' : undefined,
+                }}
+                onClick={
+                  row.selectsResidue
+                    ? event => {
+                        const col = columnAt(event)
+                        if (col !== undefined) {
+                          model.clickAlignmentPosition(col)
+                        }
+                      }
+                    : undefined
+                }
               >
                 {row.content}
               </div>

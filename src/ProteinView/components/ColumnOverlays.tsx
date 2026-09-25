@@ -5,9 +5,11 @@ import { observer } from 'mobx-react'
 import {
   HOVER_COLOR,
   HOVER_RANGE_COLOR,
+  MATCH_COLOR,
   SELECTION_COLOR,
   SELECTION_OUTLINE,
 } from '../constants'
+import { positionRuns } from '../residueRanges'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -58,18 +60,40 @@ function Layer({
 }
 
 /**
- * The selection's fill, drawn beneath every row: a persistent band on top
- * would tint the pLDDT cells and feature bars inside it, and those colours are
- * data. Its outline is drawn over the rows by ColumnOverlays.
+ * The persistent state, drawn beneath every row: a band on top would tint the
+ * pLDDT cells and feature bars inside it, and those colours are data. The
+ * aligned portion (`showHighlight`) lights the sequence rows, `matchHeight`
+ * tall, and the selection's fill goes over it; ColumnOverlays draws the
+ * selection's outline over the rows.
  */
 export const SelectionBackdrop = observer(function SelectionBackdrop({
   model,
+  matchHeight,
 }: {
   model: JBrowsePluginProteinStructureModel
+  matchHeight: number
 }) {
-  const { clickAlignmentRanges, columnWidth } = model
+  const {
+    clickAlignmentRanges,
+    columnWidth,
+    showHighlight,
+    alignmentMatchSet,
+  } = model
   return (
     <Layer zIndex={0}>
+      {showHighlight && alignmentMatchSet ? (
+        <div style={{ position: 'relative', height: matchHeight }}>
+          {positionRuns(alignmentMatchSet).map(run => (
+            <Band
+              key={run.start}
+              start={run.start}
+              end={run.end - 1}
+              columnWidth={columnWidth}
+              background={MATCH_COLOR}
+            />
+          ))}
+        </div>
+      ) : null}
       {clickAlignmentRanges.map(range => (
         <Band
           key={range.start}
