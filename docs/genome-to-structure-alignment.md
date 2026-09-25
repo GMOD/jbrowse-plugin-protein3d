@@ -38,16 +38,17 @@ Foldseek hits, and files the user opens by hand, none of which SIFTS covers.
 
 ## What the pipeline does
 
-1. **Translate.** `calculateProteinSequence.ts` stitches the CDS subfeatures and
-   translates with the NCBI table the feature's `transl_table` names, else the
-   one the assembly's `geneticCodes` names for the contig (`{ chrM: 2 }` in the
-   hub configs; v5 hosts only), else the standard code. GFF3 `phase` on the
-   first CDS sets the frame; a 5' partial codon becomes a leading `&`, so
-   residue 0 of the translation is the same partial codon that `g2p_mapper`
-   assigns protein position 0. Core's bigGenePred adapter derives `phase` from
-   UCSC `exonFrames`, so hub tracks carry it too. Only the terminal stop is
-   stripped: an interior stop occupies a codon position, and deleting it would
-   shift every later residue off its codon.
+1. **Translate.** Core's `translateTranscript`, bundled so every host runs the
+   same one, stitches the CDS subfeatures and translates with the NCBI table the
+   feature's `transl_table` names, else the one the assembly's `geneticCodes`
+   names for the contig (`{ chrM: 2 }` in the hub configs; v5 hosts only), else
+   the standard code, applying any `transl_except`. GFF3 `phase` on the first
+   CDS sets the frame; a 5' partial codon becomes a leading `&`, so residue 0 of
+   the translation is the same partial codon that `g2p_mapper` assigns protein
+   position 0. Core's bigGenePred adapter derives `phase` from UCSC
+   `exonFrames`, so hub tracks carry it too. Only the terminal stop is stripped:
+   an interior stop occupies a codon position, and deleting it would shift every
+   later residue off its codon.
 2. **Read the structure's sequence.** `extractStructureSequences.ts` takes each
    polymer entity's full sequence from molstar, SEQRES included, with the
    `label_seq_id` of every position carried alongside. See

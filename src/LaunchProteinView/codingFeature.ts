@@ -8,7 +8,7 @@ export function isGeneLikeType(type: string | undefined) {
   return type !== undefined && GENE_LIKE_TYPE.test(type.toLowerCase())
 }
 
-export function isCDS(feature: Feature) {
+function isCDS(feature: Feature) {
   return feature.get('type')?.toLowerCase() === 'cds'
 }
 

@@ -5,7 +5,7 @@ import { resolveShortLaunch } from './resolveShortLaunch'
 
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
-vi.mock('../LaunchProteinView/utils/calculateProteinSequence', () => ({
+vi.mock('../LaunchProteinView/utils/translateTranscripts', () => ({
   fetchProteinSeq: () => Promise.resolve('MEEPQSDPSV'),
 }))
 

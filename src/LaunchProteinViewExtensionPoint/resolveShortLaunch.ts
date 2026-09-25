@@ -3,7 +3,7 @@ import { parseLocString } from '@jbrowse/core/util'
 import { stripTrailingVersion } from 'p2s_mapper'
 
 import { codingTranscripts } from '../LaunchProteinView/codingFeature'
-import { fetchProteinSeq } from '../LaunchProteinView/utils/calculateProteinSequence'
+import { fetchProteinSeq } from '../LaunchProteinView/utils/translateTranscripts'
 
 import type { AnyConfigurationModel } from '@jbrowse/core/configuration'
 import type {

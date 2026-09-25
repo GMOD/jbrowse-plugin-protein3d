@@ -131,7 +131,7 @@ A genome hover arrives as `session.hovered.hoverPosition.refName`, which is the
 `chr1` in GENCODE. They match only when a config happens to pair files that
 agree, so any comparison between them goes through the assembly's
 `getCanonicalRefName`, as `proteinToGenomeMapping`, `AddHighlightModel`,
-`calculateProteinSequence` and `resolveShortLaunch` already did.
+`fetchRegionSequence` and `resolveShortLaunch` already did.
 
 `connectedHover` was the one path that compared them raw, and the gate it feeds
 is load-bearing (without it the same number on another chromosome matches a key

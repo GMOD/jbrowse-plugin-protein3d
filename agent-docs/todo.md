@@ -10,6 +10,3 @@ worth doing:
   `siftsNumbering.ts` and most of the "approximate" captions. Every selection
   field now takes an array of ranges too, so an interface focus can send its
   contact stretches rather than 30–370.
-
-Still open: moving both plugins onto core's translateTranscript needs a core
-release first.
