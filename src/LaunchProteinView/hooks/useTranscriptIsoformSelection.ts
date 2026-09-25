@@ -55,7 +55,10 @@ export default function useTranscriptIsoformSelection({
     structureSequence: ranking?.structureSequence,
     ranking: ranking?.ranking,
     isLoading,
-    isRanking: !!isoformSequences && !ranking && !rankingError,
+    // only while the ranking is what the selection waits on; the
+    // right-clicked isoform launches without one, and the picker follows
+    isRanking:
+      !!isoformSequences && !ranking && !rankingError && !userSelection,
     error: error ?? rankingError,
     partialFailure,
     selectedTranscriptId: userSelection,
