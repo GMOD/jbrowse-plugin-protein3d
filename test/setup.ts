@@ -73,7 +73,7 @@ declare global {
       removeView?: (view: SessionView) => void
       hovered?: { hoverPosition?: { coord: number; refName: string } }
     }
-    JBrowsePluginProtein3d?: unknown
+    JBrowseRootModel?: { pluginManager?: { plugins?: { name: string }[] } }
   }
 }
 
@@ -131,7 +131,7 @@ function createTestConfig() {
     plugins: [
       {
         name: 'Protein3d',
-        url: `http://localhost:${JBROWSE_PORT}/plugin/jbrowse-plugin-protein3d.umd.production.min.js`,
+        esmUrl: `http://localhost:${JBROWSE_PORT}/plugin/jbrowse-plugin-protein3d.esm.js`,
       },
     ],
     assemblies: [

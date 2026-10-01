@@ -17,7 +17,7 @@ const config = {
   plugins: [
     {
       name: 'Protein3d',
-      url: `http://localhost:${PORT}/plugin/jbrowse-plugin-protein3d.umd.production.min.js`,
+      esmUrl: `http://localhost:${PORT}/plugin/jbrowse-plugin-protein3d.esm.js`,
     },
   ],
   assemblies: [

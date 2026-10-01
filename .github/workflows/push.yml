@@ -37,7 +37,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jbrowse-version: [v4.3.0, nightly]
+        jbrowse-version: [nightly]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
       - uses: pnpm/action-setup@0e279bb959325dab635dd2c09392533439d90093 # v6.0.8
@@ -95,9 +95,10 @@ jobs:
   # released hosts re-export with a different shape, and a @jbrowse/core/util
   # export that vanished from the host's barrel. Neither is visible to tsc,
   # eslint, or a url reachability check; both are obvious the moment the bundle
-  # is actually booted on the host.
+  # is actually booted on the host. The ESM build needs JBrowse 5, so until
+  # 5.0.0 is released the hosted `main` is the only host it gates on.
   host-compat:
-    name: Host compat (candidate build on hosted releases)
+    name: Host compat (candidate build on hosted main)
     runs-on: ubuntu-latest
     needs: build-and-lint
     steps:
@@ -115,9 +116,7 @@ jobs:
         run: npx puppeteer browsers install chrome
       - name: Build
         run: pnpm build
-      - name: Check host-bound imports against every supported host
-        run: pnpm check-host-externals
-      - name: Boot the built bundle on released hosts
+      - name: Boot the built bundle on hosted main
         run: pnpm host-compat:candidate
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()

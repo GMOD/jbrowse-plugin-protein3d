@@ -1,8 +1,7 @@
 #!/usr/bin/env node
 //
 // Probes one plugin bundle against many hosted JBrowse builds and reports, per
-// host version, whether the session boots, the UMD global is defined, the view
-// type registered, a declarative ProteinView launch reaches its settled state,
+// host version, whether the session boots, the plugin registered, a declarative ProteinView launch reaches its settled state,
 // and right-clicking a gene still opens a feature context menu carrying both
 // the plugin's row and the host's own, with nothing unexpected on its console.
 //
@@ -14,7 +13,7 @@
 // gate. That distinction is the whole point: the store uploads `latest/` with
 // no-cache, so a publish is a live change to configs shipped months ago, and
 // "does this build error-page the app" has to be answerable before the tag, not
-// after. The failure modes are a runtime throw while the UMD evaluates -- an
+// after. The failure modes are a runtime throw while the bundle evaluates -- an
 // import the host does not re-export, or a barrel export that disappeared --
 // and a throw while the plugin contributes to the host's UI, which costs the
 // user the whole feature menu. No amount of type checking or linting in this
@@ -23,7 +22,7 @@
 // Usage:
 //   node scripts/host-compat-probe.mjs                       # published bundle
 //   node scripts/host-compat-probe.mjs --bundle dist/x.js     # candidate build
-//   node scripts/host-compat-probe.mjs --versions v4.0.0,main --floor v4.0.0
+//   node scripts/host-compat-probe.mjs --versions main --floor main
 //
 import fs from 'node:fs'
 import path from 'node:path'
@@ -33,23 +32,17 @@ import puppeteer from 'puppeteer'
 
 import { isBrowserConsoleNoise } from './browserConsole.mjs'
 
-const DEFAULT_VERSIONS = [
-  'v2.15.0',
-  'v3.0.0',
-  'v3.7.0',
-  'v4.0.0',
-  'v4.2.0',
-  'v4.3.0',
-  'latest',
-  'main',
-]
+// The ESM build needs JBrowse 5, and `main` is the only hosted 5.x build until
+// 5.0.0 is released. v4 hosts load the frozen 0.15.3 UMD from pinned urls.
+const DEFAULT_VERSIONS = ['main']
 
-// A config hosted on the same origin as the app builds, declaring the plugin at
-// its version-agnostic store path. Absolute so every host build reads the same
-// one (a relative config path resolves against the app dir, where old builds
-// have no such fixture).
+// A config hosted on the same origin as the app builds. Its plugin entry still
+// names the frozen UMD, so the probe answers this request with the same config
+// naming the ESM entry at its version-agnostic store path.
 const CONFIG =
   'https://jbrowse.org/code/jb2/main/test_data/protein3d_config.json'
+const PUBLISHED_ESM =
+  'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/latest/dist/jbrowse-plugin-protein3d.esm.js'
 
 // The AlphaFold model matches the transcript exactly and aligns in place. 1YCR
 // does not, so its alignment runs in the host's RPC worker, which is the only
@@ -80,7 +73,8 @@ const { values } = parseArgs({
     floor: { type: 'string' },
     json: { type: 'string' },
     timeout: { type: 'string', default: '90000' },
-    // Path to a local umd build to serve in place of the published one.
+    // Path to a local ESM entry to serve, with its dist/, in place of the
+    // published one.
     bundle: { type: 'string' },
     // Re-probes a host that did not settle. The launch fetches real structures
     // from the network, so a single miss is more often a blip than a break, and
@@ -94,6 +88,14 @@ const timeout = Number(values.timeout)
 if (values.bundle && !fs.existsSync(values.bundle)) {
   throw new Error(`no bundle at ${values.bundle}`)
 }
+
+const configResponse = await fetch(CONFIG)
+if (!configResponse.ok) {
+  throw new Error(`${CONFIG}: HTTP ${configResponse.status}`)
+}
+const esmConfig = await configResponse.json()
+esmConfig.plugins = [{ name: 'Protein3d', esmUrl: PUBLISHED_ESM }]
+const esmConfigBody = Buffer.from(JSON.stringify(esmConfig)).toString('base64')
 
 function url(version, withSpec) {
   const spec = withSpec
@@ -109,77 +111,94 @@ function readSession() {
   return w.JBrowseSession ?? w.__jbrowse_session ?? w.JBrowseRootModel?.session
 }
 
-// The config names the plugin at its version-agnostic store path, so serving a
-// candidate build means answering requests under that path from the local dist
-// instead.
+// Serving a candidate build means answering requests under the store path from
+// the local dist instead.
 //
-// Resolving by BASENAME rather than matching the package name is load-bearing:
-// this build code-splits Mol* into a content-hashed molstar-chunk-*.js that the
-// main bundle fetches as a sibling. A matcher that answered every
-// `jbrowse-plugin-protein3d/**.js` with the main bundle handed that chunk
-// request the umd, and the run failed with "DefaultPluginUISpec is not a
-// function" on every host -- a probe artifact indistinguishable from a real
-// incompatibility. A gate that cries wolf gets ignored, so it has to serve the
-// whole directory, not one file.
+// Resolving by PATH under dist/ rather than matching the package name is
+// load-bearing: the build code-splits Mol* into a content-hashed chunk under
+// dist/chunks/ that the entry fetches relative to its own url. A matcher that
+// answered every `jbrowse-plugin-protein3d/**.js` with the entry handed that
+// chunk request the wrong module, and the run failed with "DefaultPluginUISpec
+// is not a function" on every host -- a probe artifact indistinguishable from a
+// real incompatibility. A gate that cries wolf gets ignored, so it has to serve
+// the whole directory, not one file.
 //
-// SCOPED to the plugin's own assets through CDP `Fetch.enable` patterns, rather
-// than puppeteer's `page.setRequestInterception(true)`, which routes EVERY
-// request through node. That routing is not free: with it on, v4.3.0, latest
-// and main booted the config and then sat on "Select a view to launch" with
-// `session.views` empty and not one console message, while the same url in a
-// plain browser opened both views. Passthrough interception -- serving nothing
-// local, `continue()` on everything -- reproduced it, so the bundle was never
-// the variable. Measured 2026-08-17.
+// SCOPED to the config and the plugin's own assets through CDP `Fetch.enable`
+// patterns, rather than puppeteer's `page.setRequestInterception(true)`, which
+// routes EVERY request through node. That routing is not free: with it on,
+// v4.3.0, latest and main booted the config and then sat on "Select a view to
+// launch" with `session.views` empty and not one console message, while the
+// same url in a plain browser opened both views. Passthrough interception --
+// serving nothing local, `continue()` on everything -- reproduced it, so the
+// bundle was never the variable. Measured 2026-08-17.
 //
 // The cost was not a red run, which is what makes it worth this comment: no
 // views meant `specApplied` was false, `viewReady` was excused, and the probe
 // printed `ok` for the three hosts anyone cares about while asserting nothing
-// beyond "the umd evaluated". `failure()` now treats an unapplied spec as a
+// beyond "the bundle evaluated". `failure()` now treats an unapplied spec as a
 // failure, so this can never quietly degrade to a smoke test again.
-async function serveCandidateBundle(page) {
-  const dir = path.dirname(values.bundle)
-  const mainName = path.basename(values.bundle)
+async function interceptConfigAndBundle(page) {
+  const dir = values.bundle ? path.dirname(values.bundle) : undefined
   const client = await page.createCDPSession()
   await client.send('Fetch.enable', {
     patterns: [
-      { urlPattern: '*jbrowse-plugin-protein3d*', requestStage: 'Request' },
+      { urlPattern: '*protein3d_config.json*', requestStage: 'Request' },
+      ...(dir
+        ? [
+            {
+              urlPattern: '*jbrowse-plugin-protein3d*',
+              requestStage: 'Request',
+            },
+          ]
+        : []),
     ],
   })
+  const fulfill = (requestId, contentType, body) =>
+    client
+      .send('Fetch.fulfillRequest', {
+        requestId,
+        responseCode: 200,
+        responseHeaders: [
+          { name: 'content-type', value: contentType },
+          { name: 'access-control-allow-origin', value: '*' },
+        ],
+        body,
+      })
+      .catch(() => {})
   client.on('Fetch.requestPaused', ({ requestId, request }) => {
-    const name = path.basename(new URL(request.url).pathname)
-    const local = path.join(dir, name)
-    // the published umd name and the local one can differ, so the config's
-    // bundle request maps to --bundle by position; siblings map by name
-    const file = !name.endsWith('.js')
+    const { pathname } = new URL(request.url)
+    if (pathname.endsWith('/protein3d_config.json')) {
+      fulfill(requestId, 'application/json', esmConfigBody)
+      return
+    }
+    const rel = pathname.split('/dist/').slice(1).join('/dist/')
+    const local = path.join(dir, rel)
+    // the published entry name and the local one can differ (a watch build
+    // writes out.js), so the entry request maps to --bundle; the rest by path
+    const file = !rel.endsWith('.js')
       ? undefined
-      : name !== mainName && fs.existsSync(local)
+      : rel.includes('/') && fs.existsSync(local)
         ? local
         : values.bundle
     if (file === undefined) {
       client.send('Fetch.continueRequest', { requestId }).catch(() => {})
     } else {
-      client
-        .send('Fetch.fulfillRequest', {
-          requestId,
-          responseCode: 200,
-          responseHeaders: [
-            { name: 'content-type', value: 'application/javascript' },
-            { name: 'access-control-allow-origin', value: '*' },
-          ],
-          body: fs.readFileSync(file).toString('base64'),
-        })
-        .catch(() => {})
+      fulfill(
+        requestId,
+        'application/javascript',
+        fs.readFileSync(file).toString('base64'),
+      )
     }
   })
 }
 
 // Right-click a gene in the connected view and read the menu back. This is the
-// half the probe was missing: booting the umd only proves it evaluates, and the
+// half the probe was missing: booting the bundle only proves it evaluates, and the
 // declarative launch above enters through `LaunchView-ProteinView`, so neither
 // touches the context menu the plugin actually contributes to. Both outages
 // this file's header names -- the deep @mui import, the vanished core export --
 // happened at evaluation and so were catchable without it. The one on
-// 2026-08-17 was not: the umd evaluated, the global was defined, the launch
+// 2026-08-17 was not: the bundle evaluated, the plugin registered, the launch
 // settled, and right-clicking a feature produced NO menu at all, because the
 // plugin called the display's super view detached and the host's own
 // `this.isGeneLike` threw inside the ErrorBoundary the menu builds in.
@@ -253,9 +272,7 @@ async function probeContextMenu(page) {
 
 async function probeOne(browser, version) {
   const page = await browser.newPage()
-  if (values.bundle) {
-    await serveCandidateBundle(page)
-  }
+  await interceptConfigAndBundle(page)
   const consoleErrors = []
   // Warnings too, and filtered through the same rules the e2e uses. The e2e
   // covers one `jbrowse create` install; these are the hosted releases a
@@ -306,15 +323,12 @@ async function probeOne(browser, version) {
         : undefined
     })
 
-    result.globalDefined = await page.evaluate(
-      () => 'JBrowsePluginProtein3d' in window,
+    result.registered = await page.evaluate(() =>
+      window.JBrowseRootModel?.pluginManager?.plugins?.some(
+        p => p.name === 'ProteinViewer',
+      ),
     )
 
-    // The type registry is not reachable from the page (it lives in the MST env,
-    // not on a global), so registration is asserted the way a user experiences
-    // it: the declarative launch below either produces a settled view or does
-    // not.
-    //
     // Settled state of the launched view. The plugin flips this test-id only
     // once the structure has loaded and no pairwise alignment is pending, so it
     // is a real completion signal rather than a duration guess.
@@ -379,7 +393,7 @@ const retries = Number(values.retries)
 // failed probe rather than a passing one. It used to be excused -- the theory
 // was that newer hosts ignore the session spec -- and that excuse covered
 // v4.3.0, latest and main for as long as the probe intercepted every request
-// (see serveCandidateBundle). The three hosts that matter most reported `ok`
+// (see interceptConfigAndBundle). The three hosts that matter most reported `ok`
 // while testing nothing. An excuse a check applies to itself is indistinguishable
 // from a pass, so there isn't one any more.
 function specApplied(r) {
@@ -387,8 +401,8 @@ function specApplied(r) {
 }
 
 // What must hold for a build to be safe to publish, in blast-radius order. The
-// first is the one that has actually bitten twice: a throw while the UMD
-// evaluates leaves the global undefined and error-pages every config naming it.
+// first is the one that has actually bitten twice: a throw while the bundle
+// evaluates leaves the plugin unregistered and error-pages every config naming it.
 // The rest are functional, and each covers a failure the one above it does not
 // see -- the context menu most of all, since a plugin that throws while
 // contributing to it takes the host's own rows down with it and never touches
@@ -396,8 +410,8 @@ function specApplied(r) {
 function failure(r) {
   return r.appError
     ? `SESSION FAILED: ${r.appError}`
-    : !r.globalDefined
-      ? 'plugin global missing'
+    : !r.registered
+      ? 'plugin not registered'
       : !specApplied(r)
         ? 'no view launched, so nothing was asserted'
         : !r.viewReady

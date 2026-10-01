@@ -1,20 +1,19 @@
 # Host version compatibility
 
-Hub configs at permanent urls (`jbrowse.org/ucsc/hg38/config.json`) name this
-plugin, and desktop installs and published links keep opening them on whatever
-JBrowse they have. So the published bundle has to work on hosts much older than
-the one we develop against, and there are two separate floors:
+From 0.16 the plugin ships as a code-split ES module and needs JBrowse 5. Hub
+configs at permanent urls (`jbrowse.org/ucsc/hg38/config.json`) name it twice:
+`storePlugin: "Protein3d"`, which a JBrowse 5 host resolves through the plugin
+store to this build, and a UMD `url`, which v4 hosts load instead. v4 hosts keep
+the UMD builds already published — 0.15.3 at that url, an older one in the v1
+store — and nothing here rebuilds them.
 
-- **Loading.** The bundle externalizes a module only when every host in
-  `scripts/host-reexports.json` re-exports it. A host missing one leaves
-  `JBrowseExports["mod"]` undefined, the UMD global is never defined, and
-  `PluginLoader`'s `Promise.all` fails the **entire session** — not just this
-  view. `pnpm check-host-externals` greps the built bundle to confirm.
+- **Loading.** The bundle externalizes every path the installed `@jbrowse/core`
+  ReExports list names. A key the host lacks throws at its first read, naming
+  the key, and `PluginLoader` fails the **entire session** — not just this view.
+  Booting on hosted `main` is what catches it.
 - **Working.** A host API the plugin calls but an older host lacks throws at use
-  time. This floor moves silently: a single `session.getTracksById()` call held
-  the declarative launch at `v4.2.0` while the bundle loaded fine seven releases
-  earlier. Feature-detect rather than assume, as `findTrackConf` in
-  `resolveShortLaunch.ts` does.
+  time, and the bundle loads fine. Feature-detect rather than assume, as
+  `findTrackConf` in `resolveShortLaunch.ts` does.
 
 The same goes for the settings the plugin writes into other views. JBrowse 5
 deprecates the `init` key JBrowse 4 used for a LinearGenomeView's launch
@@ -35,26 +34,27 @@ anything to deserialize, and the same class works on both. The worker loads this
 plugin from the same url as the page, so the method is there whenever the view
 is.
 
-`pnpm host-compat` boots the bundle on hosted releases
+`pnpm host-compat` boots the bundle on hosted builds
 (`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), with a
-declarative connected launch and a right-click on a gene. It waits on
-`[data-testid="protein-view-ready"]` and reports per version whether the session
-survived, the global appeared, the view settled, the context menu kept the
-host's own rows, and the console stayed clean. The launch opens 1YCR beside the
-AlphaFold model because 1YCR is not identical to the transcript, so its
-alignment is the one that goes through the worker; the probe asserts it lands on
-the p53 peptide. The probe's CDP interception serves the candidate to the RPC
-worker as well as the page (measured 2026-09-25 on v4.0.0, v4.3.0 and main by
-marking the served bundle and reading the mark inside the worker).
+declarative connected launch and a right-click on a gene. The hosted test config
+still names the UMD, so the probe serves it with an `esmUrl` entry instead. It
+waits on `[data-testid="protein-view-ready"]` and reports per version whether
+the session survived, the plugin registered, the view settled, the context menu
+kept the host's own rows, and the console stayed clean. The launch opens 1YCR
+beside the AlphaFold model because 1YCR is not identical to the transcript, so
+its alignment is the one that goes through the worker; the probe asserts it
+lands on the p53 peptide. The probe's CDP interception serves the candidate to
+the RPC worker as well as the page (measured 2026-09-25 on v4.0.0, v4.3.0 and
+main by marking the served bundle and reading the mark inside the worker).
 
 ```bash
-pnpm host-compat                              # the published bundle, v2.15.0 to main
-pnpm host-compat:candidate                    # dist/ on v4.0.0, v4.3.0, latest, main
-pnpm host-compat -- --versions v3.7.0,latest  # narrow it
+pnpm host-compat             # the published bundle on main
+pnpm host-compat:candidate   # dist/ on main
 ```
 
-`host-compat:candidate` runs in `preversion` with `--floor v4.0.0`, so a build
-that breaks a supported host fails before the tag rather than after.
+`host-compat:candidate` runs in `preversion` with `--floor main`, so a build
+that breaks the host fails before the tag rather than after. Add a release to
+`--versions` once JBrowse 5.0.0 is hosted.
 
 For what a session does on jbrowse.org, which neither probe sees,
 [live checks](live-checks.md) has the recipe for serving `dist/` to a hosted

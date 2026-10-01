@@ -5,8 +5,6 @@ import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
 import JBrowseReExports from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
 
-import hostReExports from './scripts/host-reexports.json' with { type: 'json' }
-
 const isWatch = process.argv.includes('--watch')
 const PORT = process.env.PORT ? +process.env.PORT : 9000
 
@@ -45,112 +43,32 @@ const rebuildLogPlugin = {
   },
 }
 
-// For the UMD build, replace loadMolstar with a version that loads the
-// molstar chunk via URL relative to the plugin script. The source
-// loadMolstar.ts uses a standard import('./molstarExports') which works
-// natively for npm/bundler consumers.
-// Assigned from the molstar build's metafile below, before the main build runs.
-// The name carries a content hash so a redeployed plugin can never pair with a
-// browser-cached copy of the previous chunk: JBrowse's cache buster only
-// decorates the plugin url, and the query is dropped when deriving this one.
-let molstarChunkName = 'molstar-chunk.js'
-
-const umdLoadMolstarPlugin = {
-  name: 'umd-load-molstar',
-  setup(build) {
-    build.onLoad({ filter: /loadMolstar\.ts$/ }, () => ({
-      contents: `
-        var src = typeof document !== 'undefined'
-          ? document.currentScript?.src
-          : undefined;
-        var base = src ? src.replace(/\\/[^/]*$/, '/') : '';
-        var cached;
-        export default function loadMolstar() {
-          if (!cached) {
-            cached = import(base + ${JSON.stringify(molstarChunkName)}).catch(function(e) {
-              cached = undefined;
-              throw e;
-            });
-          }
-          return cached;
-        }
-      `,
-      loader: 'js',
-    }))
-  },
-}
-
-// A bundle runs on every host a config names, not just the core it builds
-// against, so the externals are only what EVERY supported host re-exports
-// (host-reexports.json). The list moves both ways: a path only a newer core
-// lists is undefined on an old host, and a path an old core had and a new one
-// dropped is undefined on the new one. Either way it is bundled instead, as a
-// deep path absent from ReExports already is.
-//
-// SvgIcon is on every host's list but its SHAPE differs: MUI 7 hosts (v4.0.0
-// through 4.3.0) serve the bare component, while @mui/icons-material 9 calls the
-// createSvgIcon that MUI 9 hangs off it. Externalized, the bundle throws while
-// evaluating and PluginLoader error-pages the whole app. msaview 2.7.0 shipped
-// exactly that; bundling it works on both generations.
-const SHAPE_VARIES_BY_HOST = new Set(['@mui/material/SvgIcon'])
-const hostVersions = Object.keys(hostReExports.hosts)
-const everyHost = hostVersions.map(v => new Set(hostReExports.hosts[v]))
-const onEveryHost = x => everyHost.every(s => s.has(x))
-const globals = JBrowseReExports.filter(
-  x => onEveryHost(x) && !SHAPE_VARIES_BY_HOST.has(x),
-)
-const bundledForSomeHost = JBrowseReExports.filter(x => !onEveryHost(x))
-if (bundledForSomeHost.length > 0) {
-  console.log(
-    `Bundling ${bundledForSomeHost.length} re-export(s) missing from at least one of @jbrowse/core@${hostVersions.join(', ')}: ${bundledForSomeHost.join(', ')}`,
-  )
-}
-const externalsPlugin = globalExternals(createGlobalMap(globals))
-
-const molstarConfig = {
-  entryPoints: [
-    { in: 'src/ProteinView/molstarExports.ts', out: 'molstar-chunk' },
-  ],
-  bundle: true,
-  outdir: 'dist',
-  // esbuild appends the content hash and keeps the sourcemap link consistent
-  entryNames: '[name]-[hash]',
-  format: 'esm',
-  metafile: true,
-  sourcemap: true,
-  minify: true,
-  plugins: [externalsPlugin, rebuildLogPlugin],
-}
-
-const mainConfig = {
+const config = {
   entryPoints: ['src/index.ts'],
   bundle: true,
-  globalName: 'JBrowsePluginProtein3d',
+  // Mol* is a plain import() in loadMolstar.ts, which splitting emits as a
+  // sibling chunk resolved against the entry's own url, on the main thread and
+  // in the RPC worker alike
+  format: 'esm',
+  splitting: true,
+  outdir: 'dist',
+  chunkNames: 'chunks/[name]-[hash]',
   metafile: true,
-  plugins: [externalsPlugin, umdLoadMolstarPlugin, rebuildLogPlugin],
+  plugins: [
+    globalExternals(createGlobalMap(JBrowseReExports)),
+    rebuildLogPlugin,
+  ],
   ...(isWatch
-    ? { outfile: 'dist/out.js' }
+    ? { entryNames: 'out' }
     : {
-        outfile: 'dist/jbrowse-plugin-protein3d.umd.production.min.js',
+        entryNames: 'jbrowse-plugin-protein3d.esm',
         sourcemap: true,
         minify: true,
       }),
 }
 
-console.log('Building molstar chunk...')
-const molstarResult = await esbuild.build(molstarConfig)
-
-// umdLoadMolstarPlugin reads this when the main build loads loadMolstar.ts,
-// which happens after this point
-molstarChunkName = Object.keys(molstarResult.metafile.outputs)
-  .map(f => f.replace(/^dist\//, ''))
-  .find(f => f.endsWith('.js'))
-if (!molstarChunkName) {
-  throw new Error('molstar chunk build produced no .js output')
-}
-
 if (isWatch) {
-  const ctx = await esbuild.context(mainConfig)
+  const ctx = await esbuild.context(config)
   const internalPort = PORT + 400
   const { hosts } = await ctx.serve({ servedir: '.', port: internalPort })
 
@@ -180,6 +98,6 @@ if (isWatch) {
   await ctx.watch()
   console.log('Watching files...')
 } else {
-  const result = await esbuild.build(mainConfig)
+  const result = await esbuild.build(config)
   fs.writeFileSync('meta.json', JSON.stringify(result.metafile))
 }

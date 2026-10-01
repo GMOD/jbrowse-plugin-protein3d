@@ -11,8 +11,8 @@ vi.mock('./molstarExports', () => {
   return { loaded: true }
 })
 
-// The UMD build already forgot a failed chunk load; the npm build cached the
-// rejection, so one dropped request broke every protein view until a reload.
+// A cached rejection would break every protein view until a reload after one
+// dropped chunk request.
 test('a failed load is retried by the next caller', async () => {
   await expect(loadMolstar()).rejects.toThrow()
   await expect(loadMolstar()).resolves.toMatchObject({ loaded: true })

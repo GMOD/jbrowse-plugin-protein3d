@@ -2,8 +2,9 @@
 //
 // Opens every demo link in docs/demos.md and checks the mapping it shows against
 // the `<!-- expect {...} -->` comment under the link. With --bundle, serves a
-// local build in place of the published plugin, so a mapping change can be
-// checked on the demos before release.
+// local build in place of the published plugin on the demos hosted on `main`,
+// so a mapping change can be checked before release. The ESM build needs
+// JBrowse 5; demos on 4.x hosts load the frozen 0.15.3 UMD either way.
 //
 // Every link needs an expectation. Its fields, each optional, describe the
 // view's first structure:
@@ -26,7 +27,7 @@
 //
 // Usage:
 //   pnpm check-demos
-//   node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.umd.production.min.js
+//   node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.esm.js
 //
 import fs from 'node:fs'
 import path from 'node:path'
@@ -63,29 +64,36 @@ function parseDemos(markdown) {
   return demos
 }
 
-function stripPluginIntegrity(node) {
+const CANDIDATE_ESM_URL =
+  'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/candidate/dist/jbrowse-plugin-protein3d.esm.js'
+
+// Every build the store publishes for this plugin becomes the candidate's
+// esmUrl, whatever format the store names today
+function pointStoreAtCandidate(node) {
   if (Array.isArray(node)) {
-    node.forEach(stripPluginIntegrity)
+    node.forEach(pointStoreAtCandidate)
   } else if (node && typeof node === 'object') {
-    if (
-      Object.values(node).some(
-        v => typeof v === 'string' && v.includes('jbrowse-plugin-protein3d'),
-      )
-    ) {
-      delete node.integrity
+    for (const key of ['url', 'umdUrl', 'esmUrl']) {
+      if (
+        typeof node[key] === 'string' &&
+        node[key].includes('jbrowse-plugin-protein3d')
+      ) {
+        delete node.url
+        delete node.umdUrl
+        delete node.integrity
+        node.esmUrl = CANDIDATE_ESM_URL
+      }
     }
-    Object.values(node).forEach(stripPluginIntegrity)
+    Object.values(node).forEach(pointStoreAtCandidate)
   }
 }
 
 // Same scoping as host-compat-probe.mjs: only the plugin's own assets are
-// intercepted, answered from the local dist by basename. Hosts from v5 pin a
-// config's store url to a release and load it with the store manifest's
-// subresource-integrity hash, which a local build cannot match, so this
-// plugin's hashes come out of the manifest.
+// intercepted, answered from the local dist by path. A v5 host resolves the
+// config's `storePlugin` through the store manifest, so the manifest's entry is
+// pointed at the candidate.
 async function serveCandidateBundle(page) {
   const dir = path.dirname(values.bundle)
-  const mainName = path.basename(values.bundle)
   const client = await page.createCDPSession()
   await client.send('Fetch.enable', {
     patterns: [
@@ -105,7 +113,7 @@ async function serveCandidateBundle(page) {
           const manifest = JSON.parse(
             base64Encoded ? Buffer.from(body, 'base64').toString() : body,
           )
-          stripPluginIntegrity(manifest)
+          pointStoreAtCandidate(manifest)
           await client.send('Fetch.fulfillRequest', {
             requestId,
             responseCode: 200,
@@ -121,11 +129,12 @@ async function serveCandidateBundle(page) {
         }
         return
       }
-      const name = path.basename(new URL(request.url).pathname)
-      const local = path.join(dir, name)
-      const file = !name.endsWith('.js')
+      const { pathname } = new URL(request.url)
+      const rel = pathname.split('/dist/').slice(1).join('/dist/')
+      const local = path.join(dir, rel)
+      const file = !rel.endsWith('.js')
         ? undefined
-        : name !== mainName && fs.existsSync(local)
+        : rel.includes('/') && fs.existsSync(local)
           ? local
           : values.bundle
       if (file === undefined) {
@@ -329,7 +338,7 @@ for (const demo of demos) {
   page.on('pageerror', e => {
     heard('pageerror', String(e))
   })
-  if (values.bundle) {
+  if (values.bundle && host === 'main') {
     await serveCandidateBundle(page)
   }
   let found

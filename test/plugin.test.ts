@@ -96,11 +96,15 @@ describe('Protein3d Plugin E2E', () => {
   })
 
   it('evaluates the plugin bundle without error-paging the app', async () => {
-    // The umd bundle only defines its global if it finished evaluating; a throw
+    // The plugin is only registered if its module finished evaluating; a throw
     // during load or configure() takes the whole app to its error page.
     expect(
-      await page.evaluate(() => typeof window.JBrowsePluginProtein3d),
-    ).toBe('object')
+      await page.evaluate(() =>
+        window.JBrowseRootModel?.pluginManager?.plugins?.some(
+          p => p.name === 'ProteinViewer',
+        ),
+      ),
+    ).toBe(true)
     expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('01-jbrowse-loaded'))
   }, 30_000)

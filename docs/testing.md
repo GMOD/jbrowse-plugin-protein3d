@@ -17,7 +17,7 @@ path shows up as a failed nightly rather than as a bug report.
 
 ## The E2E suite
 
-`test/plugin.test.ts` drives a real `jbrowse create` instance with the built umd
+`test/plugin.test.ts` drives a real `jbrowse create` instance with the built ESM
 bundle (`TEST_JBROWSE_VERSION=<version> pnpm vitest run test/plugin.test.ts`;
 `SKIP_BUILD=1` reuses `dist/`). It clicks all the way through: right-click a
 gene → `Launch protein view` → wait for the dialog to finish resolving → Launch
@@ -27,7 +27,7 @@ Every step asserts. There is no logged-and-continue path, because a suite that
 returns early on "no menu items" passes green against a bundle that error-pages
 the whole app — which is exactly what it did before. In particular:
 
-- the umd global has to exist (a bundle that throws never defines it),
+- the plugin has to be registered (a bundle that throws never registers),
 - the context menu has to contain the plugin's item,
 - `Launch` has to become enabled, and the molstar canvas has to end up with
   actual pixels drawn — the container mounts ~5s before the structure appears,

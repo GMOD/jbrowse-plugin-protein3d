@@ -4,7 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 // Keep in sync with the e2e-tests matrix in .github/workflows/push.yml
-const JBROWSE_VERSIONS = ['v4.3.0', 'nightly']
+const JBROWSE_VERSIONS = ['nightly']
 
 function getTestDir(version) {
   return path.join(process.cwd(), `.test-jbrowse-${version}`)
