@@ -1,3 +1,9 @@
+## [0.15.3](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.2...v0.15.3) (2026-10-01)
+
+### Other Changes
+
+- The AlphaFold confidence key names its bands rather than printing the nudged cuts ([435fe0f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/435fe0f86dc31837013948f65b5a5c7a3bba810e))
+
 ## [0.15.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.1...v0.15.2) (2026-09-25)
 
 ### Bug Fixes
