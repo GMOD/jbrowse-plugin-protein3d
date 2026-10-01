@@ -1,3 +1,9 @@
+## [0.16.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.3...v0.16.0) (2026-10-01)
+
+### Other Changes
+
+- Ship as a code-split ES module for JBrowse 5, and stop building the UMD ([6bb168c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6bb168cbe391c630ce7ce6e00571f6b0988d3628))
+
 ## [0.15.3](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.2...v0.15.3) (2026-10-01)
 
 ### Other Changes
