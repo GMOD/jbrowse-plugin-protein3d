@@ -1,6 +1,7 @@
+import { isGeneLikeType } from '@jbrowse/core/util'
 import { isRecognizedDatabaseId, matchDbIdPattern } from 'p2s_mapper'
 
-import { codingTranscripts, isGeneLikeType } from '../codingFeature'
+import { codingTranscripts } from '../codingFeature'
 
 import type { Feature } from '@jbrowse/core/util'
 import type { Isoform } from 'p2s_mapper'

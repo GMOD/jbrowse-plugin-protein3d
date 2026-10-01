@@ -36,11 +36,8 @@ export async function fetchRegionSequence({
   if (!assembly) {
     throw new Error('assembly not found')
   }
-  const sessionId = 'getSequence'
-  // a named object keeps sessionId, which v4 hosts read from the args
-  const args = {
+  const [feat] = await rpcManager.call('getSequence', 'CoreGetFeatures', {
     adapterConfig: getConf(assembly, ['sequence', 'adapter']),
-    sessionId,
     regions: [
       {
         start,
@@ -49,10 +46,9 @@ export async function fetchRegionSequence({
         assemblyName: assembly.name,
       },
     ],
-  }
-  const [feat] = await rpcManager.call(sessionId, 'CoreGetFeatures', args)
+  })
   const seq = feat?.get('seq') as string | undefined
-  return { seq, assemblyGeneticCodeId: assemblyGeneticCode(assembly, refName) }
+  return { seq, assemblyGeneticCodeId: assembly.getGeneticCodeId(refName) }
 }
 
 export async function fetchProteinSeq({
@@ -151,12 +147,4 @@ export async function fetchTranscriptProteinSeqs({
     transcripts,
     fetchSpan: span => fetchRegionSequence({ session, assemblyName, ...span }),
   })
-}
-
-// v5 hosts only; a v4 assembly has neither the method nor the config slot
-function assemblyGeneticCode(assembly: object, refName: string) {
-  const { getGeneticCodeId } = assembly as {
-    getGeneticCodeId?: (refName: string) => number
-  }
-  return getGeneticCodeId?.call(assembly, refName)
 }

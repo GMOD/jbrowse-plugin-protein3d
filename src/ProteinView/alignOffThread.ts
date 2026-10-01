@@ -31,11 +31,7 @@ export async function alignOffThread<M extends AlignmentMethod>({
   current?: () => boolean
 }): Promise<RpcCallReturn<M>> {
   try {
-    // v4 hosts read sessionId from the args as well as the call
-    return await rpcManager.call(ALIGNMENT_RPC_SESSION, name, {
-      ...args,
-      sessionId: ALIGNMENT_RPC_SESSION,
-    })
+    return await rpcManager.call(ALIGNMENT_RPC_SESSION, name, args)
   } catch (e) {
     if (!current()) {
       throw e

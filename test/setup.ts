@@ -16,8 +16,6 @@ export const TRACK_ID = 'gencode.v44.annotation.sorted.gff3'
 
 const TRACK_CONTAINER = `[data-testid="trackRenderingContainer-${VIEW_ID}-${TRACK_ID}"]`
 
-// Support testing against different JBrowse versions via TEST_JBROWSE_VERSION env var
-// e.g., TEST_JBROWSE_VERSION=v3.7.0 or TEST_JBROWSE_VERSION=v4.0.4
 const TEST_JBROWSE_VERSION = process.env.TEST_JBROWSE_VERSION || 'nightly'
 const TEST_JBROWSE_DIR = path.join(
   process.cwd(),
@@ -173,11 +171,9 @@ function createTestConfig() {
         {
           id: VIEW_ID,
           type: 'LinearGenomeView',
-          init: {
-            loc: 'chr1:114,704,469-114,716,894',
-            assembly: 'hg38',
-            tracks: [TRACK_ID],
-          },
+          loc: 'chr1:114,704,469-114,716,894',
+          assembly: 'hg38',
+          tracks: [TRACK_ID],
         },
       ],
     },
@@ -299,7 +295,7 @@ export async function launchBrowser(headless = true): Promise<Browser> {
 const pageComplaints: string[] = []
 
 function complain(text: string) {
-  if (!isBrowserConsoleNoise(text, TEST_JBROWSE_VERSION)) {
+  if (!isBrowserConsoleNoise(text)) {
     pageComplaints.push(text)
   }
 }
@@ -375,34 +371,10 @@ export async function waitForJBrowseLoad(page: Page): Promise<void> {
   await page.waitForSelector(TRACK_CONTAINER, { timeout: 60_000 })
 }
 
-// Painted features, in every shape the hosts under test render them. v3 emits
-// svg boxes; v4 server-side renders each block to its own canvas and suffixes
-// that canvas's testid with `_done`. Current main deleted the block-based
-// display (jbrowse-components 8b1dacf9ff): the display is one GPU canvas with
-// no testid at all, and the signal moved to the display wrapper.
-//
-// That wrapper keeps changing shape, so this list is append-only and every
-// entry is a host still under test — dropping one silently stops testing that
-// host. The previous entry assumed `data-display-phase` sat on a DESCENDANT of
-// the `-done` element (note the space); main has since collapsed them onto one
-// element, so that selector quietly matched nothing and the nightly job timed
-// out waiting for a track that had in fact rendered.
-//
-// Prefer the most explicit signal main now offers: `data-display-drawn` is
-// literally "something has been drawn", which is what the older two-part check
-// was approximating. Both conditions are kept because neither alone is enough —
-// `-done` flips on an empty canvas while the fetch is still in flight, and
-// `ready` is reachable before anything has been drawn.
-export const PAINTED_FEATURES = [
-  // v4 block-based canvases
-  'canvas[data-testid$="_done"]',
-  // v3 svg boxes
-  '[data-testid^="box-"]',
-  // main, while phase lived on a child of the -done wrapper
-  '[data-testid$="-done"] [data-display-phase="ready"]',
-  // main today: one wrapper carrying both flags
-  '[data-display-drawn="true"][data-display-phase="ready"]',
-].join(', ')
+// `data-display-drawn` is "something has been drawn"; `ready` alone is reachable
+// before anything is drawn.
+export const PAINTED_FEATURES =
+  '[data-display-drawn="true"][data-display-phase="ready"]'
 
 export async function waitForTrackLoad(page: Page): Promise<void> {
   await page.waitForSelector(PAINTED_FEATURES, { timeout: 60_000 })
@@ -432,11 +404,9 @@ async function readMenuItems(page: Page, timeout = 2000): Promise<string[]> {
 // which stopped landing on a 10px-tall glyph the moment the row moved by two
 // pixels, and reported it as "no context menu" -- a layout change wearing the
 // costume of a broken menu.
-// Scrolled into view first, and measured after. Once a protein view is open on
-// a host without side-by-side the two views stack, which puts the genome view
-// above the fold: the track reported `top:-113` on v4.3.0 and every mouse move
-// landed outside the window, reading as "the host has no features" rather than
-// "you are pointing off the screen".
+// Scrolled into view first, and measured after: once a protein view is open the
+// genome view can sit above the fold, and every mouse move would land outside
+// the window, reading as "the host has no features".
 async function findFeature(page: Page) {
   const box = await page.$eval(TRACK_CONTAINER, el => {
     el.scrollIntoView({ block: 'center' })
@@ -597,10 +567,9 @@ export async function waitForLaunchEnabled(page: Page): Promise<void> {
   })
 }
 
-// Launch enables before a v4 host has painted the UniProt table: those hosts
-// serve MUI's components lazily behind a null fallback, so the rows, their
-// accession links and status chips arrive up to 4 s later. A capture taken on
-// the button alone shows an empty table.
+// Launch can enable before the UniProt table's rows, accession links and status
+// chips have painted, and a capture taken on the button alone shows an empty
+// table.
 export async function waitForUniProtTablePainted(page: Page): Promise<void> {
   await page.waitForFunction(
     dialog => {

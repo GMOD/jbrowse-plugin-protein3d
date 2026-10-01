@@ -7,17 +7,10 @@ export const PORT = 9000
 export const BASE = `http://localhost:${PORT}`
 export const APP = `${BASE}/.test-jbrowse-nightly/?config=/config.json`
 
-// "The genome track painted", in every shape the hosts render it. Counting
-// canvases used to stand in for this, but that was a proxy for the old
-// block-based renderer (many canvases); current main draws one GPU canvas per
-// display, so the count dropped below the threshold on a page that had in fact
-// rendered. Keep this in step with PAINTED_FEATURES in test/setup.ts.
-export const PAINTED_FEATURES = [
-  'canvas[data-testid$="_done"]',
-  '[data-testid^="box-"]',
-  '[data-testid$="-done"] [data-display-phase="ready"]',
-  '[data-display-drawn="true"][data-display-phase="ready"]',
-].join(', ')
+// "The genome track painted". Keep this in step with PAINTED_FEATURES in
+// test/setup.ts.
+export const PAINTED_FEATURES =
+  '[data-display-drawn="true"][data-display-phase="ready"]'
 
 export const specUrl = spec =>
   `${APP}&session=${encodeURIComponent(`spec-${JSON.stringify(spec)}`)}`

@@ -46,7 +46,6 @@ const ColorSchemeMenu = observer(function ColorSchemeMenu({
         </IconButton>
       </Tooltip>
       <Menu
-        keepMounted
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => {
@@ -117,7 +116,6 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
         </IconButton>
       </Tooltip>
       <Menu
-        keepMounted
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={() => {

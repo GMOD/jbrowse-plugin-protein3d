@@ -231,162 +231,44 @@ the e2e's multi-structure leg passed only because of that.
 installed `@jbrowse/core` ReExports list whole and splits Mol\* into a chunk
 under `dist/chunks/`, which the entry imports relative to its own url on the
 page and in the RPC worker. v4 hosts never load it: the hub configs carry
-`storePlugin: "Protein3d"` beside a UMD `url`, so a v5 host resolves the store's
-ESM build and a v4 host loads the UMD already published there (0.15.3, frozen).
-No release since rebuilds a UMD, so nothing here can break a v4 host.
+`storePlugin: "Protein3d"` beside a url pinned to the 0.15.3 UMD, so a v5 host
+resolves the store's ESM build and a v4 host loads a build nothing here
+rebuilds.
 
 A key the host lacks throws at its first read naming the key, and `PluginLoader`
 error-pages the session, so the gate is booting on hosted `main`
-(`host-compat:candidate`), not a list comparison. The msaview 2.7.0 outage — an
-`@mui/material/SvgIcon` whose shape differed between MUI 7 and MUI 9 hosts —
-cannot recur on hosts that are all MUI 9.
-
-**The v4 accommodations below are dead weight now** and stay until they are cut
-in one pass: the `addToExtensionPoint` typing, both context-menu shapes in
-`MenuTarget`, `keepMounted` on the view header's menus, the `init`-nested genome
-view settings.
-
-**Building against core 5 means typing for a host most users do not run.** Where
-v5's types reject the call v4 hosts need, the code keeps the v4 call and adapts
-the typing: `addToExtensionPoint` rather than `contributeToExtensionPoint`,
-`sessionId` inside `CoreGetFeatures` args (v4.3.0 reads it there to find the
-adapter cache), and a local `SessionWithAddTracks` over `addTrackConf`, the only
-method v4.3.0 sessions have.
-
-**A menu of ours opens off screen on its first click on v4 hosts.** v4.3.0
-serves `Menu`, `MenuItem`, `Checkbox` and the rest as `React.lazy` behind a null
-Suspense fallback, and the `@mui/material` barrel is no different, so no import
-path avoids it. MUI's Popover measures the paper once on open; empty, it is 16px
-wide, the right-edge clamp never fires, and the items arrive 400 ms later off
-the right edge. The second open finds the chunks loaded. The Tune and colour
-scheme menus in the view header carry `keepMounted`, which renders their items
-when the view mounts. A new menu with components nothing mounted earlier needs
-its own `keepMounted`. Core `main` serves these components eagerly, so the
-nightly never shows it.
-
-**The canvas context-menu API is `main`-only.** `contextMenuInfo`, `isGeneLike`
-and `fetchFullFeature` do not exist at `v4.3.0`, where `LinearBasicDisplay`
-still lives in `plugins/linear-genome-view` with the synchronous
-`contextMenuFeature`. A plugin that reads only the new shape shows **no menu
-item at all** on every host in the wild, and **fails silently** — the gate is
-merely falsy, nothing throws, so a compat typecheck stays green and no canary
-fires. Only a released-host e2e leg asserting the item is present catches it.
-(msaview shipped exactly this regression in v2.7.0/v2.7.1.) This plugin resolves
-both shapes to one `MenuTarget` in `src/LaunchProteinView/index.ts`; which
-property is present _is_ the version check. Keep both.
-
-**Call a captured super view with a receiver, always.** `main`'s canvas display
-writes its own contribution as `info && this.isGeneLike ? …`. Capture
-`const superContextMenuItems = self.contextMenuItems` and call it bare and
-`this` is undefined, so it throws before returning anything, and the
-ErrorBoundary around the menu swallows the throw: the user right-clicks a
-feature and gets **no menu at all** — the host's own items vanish along with
-ours, which is a worse outcome than the plugin simply not contributing.
-`superContextMenuItems.call(self)` is the entire fix. Nothing static sees this
-one: tsc types the super as a plain `() => MenuItem[]`, and the throw needs a
-host whose implementation happens to read `this`. `host-compat` did not see it
-either, because it booted the bundle and never opened a menu — it does now.
-
-jbrowse-components fixed its side the same day (`104bbfc581`, 2026-08-17: the
-getter moves to an earlier `.views()` block so `self` carries it, plus a guard
-that calls the view detached). Keep `.call(self)` anyway — a plugin cannot
-choose which host it runs on, and every nightly zip built before that commit
-still throws. The same bare call sits in **msaview, icn3d, alphagenome,
-alphagenome2 and graphgenomeview**.
+(`host-compat:candidate`), not a list comparison.
 
 **`host-compat` intercepted every request and broke what it was measuring.**
 `page.setRequestInterception(true)` routes the whole page through node, and with
-it on, v4.3.0, latest and main booted the config and then sat on "Select a view
-to launch" with `session.views` empty and not one console message — the same url
-in a plain browser opened both views. Passthrough interception reproduced it, so
-the candidate bundle was never the variable. The interception is now scoped to
+it on the hosts booted the config and then sat on "Select a view to launch" with
+`session.views` empty and not one console message — the same url in a plain
+browser opened both views. The interception is now scoped to
 `*jbrowse-plugin-protein3d*` through CDP `Fetch.enable` patterns, which serves
-the local dist (molstar chunk included) and leaves every other request alone.
+the local dist and leaves every other request alone. It was never red: no views
+meant the probe excused `viewReady` and printed `ok`, so the gate had quietly
+become "the bundle evaluated". An unapplied spec is now a failure.
 
-What made it expensive is that it was never red: no views meant the probe
-excused `viewReady` and printed
-`ok (booted; host did not apply the session spec, view not asserted)` for the
-three hosts that matter, so the pre-publish gate had quietly become "the umd
-evaluated". An unapplied spec is now a failure. A check that cannot tell "fine"
-from "didn't look" reports both as fine.
-
-**`host-compat` right-clicks a gene now.** Booting the bundle only proves it
+**`host-compat` right-clicks a gene.** Booting the bundle only proves it
 evaluates, and the declarative launch enters through `LaunchView-ProteinView` —
-neither touches the context menu. Both earlier outages happened at evaluation;
-the 2026-08-17 one did not, and nothing on the hosted-release side would have
-seen it. The leg asserts the menu carries the host's own rows as well as ours,
-because a plugin that throws while contributing takes the whole menu down and
-asserting only on our row calls that a missing feature. Verified by making the
-contribution throw: `the feature context menu lost the host's own rows: []`,
-exit 1, on v4.3.0 and main.
-
-**Side-by-side launch works on `main` only, and that is the v4 hangover rather
-than a break.** Measured 2026-08-17 on the hosted releases: `main` has
-`session.setPendingMove`, so the protein view lands in a right-hand panel;
-v4.3.0 and `latest` expose `setUseWorkspaces` but place views through
-`setPendingMoveToSplitRight`, a module function in `@jbrowse/app-core`'s
-DockviewContext, so the views stack and `sideBySide.ts` warns. Nothing on the
-session distinguishes that host from a newer one that dropped the action, which
-is why the warning names both and why sniffing the version to quiet it would
-throw away the alarm. Wiring up v4's door would be new v4-only accommodation, so
-it stays unwired.
+neither touches the context menu. The leg asserts the menu carries the host's
+own rows as well as ours, because a plugin that throws while contributing takes
+the whole menu down and asserting only on our row calls that a missing feature.
 
 **The e2e finds a feature by asking the host, not by pixel arithmetic.**
 `openFeatureContextMenu` hovers across the track container until the display
 reports `featureIdUnderMouse`, then right-clicks that point — the same hit test
-the right-click itself runs, so a point that answers is a point whose menu is
-the feature's. The previous version right-clicked a constant 10px below the
-container top. main's glyph row is 10px tall and starts at the top, so the click
-landed one pixel past its bottom edge and the leg failed with a y coordinate in
-the message — a missed click that reads exactly like the genuinely broken menu
-it happened to be sitting on top of.
+the right-click itself runs. The previous version right-clicked a constant 10px
+below the container top, landed one pixel past the 10px glyph row, and read
+exactly like a broken menu.
 
-**The CDS truncation is fixed upstream — take the `fetchFullFeature` route and
-it cannot come back.** It was real: measured 2026-08-01 on the E2E fixture
-(GENCODE v44, NRAS ENST00000369535.5), a host handed over a transcript whose
-`CDS` was reduced to a single record while all 7 exons survived, giving 40aa and
-120 mapped positions against a 189-residue structure, where v3.7.0 resolved all
-4 CDS → 190aa and 570 positions.
-
-The cause was **not** block clipping and not anything in this plugin. GENCODE
-gives every segment of a multi-segment CDS **the same `ID`**
-(`ID=CDS:ENST00000369535.5` on all four lines) while each exon gets a unique one
-(`ID=exon:…:1..7`) — that asymmetry is the whole tell. A parser that treats the
-GFF3 `ID` as a unique key keeps one CDS and drops the continuation lines, and
-leaves the exons alone. `gff-nostream` now registers the id once but still
-attaches every line to its parent, and jbrowse-components pins that behaviour
-with `keeps every segment of a CDS that shares one ID across lines` in both
-`Gff3Adapter` and `Gff3TabixAdapter`. Verified 2026-08-10 against the live
-`gencode.v44.annotation.sorted.gff3.gz`: the adapter returns 4 CDS, 570 bp,
-190aa.
-
-**No released host was ever affected, so a released leg reporting 40aa means a
-stale zip.** Bisected against the real records 2026-08-10: only **gff-nostream
-3.0.6 – 3.0.9** truncate; 3.0.5 and earlier are fine, 1.3.9 is fine, 3.0.10+ is
-fine. Checking the lockfiles rather than the caret ranges — which is the step
-that matters, since pnpm builds from the lockfile — **`v4.3.0` shipped with
-`gff-nostream@3.0.5` pinned and is clean**, and v3.7.0's `^1.3.3` is clean.
-jbrowse-components `main` carried 3.0.9 for about thirteen days (2026-05-19 to
-2026-06-01) and nothing else ever did.
-
-So the only build that can show 40aa is a **nightly zip fetched during that
-window** — which is precisely the frozen-`.test-jbrowse-nightly` trap below,
-since `pretest` never refreshes an existing one. That is the likely source of
-the 2026-08-01 measurement. If a leg reports 40aa today, date the zip before
-suspecting anything else.
-
-What is left is not truncation but **architecture**, and it is why
-`fetchFullFeature` matters. On canvas hosts the render payload is typed arrays
-and hit-detection items — there are no `Feature` objects in it at all, so a
-plugin reading render data has no CDS to find, by design.
-`fetchFullFeature(parentId, displayedRegionIndex)` re-queries the adapter
-(`GetCanvasFeatureDetails` → `getFeaturesArray`) and returns the complete
-feature. `resolveTarget` in `src/LaunchProteinView/index.ts` already prefers
-that path and falls back to `contextMenuFeature` only on legacy hosts — so the
-short alignment can only reappear on an old host, where it is unfixable from
-here.
-
-Still: don't pin exact mapping counts in tests across hosts.
+**The menu fetches the whole gene.** The canvas display's render payload holds
+typed arrays and hit-test items, no `Feature` objects, so `resolveTarget` hands
+the dialog `fetchFullFeature(parentId, displayedRegionIndex)`, which re-queries
+the adapter for every CDS record. A 40aa NRAS translation (one CDS of four) came
+from `gff-nostream` 3.0.6–3.0.9 keying GENCODE's shared CDS `ID`, on main from
+2026-05-19 to 2026-06-01 only; a leg reporting it today means a stale nightly
+zip. Don't pin exact mapping counts in tests.
 
 **A red nightly leg is usually upstream churn, not your diff.**
 `jbrowse create --nightly` fetches a zip that is rebuilt without notice, and
@@ -394,8 +276,7 @@ Still: don't pin exact mapping counts in tests across hosts.
 copy is frozen at whatever `main` was the day it was made while CI downloads a
 fresh one every run. Check `stat .test-jbrowse-nightly/index.html` before
 theorizing, then `rm -rf` and recreate to reproduce. `curl -sI` the zip url to
-date what CI got; it has flipped mid-run. The **released-host legs are the ones
-that mean a user is affected**.
+date what CI got; it has flipped mid-run.
 
 ## What a unit test can and cannot instantiate
 
@@ -428,41 +309,16 @@ name. A stray `console.log` still shows up, which is the point.
 `pageComplaintsSince()` drains what the browser logged, and every leg asserts it
 empty. A console line is the only place several host incompatibilities have ever
 appeared: a bundle resolving a re-export the host dropped, a menu contribution
-throwing inside an ErrorBoundary, MUI 9's `createSvgIcon` missing from a v4
-host's `SvgIcon`. None of those reach tsc, eslint or a url check, and a suite
-that merely _prints_ them is betting that somebody reads the scrollback. Nobody
-does — a `silent: 'passed-only'` here hid the `init` deprecation below for
-exactly one afternoon before it was caught.
+throwing inside an ErrorBoundary. None of those reach tsc, eslint or a url
+check, and a suite that merely _prints_ them is betting that somebody reads the
+scrollback. Nobody does — a `silent: 'passed-only'` here once hid a deprecation
+warning for an afternoon before it was caught.
 
-Two lists in `test/setup.ts` say what the page is allowed to say:
-
-- `GPU_NOISE` tracks `products/jbrowse-capture/src/browser.ts` in
-  jbrowse-components, and keeps upstream's rule that a real GPU failure
-  (`context LOST`, `GL error`) is **not** noise. CI has no GPU, so swiftshader
-  narrates.
-- `KNOWN_DEBT` holds two entries and every entry needs an exit condition. One is
-  v5's warning that `LinearGenomeView` "nests its settings under `init`":
-  v4.3.0's LGV has no other door — `init: types.frozen<InitState>()` plus the
-  autorun in its `afterAttach.ts`. Since 2026-09-17 (`61b922f`) `addView` in
-  `LaunchProteinViewExtensionPoint` writes `init` only when the host's LGV
-  declares it, so the plugin's own launches are flat on v5; the e2e fixture's
-  `defaultSession` in `test/setup.ts` still nests, for the v4 legs.
-
-An entry can be scoped to the hosts it is true of, and the second one has to be.
-`sideBySide.ts` warns that the session "supports workspaces but not
-setPendingMove" on every released host, where that is a known limitation nobody
-is wiring up — but the identical sentence on `main` would mean the session API
-moved out from under the plugin, which is a break. Excusing it everywhere
-deletes the alarm it exists to raise, so its `expectedOn` is every host but
-`main`. The rules live in `scripts/browserConsole.mjs`, shared with
-`host-compat`, with unit tests beside them, because a mis-scoped entry fails
-open and in silence.
-
-Verify the gate still bites before trusting it: delete the `init` entry and the
-legs fail, naming the message. Before `61b922f` two sources failed, the test
-config's own session and the view the plugin itself adds; after it only the
-fixture should, which is the check that the deprecation no longer reaches
-shipped code. That second half has not been re-measured.
+`GPU_NOISE` in `scripts/browserConsole.mjs`, shared with `host-compat` and
+`check-demos`, is the one list of what the page is allowed to say. It tracks
+`products/jbrowse-capture/src/browser.ts` in jbrowse-components, and keeps
+upstream's rule that a real GPU failure (`context LOST`, `GL error`) is **not**
+noise. CI has no GPU, so swiftshader narrates.
 
 **`host-compat` gates on the same rules, and arming that found its own bug.**
 The probe launched Chrome with `--use-gl=swiftshader` and no
@@ -471,14 +327,10 @@ deprecated the automatic fallback, so Mol\* got no WebGL context on any host.
 Every run printed `Error: Could not create a WebGL rendering context` and a
 `reprCount` TypeError behind it, and every run still said `ok` — `viewReady`
 reads the plugin's `loading` getter, which is about load and alignment, not
-paint. Measured 2026-09-13 across v4.0.0/v4.3.0/latest/main; the probe now uses
-the e2e's plain `--no-sandbox --disable-setuid-sandbox` and all four are clean.
-No separate "did it render" assertion is needed, because a missing context is a
-console error and a console error is now a failure.
-
-That measurement also confirms the scoping from the other side: the side-by-side
-warning appears on v4.0.0, v4.3.0 and `latest` and not on `main`, and the `init`
-deprecation appears only on `main`.
+paint. Measured 2026-09-13; the probe now uses the e2e's plain
+`--no-sandbox --disable-setuid-sandbox` and runs clean. No separate "did it
+render" assertion is needed, because a missing context is a console error and a
+console error is now a failure.
 
 **A child process writing to an inherited fd bypasses all of it.**
 `setupJBrowse` pipes esbuild's output for that reason and prints it only when
@@ -509,8 +361,8 @@ seriously: with `minimumReleaseAgeStrict` false, an install that meets a too-new
 committing it is the point.
 
 **Once the window passes, the local build works and is worth using.** Verified
-2026-08-25 against `@jbrowse/core` 4.3.0: `pnpm build`, `pnpm lint`,
-`pnpm vitest run` and `pnpm host-compat:candidate` all pass from a cold
+2026-08-25: `pnpm build`, `pnpm lint`, `pnpm vitest run` and
+`pnpm host-compat:candidate` all pass from a cold
 `pnpm install --frozen-lockfile`, which is the whole of `preversion`. So don't
 read a red build as expected — check the age of the `@jbrowse` release in the
 lockfile first. If you are inside the window, the dev harness still builds

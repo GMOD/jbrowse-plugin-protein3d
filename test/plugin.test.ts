@@ -48,11 +48,6 @@ function screenshot(name: string) {
 }
 
 // The locus lands on NRAS, whose AlphaFold structure (P01111) is 189 residues.
-// How much transcript arrives with the clicked feature is host dependent: v3
-// hands the menu the gene and the plugin picks the transcript itself, keeping
-// all four CDS records, while v4 hands over a transcript that has been reduced
-// to one CDS. So the transcript length is asserted for consistency with the
-// mapping rather than pinned to a number.
 const STRUCTURE_RESIDUES = 189
 
 describe('Protein3d Plugin E2E', () => {

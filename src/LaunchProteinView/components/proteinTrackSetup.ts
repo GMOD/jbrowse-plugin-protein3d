@@ -1,11 +1,9 @@
-import { getEnv } from '@jbrowse/mobx-state-tree'
 import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 
-import { jexlBandColor, thresholdBandColor } from './wiggleBandColors'
+import { thresholdBandColor } from './wiggleBandColors'
 import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
 
-import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
-import type PluginManager from '@jbrowse/core/PluginManager'
+import type { SessionWithAddSessionTrack } from '@jbrowse/core/util'
 
 /**
  * Fetches UniProt GFF data and extracts unique feature types
@@ -34,13 +32,13 @@ function addUniProtFeatureTracks({
   uniprotId,
   featureTypes,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
   featureTypes: string[]
 }) {
   featureTypes.forEach(type => {
     const trackId = `${uniprotId}-${type}`
-    session.addTrackConf({
+    session.addSessionTrackConf({
       type: 'FeatureTrack',
       trackId,
       name: type,
@@ -69,10 +67,10 @@ function addAntigenTrack({
   session,
   uniprotId,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
 }) {
-  session.addTrackConf({
+  session.addSessionTrackConf({
     type: 'FeatureTrack',
     trackId: `${uniprotId}-Antigen`,
     name: 'Antigen',
@@ -93,10 +91,10 @@ function addVariationTrack({
   session,
   uniprotId,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
 }) {
-  session.addTrackConf({
+  session.addSessionTrackConf({
     type: 'FeatureTrack',
     trackId: `${uniprotId}-Variation`,
     name: 'Variation',
@@ -118,12 +116,12 @@ function addAlphaFoldConfidenceTrack({
   uniprotId,
   confidenceUrl,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
   confidenceUrl: string | undefined
 }) {
   if (confidenceUrl) {
-    session.addTrackConf({
+    session.addSessionTrackConf({
       type: 'QuantitativeTrack',
       trackId: `${uniprotId}-AlphaFold-confidence`,
       name: 'AlphaFold confidence',
@@ -138,12 +136,6 @@ function addAlphaFoldConfidenceTrack({
         {
           type: 'LinearWiggleDisplay',
           displayId: `${uniprotId}-AlphaFold-confidence-LinearWiggleDisplay`,
-          // Each host drops the key it does not declare: v4 reads the
-          // renderers, v5 the display's `color`.
-          renderers: {
-            XYPlotRenderer: { color: jexlBandColor('score', PLDDT_BANDS) },
-            DensityRenderer: { color: jexlBandColor('score', PLDDT_BANDS) },
-          },
           color: thresholdBandColor('score', PLDDT_BANDS),
         },
       ],
@@ -157,13 +149,11 @@ function addAlphaFoldConfidenceTrack({
 function addAlphaMissenseTrack({
   session,
   uniprotId,
-  hasMultiWiggleDisplay,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
-  hasMultiWiggleDisplay: boolean
 }) {
-  session.addTrackConf({
+  session.addSessionTrackConf({
     type: 'MultiQuantitativeTrack',
     trackId: `${uniprotId}-AlphaMissense-scores`,
     name: 'AlphaMissense scores',
@@ -174,28 +164,18 @@ function addAlphaMissenseTrack({
         uri: `https://alphafold.ebi.ac.uk/files/AF-${uniprotId}-F1-aa-substitutions.csv`,
       },
     },
-    // v5 folded MultiLinearWiggleDisplay into LinearWiggleDisplay and warns on
-    // a config naming the old type. v4's density renderer ramps from white to
-    // posColor, so pathogenic reads red; v5 diverges at AlphaMissense's 0.5.
     displays: [
-      hasMultiWiggleDisplay
-        ? {
-            type: 'MultiLinearWiggleDisplay',
-            displayId: `${uniprotId}-AlphaMissense-scores-MultiLinearWiggleDisplay`,
-            defaultRendering: 'multirowdensity',
-            renderers: { MultiDensityRenderer: { posColor: '#d7191c' } },
-          }
-        : {
-            type: 'LinearWiggleDisplay',
-            displayId: `${uniprotId}-AlphaMissense-scores-LinearWiggleDisplay`,
-            defaultRendering: 'density',
-            color: {
-              field: 'score',
-              scale: 'linear',
-              range: ['#2c7bb6', '#ffffff', '#d7191c'],
-              domainMid: 0.5,
-            },
-          },
+      {
+        type: 'LinearWiggleDisplay',
+        displayId: `${uniprotId}-AlphaMissense-scores-LinearWiggleDisplay`,
+        defaultRendering: 'density',
+        color: {
+          field: 'score',
+          scale: 'linear',
+          range: ['#2c7bb6', '#ffffff', '#d7191c'],
+          domainMid: 0.5,
+        },
+      },
     ],
   })
 }
@@ -208,7 +188,7 @@ export async function addAllProteinTracks({
   uniprotId,
   confidenceUrl,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
   confidenceUrl: string | undefined
 }) {
@@ -236,9 +216,6 @@ export async function addAllProteinTracks({
     addAlphaMissenseTrack({
       session,
       uniprotId,
-      hasMultiWiggleDisplay: getEnv<{ pluginManager: PluginManager }>(session)
-        .pluginManager.getDisplayElements()
-        .some(d => d.name === 'MultiLinearWiggleDisplay'),
     })
   }
 }

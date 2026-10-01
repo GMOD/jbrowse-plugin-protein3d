@@ -31,29 +31,6 @@ function getTrackId(track: string | Record<string, unknown>) {
   return typeof trackId === 'string' ? trackId : undefined
 }
 
-/**
- * Track config for a trackId, reading whichever lookup this host has. Hosts are
- * not all current: a hub config lives at one permanent url that desktop installs
- * and published links keep naming, so this runs on builds years apart.
- * `getTrackById` landed 2026-07 and `getTracksById` 2026-01, while a session's
- * own `tracks` array has been there throughout — measured floor for the whole
- * short-form launch was v4.2.0 when this only called `getTracksById()`, purely
- * because of that one call. Probe it with
- * `pnpm host-compat -- --floor <version>`.
- */
-function findTrackConf(session: AbstractSessionModel, trackId: string) {
-  const host: {
-    getTrackById?: (id: string) => AnyConfigurationModel | undefined
-    getTracksById?: () => Record<string, AnyConfigurationModel>
-    tracks?: AnyConfigurationModel[]
-  } = session
-  return (
-    host.getTrackById?.(trackId) ??
-    host.getTracksById?.()[trackId] ??
-    host.tracks?.find(t => readConfObject(t, 'trackId') === trackId)
-  )
-}
-
 // `transcript_id` because Ensembl's GFF3 prefixes the ID (`transcript:ENST…`)
 function transcriptMatches(transcript: Feature, transcriptId: string) {
   const target = stripTrailingVersion(transcriptId)
@@ -87,18 +64,14 @@ async function findTranscript({
   region: { assemblyName: string; refName: string; start: number; end: number }
   transcriptId: string
 }) {
-  const sessionId = 'getFeatures'
   for (const trackConf of trackConfs) {
-    // a named object keeps sessionId, which v4 hosts read from the args
-    const args = {
-      adapterConfig: readConfObject(trackConf, 'adapter'),
-      sessionId,
-      regions: [region],
-    }
     const feats = await session.rpcManager.call(
-      sessionId,
+      'getFeatures',
       'CoreGetFeatures',
-      args,
+      {
+        adapterConfig: readConfObject(trackConf, 'adapter'),
+        regions: [region],
+      },
     )
     for (const feat of feats) {
       const hit = codingTranscripts(feat).find(t =>
@@ -166,7 +139,7 @@ export async function resolveShortLaunch({
   const transcript = await findTranscript({
     session,
     trackConfs: trackIds.flatMap(trackId => {
-      const conf = findTrackConf(session, trackId)
+      const conf = session.getTrackById(trackId)
       return conf && isFeatureTrack(conf) ? [conf] : []
     }),
     region,

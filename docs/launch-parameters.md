@@ -53,9 +53,7 @@ connectedView: {
 }
 ```
 
-Write them flat, as shown. JBrowse 4 nested these settings under an `init` key
-and JBrowse 5 deprecates that nesting; the plugin writes whichever shape the
-host takes, so a spec needs no `init` of its own.
+Write them flat, as shown; JBrowse 5 deprecates nesting them under `init`.
 
 ## Feature shape
 

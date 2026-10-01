@@ -240,9 +240,6 @@ async function probeContextMenu(page) {
   }
 
   await page.mouse.click(point.x, point.y, { button: 'right' })
-  // The view header's Tune menu is `keepMounted`, so its menuitems sit in the
-  // DOM (aria-hidden) before anything is right-clicked. Reading them as "the
-  // menu" failed v4.0.0 and v4.3.0 whenever the real menu lagged the first read.
   const deadline = Date.now() + 5000
   const hasHostRow = ls => ls.some(l => l.includes('Open feature details'))
   let labels = []
@@ -282,7 +279,7 @@ async function probeOne(browser, version) {
   const heard = (type, text) => {
     const line = `[${type}] ${text.slice(0, 200)}`
     consoleErrors.push(line)
-    if (!isBrowserConsoleNoise(text, version)) {
+    if (!isBrowserConsoleNoise(text)) {
       consoleComplaints.push(line)
     }
   }

@@ -126,9 +126,9 @@ Commands:
 
 Examples:
   node scripts/test-versions.mjs setup           # Setup all versions
-  node scripts/test-versions.mjs setup v4.3.0   # Setup only v4.3.0
+  node scripts/test-versions.mjs setup nightly  # Setup only nightly
   node scripts/test-versions.mjs run            # Test all versions
-  node scripts/test-versions.mjs run v4.0.4     # Test only v4.0.4
+  node scripts/test-versions.mjs run nightly    # Test only nightly
 
 Environment:
   TEST_JBROWSE_VERSION - Set to test against a specific version with vitest directly

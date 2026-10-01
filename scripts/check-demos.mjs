@@ -2,9 +2,9 @@
 //
 // Opens every demo link in docs/demos.md and checks the mapping it shows against
 // the `<!-- expect {...} -->` comment under the link. With --bundle, serves a
-// local build in place of the published plugin on the demos hosted on `main`,
-// so a mapping change can be checked before release. The ESM build needs
-// JBrowse 5; demos on 4.x hosts load the frozen 0.15.3 UMD either way.
+// local build in place of the published plugin, so a mapping change can be
+// checked before release. Only demos hosted on `main` are checked: a 4.x host
+// loads the frozen 0.15.3 UMD, which nothing here can change.
 //
 // Every link needs an expectation. Its fields, each optional, describe the
 // view's first structure:
@@ -322,11 +322,15 @@ const browser = await puppeteer.launch({
 })
 let failed = 0
 for (const demo of demos) {
-  const page = await browser.newPage()
   const host = hostOf(demo.url)
+  if (host !== 'main') {
+    console.log(`skip ${demo.name} (hosted on ${host})`)
+    continue
+  }
+  const page = await browser.newPage()
   const complaints = []
   const heard = (type, text) => {
-    if (!isBrowserConsoleNoise(text, host)) {
+    if (!isBrowserConsoleNoise(text)) {
       complaints.push(`[${type}] ${text.slice(0, 200)}`)
     }
   }
@@ -338,7 +342,7 @@ for (const demo of demos) {
   page.on('pageerror', e => {
     heard('pageerror', String(e))
   })
-  if (values.bundle && host === 'main') {
+  if (values.bundle) {
     await serveCandidateBundle(page)
   }
   let found

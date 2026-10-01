@@ -2,7 +2,7 @@ import React from 'react'
 
 import { observer } from 'mobx-react'
 
-import { getHighlightCoords, useStyles } from './util'
+import { useStyles } from './util'
 
 import type { HighlightRegion } from './util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -15,7 +15,7 @@ const Highlight = observer(function Highlight({
   region: HighlightRegion
 }) {
   const { cx, classes } = useStyles()
-  const coords = getHighlightCoords(model, region)
+  const coords = model.getHighlightCoords(region)
   return coords ? (
     <div
       className={cx(

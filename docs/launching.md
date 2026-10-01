@@ -122,7 +122,7 @@ const session = `spec-${JSON.stringify({
 
 `connectedView` takes a LinearGenomeView's `loc`, `assembly` and `tracks`,
 written flat; [launch parameters](launch-parameters.md#connectedview) has the
-details, including JBrowse 5's deprecation of the `init` nesting.
+details.
 
 ### Several structures in one launch
 

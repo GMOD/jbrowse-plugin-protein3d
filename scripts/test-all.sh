@@ -5,7 +5,7 @@
 #   ./scripts/test-all.sh           # Setup and run all versions
 #   ./scripts/test-all.sh setup     # Setup all versions only
 #   ./scripts/test-all.sh run       # Run tests only (assumes setup done)
-#   ./scripts/test-all.sh v4.0.4    # Run tests for specific version
+#   ./scripts/test-all.sh nightly   # Run tests for specific version
 
 set -e
 

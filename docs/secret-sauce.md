@@ -112,14 +112,10 @@ time today, so the gain is small against a real design problem.
 
 ## Constraints every idea inherits
 
-- **Colour config differs by host.** v4 wiggle renderers take `color` as a jexl
-  callback, and evaluate it once with no feature, so an unguarded
-  `get(feature, …)` shows the whole track as a TypeError. v5 takes a
-  display-level `color` scale. Display-level `bicolorPivot` worked only on
-  5.0.0-beta.1 to beta.8. Main removed `MultiLinearWiggleDisplay`. Check a track
-  colour live on v4.0.0, v4.3.0 and main (`docs/live-checks.md`), counting
-  pixels per band; the 2026-09-25 check found two configs that tsc, lint and
-  unit tests passed but that showed the track as an error.
+- **Track colour is a display-level `color` scale.** Check a track colour live
+  on main (`docs/live-checks.md`), counting pixels per band; the 2026-09-25
+  check found two configs that tsc, lint and unit tests passed but that showed
+  the track as an error.
 - **Scheme values are persisted.** `colorScheme` is an MST enumeration in saved
   sessions, so rename nothing; map a kept value to a new Mol\* theme, as
   `'hydrophobicity'` maps to `kyte-doolittle`.

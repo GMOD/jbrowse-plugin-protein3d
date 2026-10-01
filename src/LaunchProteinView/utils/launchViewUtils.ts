@@ -1,11 +1,15 @@
-import { isSessionWithAddTracks } from './sessionWithAddTracks'
+import { isSessionWithAddSessionTrack } from '@jbrowse/core/util'
+
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
 
-import type { SessionWithAddTracks } from './sessionWithAddTracks'
-import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
+import type {
+  AbstractSessionModel,
+  Feature,
+  SessionWithAddSessionTrack,
+} from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import type { AlignmentAlgorithm } from 'p2s_mapper'
 
@@ -82,7 +86,7 @@ export function launch3DProteinView({
 }
 
 // The 1D annotation view adds temporary tracks/assemblies, so it requires a
-// SessionWithAddTracks and a known uniprotId. Demanding both in the signature
+// SessionWithAddSessionTrack and a known uniprotId. Demanding both in the signature
 // forces callers to narrow up front — there's no silent no-op when a wide
 // session or missing id slips through.
 async function launch1DProteinView({
@@ -93,7 +97,7 @@ async function launch1DProteinView({
   uniprotId,
   confidenceUrl,
 }: Omit<LaunchViewParams, 'session' | 'uniprotId'> & {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   uniprotId: string
   confidenceUrl?: string
 }) {
@@ -130,7 +134,9 @@ export function getConditionalProteinLaunches({
   uniprotId,
   confidenceUrl,
 }: LaunchViewParams & { confidenceUrl?: string }) {
-  const addTracksSession = isSessionWithAddTracks(session) ? session : undefined
+  const addTracksSession = isSessionWithAddSessionTrack(session)
+    ? session
+    : undefined
   return {
     launch1D:
       addTracksSession && uniprotId

@@ -1,6 +1,5 @@
 import { types } from '@jbrowse/mobx-state-tree'
 
-import { extendPluggableStateModel } from '../extendStateModel'
 import { linkageGenomeMapping } from './linkage'
 
 import type { Protein1DLinkage } from './linkage'
@@ -48,7 +47,7 @@ export default function Protein1DLinkageF(pluginManager: PluginManager) {
     'Core-extendPluggableElement',
     (elt: PluggableElementType) => {
       if (isLinearGenomeView(elt)) {
-        extendPluggableStateModel(elt, withProteinLinkage)
+        elt.extendStateModel(withProteinLinkage)
       }
       return elt
     },

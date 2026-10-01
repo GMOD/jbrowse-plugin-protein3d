@@ -25,52 +25,13 @@ const GPU_NOISE = [
   'Failed to create WebGPU Context Provider',
 ]
 
-// Warnings this plugin has read and owes a fix for. Each is a debt with an exit
-// condition, not a decision to stop looking — delete an entry and the gate
-// starts failing on it again. `expectedOn` scopes one to the hosts where it
-// means what the comment says, because the same sentence can be a known
-// limitation on one host and an alarm on another.
-// `session.setPendingMove` landed on main and has not shipped in a release, so
-// every released host through `latest` still places views through
-// @jbrowse/app-core. Measured 2026-08-17, re-measured 2026-09-13.
-const preSetPendingMove = host => host !== 'main' && host !== 'nightly'
-
-/** @type {{ needle: string, expectedOn?: (host: string) => boolean }[]} */
-const KNOWN_DEBT = [
-  {
-    // v5 unwraps v4's nested `init` and warns; v4.3.0's LinearGenomeView has no
-    // other way in (`init: types.frozen<InitState>()` plus the autorun in
-    // `afterAttach.ts` that reads it). The extension point writes whichever
-    // shape the host declares, so only the e2e fixture's defaultSession in
-    // test/setup.ts still says it on v5. Drop both together with v4.
-    needle: 'nests its settings under "init"',
-  },
-  {
-    // sideBySide.ts says this on purpose. Releases through v4.3.0 expose
-    // `setUseWorkspaces` but place views through @jbrowse/app-core's
-    // `setPendingMoveToSplitRight`, so the protein view stacks instead of
-    // landing beside the genome — a known v4 limitation nobody is wiring up.
-    // On a newer host the identical line means the session API moved out from
-    // under the plugin, which is a break, so it is excused only where it is
-    // expected. See CLAUDE.md, "Host compatibility".
-    needle: 'supports workspaces but not setPendingMove',
-    expectedOn: preSetPendingMove,
-  },
-]
-
 /**
  * @param {string} text
- * @param {string} host version label under test, e.g. `v4.3.0` or `main`
  * @returns {boolean}
  */
-export function isBrowserConsoleNoise(text, host) {
+export function isBrowserConsoleNoise(text) {
   if (text.includes('[WebGL2Hal #')) {
     return !text.includes('context LOST') && !text.includes('GL error')
   }
-  return (
-    GPU_NOISE.some(n => text.includes(n)) ||
-    KNOWN_DEBT.some(
-      d => text.includes(d.needle) && (!d.expectedOn || d.expectedOn(host)),
-    )
-  )
+  return GPU_NOISE.some(n => text.includes(n))
 }

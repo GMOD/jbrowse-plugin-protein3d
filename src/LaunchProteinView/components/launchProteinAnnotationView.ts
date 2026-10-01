@@ -3,8 +3,7 @@ import { addAllProteinTracks } from './proteinTrackSetup'
 import { formatViewName } from '../utils/launchViewUtils'
 
 import type { Protein1DLinkage } from '../../Protein1DLinkage'
-import type { SessionWithAddTracks } from '../utils/sessionWithAddTracks'
-import type { Feature } from '@jbrowse/core/util'
+import type { Feature, SessionWithAddSessionTrack } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export async function launchProteinAnnotationView({
@@ -16,7 +15,7 @@ export async function launchProteinAnnotationView({
   connectedViewId,
   connectedAssemblyName,
 }: {
-  session: SessionWithAddTracks
+  session: SessionWithAddSessionTrack
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
