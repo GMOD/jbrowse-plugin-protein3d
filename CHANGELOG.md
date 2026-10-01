@@ -1,3 +1,10 @@
+## [1.0.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.16.0...v1.0.0) (2026-10-01)
+
+### Other Changes
+
+- Drop the code paths that existed only for JBrowse 4 hosts ([5bb1ebf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5bb1ebfe1c2935a38588c1ec5ab87cc6dfd9331d))
+- A session-spec test waits for the protein view, not for the network to go quiet ([4064ae2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4064ae27afb013fad010be99f4596adebef257ea))
+
 ## [0.16.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.15.3...v0.16.0) (2026-10-01)
 
 ### Other Changes
