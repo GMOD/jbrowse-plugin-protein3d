@@ -621,7 +621,7 @@ export async function getProteinViewState(page: Page) {
 // Open a session spec on the test instance, the way a shared link does.
 export async function openSessionSpec(page: Page, spec: object) {
   const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
-  await page.goto(url, { waitUntil: 'networkidle2', timeout: 60_000 })
+  await page.goto(url, { waitUntil: 'domcontentloaded' })
 }
 
 // Fraction of the molstar canvas that is not blank. Read back from a real
