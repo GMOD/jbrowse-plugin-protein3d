@@ -1,3 +1,31 @@
+## [1.0.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.0.0...v1.0.1) (2026-10-02)
+
+### Other Changes
+
+- A failed structure no longer stalls the view or retries on every rerun ([1d18025](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1d180252367f6cc626b3a8339554d50cad231e22))
+- Hovers stay on the mapped chain; focusResidues works without a transcript ([c1e2745](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c1e2745f8e1650759e14d2374ed8c38d69f93667))
+- Launch dialog: lookup mode sticks, cleared accession clears the model, typed PDB ID launches ([d0c8408](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d0c84089f9fbdba6e5e62ad6f4e1fa7b906a9aa8))
+- Re-align goes through the superposer; bad stored settings can't block a view ([e620b5a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e620b5ae28f902a245fe668b968685ec4498da00))
+- Manual alignment imports into the open panel's structure, checked as the model checks it ([ab9b2eb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ab9b2ebd5204e5733edc83ca76f108f2c77c0eff))
+- Host-compat fails on any probed host failing ([1ef7386](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1ef7386bdcd66525c0b855938518cb86ef694187))
+- Drop the UMD-era devDependencies and the one-version e2e plumbing ([704a2f5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/704a2f5338708df8c981bfb387fac24469ca7838))
+- Probe scripts read JBrowse 5's session global only ([16cf367](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/16cf367ab5973a7d5e24d1b3bc3eb410b73b7011))
+- Per-structure show/hide toggle in the view header ([c377b20](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c377b2005c55280e3d4d9fa474871f68ab60f041))
+- Typecheck the unit tests ([ecf141f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ecf141fb02776455289577428830d10376dc4694))
+- Re-align during a superposition is tracked and not overwritten ([f2c666d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f2c666dd80b9a1042d9a9011441e10e92e526218))
+- Hide toggle can always be undone; focusing shows a hidden structure ([ddf2ea4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ddf2ea44365b05a2453ae75592770fd5ddecfce0))
+- Foldseek reports a rate-limited or unknown poll status at once ([6974937](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6974937b2f2e16c951dcec3ffe5795ca6e12dad6))
+- Drop TEST_JBROWSE_VERSION; the e2e runs on the nightly only ([48abd19](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/48abd195a78d2f1e64afad90d8f673c5387e9f1a))
+- Refresh e2e screenshots on the 2026-10-02 nightly ([6ad20bb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6ad20bb1e0d348d2e10da978daed80037ec830b6))
+- Structure's creation type is the spec, pdbId included ([36e0d5c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/36e0d5c2d1689554df1c24e5f90edf364ff8919c))
+- A structure opened without a transcript gets a chain picker ([65d1b5e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/65d1b5e2600ae799dda12c143bd5ad7a810d2699))
+- A standalone chain switch clears what a chain pick clears ([ff9326d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff9326d2d5a8d1e8f04a06387e0f57e63b176076))
+- Hiding a structure survives Re-align; a standalone structure picks its chain ([f6c7ce3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f6c7ce35565dffa5fb9d81f80cc5863df53d882a))
+- AlphaFold and 1TUP superposed, and 1TUP without a transcript ([279b6f1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/279b6f19f78d9d8ce3005e143779801c769d0e0c))
+- Reformat two docs so format:check, which preversion runs, passes ([d5af122](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d5af1226ea5103bb0c349cbfe8417ebb81cf5ca3))
+- An imported alignment onto another chain clears the old chain's selection ([b945efa](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b945efa4cbbc64bf121f2f1320761ce01f695e8b))
+- Superposition reruns when a structure is swapped for another mid-run ([1ef710a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1ef710ae81b0718e4e993167e2b5682df78d9059))
+
 ## [1.0.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v0.16.0...v1.0.0) (2026-10-01)
 
 ### Other Changes
