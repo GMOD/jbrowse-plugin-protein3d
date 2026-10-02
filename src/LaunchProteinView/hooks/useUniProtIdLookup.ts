@@ -36,10 +36,19 @@ export default function useUniProtIdLookup({
   feature: Feature
   view: LinearGenomeViewModel
 }) {
-  const [lookupMode, setLookupMode] = useState<LookupMode>('auto')
+  const geneIds = extractFeatureIdentifiers(feature)
+  const featureUniprotId = geneIds.uniprotId
+  const hasSearchableIdentifier =
+    geneIds.recognizedIds.length > 0 || !!geneIds.geneName
+  // Nothing to search and no accession on the feature: the auto mode has no
+  // query to run, so the dialog opens on the manual field instead of reporting
+  // an empty result for an empty query. Only the opening mode is chosen here;
+  // deciding it on every render snapped the user's pick back.
+  const [lookupMode, setLookupMode] = useState<LookupMode>(() =>
+    featureUniprotId ? 'feature' : hasSearchableIdentifier ? 'auto' : 'manual',
+  )
   const [manualUniprotId, setManualUniprotId] = useState('')
   const [taxonIdInput, setTaxonIdInput] = useState('')
-  const geneIds = extractFeatureIdentifiers(feature)
 
   // The gene-name UniProt search is ambiguous across species, so scope it to
   // the assembly's organism where the assembly says what that is. jb2hubs
@@ -69,20 +78,7 @@ export default function useUniProtIdLookup({
   const [selectedQueryId, setSelectedQueryId] = useState('auto')
   const [selectedUniprotId, setSelectedUniprotId] = useState<string>()
 
-  const featureUniprotId = geneIds.uniprotId
-  const hasSearchableIdentifier =
-    geneIds.recognizedIds.length > 0 || !!geneIds.geneName
-
-  // Nothing to search and no accession on the feature: the auto mode has no
-  // query to run, so the dialog opens on the manual field instead of reporting
-  // an empty result for an empty query.
-  const effectiveLookupMode =
-    lookupMode === 'auto' && featureUniprotId
-      ? 'feature'
-      : lookupMode === 'auto' && !hasSearchableIdentifier
-        ? 'manual'
-        : lookupMode
-  const isAutoMode = effectiveLookupMode === 'auto'
+  const isAutoMode = lookupMode === 'auto'
 
   const {
     entries: uniprotEntries,
@@ -111,14 +107,14 @@ export default function useUniProtIdLookup({
     : undefined
   const autoUniprotId = uniprotEntries[0]?.accession
   const uniprotId =
-    effectiveLookupMode === 'feature'
+    lookupMode === 'feature'
       ? featureUniprotId
       : isAutoMode
         ? (pickedUniprotId ?? autoUniprotId)
         : debouncedManualUniprotId
 
   return {
-    lookupMode: effectiveLookupMode,
+    lookupMode,
     setLookupMode,
     manualUniprotId,
     setManualUniprotId,

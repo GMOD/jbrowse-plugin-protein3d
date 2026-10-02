@@ -124,16 +124,32 @@ const PdbSearch = observer(function PdbSearch({
     resetKey: uniprotId,
   })
 
-  const loadingStatuses = [
-    isLookupLoading && 'Looking up UniProt ID',
+  const isoformStatuses = [
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isRanking && 'Aligning isoforms to the structure',
+  ]
+  const lookupStatuses = [
+    isLookupLoading && 'Looking up UniProt ID',
     isPdbLoading && 'Listing PDB entries from PDBe',
-  ].filter((s): s is string => !!s)
+  ]
+  const loadingStatuses = [...lookupStatuses, ...isoformStatuses].filter(
+    (s): s is string => !!s,
+  )
   const isLoading = loadingStatuses.length > 0
   const error = isLoading
     ? undefined
     : (isoformError ?? lookup.lookupError ?? pdbError)
+  // A typed PDB ID exists to get around a lookup that is slow, failing or
+  // wrong, so only the isoforms it is ranked against hold its launch back
+  const typedIdOverrides = isPdbId(debouncedTypedPdbId)
+  const launchWaiting = typedIdOverrides
+    ? isoformStatuses.some(Boolean)
+    : isLoading
+  const launchError = typedIdOverrides
+    ? launchWaiting
+      ? undefined
+      : isoformError
+    : error
 
   return (
     <>
@@ -232,8 +248,8 @@ const PdbSearch = observer(function PdbSearch({
           session={session}
           sideBySide={sideBySide}
           onSideBySideChange={onSideBySideChange}
-          isLoading={isLoading}
-          error={error}
+          isLoading={launchWaiting}
+          error={launchError}
         />
       </DialogActions>
     </>

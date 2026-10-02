@@ -24,11 +24,14 @@ export default function useAlphaFoldData({
     { ...STATIC_SWR_OPTIONS, keepPreviousData: true },
   )
   const { isoformSequences } = useIsoformProteinSequences({ feature, view })
-  // with an error, data is the previous accession's (keepPreviousData)
+  // keepPreviousData hands back the last accession's models after an error
+  // and after the accession is cleared, when the key is null
   const model = useMemo(
     () =>
-      data && !error ? pickAlphaFoldModel(data, isoformSequences) : undefined,
-    [data, error, isoformSequences],
+      uniprotId && data && !error
+        ? pickAlphaFoldModel(data, isoformSequences)
+        : undefined,
+    [uniprotId, data, error, isoformSequences],
   )
   return {
     isLoading,

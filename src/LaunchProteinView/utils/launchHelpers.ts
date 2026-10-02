@@ -34,9 +34,9 @@ interface LaunchRequirements {
  * A launch that names its own structure needs no accession. Bypassing a lookup
  * that failed or resolved the wrong gene is the whole point of typing a PDB id,
  * and the view resolves SIFTS from the entry itself; the accession only feeds
- * the feature tracks and the view's name, both of which do without it. The
- * AlphaFold tab keeps the requirement for free — its structure url is derived
- * from the accession, so no accession means no structure either.
+ * the feature tracks and the view's name, both of which do without it. On the
+ * AlphaFold tab the url is derived from the accession, so no accession means
+ * no url either; `useAlphaFoldData` makes sure of it.
  */
 export function getLaunchMissingReasons({
   uniprotId,

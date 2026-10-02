@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { SimpleFeature } from '@jbrowse/core/util'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 
 import * as codingFeature from '../src/LaunchProteinView/codingFeature'
 import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
@@ -155,6 +155,29 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Check if selectedQueryId was initialized to 'auto' when no identifiers are found
     expect(result.current.selectedQueryId).toBe('auto')
+  })
+
+  // the mode used to be re-derived on every render, so picking the search
+  // over a feature accession snapped straight back to "From feature"
+  it('lets the user switch from the feature accession to the identifier search', () => {
+    mockExtractFeatureIdentifiers.mockReturnValue({
+      recognizedIds: ['ENSG1'],
+      geneName: 'TP53',
+      geneId: 'TP53',
+      uniprotId: 'P04637',
+    })
+    const { result } = renderHook(() => useSearchUnderTest())
+    expect(result.current.lookupMode).toBe('feature')
+    expect(result.current.uniprotId).toBe('P04637')
+    act(() => {
+      result.current.setLookupMode('auto')
+    })
+    expect(result.current.lookupMode).toBe('auto')
+  })
+
+  it('opens on the manual field when there is nothing to search', () => {
+    const { result } = renderHook(() => useSearchUnderTest())
+    expect(result.current.lookupMode).toBe('manual')
   })
 
   it('selects the isoform whose protein is the structure', async () => {
