@@ -31,9 +31,11 @@ export type StructureSuperposerHost = IAnyStateTreeNode & {
  *
  *   - a non-observable in-flight flag serializes runs so overlapping molstar
  *     state mutations can't interleave;
- *   - `superposedCount`/`superposedPlugin` remember the last alignment, so a run
- *     only happens when the loaded set grows or the plugin is swapped, not on
- *     every reaction;
+ *   - `superposedCount`, the loads it covered and `superposedPlugin` remember
+ *     the last alignment, so a run only happens when the loaded set changes or
+ *     the plugin is swapped, not on every reaction. The loads are compared by
+ *     identity, since a removal and a load during a run leave the count where
+ *     it was;
  *   - after a run finishes it re-checks, because the loaded set may have grown
  *     (or the plugin been swapped) while it was aligning;
  *   - every observable is read before the in-flight check, so a reset that
@@ -43,27 +45,25 @@ export type StructureSuperposerHost = IAnyStateTreeNode & {
 export function makeStructureSuperposer(host: StructureSuperposerHost) {
   let superposing = false
   let superposedPlugin: PluginContext | undefined
+  let superposedLoads: readonly (readonly Structure[])[] = []
 
   function run() {
     const { molstarPluginContext: plugin, structures } = host
-    const loaded = structures.filter(s => s.loadedToMolstar)
-    const loadedCount = loaded.length
+    const loads = structures
+      .filter(s => s.loadedToMolstar)
+      .map(s => s.molstarStructures)
+    const loadedCount = loads.length
     if (plugin !== superposedPlugin) {
       superposedPlugin = plugin
       host.setSuperposedCount(0)
     }
     const startCount = host.superposedCount
-    if (
-      plugin &&
-      !superposing &&
-      loadedCount >= 2 &&
-      loadedCount !== startCount
-    ) {
+    const changed =
+      loadedCount !== startCount ||
+      loads.some((load, i) => load !== superposedLoads[i])
+    if (plugin && !superposing && loadedCount >= 2 && changed) {
       superposing = true
-      superposeStructures(
-        plugin,
-        loaded.map(s => s.molstarStructures),
-      )
+      superposeStructures(plugin, loads)
         .catch((e: unknown) => {
           if (isAlive(host)) {
             host.setError(e)
@@ -78,6 +78,7 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
               host.molstarPluginContext === plugin &&
               host.superposedCount === startCount
             ) {
+              superposedLoads = loads
               host.setSuperposedCount(loadedCount)
             }
             run()

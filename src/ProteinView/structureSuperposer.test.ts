@@ -144,7 +144,7 @@ test('superposes the loaded structures of the view, each with all its models', a
 
 // Re-align resets the count while a run that started earlier is in flight: the
 // run must neither overwrite the reset nor leave the autorun deaf to it.
-test('a reset during a run re-superposes once the run finishes', async () => {
+function blockNextSuperpose() {
   let finish = () => {}
   mockSuperpose.mockReturnValueOnce(
     new Promise<undefined>(resolve => {
@@ -153,18 +153,36 @@ test('a reset during a run re-superposes once the run finishes', async () => {
       }
     }),
   )
+  return () => {
+    finish()
+  }
+}
+
+test('a reset during a run is not overwritten by the run finishing', async () => {
   const { host, run } = setup({}, 2)
-  host.setSuperposedCount(1)
   const dispose = autorun(run)
+  await tick()
+  expect(host.superposedCount).toBe(2)
+  const finish = blockNextSuperpose()
   host.structures[2]!.setLoadedToMolstar(true)
   host.setSuperposedCount(0)
   finish()
   await tick()
-  expect(mockSuperpose).toHaveBeenCalledTimes(2)
-  await tick()
-  expect(host.superposedCount).toBe(3)
-  host.setSuperposedCount(0)
   await tick()
   expect(mockSuperpose).toHaveBeenCalledTimes(3)
+  expect(host.superposedCount).toBe(3)
+  dispose()
+})
+
+test('a structure swapped for another during a run is superposed too', async () => {
+  const finish = blockNextSuperpose()
+  const { host, run } = setup({}, 2)
+  const dispose = autorun(run)
+  host.structures[1]!.setLoadedToMolstar(false)
+  host.structures[2]!.setLoadedToMolstar(true)
+  finish()
+  await tick()
+  await tick()
+  expect(mockSuperpose).toHaveBeenCalledTimes(2)
   dispose()
 })
