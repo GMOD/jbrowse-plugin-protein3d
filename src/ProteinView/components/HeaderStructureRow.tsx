@@ -1,6 +1,5 @@
 import React from 'react'
 
-import { getPath } from '@jbrowse/mobx-state-tree'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
@@ -170,7 +169,7 @@ const StructureRow = observer(function StructureRow({
           />
         </Tooltip>
       ) : null}
-      {several ? (
+      {several || hidden ? (
         <Tooltip title={hidden ? `Show ${label}` : `Hide ${label}`}>
           <IconButton
             size="small"
@@ -229,9 +228,9 @@ const HeaderStructureRows = observer(function HeaderStructureRows({
   )
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      {structures.map(structure => (
+      {structures.map((structure, idx) => (
         <StructureRow
-          key={getPath(structure)}
+          key={idx}
           model={model}
           structure={structure}
           readout={

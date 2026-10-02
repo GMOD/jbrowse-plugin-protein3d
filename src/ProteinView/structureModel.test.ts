@@ -749,6 +749,25 @@ test('an unmapped structure answers hovers on its first chain only', async () =>
   expect(s!.interactionPosition(hover('2', 'B'))).toBeUndefined()
 })
 
+// a protein-DNA complex listing its DNA first still answers on the protein
+test('an unmapped structure reads hovers from its first protein chain', () => {
+  const parent = TestParent.create({ structures: [{ url: 'complex.cif' }] })
+  const [s] = parent.structures
+  s!.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'ACGT',
+        seqIds: [1, 2, 3, 4],
+        chains: ['E'],
+        nucleicAcid: true,
+      },
+      { entityId: '2', seq: 'MKA', seqIds: [1, 2, 3], chains: ['A'] },
+    ],
+  })
+  expect(s!.mappedEntity?.entityId).toBe('2')
+})
+
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
     structures: specs(
@@ -973,12 +992,21 @@ test('focusResidues works on a structure opened without a transcript', async () 
   ])
 })
 
+test('focusResidues shows a hidden structure', async () => {
+  const parent = twoNumberedStructures()
+  settle(parent)
+  const [a] = parent.structures
+  a!.setHidden(true)
+  await a!.focusResidues({ residues: { start: 95, end: 95 } })
+  expect(a!.hidden).toBe(false)
+})
+
 test('focusResidues rejects at once on a structure that failed', async () => {
   const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
   parent.structures[0]!.setError(new Error('404'))
   await expect(
     parent.structures[0]!.focusResidues({ positions: [{ start: 0, end: 1 }] }),
-  ).rejects.toThrow(/failed to load/)
+  ).rejects.toThrow(/failed/)
 })
 
 // "show me this one" is one selection for the view, as a click in Mol* is

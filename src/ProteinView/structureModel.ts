@@ -574,12 +574,16 @@ const Structure = types
     /**
      * #getter
      * The entity that maps to the transcript: the chosen one when
-     * `mappedEntityId` is set, else the first, so a standalone structure with
-     * no transcript still has a chain to read hovers from.
+     * `mappedEntityId` is set, else the first protein chain, so a standalone
+     * structure with no transcript still has a chain to read hovers from.
      */
     get mappedEntity() {
       const { entities, mappedEntityId } = self
-      return entities?.find(e => e.entityId === mappedEntityId) ?? entities?.[0]
+      return (
+        entities?.find(e => e.entityId === mappedEntityId) ??
+        entities?.find(e => !e.nucleicAcid) ??
+        entities?.[0]
+      )
     },
     /**
      * #getter
@@ -1480,11 +1484,12 @@ const Structure = types
         return []
       }
       if (self.error !== undefined) {
-        throw new Error(`${self.label} failed to load`, { cause: self.error })
+        throw new Error(`${self.label} failed`, { cause: self.error })
       }
       const runs = self.resolveSelection(target) ?? []
       self.parentView.clearSelection()
       self.setClickedStructureRanges(runs)
+      self.setHidden(false)
       const first = runs[0]
       const last = runs.at(-1)
       const plugin = self.molstarPluginContext

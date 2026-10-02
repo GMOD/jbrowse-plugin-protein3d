@@ -342,15 +342,13 @@ function stateModelFactory() {
           }),
         )
 
-        // A superposition inserts a transform above the representations, so
-        // visibility is reapplied once it settles
         addDisposer(
           self,
           autorun(() => {
-            const { molstarPluginContext: plugin, superposedCount } = self
+            const plugin = self.molstarPluginContext
             for (const s of self.structures) {
               const { hidden, molstarStructures: structures } = s
-              if (plugin && structures.length > 0 && superposedCount >= 0) {
+              if (plugin && structures.length > 0) {
                 setStructuresHidden({ plugin, structures, hidden }).catch(
                   (e: unknown) => {
                     console.error(e)

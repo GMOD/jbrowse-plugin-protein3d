@@ -37,7 +37,11 @@ function recordingPlugin() {
   }
 }
 
-async function structure(seeded: boolean, clickedLabelSeqIds: number[] = []) {
+async function structure(
+  seeded: boolean,
+  clickedLabelSeqIds: number[] = [],
+  hidden = false,
+) {
   const molstarStructure = await parseStructure([
     { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] },
   ])
@@ -45,6 +49,7 @@ async function structure(seeded: boolean, clickedLabelSeqIds: number[] = []) {
     loading: true,
     loadedToMolstar: true,
     seedLit: seeded,
+    hidden,
     molstarStructure,
     mappedEntity: { entityId: '1' },
     clickedLabelSeqIds,
@@ -137,6 +142,24 @@ test('a seed that resolves after the structure settles is still framed', async (
 test('a clicked selection with no seed leaves the camera alone', async () => {
   const { plugin, focused } = recordingPlugin()
   const only = await structure(false, [2])
+  const host = observable({
+    molstarPluginContext: plugin,
+    structures: [only],
+    superposedCount: 0,
+  })
+  const dispose = autorun(makeSelectionFramer(host))
+  runInAction(() => {
+    only.loading = false
+  })
+  await tick()
+  expect(focused).toHaveLength(0)
+  dispose()
+})
+
+// focusing sticks onto a hidden structure draws them floating in empty space
+test('a seed on a hidden structure leaves the camera alone', async () => {
+  const { plugin, focused } = recordingPlugin()
+  const only = await structure(true, [2], true)
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],

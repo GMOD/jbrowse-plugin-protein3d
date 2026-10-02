@@ -8,6 +8,7 @@ interface FramedStructure {
   readonly loading: boolean
   readonly loadedToMolstar: boolean
   readonly seedLit: boolean
+  readonly hidden: boolean
   readonly molstarStructure: Structure | undefined
   readonly mappedEntity: { entityId: string } | undefined
   readonly clickedLabelSeqIds: number[]
@@ -96,7 +97,10 @@ export function makeSelectionFramer(host: SelectionFramerHost) {
     // a seed resolved by the same change that settles the structure may land
     // after this run, so the plugin counts as framed only once it has targets
     const targets = structures.flatMap(s =>
-      s.seedLit && s.molstarStructure && s.clickedLabelSeqIds.length
+      s.seedLit &&
+      !s.hidden &&
+      s.molstarStructure &&
+      s.clickedLabelSeqIds.length
         ? [
             {
               structure: s.molstarStructure,
