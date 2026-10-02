@@ -23,8 +23,10 @@ import {
   setupJBrowse,
   startJBrowseServer,
   stopServer,
+  structureCellsHidden,
   waitForJBrowseLoad,
   waitForLaunchEnabled,
+  waitForMolstarIdle,
   waitForStructureRendered,
   waitForTrackLoad,
   waitForUniProtTablePainted,
@@ -44,6 +46,10 @@ function screenshot(name: string) {
 
 // The locus lands on NRAS, whose AlphaFold structure (P01111) is 189 residues.
 const STRUCTURE_RESIDUES = 189
+
+function allHidden(hidden: boolean[]) {
+  return hidden.length > 1 && hidden.every(Boolean)
+}
 
 describe('Protein3d Plugin E2E', () => {
   let server: ChildProcess | undefined
@@ -299,8 +305,46 @@ describe('Protein3d Plugin E2E', () => {
     )
     expect(peptideRuns?.map(r => r.end - r.start)).toEqual([3, 3])
 
+    // Hiding a structure hides every Mol* cell under it, a Re-align
+    // superposes all three again from scratch, and the hidden one stays hidden
+    // through it
+    const superposed = () =>
+      page.evaluate(
+        () =>
+          window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+            .superposedCount,
+      )
+    await expect.poll(superposed, { timeout: 120_000 }).toBe(3)
+    await page.click('button[aria-label="Hide 1TUP"]')
+    await expect
+      .poll(() => structureCellsHidden(page, '1TUP'), { timeout: 30_000 })
+      .toSatisfy(allHidden)
+    expect(await structureCellsHidden(page, 'P04637')).not.toContain(true)
+
+    const resetTo = await page.evaluate(() => {
+      const view = window.JBrowseSession!.views!.find(
+        v => v.type === 'ProteinView',
+      )!
+      view.menuItems!().find(
+        item => item.label === 'Re-align structures (TM-align)',
+      )!.onClick!()
+      return view.superposedCount
+    })
+    expect(resetTo).toBe(0)
+    await expect.poll(superposed, { timeout: 120_000 }).toBe(3)
+    expect(await structureCellsHidden(page, '1TUP')).toSatisfy(allHidden)
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('11-structure-hidden'))
+
+    await page.click('button[aria-label="Show 1TUP"]')
+    await expect
+      .poll(() => structureCellsHidden(page, '1TUP'), { timeout: 30_000 })
+      .toSatisfy(
+        (hidden: boolean[]) => hidden.length > 1 && !hidden.includes(true),
+      )
+
     expect(pageComplaintsSince()).toEqual([])
-  }, 300_000)
+  }, 400_000)
 
   // A declared selection is the user's to put down like a clicked one. This
   // leg is what shows Mol* reports a click on empty canvas at all; the unit
@@ -386,6 +430,44 @@ describe('Protein3d Plugin E2E', () => {
           names.length >= 10 && names.every(n => n === 'kyte-doolittle'),
       )
     await captureScreenshot(page, screenshot('09-nmr-ensemble'))
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // With no transcript there is nothing to align, so the structure reads
+  // hovers from its first protein chain and lets the user pick another. On
+  // 1TUP the first two entities are DNA strands.
+  it('opens a structure without a transcript on its protein chain, with a chain picker', async () => {
+    await openSessionSpec(page, {
+      views: [{ type: 'ProteinView', structures: [{ pdbId: '1TUP' }] }],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const mapped = () =>
+      page.evaluate(() => {
+        const s = window.JBrowseSession!.views!.find(
+          v => v.type === 'ProteinView',
+        )!.structures![0]!
+        return {
+          entities: s.entities?.map(e => e.entityId),
+          mappedEntity: s.mappedEntity?.entityId,
+        }
+      })
+    expect(await mapped()).toEqual({
+      entities: ['1', '2', '3'],
+      mappedEntity: '3',
+    })
+
+    await page.click('[data-testid="protein-mapped-chain"] [role="combobox"]')
+    const options = await page.$$('[role="listbox"] [role="option"]')
+    expect(options).toHaveLength(3)
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('12-standalone-chain-picker'))
+    await options[0]!.click()
+    await expect
+      .poll(async () => (await mapped()).mappedEntity, { timeout: 10_000 })
+      .toBe('1')
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })

@@ -35,12 +35,41 @@ interface ProteinViewStructure {
   url?: string
   clickedStructureRanges?: { start: number; end: number }[]
   residueNumber?: (pos: number) => number
+  label?: string
+  hidden?: boolean
+  molstarStructures?: unknown[]
+  entities?: { entityId: string }[]
+  mappedEntity?: { entityId: string; chains: string[] }
+}
+interface MolstarCell {
+  transform: { ref: string; parent: string }
+  obj?: { type: { name: string } }
+  state: { isHidden?: boolean }
 }
 interface SessionView {
   type: string
   structures?: ProteinViewStructure[]
+  superposedCount?: number
+  menuItems?: () => { label?: string; onClick?: () => void }[]
   tracks?: { displays?: { featureIdUnderMouse?: string }[] }[]
   molstarPluginContext?: {
+    helpers: {
+      substructureParent: {
+        get: (structure: unknown) => MolstarCell | undefined
+      }
+    }
+    state: {
+      data: {
+        cells: Map<string, MolstarCell>
+        tree: {
+          children: {
+            get: (ref: string) => {
+              forEach: (fn: (ref: string) => void) => void
+            }
+          }
+        }
+      }
+    }
     managers: {
       structure: {
         hierarchy: {
@@ -614,6 +643,43 @@ export async function getProteinViewState(page: Page) {
   })
 }
 
+// Whether the Mol* state cells of the labelled structure are hidden: each of
+// its Mol* structures' root cell and everything built under it, read from the
+// live state tree as structureVisibility.ts sets them.
+export async function structureCellsHidden(
+  page: Page,
+  label: string,
+): Promise<boolean[]> {
+  return page.evaluate(label => {
+    const view = window.JBrowseSession?.views?.find(
+      v => v.type === 'ProteinView',
+    )
+    const plugin = view?.molstarPluginContext
+    const structure = view?.structures?.find(s => s.label === label)
+    if (!plugin || !structure) {
+      return []
+    }
+    const { cells, tree } = plugin.state.data
+    const hidden: boolean[] = []
+    const walk = (ref: string) => {
+      hidden.push(cells.get(ref)?.state.isHidden ?? false)
+      tree.children.get(ref).forEach(walk)
+    }
+    for (const s of structure.molstarStructures ?? []) {
+      let root = plugin.helpers.substructureParent.get(s)
+      let parent = root && cells.get(root.transform.parent)
+      while (root && parent?.obj?.type.name === 'Structure') {
+        root = parent
+        parent = cells.get(root.transform.parent)
+      }
+      if (root) {
+        walk(root.transform.ref)
+      }
+    }
+    return hidden
+  }, label)
+}
+
 // Open a session spec on the test instance, the way a shared link does.
 export async function openSessionSpec(page: Page, spec: object) {
   const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
@@ -667,4 +733,14 @@ export async function waitForStructureRendered(page: Page): Promise<number> {
   throw new Error(
     `molstar canvas still blank after 90s (ink=${ink.toFixed(4)})`,
   )
+}
+
+// Mol* narrates a draw in a background-task toast over the canvas; a capture
+// taken while it shows records the toast instead of the structure.
+export async function waitForMolstarIdle(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => !document.querySelector('.msp-background-tasks')?.textContent,
+    { timeout: 30_000, polling: 250 },
+  )
+  await new Promise(resolve => setTimeout(resolve, 500))
 }
