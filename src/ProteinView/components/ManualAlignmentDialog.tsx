@@ -11,11 +11,8 @@ import {
 } from '@mui/material'
 import { parsePairwise } from 'clustal-js'
 import { observer } from 'mobx-react'
-import {
-  pairwiseAlignmentProblem,
-  pairwiseAlignmentSequenceProblem,
-  stripStopCodon,
-} from 'p2s_mapper'
+
+import { entityAlignedTo, withoutStopColumn } from '../entityAlignedTo'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 
@@ -26,7 +23,7 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
 }) {
   const [alignment, setAlignment] = useState('')
   const [parseError, setParseError] = useState<string>()
-  const { showManualAlignmentDialog, primaryStructure } = model
+  const { showManualAlignmentDialog, alignmentStructure } = model
 
   const handleClose = () => {
     setAlignment('')
@@ -38,29 +35,26 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
     if (alignment.trim()) {
       try {
         const parsed = parsePairwise(alignment.trim())
-        // Rejected here rather than committed: every coordinate map is built
-        // from these two rows by the `coordinateMapper` getter, which throws on
-        // a bad pair during render — outside this catch, taking the whole view
-        // down instead of reporting a bad paste. Same predicate the map builder
-        // asserts on, so what the dialog accepts is exactly what it can use.
-        // The rows also have to spell the transcript and the mapped chain:
-        // the maps count residues along each row, so an alignment made
-        // against another isoform or chain is well-formed and wrong.
-        const problem =
-          pairwiseAlignmentProblem(parsed) ??
-          (primaryStructure
-            ? pairwiseAlignmentSequenceProblem(
+        const entities = alignmentStructure?.entities
+        // Rejected here rather than committed: the `coordinateMapper` getter
+        // throws on a bad pair during render, outside this catch. The check is
+        // the one the model applies to an imported alignment, so a paste whose
+        // second row spells another chain switches to that chain.
+        const fit =
+          alignmentStructure && entities
+            ? entityAlignedTo(
                 parsed,
-                stripStopCodon(primaryStructure.userProvidedTranscriptSequence),
-                stripStopCodon(primaryStructure.mappedStructureSeq ?? ''),
+                alignmentStructure.userProvidedTranscriptSequence,
+                entities,
+                alignmentStructure.mappedEntityId,
               )
-            : undefined)
-        if (!primaryStructure) {
+            : undefined
+        if (!alignmentStructure || !fit) {
           setParseError('No structure loaded to apply alignment to')
-        } else if (problem) {
-          setParseError(problem)
+        } else if ('problem' in fit) {
+          setParseError(fit.problem)
         } else {
-          primaryStructure.importAlignment(parsed)
+          alignmentStructure.importAlignment(withoutStopColumn(parsed))
           handleClose()
         }
       } catch (e) {

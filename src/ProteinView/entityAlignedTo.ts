@@ -8,7 +8,9 @@ import {
 
 import type { Entity, PairwiseAlignment } from 'p2s_mapper'
 
-function withoutStopColumn(alignment: PairwiseAlignment): PairwiseAlignment {
+export function withoutStopColumn(
+  alignment: PairwiseAlignment,
+): PairwiseAlignment {
   const t = transcriptAlignedSeq(alignment)
   const s = structureAlignedSeq(alignment)
   const [a, b] = alignment.alns

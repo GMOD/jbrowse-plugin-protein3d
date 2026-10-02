@@ -139,11 +139,35 @@ export async function submitFoldseekSearch({
     throw await httpError(response, url)
   }
 
-  // Read the body as text rather than response.json() so a non-JSON error page
-  // (a gateway 500's HTML) surfaces as itself instead of an opaque
-  // SyntaxError.
+  // The server answers a refusal (RATELIMIT, MAINTENANCE) with a 200 and no
+  // id, which used to be polled as ticket "undefined" for three minutes
   const text = await response.text()
-  return JSON.parse(text) as FoldseekTicketResponse
+  const ticket = parseTicket(text)
+  if (!ticket) {
+    throw new Error(`Foldseek did not accept the search: ${text.slice(0, 200)}`)
+  }
+  return ticket
+}
+
+function parseTicket(text: string): FoldseekTicketResponse | undefined {
+  let body: unknown
+  try {
+    body = JSON.parse(text)
+  } catch {
+    return undefined
+  }
+  if (typeof body !== 'object' || body === null) {
+    return undefined
+  }
+  const id: unknown = Reflect.get(body, 'id')
+  const status: unknown = Reflect.get(body, 'status')
+  return typeof id === 'string' &&
+    (status === 'PENDING' ||
+      status === 'RUNNING' ||
+      status === 'COMPLETE' ||
+      status === 'ERROR')
+    ? { id, status }
+    : undefined
 }
 
 async function pollFoldseekStatus({

@@ -4,6 +4,7 @@ import {
   FOLDSEEK_MAX_RESIDUES,
   foldseekLengthProblem,
   predict3Di,
+  submitFoldseekSearch,
 } from './foldseekApi'
 
 afterEach(() => {
@@ -25,4 +26,35 @@ test('an over-long sequence never reaches the predictor', async () => {
     predict3Di({ aaSequence: 'A'.repeat(FOLDSEEK_MAX_RESIDUES + 1) }),
   ).rejects.toThrow(/at most 1,200 residues/)
   expect(fetchSpy).not.toHaveBeenCalled()
+})
+
+test('a refusal without a ticket id is reported, not polled', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify({ status: 'RATELIMIT' }))),
+  )
+  await expect(
+    submitFoldseekSearch({
+      aaSequence: 'MK',
+      di3Sequence: 'DD',
+      databases: [],
+    }),
+  ).rejects.toThrow(/did not accept the search: {"status":"RATELIMIT"}/)
+})
+
+test('an accepted search returns its ticket', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async () =>
+        new Response(JSON.stringify({ id: 'abc', status: 'PENDING' })),
+    ),
+  )
+  expect(
+    await submitFoldseekSearch({
+      aaSequence: 'MK',
+      di3Sequence: 'DD',
+      databases: [],
+    }),
+  ).toEqual({ id: 'abc', status: 'PENDING' })
 })
