@@ -33,15 +33,10 @@ import {
 import type { ChildProcess } from 'node:child_process'
 import type { Browser, Page } from 'puppeteer'
 
-const JBROWSE_VERSION = process.env.TEST_JBROWSE_VERSION || 'nightly'
-const SCREENSHOT_DIR = path.join('test-screenshots', JBROWSE_VERSION)
+const SCREENSHOT_DIR = path.join('test-screenshots', 'nightly')
 // A failing run's captures show a broken app, so they go here instead of over
 // the committed references. Gitignored; CI uploads the whole tree as artifacts.
-const FAILED_SCREENSHOT_DIR = path.join(
-  'test-screenshots',
-  'failed',
-  JBROWSE_VERSION,
-)
+const FAILED_SCREENSHOT_DIR = path.join('test-screenshots', 'failed', 'nightly')
 
 function screenshot(name: string) {
   return path.join(SCREENSHOT_DIR, `${name}.png`)

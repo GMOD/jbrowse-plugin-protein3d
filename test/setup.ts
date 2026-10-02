@@ -16,11 +16,7 @@ export const TRACK_ID = 'gencode.v44.annotation.sorted.gff3'
 
 const TRACK_CONTAINER = `[data-testid="trackRenderingContainer-${VIEW_ID}-${TRACK_ID}"]`
 
-const TEST_JBROWSE_VERSION = process.env.TEST_JBROWSE_VERSION || 'nightly'
-const TEST_JBROWSE_DIR = path.join(
-  process.cwd(),
-  `.test-jbrowse-${TEST_JBROWSE_VERSION}`,
-)
+const TEST_JBROWSE_DIR = path.join(process.cwd(), '.test-jbrowse-nightly')
 
 // The structure and its genome<->protein mapping live on the session, so the
 // tests can assert on what was actually loaded rather than on DOM shape.
