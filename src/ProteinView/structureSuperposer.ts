@@ -25,8 +25,7 @@ export type StructureSuperposerHost = IAnyStateTreeNode & {
  * Superposition is a pure function of which structures are loaded into the
  * current plugin, so it is modeled as a reaction rather than triggered
  * imperatively when a structure is added. That keeps a single loading path (the
- * structure loader) and means a failed load is retried by the loader instead of
- * being stranded. The body reads its observable dependencies synchronously
+ * structure loader). The body reads its observable dependencies synchronously
  * (MobX only tracks reads before the first `await`) and dispatches one guarded,
  * fire-and-forget run:
  *
@@ -36,7 +35,10 @@ export type StructureSuperposerHost = IAnyStateTreeNode & {
  *     only happens when the loaded set grows or the plugin is swapped, not on
  *     every reaction;
  *   - after a run finishes it re-checks, because the loaded set may have grown
- *     (or the plugin been swapped) while it was aligning.
+ *     (or the plugin been swapped) while it was aligning;
+ *   - every observable is read before the in-flight check, so a reset that
+ *     lands mid-run (Re-align, a removal) is still tracked, and the run leaves
+ *     a reset count alone rather than overwriting it.
  */
 export function makeStructureSuperposer(host: StructureSuperposerHost) {
   let superposing = false
@@ -50,11 +52,12 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
       superposedPlugin = plugin
       host.setSuperposedCount(0)
     }
+    const startCount = host.superposedCount
     if (
       plugin &&
       !superposing &&
       loadedCount >= 2 &&
-      loadedCount !== host.superposedCount
+      loadedCount !== startCount
     ) {
       superposing = true
       superposeStructures(
@@ -71,7 +74,10 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
           superposing = false
           if (isAlive(host)) {
             // a run into a plugin swapped away mid-flight covered nothing
-            if (host.molstarPluginContext === plugin) {
+            if (
+              host.molstarPluginContext === plugin &&
+              host.superposedCount === startCount
+            ) {
               host.setSuperposedCount(loadedCount)
             }
             run()

@@ -1,4 +1,5 @@
 import { types } from '@jbrowse/mobx-state-tree'
+import { autorun } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { makeStructureSuperposer } from './structureSuperposer'
@@ -139,4 +140,31 @@ test('superposes the loaded structures of the view, each with all its models', a
   host.structures[2]!.setLoadedToMolstar(true, [single])
   makeStructureSuperposer(host as unknown as StructureSuperposerHost)()
   expect(mockSuperpose).toHaveBeenCalledWith({}, [[model1, model2], [single]])
+})
+
+// Re-align resets the count while a run that started earlier is in flight: the
+// run must neither overwrite the reset nor leave the autorun deaf to it.
+test('a reset during a run re-superposes once the run finishes', async () => {
+  let finish = () => {}
+  mockSuperpose.mockReturnValueOnce(
+    new Promise<undefined>(resolve => {
+      finish = () => {
+        resolve(undefined)
+      }
+    }),
+  )
+  const { host, run } = setup({}, 2)
+  host.setSuperposedCount(1)
+  const dispose = autorun(run)
+  host.structures[2]!.setLoadedToMolstar(true)
+  host.setSuperposedCount(0)
+  finish()
+  await tick()
+  expect(mockSuperpose).toHaveBeenCalledTimes(2)
+  await tick()
+  expect(host.superposedCount).toBe(3)
+  host.setSuperposedCount(0)
+  await tick()
+  expect(mockSuperpose).toHaveBeenCalledTimes(3)
+  dispose()
 })
