@@ -448,6 +448,20 @@ test('an imported alignment is not replaced by a pick still aligning', async () 
   expect(model.mappedEntityId).toBe('2')
 })
 
+test('an imported alignment onto another chain clears the old chain selection', () => {
+  const { model } = loadThreeChains()
+  model.setClickedStructureRanges([{ start: 0, end: 2 }])
+  model.importAlignment({
+    consensus: '|||.',
+    alns: [
+      { id: 'transcript', seq: 'MKAA' },
+      { id: 'structure', seq: 'MKAG' },
+    ],
+  })
+  expect(model.mappedEntityId).toBe('3')
+  expect(model.clickedStructureRanges).toEqual([])
+})
+
 test('cancelling a pick that superseded the automatic alignment runs that again', async () => {
   const parent = TestParent.create({
     structures: [{ userProvidedTranscriptSequence: 'MKAA' }],

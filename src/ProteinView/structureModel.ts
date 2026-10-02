@@ -1306,15 +1306,6 @@ const Structure = types
     },
     /**
      * #action
-     * A user's own alignment, which no answer still running in the worker
-     * may replace.
-     */
-    importAlignment(alignment: PairwiseAlignment) {
-      self.supersedeAlignment()
-      self.setAlignment(alignment, true)
-    },
-    /**
-     * #action
      */
     switchEntity(entityId: string) {
       self.setMappedEntityId(entityId)
@@ -1331,6 +1322,28 @@ const Structure = types
     applyChosenEntity(entityId: string, alignment: PairwiseAlignment) {
       self.switchEntity(entityId)
       self.setAlignment(alignment)
+    },
+    /**
+     * #action
+     * A user's own alignment, which no answer still running in the worker
+     * may replace. One spelling another chain switches to it as a pick would,
+     * so the old chain's selection does not land on the new chain's residues.
+     */
+    importAlignment(alignment: PairwiseAlignment) {
+      const { entities, mappedEntityId } = self
+      const fit = entities
+        ? entityAlignedTo(
+            alignment,
+            self.userProvidedTranscriptSequence,
+            entities,
+            mappedEntityId,
+          )
+        : undefined
+      if (fit && 'entityId' in fit && fit.entityId !== mappedEntityId) {
+        self.switchEntity(fit.entityId)
+      }
+      self.supersedeAlignment()
+      self.setAlignment(alignment, true)
     },
   }))
   .actions(self => ({
