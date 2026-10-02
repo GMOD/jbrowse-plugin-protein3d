@@ -39,9 +39,9 @@ the whole app — which is exactly what it did before. In particular:
 
 The suite asserts the mapping is consistent with whatever transcript arrived
 rather than pinning a length, because hosts differ in what they hand the context
-menu. `pnpm test` fetches the nightly zip into `.test-jbrowse-nightly` only when
-that directory is missing, so a local copy freezes at whatever `main` was the
-day it was made. When a nightly leg fails, check its date before your diff.
+menu. `pnpm test` refreshes the nightly zip in `.test-jbrowse-nightly` once the
+copy is a week old, so a local copy can trail CI's by up to seven days. When a
+nightly leg fails, check its date before your diff.
 
 ## Screenshots
 

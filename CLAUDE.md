@@ -272,11 +272,12 @@ zip. Don't pin exact mapping counts in tests.
 
 **A red nightly leg is usually upstream churn, not your diff.**
 `jbrowse create --nightly` fetches a zip that is rebuilt without notice, and
-`pretest` only creates `.test-jbrowse-nightly` when it is _missing_ — so a local
-copy is frozen at whatever `main` was the day it was made while CI downloads a
-fresh one every run. Check `stat .test-jbrowse-nightly/index.html` before
-theorizing, then `rm -rf` and recreate to reproduce. `curl -sI` the zip url to
-date what CI got; it has flipped mid-run.
+`pretest` (`scripts/ensure-nightly.mjs`) refreshes `.test-jbrowse-nightly` only
+once it is a week old — so a local copy can be up to seven days behind the
+`main` CI downloads fresh every run. Check
+`stat .test-jbrowse-nightly/index.html` before theorizing, then `rm -rf` and
+recreate to reproduce. `curl -sI` the zip url to date what CI got; it has
+flipped mid-run.
 
 ## What a unit test can and cannot instantiate
 

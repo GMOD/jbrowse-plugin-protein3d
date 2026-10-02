@@ -83,7 +83,7 @@ export function setupJBrowse() {
   if (!fs.existsSync(TEST_JBROWSE_DIR)) {
     throw new Error(
       `JBrowse directory not found at ${TEST_JBROWSE_DIR}. ` +
-        `Run: npm run test:setup:version ${TEST_JBROWSE_VERSION}`,
+        'Run: node scripts/ensure-nightly.mjs',
     )
   }
 

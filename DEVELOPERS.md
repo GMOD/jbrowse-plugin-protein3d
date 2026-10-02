@@ -26,9 +26,9 @@ runs that code on real structures without JBrowse.
 
 - [Testing](docs/testing.md): the unit and e2e suites, the documentation and
   demo checks, and the screenshot baselines.
-- [Host compatibility](docs/host-compatibility.md): why the published bundle has
-  to keep working on JBrowse releases years old, and the probe that boots it on
-  them before every publish.
+- [Host compatibility](docs/host-compatibility.md): which JBrowse hosts load the
+  published bundle, and the probe that boots it on hosted `main` before every
+  publish.
 - [Live checks](docs/live-checks.md): serving a local build to a session on
   jbrowse.org.
 
@@ -39,5 +39,5 @@ pnpm version patch
 ```
 
 `preversion` waits for green CI, lints, builds and boots the bundle on hosted
-JBrowse releases; `postversion` pushes the tag, and CI publishes to npm and
-writes the GitHub release from `CHANGELOG.md`.
+JBrowse `main`; `postversion` pushes the tag, and CI publishes to npm and writes
+the GitHub release from `CHANGELOG.md`.
