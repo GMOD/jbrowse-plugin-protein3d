@@ -106,3 +106,32 @@ Twenty models take noticeably longer to load than one crystal structure.
 [TP53 on 2L14](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222L14%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"B","models":20,"minIdentity":0.95,"minAligned":49} -->
+
+## A predicted model and a crystal superposed
+
+This link opens the AlphaFold model of human p53 beside 1TUP, the p53 core bound
+to DNA. TM-align superposes the crystal on the model, and both map to the same
+transcript. Each structure's row in the view header has an eye button: hide 1TUP
+to see the model's full chain underneath it, then use **Re-align structures
+(TM-align)** in the view menu; the superposition runs again and 1TUP stays
+hidden until you show it. The link uses JBrowse `main`, and the eye button
+arrives with the first plugin release after 1.0.0.
+
+[TP53 on AlphaFold and 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22pdbId%22%3A%221TUP%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99,"minAligned":390},{"chain":"A","minIdentity":0.95}]} -->
+
+## A structure with no transcript
+
+This link opens 1TUP alone, with no gene to map it to. Without a transcript the
+plugin reads hovers from the first protein chain, p53's A/B/C, rather than from
+the DNA strands E and F that come first in the file, and the chain picker on the
+structure's row switches to any of the three entities. Hovers read only the
+chosen chain: a residue on another chain used to read out as the chosen chain's
+residue at the same index, so a DNA base named a p53 residue. The link uses
+JBrowse `main`, and the picker and the hover gating arrive with the first plugin
+release after 1.0.0.
+
+[1TUP without a transcript](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%7D%5D%7D)
+
+<!-- expect {"chain":"A"} -->
