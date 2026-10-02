@@ -9,19 +9,24 @@ import type { JBrowsePluginProteinStructureModel } from '../model'
 // Which chain the transcript maps to. The structure picks the protein chain
 // the transcript explains most of, which cannot separate paralogs in a complex
 // or the halves of a chimeric construct, so the choice is exposed for the
-// cases it gets wrong.
+// cases it gets wrong. With no transcript it picks the chain hovers and the
+// ruler read.
 const ChainSelect = observer(function ChainSelect({
   model,
 }: {
   model: JBrowsePluginProteinStructureModel
 }) {
   const { entities, mappedEntity, userProvidedTranscriptSequence } = model
-  if (!entities || entities.length < 2 || !userProvidedTranscriptSequence) {
+  if (!entities || entities.length < 2) {
     return null
   }
   return (
     <Tooltip
-      title="Mapped chain: the one the transcript maps to"
+      title={
+        userProvidedTranscriptSequence
+          ? 'Mapped chain: the one the transcript maps to'
+          : 'Chain: the one hovers read'
+      }
       placement="left"
     >
       <TextField

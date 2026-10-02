@@ -1361,6 +1361,11 @@ const Structure = types
       if (!entity || entityId === (self.pendingEntityId ?? shown)) {
         return
       }
+      if (!self.userProvidedTranscriptSequence) {
+        self.setMappedEntityId(entityId)
+        self.setClickedStructureRanges([])
+        return
+      }
       if (self.pendingEntityId !== undefined && entityId === shown) {
         // back to the chain on screen: the pick may have superseded the
         // automatic alignment, so that decides again

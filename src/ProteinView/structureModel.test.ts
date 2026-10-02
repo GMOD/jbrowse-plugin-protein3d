@@ -979,6 +979,22 @@ test('focusResidues works on a structure opened without a transcript', async () 
   ])
 })
 
+test('a structure with no transcript switches chain without aligning', () => {
+  const parent = TestParent.create({ structures: [{ url: 'complex.cif' }] })
+  const [s] = parent.structures
+  s!.setStructureData({
+    entities: [
+      { entityId: '1', seq: 'MKA', seqIds: [1, 2, 3], chains: ['A'] },
+      { entityId: '2', seq: 'GGGG', seqIds: [1, 2, 3, 4], chains: ['B'] },
+    ],
+  })
+  s!.setClickedStructureRanges([{ start: 0, end: 2 }])
+  s!.chooseEntity('2')
+  expect(s!.mappedEntity?.entityId).toBe('2')
+  expect(s!.pendingEntityId).toBeUndefined()
+  expect(s!.clickedStructureRanges).toEqual([])
+})
+
 test('focusResidues shows a hidden structure', async () => {
   const parent = twoNumberedStructures()
   settle(parent)

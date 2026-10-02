@@ -157,7 +157,10 @@ const StructureRow = observer(function StructureRow({
       ) : null}
       <UniProtLink structure={structure} />
       <div style={{ flex: 1 }} />
-      {open && model.showAlignment ? <ChainSelect model={structure} /> : null}
+      {(open && model.showAlignment) ||
+      !structure.userProvidedTranscriptSequence ? (
+        <ChainSelect model={structure} />
+      ) : null}
       {quality && isLowSimilarity(quality) ? (
         <Tooltip title={LOW_SIMILARITY_EXPLANATION}>
           <Chip
