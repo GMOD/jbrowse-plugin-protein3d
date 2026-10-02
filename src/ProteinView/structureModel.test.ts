@@ -7,7 +7,6 @@ import { structuresSettled } from './frameSelection'
 import Structure from './structureModel'
 import { parseStructure } from '../test_data/molstarStructure'
 
-import type { ProteinStructureSpec } from './proteinViewSpec'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { AlignmentAlgorithm, PairwiseAlignment } from 'p2s_mapper'
 
@@ -87,10 +86,6 @@ const pairwiseAlignment: PairwiseAlignment = {
   ],
 }
 
-// preProcessSnapshot accepts the spec's shorthands (pdbId) that the model's
-// creation type does not declare
-const specs = (...structures: ProteinStructureSpec[]) => structures
-
 function makeModel() {
   const parent = TestParent.create({
     structures: [{ userProvidedTranscriptSequence: 'MKAA', pairwiseAlignment }],
@@ -168,11 +163,7 @@ test('a saved session keeps the accession that was asked for, not the file its m
 // lookup take says nothing about which of them is running.
 test('names the step it is on while it settles', () => {
   const parent = TestParent.create({
-    structures: specs(
-      { uniprotId: 'P04637' },
-      { url: 'x.cif' },
-      { pdbId: '1TUP' },
-    ),
+    structures: [{ uniprotId: 'P04637' }, { url: 'x.cif' }, { pdbId: '1TUP' }],
   })
   const [pending, loading, pdb] = parent.structures
   expect(pending!.loadingMessage).toBe('Resolving AlphaFold model for P04637')
@@ -188,7 +179,7 @@ test('names the step it is on while it settles', () => {
 })
 
 test('resolves a pdbId shorthand to an RCSB url at hydration', () => {
-  const parent = TestParent.create({ structures: specs({ pdbId: '1CRN' }) })
+  const parent = TestParent.create({ structures: [{ pdbId: '1CRN' }] })
   expect(parent.structures[0]!.url).toBe(
     'https://files.rcsb.org/download/1CRN.cif',
   )
@@ -641,13 +632,13 @@ test('initialResidues seeds the selection by author numbering once the mapped en
 
 test('a structure is loading until it is in Mol*, aligned, and SIFTS has answered for a PDB entry', async () => {
   const parent = TestParent.create({
-    structures: specs(
+    structures: [
       {
         url: 'https://example.org/model.cif',
         userProvidedTranscriptSequence: 'MKAA',
       },
       { pdbId: '1TUP', userProvidedTranscriptSequence: 'MKAA' },
-    ),
+    ],
   })
   const [model, entry] = parent.structures
   // nothing downloaded yet, so no sequence and no pending alignment either
@@ -770,11 +761,7 @@ test('an unmapped structure reads hovers from its first protein chain', () => {
 
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
-    structures: specs(
-      { pdbId: '1TUP' },
-      { uniprotId: 'P04637' },
-      { data: 'ATOM' },
-    ),
+    structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],
   })
   expect(parent.structures.map(s => s.label)).toEqual([
     '1TUP',

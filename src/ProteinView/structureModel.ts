@@ -197,32 +197,6 @@ const Structure = types
      */
     hidden: types.optional(types.boolean, false),
   })
-  // Shorthand: a `{ pdbId }` snapshot resolves to a concrete `url` at
-  // hydration, so a hand-authored snapshot loads without the caller knowing
-  // RCSB's URL format. A `{ uniprotId }` keeps the accession instead and the
-  // loader resolves the file. An explicit url/data always wins, and an
-  // AlphaFold url fills in the accession it names. Idempotent: a re-snapshot
-  // carries an already-set url, so it passes through unchanged.
-  //
-  // A given accession outranks the one the url spells, because they differ
-  // exactly when it matters: asked for P04637, the loader may open the isoform
-  // file AF-P04637-2-F1, and reading the accession back off that url would
-  // save P04637-2 — which UniProt's GFF endpoint does not serve, so a reopened
-  // session lost its feature tracks and its entry link.
-  //
-  // A snapshot carrying an alignment but no alignmentImported predates the
-  // flag or was written by hand; either way the alignment is used as given.
-  .preProcessSnapshot(({ pdbId, uniprotId, ...rest }: ProteinStructureSpec) => {
-    const url = resolveStructureUrl({ ...rest, uniprotId, pdbId })
-    return {
-      ...rest,
-      url,
-      uniprotId:
-        uniprotId ?? (url ? getUniprotIdFromAlphaFoldTarget(url) : undefined),
-      alignmentImported:
-        rest.alignmentImported ?? rest.pairwiseAlignment !== undefined,
-    }
-  })
   .volatile(() => ({
     /**
      * #volatile
@@ -1687,8 +1661,37 @@ const Structure = types
     },
   }))
 
-export default Structure
+// Shorthand: a `{ pdbId }` snapshot resolves to a concrete `url` at
+// hydration, so a hand-authored snapshot loads without the caller knowing
+// RCSB's URL format. A `{ uniprotId }` keeps the accession instead and the
+// loader resolves the file. An explicit url/data always wins, and an
+// AlphaFold url fills in the accession it names. Idempotent: a re-snapshot
+// carries an already-set url, so it passes through unchanged.
+//
+// A given accession outranks the one the url spells, because they differ
+// exactly when it matters: asked for P04637, the loader may open the isoform
+// file AF-P04637-2-F1, and reading the accession back off that url would
+// save P04637-2 — which UniProt's GFF endpoint does not serve, so a reopened
+// session lost its feature tracks and its entry link.
+//
+// A snapshot carrying an alignment but no alignmentImported predates the
+// flag or was written by hand; either way the alignment is used as given.
+const StructureFromSpec = types.snapshotProcessor(Structure, {
+  preProcessor({ pdbId, uniprotId, ...rest }: ProteinStructureSpec) {
+    const url = resolveStructureUrl({ ...rest, uniprotId, pdbId })
+    return {
+      ...rest,
+      url,
+      uniprotId:
+        uniprotId ?? (url ? getUniprotIdFromAlphaFoldTarget(url) : undefined),
+      alignmentImported:
+        rest.alignmentImported ?? rest.pairwiseAlignment !== undefined,
+    }
+  },
+})
 
-export type JBrowsePluginProteinStructureStateModel = typeof Structure
+export default StructureFromSpec
+
+export type JBrowsePluginProteinStructureStateModel = typeof StructureFromSpec
 export type JBrowsePluginProteinStructureModel =
   Instance<JBrowsePluginProteinStructureStateModel>
