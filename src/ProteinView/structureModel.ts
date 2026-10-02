@@ -17,7 +17,6 @@ import {
   fusionPartnerPositions,
   getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
-  interactionMatchesMappedEntity,
   looksLikePlddt,
   makeCoordinateMapper,
   makeLabelSeqIdIndex,
@@ -44,7 +43,6 @@ import {
 } from './constants'
 import { entityAlignedTo } from './entityAlignedTo'
 import { frameResidues } from './frameSelection'
-import { proteinAbbreviationMapping } from './proteinAbbreviationMapping'
 import {
   clickProteinToGenome,
   navigateToProteinPosition,
@@ -250,7 +248,6 @@ const Structure = types
     hoverPosition: undefined as
       | {
           structureSeqPos?: number
-          code?: string
           chain?: string
           source: 'structure' | 'genome' | 'msa'
         }
@@ -478,11 +475,7 @@ const Structure = types
     /**
      * #action
      */
-    setHoveredPosition(arg?: {
-      structureSeqPos?: number
-      chain?: string
-      code?: string
-    }) {
+    setHoveredPosition(arg?: { structureSeqPos?: number; chain?: string }) {
       self.hoverPosition = arg ? { ...arg, source: 'structure' } : undefined
     },
     /**
@@ -868,10 +861,7 @@ const Structure = types
      */
     interactionPosition(info: MolstarLocationInfo) {
       return self.molstarModelIds.includes(info.modelId) &&
-        interactionMatchesMappedEntity(
-          info.entityId,
-          this.coordinateMapper ? this.mappedEntity?.entityId : undefined,
-        )
+        info.entityId === this.mappedEntity?.entityId
         ? this.labelSeqIdIndex.get(info.labelSeqId)
         : undefined
     },
@@ -988,19 +978,14 @@ const Structure = types
 
     /**
      * #getter
-     * Returns the single-letter amino acid code from the structure at hover position
+     * The hovered residue's one-letter code, read from the entity's sequence
+     * so a modified residue (MSE, TPO) shows its parent's letter.
      */
     get hoverStructureLetter() {
-      const code = self.hoverPosition?.code
-      if (code) {
-        return proteinAbbreviationMapping[code]?.singleLetterCode
-      }
       const structurePos = this.structureSeqHoverPos
-      const seq = this.mappedStructureSeq
-      if (structurePos !== undefined && seq) {
-        return seq[structurePos]
-      }
-      return undefined
+      return structurePos === undefined
+        ? undefined
+        : this.mappedStructureSeq?.[structurePos]
     },
 
     /**
@@ -1462,22 +1447,28 @@ const Structure = types
      * transcript's entity chosen, the alignment made and, with several
      * structures, superposition done, so neither the numbering nor the camera
      * is read before it means anything. Rejects if that takes longer than
-     * `timeout` ms. A target naming no residue of the structure selects
-     * nothing and leaves the camera where it is.
+     * `timeout` ms, or at once if the structure failed. A target naming no
+     * residue of the structure selects nothing and leaves the camera where it
+     * is.
      */
     async focusResidues(target: SelectionTarget, { timeout = 120_000 } = {}) {
       const ready = () =>
-        !!self.coordinateMapper &&
         (self.entityChosen || !self.userProvidedTranscriptSequence) &&
         self.parentView.settled &&
         self.resolveSelection(target) !== undefined
       try {
-        await when(() => !isAlive(self) || ready(), { timeout })
+        await when(
+          () => !isAlive(self) || self.error !== undefined || ready(),
+          { timeout },
+        )
       } catch {
         throw new Error(`${self.label} did not finish loading`)
       }
       if (!isAlive(self)) {
         return []
+      }
+      if (self.error !== undefined) {
+        throw new Error(`${self.label} failed to load`, { cause: self.error })
       }
       const runs = self.resolveSelection(target) ?? []
       self.parentView.clearSelection()

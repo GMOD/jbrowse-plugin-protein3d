@@ -711,6 +711,35 @@ test('a Mol* interaction on another structure of the view names no position here
   expect(mouse!.interactionPosition(hover(humanStructure))).toBeUndefined()
 })
 
+// Before this a structure with no coordinate mapper accepted every entity and
+// read the hover through the first entity's index: chain B's residue 3 lit
+// chain A's.
+test('an unmapped structure answers hovers on its first chain only', async () => {
+  const parent = TestParent.create({ structures: [{ url: 'complex.cif' }] })
+  const [s] = parent.structures
+  const molstarStructure = await parseStructure([
+    { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] },
+    { asym: 'B', entity: '2', residues: ['GLY', 'GLY', 'GLY'] },
+  ])
+  s!.setStructureData({
+    entities: [
+      { entityId: '1', seq: 'MKA', seqIds: [1, 2, 3], chains: ['A'] },
+      { entityId: '2', seq: 'GGG', seqIds: [1, 2, 3], chains: ['B'] },
+    ],
+    molstarStructures: [molstarStructure],
+    modelIds: [molstarStructure.model.id],
+  })
+  const hover = (entityId: string, chain: string) => ({
+    labelSeqId: 3,
+    code: 'ALA',
+    chain,
+    entityId,
+    modelId: molstarStructure.model.id,
+  })
+  expect(s!.interactionPosition(hover('1', 'A'))).toBe(2)
+  expect(s!.interactionPosition(hover('2', 'B'))).toBeUndefined()
+})
+
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
     structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],
@@ -917,6 +946,26 @@ test('focusResidues rejects when the structure never settles', async () => {
       { timeout: 10 },
     ),
   ).rejects.toThrow(/did not finish loading/)
+})
+
+// a standalone structure never gets a coordinate mapper, and focusResidues
+// used to wait for one until its timeout
+test('focusResidues works on a structure opened without a transcript', async () => {
+  const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
+  const [s] = parent.structures
+  s!.setStructureData({ entities: NUMBERED_FROM_94 })
+  s!.setLoadedToMolstar(true)
+  expect(await s!.focusResidues({ residues: { start: 95, end: 95 } })).toEqual([
+    { start: 1, end: 2 },
+  ])
+})
+
+test('focusResidues rejects at once on a structure that failed', async () => {
+  const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
+  parent.structures[0]!.setError(new Error('404'))
+  await expect(
+    parent.structures[0]!.focusResidues({ positions: [{ start: 0, end: 1 }] }),
+  ).rejects.toThrow(/failed to load/)
 })
 
 // "show me this one" is one selection for the view, as a click in Mol* is

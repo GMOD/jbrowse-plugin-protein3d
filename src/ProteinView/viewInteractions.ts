@@ -16,7 +16,6 @@ export type StructureInteractionHost = ClickProteinToGenomeModel & {
   setHoveredPosition: (arg?: {
     structureSeqPos?: number
     chain?: string
-    code?: string
   }) => void
   setSelectedFeatureId: (uniqueId?: string) => void
   setViewError: (e: unknown) => void
