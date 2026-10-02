@@ -1316,13 +1316,21 @@ const Structure = types
     /**
      * #action
      */
-    applyChosenEntity(entityId: string, alignment: PairwiseAlignment) {
+    switchEntity(entityId: string) {
       self.setMappedEntityId(entityId)
-      self.setAlignment(alignment)
       self.setClickedStructureRanges([])
       self.setAlignmentHoverRange(undefined)
       self.setSelectedFeatureId(undefined)
       self.setHoveredPosition(undefined)
+    },
+  }))
+  .actions(self => ({
+    /**
+     * #action
+     */
+    applyChosenEntity(entityId: string, alignment: PairwiseAlignment) {
+      self.switchEntity(entityId)
+      self.setAlignment(alignment)
     },
   }))
   .actions(self => ({
@@ -1362,8 +1370,7 @@ const Structure = types
         return
       }
       if (!self.userProvidedTranscriptSequence) {
-        self.setMappedEntityId(entityId)
-        self.setClickedStructureRanges([])
+        self.switchEntity(entityId)
         return
       }
       if (self.pendingEntityId !== undefined && entityId === shown) {
@@ -1681,6 +1688,9 @@ const Structure = types
 //
 // A snapshot carrying an alignment but no alignmentImported predates the
 // flag or was written by hand; either way the alignment is used as given.
+//
+// A node's own type is the inner model, so applySnapshot on a structure node
+// or getType(node).create() skips this; apply specs through the view's array.
 const StructureFromSpec = types.snapshotProcessor(Structure, {
   preProcessor({ pdbId, uniprotId, ...rest }: ProteinStructureSpec) {
     const url = resolveStructureUrl({ ...rest, uniprotId, pdbId })

@@ -989,10 +989,12 @@ test('a structure with no transcript switches chain without aligning', () => {
     ],
   })
   s!.setClickedStructureRanges([{ start: 0, end: 2 }])
+  s!.setSelectedFeatureId('domain-1')
   s!.chooseEntity('2')
   expect(s!.mappedEntity?.entityId).toBe('2')
   expect(s!.pendingEntityId).toBeUndefined()
   expect(s!.clickedStructureRanges).toEqual([])
+  expect(s!.selectedFeatureId).toBeUndefined()
 })
 
 test('focusResidues shows a hidden structure', async () => {
