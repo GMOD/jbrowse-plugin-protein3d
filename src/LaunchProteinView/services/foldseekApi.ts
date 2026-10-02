@@ -195,7 +195,10 @@ async function pollFoldseekStatus({
     throw await httpError(response, url)
   }
 
-  const results = (await response.json()) as FoldseekTicketResponse[]
+  const results = (await response.json()) as {
+    status: string
+    error?: string
+  }[]
 
   // Return the first (and only) result
   const result = results[0]
@@ -250,13 +253,6 @@ export async function waitForFoldseekResults({
     }
     const status = await pollFoldseekStatus({ ticketId, signal })
 
-    if (status.status === 'ERROR') {
-      console.error('[Foldseek] Search error:', status)
-      throw new Error(
-        `Foldseek search failed: ${status.error ?? 'Unknown error'}`,
-      )
-    }
-
     if (status.status === 'COMPLETE') {
       onStatusChange?.('Fetching results...')
       const apiResponse = await getFoldseekResults({ ticketId, signal })
@@ -271,6 +267,14 @@ export async function waitForFoldseekResults({
       }
 
       return results
+    }
+
+    // the server also answers RATELIMIT, MAINTENANCE and UNKNOWN, none of
+    // which a wait resolves
+    if (status.status !== 'PENDING' && status.status !== 'RUNNING') {
+      throw new Error(
+        `Foldseek search failed: ${status.error ?? status.status}`,
+      )
     }
 
     onStatusChange?.(

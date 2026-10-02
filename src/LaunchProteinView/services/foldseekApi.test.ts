@@ -5,6 +5,7 @@ import {
   foldseekLengthProblem,
   predict3Di,
   submitFoldseekSearch,
+  waitForFoldseekResults,
 } from './foldseekApi'
 
 afterEach(() => {
@@ -57,4 +58,14 @@ test('an accepted search returns its ticket', async () => {
       databases: [],
     }),
   ).toEqual({ id: 'abc', status: 'PENDING' })
+})
+
+test('a rate-limited poll is reported, not waited out', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify([{ status: 'RATELIMIT' }]))),
+  )
+  await expect(waitForFoldseekResults({ ticketId: 'abc' })).rejects.toThrow(
+    /failed: RATELIMIT/,
+  )
 })
