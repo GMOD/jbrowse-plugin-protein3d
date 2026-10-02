@@ -59,3 +59,20 @@ test('storing a menu choice keeps the other stored choices and adds nothing else
   })
   vi.unstubAllGlobals()
 })
+
+// a non-boolean copied into the snapshot fails MST's type check, and the view
+// would not open at all
+test('a stored value that is not a boolean is dropped', () => {
+  const store = new Map([
+    [
+      'proteinView-settings',
+      JSON.stringify({ showAlignment: 'yes', compactTracks: true, extra: 1 }),
+    ],
+  ])
+  vi.stubGlobal('localStorage', {
+    getItem: (k: string) => store.get(k) ?? null,
+    setItem: (k: string, v: string) => store.set(k, v),
+  })
+  expect(readStoredSettings()).toEqual({ compactTracks: true })
+  vi.unstubAllGlobals()
+})

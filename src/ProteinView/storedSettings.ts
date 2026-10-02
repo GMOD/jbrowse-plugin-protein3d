@@ -45,8 +45,24 @@ export function withStoredSettings<T extends PersistedSettings>(
   return filled
 }
 
-export function readStoredSettings() {
-  return readStoredJson(SETTINGS_KEY) as PersistedSettings | undefined
+/**
+ * The stored settings that are booleans. Anything else in storage (an older
+ * format, a hand edit) is dropped: copied into the snapshot it fails MST's
+ * type check and the view never opens.
+ */
+export function readStoredSettings(): PersistedSettings | undefined {
+  const stored: unknown = readStoredJson(SETTINGS_KEY)
+  if (typeof stored !== 'object' || stored === null) {
+    return undefined
+  }
+  const settings: PersistedSettings = {}
+  for (const key of PERSISTED_SETTINGS) {
+    const value: unknown = Reflect.get(stored, key)
+    if (typeof value === 'boolean') {
+      settings[key] = value
+    }
+  }
+  return settings
 }
 
 /** Remembers one choice, leaving the other stored settings as they were. */

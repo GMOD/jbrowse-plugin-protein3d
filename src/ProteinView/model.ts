@@ -28,7 +28,6 @@ import {
 import { makeStructureLoader } from './structureLoader'
 import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
-import { superposeStructures } from './superposeStructures'
 import { attachViewInteractions } from './viewInteractions'
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
@@ -507,15 +506,7 @@ function stateModelFactory() {
           {
             label: 'Re-align structures (TM-align)',
             onClick: () => {
-              if (self.molstarPluginContext) {
-                superposeStructures(
-                  self.molstarPluginContext,
-                  self.structures.map(s => s.molstarStructures),
-                ).catch((e: unknown) => {
-                  console.error(e)
-                  self.setError(e)
-                })
-              }
+              self.setSuperposedCount(0)
             },
           },
           {

@@ -90,7 +90,7 @@ const FeatureBar = observer(function FeatureBar({
               structureSeqEndPos: layout.structureEnd,
             }).catch((e: unknown) => {
               console.error(e)
-              model.setError(e)
+              model.setViewError(e)
             })
           }
         }}
