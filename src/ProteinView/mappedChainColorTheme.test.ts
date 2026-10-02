@@ -28,11 +28,14 @@ function colorByChain(entityId: string) {
     { structure },
     { entityId },
   )
+  if (!('color' in theme)) {
+    throw new Error(`expected a location theme, got ${theme.granularity}`)
+  }
   const byChain = new Map<string, Set<number>>()
   const l = StructureElement.Location.create(structure)
   for (const unit of structure.units) {
     l.unit = unit
-    for (const element of unit.elements) {
+    for (const element of Array.from(unit.elements)) {
       l.element = element
       const chain = SP.chain.label_asym_id(l)
       const colors = byChain.get(chain) ?? new Set()

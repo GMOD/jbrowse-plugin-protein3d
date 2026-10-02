@@ -34,11 +34,14 @@ beforeAll(async () => {
 
 function colorByResidue(structure: Structure) {
   const theme = KyteDoolittleColorThemeProvider.factory({ structure }, {})
+  if (!('color' in theme)) {
+    throw new Error(`expected a location theme, got ${theme.granularity}`)
+  }
   const byResidue: Record<string, string> = {}
   const l = StructureElement.Location.create(structure)
   for (const unit of structure.units) {
     l.unit = unit
-    for (const element of unit.elements) {
+    for (const element of Array.from(unit.elements)) {
       l.element = element
       byResidue[SP.atom.label_comp_id(l)] = Color.toStyle(theme.color(l, false))
     }

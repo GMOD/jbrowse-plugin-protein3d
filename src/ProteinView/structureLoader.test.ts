@@ -19,6 +19,7 @@ const entity = (seq: string): Entity => ({
   entityId: '1',
   seq,
   seqIds: Array.from(seq, (_, i) => i + 1),
+  chains: ['A'],
 })
 // stand-in for a molstar Structure — the loader only passes the handle through
 const molstarStructure = (id: string) => ({ id }) as unknown as Structure

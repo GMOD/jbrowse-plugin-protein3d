@@ -73,7 +73,14 @@ describe('translateTranscripts', () => {
         strand: 1,
         type: 'mRNA',
         subfeatures: [
-          { type: 'CDS', start: 0, end: 12, phase: 0, ...cdsAttributes },
+          {
+            type: 'CDS',
+            refName: 'chrM',
+            start: 0,
+            end: 12,
+            phase: 0,
+            ...cdsAttributes,
+          },
         ],
       })
     const results = await translateTranscripts({
@@ -93,6 +100,7 @@ describe('translateTranscripts', () => {
     const genome = 'ATGAAATAA' + 'CC' + 'TTATTTT' + 'GGGGG' + 'TTTCACAT'
     const cds = (start: number, end: number) => ({
       type: 'CDS',
+      refName: 'chr1',
       start,
       end,
       phase: 0,

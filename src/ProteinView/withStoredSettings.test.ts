@@ -7,10 +7,15 @@ import {
   withStoredSettings,
 } from './storedSettings'
 
+import type { PersistedSettings } from './storedSettings'
+
+const bare: { type: string } & PersistedSettings = { type: 'ProteinView' }
+
 test('a stored preference fills in a setting the snapshot leaves unsaid', () => {
-  expect(
-    withStoredSettings({ type: 'ProteinView' }, { showAlignment: false }),
-  ).toEqual({ type: 'ProteinView', showAlignment: false })
+  expect(withStoredSettings(bare, { showAlignment: false })).toEqual({
+    type: 'ProteinView',
+    showAlignment: false,
+  })
 })
 
 test('a declared value wins even when it equals the property default', () => {
@@ -34,8 +39,11 @@ test('a behavior setting is never restored from storage', () => {
     'compactTracks',
     'showAllFeatureTracks',
   ])
-  const stored = { zoomToBaseLevel: false, showHighlight: true }
-  expect(withStoredSettings({ type: 'ProteinView' }, stored)).toEqual({
+  const stored: Record<string, boolean> = {
+    zoomToBaseLevel: false,
+    showHighlight: true,
+  }
+  expect(withStoredSettings(bare, stored)).toEqual({
     type: 'ProteinView',
   })
 })

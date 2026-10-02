@@ -116,7 +116,9 @@ test('an alignment codon spelled the annotation way still maps', () => {
       views: [
         {
           ...msa('lgv', 103),
-          connectedHoverHighlights: [{ refName: '17', start: 103, end: 106 }],
+          connectedHoverHighlights: [
+            { assemblyName: 'hg38', refName: '17', start: 103, end: 106 },
+          ],
         },
       ],
       mapping,

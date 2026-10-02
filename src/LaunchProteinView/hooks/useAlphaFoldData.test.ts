@@ -31,10 +31,10 @@ const feature = new SimpleFeature({
 // SWR's keepPreviousData returns the last key's data after the key turns
 // null, and the tab's Launch read it as this accession's structure
 test('clearing the accession clears the model', async () => {
+  const initialProps: { uniprotId?: string } = { uniprotId: 'P04637' }
   const { result, rerender } = renderHook(
-    ({ uniprotId }: { uniprotId?: string }) =>
-      useAlphaFoldData({ uniprotId, feature }),
-    { initialProps: { uniprotId: 'P04637' } },
+    ({ uniprotId }) => useAlphaFoldData({ uniprotId, feature }),
+    { initialProps },
   )
   await waitFor(() => {
     expect(result.current.model?.accession).toBe('P04637')

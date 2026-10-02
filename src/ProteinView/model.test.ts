@@ -3,6 +3,7 @@ import { expect, test, vi } from 'vitest'
 import stateModelFactory from './model'
 import { removeMolstarStructure } from './removeStructure'
 
+import type { ProteinStructureSpec } from './proteinViewSpec'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
@@ -62,7 +63,9 @@ test('a removal that fails reports through the error action', async () => {
 // a third copy of "restore hidden tracks", then bury the rest under "Advanced".
 test('the view menu carries actions and the Tune menu carries toggles', () => {
   const view = makeView()
-  const labels = view.menuItems().map(item => item.label)
+  const labels = view
+    .menuItems()
+    .map(item => ('label' in item ? item.label : undefined))
   expect(labels).toEqual([
     'Add structure...',
     'Remove structure',
@@ -72,11 +75,14 @@ test('the view menu carries actions and the Tune menu carries toggles', () => {
     'Restore hidden feature tracks',
   ])
 
-  const toggles = [...view.displayToggles, ...view.behaviorToggles].map(
-    t => t.label,
-  )
+  const toggles: string[] = [
+    ...view.displayToggles,
+    ...view.behaviorToggles,
+  ].map(t => t.label)
   expect(toggles).toContain('Show Mol* controls')
-  expect(labels.some(label => toggles.includes(label))).toBe(false)
+  expect(
+    labels.some(label => typeof label === 'string' && toggles.includes(label)),
+  ).toBe(false)
 })
 
 test('a behavior toggle changes this view and is not remembered', () => {
@@ -109,9 +115,10 @@ test('a failed structure reports on its own line and stops being pending', () =>
 // read the same; keyed on the text, React logs a duplicate key, which the e2e
 // console gate fails on.
 test('two structures loading the same file get one overlay line each', () => {
+  const entry: ProteinStructureSpec = { pdbId: '1TUP' }
   const view = ProteinView.create({
     type: 'ProteinView',
-    structures: [{ pdbId: '1TUP' }, { pdbId: '1TUP' }],
+    structures: [entry, entry],
   })
   const messages = view.loadingMessages
   expect(messages.map(m => m.message)).toEqual(['Loading 1TUP', 'Loading 1TUP'])

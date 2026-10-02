@@ -13,6 +13,9 @@ import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescri
 // Import utility functions and constants directly
 import * as util from '../src/LaunchProteinView/utils/util' // Import all utilities from util
 
+import type * as JBrowseCoreUtil from '@jbrowse/core/util'
+import type { Feature } from '@jbrowse/core/util'
+
 // Use vi.mock for Vitest
 vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
@@ -21,21 +24,21 @@ vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
 // the isoform ranking runs through the session's RPC manager; here the
 // registered methods run in place
 vi.mock('@jbrowse/core/util', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof JBrowseCoreUtil>()
   const { localRpcManager } = await import('../src/test_data/localRpcManager')
   const rpcManager = localRpcManager()
   return { ...actual, getSession: () => ({ rpcManager }) }
 })
 vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof util>()
   return {
     ...actual,
     extractFeatureIdentifiers: vi.fn(), // Mock extractFeatureIdentifiers to control its output
-    getId: vi.fn(f => f?.id() || ''),
+    getId: vi.fn((f?: Feature) => f?.id() || ''),
   }
 })
 vi.mock('../src/LaunchProteinView/codingFeature', async importOriginal => {
-  const actual = await importOriginal()
+  const actual = await importOriginal<typeof codingFeature>()
   return { ...actual, codingTranscripts: vi.fn() }
 })
 
@@ -44,9 +47,9 @@ const mockUseAlphaFoldData = vi.mocked(useAlphaFoldData)
 const mockUseIsoformProteinSequences = vi.mocked(useIsoformProteinSequences)
 const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
 const mockGetSearchDescription = vi.mocked(getSearchDescription)
-const mockExtractFeatureIdentifiers = util.extractFeatureIdentifiers as vi.Mock
-const mockGetTranscriptFeatures = codingFeature.codingTranscripts as vi.Mock
-const mockGetId = util.getId as vi.Mock
+const mockExtractFeatureIdentifiers = vi.mocked(util.extractFeatureIdentifiers)
+const mockGetTranscriptFeatures = vi.mocked(codingFeature.codingTranscripts)
+const mockGetId = vi.mocked(util.getId)
 
 describe('useAlphaFoldDBSearch', () => {
   let mockFeature: SimpleFeature
@@ -68,11 +71,14 @@ describe('useAlphaFoldDBSearch', () => {
       isoformSequences: {},
       isLoading: false,
       error: null,
+      partialFailure: undefined,
     })
     mockUseUniProtSearch.mockReturnValue({
       entries: [],
       isLoading: false,
       error: null,
+      hasValidId: false,
+      partialFailure: undefined,
     })
     mockGetSearchDescription.mockReturnValue('mock search description')
 
@@ -80,9 +86,9 @@ describe('useAlphaFoldDBSearch', () => {
     // This mock will be overridden in specific tests
     mockExtractFeatureIdentifiers.mockImplementation(() => ({
       recognizedIds: [],
-      geneName: null,
-      geneId: null,
-      uniprotId: null,
+      geneName: undefined,
+      geneId: undefined,
+      uniprotId: undefined,
     }))
 
     // Mocking getTranscriptFeatures to return an empty array by default
@@ -146,9 +152,9 @@ describe('useAlphaFoldDBSearch', () => {
     // Mock extractFeatureIdentifiers to return empty
     mockExtractFeatureIdentifiers.mockReturnValue({
       recognizedIds: [],
-      geneName: null,
-      geneId: null,
-      uniprotId: null,
+      geneName: undefined,
+      geneId: undefined,
+      uniprotId: undefined,
     })
 
     const { result } = renderHook(() => useSearchUnderTest())
@@ -204,6 +210,7 @@ describe('useAlphaFoldDBSearch', () => {
       },
       isLoading: false,
       error: null,
+      partialFailure: undefined,
     })
     mockUseAlphaFoldData.mockReturnValue({
       isLoading: false,
@@ -255,7 +262,7 @@ describe('extractFeatureIdentifiers', () => {
 
   it('should extract identifiers from the first transcript subfeature if the input is a gene with transcripts', () => {
     // Mock transcript subfeature with recognized IDs and UniProt ID
-    const mockTranscript = new SimpleFeature({
+    const mockTranscript = {
       uniqueId: 'transcript1_id',
       start: 0,
       end: 100,
@@ -268,7 +275,7 @@ describe('extractFeatureIdentifiers', () => {
       subfeatures: [
         { uniqueId: 'cds1', start: 0, end: 99, refName: 'chr1', type: 'CDS' },
       ],
-    })
+    }
 
     const mockGene = new SimpleFeature({
       uniqueId: 'SHH_gene_id',

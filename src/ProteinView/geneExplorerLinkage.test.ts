@@ -8,7 +8,7 @@ import {
 import Structure from './structureModel'
 
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
-import type { AlignmentAlgorithm } from 'p2s_mapper'
+import type { AlignmentAlgorithm, PairwiseAlignment } from 'p2s_mapper'
 
 vi.mock('@jbrowse/core/util', async importActual => {
   const actual = await importActual<typeof JBrowseCoreUtil>()
@@ -46,6 +46,7 @@ const tp53Feature = {
   name: 'TP53',
   subfeatures: TP53_CDS.map(c => ({
     type: 'CDS',
+    refName: 'chr17',
     start: c.start,
     end: c.end,
     strand: -1,
@@ -57,7 +58,7 @@ const tp53Feature = {
 // structureSeqPos maps 1:1 to transcript position (the clean-gene case, ~79% of
 // genes; divergent genes degrade gracefully via the real pairwise alignment)
 const identitySeq = 'M'.repeat(PROTEIN_LEN)
-const pairwiseAlignment = {
+const pairwiseAlignment: PairwiseAlignment = {
   consensus: '|'.repeat(PROTEIN_LEN),
   alns: [
     { id: 'structure', seq: identitySeq },

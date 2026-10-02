@@ -28,12 +28,13 @@ test('multi-residue span keeps the half-open end', () => {
 
 test('score follows the configured scoreField', () => {
   const [freq] = parseUniProtVariants([variant], 'population_frequency')
-  expect(freq.score).toBe(0.01)
+  expect(freq).toMatchObject({ score: 0.01 })
   const [none] = parseUniProtVariants([variant], 'none')
-  expect(none.score).toBeUndefined()
+  expect(none).toBeDefined()
+  expect(none?.score).toBeUndefined()
 })
 
 test('deletion (no mutatedType) is named ->del', () => {
   const [row] = parseUniProtVariants([{ ...variant, mutatedType: '' }], 'none')
-  expect(row.name).toEqual(['V->del'])
+  expect(row).toMatchObject({ name: ['V->del'] })
 })

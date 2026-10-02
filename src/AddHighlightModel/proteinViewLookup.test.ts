@@ -4,7 +4,9 @@ import { getStructuresConnectedTo } from './proteinViewLookup'
 
 const a = { name: 'a', connectedViewId: 'lgv-1' }
 const b = { name: 'b', connectedViewId: 'lgv-2' }
-const unattached = { name: 'unattached' }
+const unattached: { name: string; connectedViewId?: string } = {
+  name: 'unattached',
+}
 
 test('takes only the structures declaring this genome view', () => {
   const views = [{ structures: [a, b] }]
