@@ -40,6 +40,8 @@ export interface ProteinStructureSpec {
   alignmentImported?: boolean
   // mmCIF entity id the transcript maps to; chosen by alignment when absent
   mappedEntityId?: string
+  // drawn in Mol* or not; a hidden structure stays mapped and superposed
+  hidden?: boolean
 }
 
 /**

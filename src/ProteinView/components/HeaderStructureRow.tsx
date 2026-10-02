@@ -1,8 +1,11 @@
 import React from 'react'
 
+import { getPath } from '@jbrowse/mobx-state-tree'
 import ChevronRightIcon from '@mui/icons-material/ChevronRight'
 import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
+import VisibilityIcon from '@mui/icons-material/Visibility'
+import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
@@ -70,8 +73,9 @@ const StructureRow = observer(function StructureRow({
   structure: JBrowsePluginProteinStructureModel
   readout: string
 }) {
-  const { label, alignmentQuality: quality, statusMessage } = structure
-  const switchable = model.showAlignment && model.structures.length > 1
+  const { label, alignmentQuality: quality, statusMessage, hidden } = structure
+  const several = model.structures.length > 1
+  const switchable = model.showAlignment && several
   const open = model.alignmentStructure === structure
   const coveredRange = quality ? describeCoveredRange(quality) : undefined
   return (
@@ -81,7 +85,9 @@ const StructureRow = observer(function StructureRow({
       data-testid="structure-row"
       data-label={label}
       data-open={switchable ? open : undefined}
+      data-hidden={hidden || undefined}
       style={{
+        opacity: hidden ? 0.6 : undefined,
         display: 'flex',
         alignItems: 'center',
         gap: 8,
@@ -164,6 +170,25 @@ const StructureRow = observer(function StructureRow({
           />
         </Tooltip>
       ) : null}
+      {several ? (
+        <Tooltip title={hidden ? `Show ${label}` : `Hide ${label}`}>
+          <IconButton
+            size="small"
+            aria-label={hidden ? `Show ${label}` : `Hide ${label}`}
+            aria-pressed={hidden}
+            onClick={() => {
+              structure.setHidden(!hidden)
+            }}
+            sx={{ p: 0.25 }}
+          >
+            {hidden ? (
+              <VisibilityOffIcon fontSize="small" />
+            ) : (
+              <VisibilityIcon fontSize="small" />
+            )}
+          </IconButton>
+        </Tooltip>
+      ) : null}
       <Tooltip title={`Remove ${label}`}>
         <IconButton
           size="small"
@@ -204,9 +229,9 @@ const HeaderStructureRows = observer(function HeaderStructureRows({
   )
   return (
     <div style={{ flex: 1, minWidth: 0 }}>
-      {structures.map((structure, idx) => (
+      {structures.map(structure => (
         <StructureRow
-          key={idx}
+          key={getPath(structure)}
           model={model}
           structure={structure}
           readout={

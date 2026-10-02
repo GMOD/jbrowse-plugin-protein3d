@@ -190,6 +190,12 @@ const Structure = types
      * alignment is used exactly as given, fusion partners included.
      */
     alignmentImported: types.optional(types.boolean, false),
+    /**
+     * #property
+     * Left out of the 3D canvas. Mapping, superposition and the header row
+     * carry on, so showing it again needs no reload.
+     */
+    hidden: types.optional(types.boolean, false),
   })
   // Shorthand: a `{ pdbId }` snapshot resolves to a concrete `url` at
   // hydration, so a hand-authored snapshot loads without the caller knowing
@@ -529,6 +535,12 @@ const Structure = types
       self.aligning = false
       self.pendingEntityId = undefined
       apply()
+    },
+    /**
+     * #action
+     */
+    setHidden(hidden: boolean) {
+      self.hidden = hidden
     },
     /**
      * #action
