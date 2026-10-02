@@ -36,9 +36,9 @@ pnpm host-compat             # the published bundle on main
 pnpm host-compat:candidate   # dist/ on main
 ```
 
-`host-compat:candidate` runs in `preversion` with `--floor main`, so a build
-that breaks the host fails before the tag rather than after. Add a release to
-`--versions` once JBrowse 5.0.0 is hosted.
+Both fail when any probed host fails. `host-compat:candidate` runs in
+`preversion`, so a build that breaks the host fails before the tag rather than
+after. Add a release to `--versions` once JBrowse 5.0.0 is hosted.
 
 For what a session does on jbrowse.org, which neither probe sees,
 [live checks](live-checks.md) has the recipe for serving `dist/` to a hosted

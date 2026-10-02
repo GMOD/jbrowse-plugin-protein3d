@@ -22,7 +22,9 @@
 // Usage:
 //   node scripts/host-compat-probe.mjs                       # published bundle
 //   node scripts/host-compat-probe.mjs --bundle dist/x.js     # candidate build
-//   node scripts/host-compat-probe.mjs --versions main --floor main
+//   node scripts/host-compat-probe.mjs --versions main
+//
+// Exits non-zero when any probed host fails.
 //
 import fs from 'node:fs'
 import path from 'node:path'
@@ -66,11 +68,6 @@ const LAUNCH_SPEC = {
 const { values } = parseArgs({
   options: {
     versions: { type: 'string' },
-    // Oldest host the published bundle is expected to work on. Given, the run
-    // exits non-zero when that host or any newer one fails, so a release that
-    // silently raises the floor is a build failure rather than a user's bug
-    // report. Hosts below it are still probed and reported, just not gated.
-    floor: { type: 'string' },
     json: { type: 'string' },
     timeout: { type: 'string', default: '90000' },
     // Path to a local ESM entry to serve, with its dist/, in place of the
@@ -373,10 +370,6 @@ const browser = await puppeteer.launch({
   defaultViewport: { width: 1400, height: 900 },
 })
 
-const floorIndex = values.floor ? versions.indexOf(values.floor) : -1
-if (values.floor && floorIndex === -1) {
-  throw new Error(`floor ${values.floor} is not in the probed versions`)
-}
 
 console.log(
   values.bundle
@@ -436,25 +429,22 @@ async function probeWithRetry(version) {
 }
 
 const results = []
-let gatedFailure = false
-for (const [i, version] of versions.entries()) {
+let failed = false
+for (const version of versions) {
   const r = await probeWithRetry(version)
   results.push(r)
   const bad = failure(r)
   const verdict = bad
     ? bad
     : 'ok (view settled, feature context menu intact, console clean)'
-  const gated = floorIndex !== -1 && i >= floorIndex
-  console.log(
-    `${version.padEnd(10)} ${verdict}${bad && !gated ? ' (below floor, not gated)' : ''}`,
-  )
+  console.log(`${version.padEnd(10)} ${verdict}`)
   if (bad && r.consoleErrors.length > 0) {
     for (const e of [...new Set(r.consoleErrors)].slice(0, 4)) {
       console.log(`           · ${e}`)
     }
   }
-  if (bad && gated) {
-    gatedFailure = true
+  if (bad) {
+    failed = true
   }
 }
 await browser.close()
@@ -463,9 +453,7 @@ if (values.json) {
   fs.writeFileSync(values.json, JSON.stringify(results, null, 2))
 }
 
-const firstWorking = results.find(r => !failure(r))?.version
-console.log(`\nOldest probed host that works: ${firstWorking ?? 'none'}`)
-if (gatedFailure) {
-  console.error(`A host at or above the ${values.floor} floor failed.`)
+if (failed) {
+  console.error('A probed host failed.')
   process.exit(1)
 }

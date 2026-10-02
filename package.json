@@ -25,7 +25,7 @@
     "test:docs": "node scripts/test-docs.mjs",
     "readme-figure": "node scripts/readme-figure.mjs",
     "host-compat": "node scripts/host-compat-probe.mjs",
-    "host-compat:candidate": "node scripts/host-compat-probe.mjs --bundle dist/jbrowse-plugin-protein3d.esm.js --versions main --floor main --json host-compat.json",
+    "host-compat:candidate": "node scripts/host-compat-probe.mjs --bundle dist/jbrowse-plugin-protein3d.esm.js --json host-compat.json",
     "check-demos": "node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.esm.js",
     "clean": "rimraf dist",
     "build:harness": "vite build --config harness/vite.config.mts --base=/jbrowse-plugin-protein3d/",
