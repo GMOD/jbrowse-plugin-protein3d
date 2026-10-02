@@ -43,6 +43,7 @@ async function structure(seeded: boolean, clickedLabelSeqIds: number[] = []) {
   ])
   return observable({
     loading: true,
+    loadedToMolstar: true,
     seedLit: seeded,
     molstarStructure,
     mappedEntity: { entityId: '1' },
@@ -84,6 +85,27 @@ test('frames a seeded selection once every structure has settled and superposed'
   })
   await tick()
   expect(focused).toHaveLength(1)
+  dispose()
+})
+
+test('a structure that failed to load does not hold the others back', async () => {
+  const { plugin, focused } = recordingPlugin()
+  const human = await structure(true, [2])
+  const missing = await structure(false)
+  const host = observable({
+    molstarPluginContext: plugin,
+    structures: [human, missing],
+    superposedCount: 0,
+  })
+  const dispose = autorun(makeSelectionFramer(host))
+  runInAction(() => {
+    human.loading = false
+    missing.loading = false
+    missing.loadedToMolstar = false
+  })
+  await vi.waitFor(() => {
+    expect(focused).toHaveLength(1)
+  })
   dispose()
 })
 

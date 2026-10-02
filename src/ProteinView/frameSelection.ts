@@ -6,6 +6,7 @@ import type { Structure } from 'molstar/lib/mol-model/structure'
 
 interface FramedStructure {
   readonly loading: boolean
+  readonly loadedToMolstar: boolean
   readonly seedLit: boolean
   readonly molstarStructure: Structure | undefined
   readonly mappedEntity: { entityId: string } | undefined
@@ -26,18 +27,24 @@ export interface SelectionFramerHost {
 }
 
 /**
- * Every structure loaded and aligned and, with several, superposed: the
- * reset that ends a superposition would undo any framing done before it.
+ * Every structure loaded and aligned or failed and, with several loaded,
+ * superposed: the reset that ends a superposition would undo any framing done
+ * before it. The superposer counts only what reached Mol*, so a failed
+ * structure is left out of the comparison.
  */
 export function structuresSettled(host: {
-  readonly structures: readonly { readonly loading: boolean }[]
+  readonly structures: readonly {
+    readonly loading: boolean
+    readonly loadedToMolstar: boolean
+  }[]
   readonly superposedCount: number
 }) {
   const { structures, superposedCount } = host
+  const loadedCount = structures.filter(s => s.loadedToMolstar).length
   return (
     structures.length > 0 &&
     structures.every(s => !s.loading) &&
-    (structures.length < 2 || superposedCount === structures.length)
+    (loadedCount < 2 || superposedCount === loadedCount)
   )
 }
 

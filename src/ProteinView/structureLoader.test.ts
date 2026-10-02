@@ -13,7 +13,7 @@ import type {
 } from './structureLoader'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { Structure } from 'molstar/lib/mol-model/structure'
-import type { Entity } from 'p2s_mapper'
+import type { AlphaFoldModel, Entity } from 'p2s_mapper'
 
 const entity = (seq: string): Entity => ({
   entityId: '1',
@@ -317,6 +317,38 @@ test('a structure that already has a url never asks AlphaFold DB', async () => {
   await tick()
   expect(fetchModels).not.toHaveBeenCalled()
   expect(structure.url).toBe('https://e.com/mine.cif')
+})
+
+// The autorun reruns whenever any structure changes, and a retry clears the
+// error it is retrying, so a 404 used to flicker back to loading every time a
+// sibling landed.
+test('a failure in the current plugin is not retried by an unrelated rerun', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const err = new Error('404')
+  mockLoad.mockRejectedValueOnce(err).mockResolvedValue({})
+  const { load, structure } = setup({}, 2)
+  load()
+  await tick()
+  expect(structure.error).toBe(err)
+  load()
+  expect(mockLoad).toHaveBeenCalledTimes(2)
+  expect(structure.error).toBe(err)
+  logged.mockRestore()
+})
+
+test('a structure removed during its AlphaFold lookup is never loaded', async () => {
+  let answer: (models: AlphaFoldModel[]) => void = () => {}
+  const host = TestHost.create({ structures: [{ uniprotId: 'P04637' }] })
+  host.setPlugin({})
+  const load = makeStructureLoader(
+    asLoaderHost(host),
+    () => new Promise(res => (answer = res)),
+  )
+  load()
+  host.removeFirstStructure()
+  answer([alphaFoldModel('P04637', 'MEEP')])
+  await tick()
+  expect(mockLoad).not.toHaveBeenCalled()
 })
 
 // A structure removed while its file was still downloading has no

@@ -48,6 +48,7 @@ export function makeStructureLoader(
   fetchModels: AlphaFoldModelFetcher = fetchAlphaFoldModels,
 ) {
   const loadingStructures = new Set<StructureInstance>()
+  const failedIn = new WeakMap<StructureInstance, PluginContext>()
 
   /** The accession a structure still has to turn into a file, if any. */
   function unresolvedAccession(structure: StructureInstance) {
@@ -103,10 +104,16 @@ export function makeStructureLoader(
       accession === undefined
         ? loadStructureData({ structure, plugin })
         : resolveAlphaFoldUrl(structure, accession).then(() =>
-            loadStructureData({ structure, plugin }),
+            isAlive(structure)
+              ? loadStructureData({ structure, plugin })
+              : undefined,
           )
     loaded
       .then(data => {
+        if (!data) {
+          loadingStructures.delete(structure)
+          return
+        }
         if (!isAlive(structure)) {
           // Removed while it was loading. The load still put a trajectory in
           // Mol*, and no model owns it any more, so it would stay on the
@@ -144,6 +151,7 @@ export function makeStructureLoader(
         } else {
           // the structure carries its own failure: a view-wide "Failed to
           // fetch" names neither which structure nor what it was fetching
+          failedIn.set(structure, plugin)
           structure.setError(e)
           console.error(e)
         }
@@ -154,7 +162,11 @@ export function makeStructureLoader(
     const { structures, molstarPluginContext } = host
     if (molstarPluginContext) {
       for (const structure of structures) {
-        if (!structure.loadedToMolstar && !loadingStructures.has(structure)) {
+        if (
+          !structure.loadedToMolstar &&
+          !loadingStructures.has(structure) &&
+          failedIn.get(structure) !== molstarPluginContext
+        ) {
           loadInto(structure, molstarPluginContext)
         }
       }
