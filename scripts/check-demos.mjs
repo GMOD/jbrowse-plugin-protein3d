@@ -159,7 +159,7 @@ async function serveCandidateBundle(page) {
 // SIFTS arrives after the view settles, and the fusion unmapping waits on it
 function readView() {
   const w = /** @type {Record<string, any>} */ (window)
-  const session = w.JBrowseSession ?? w.__jbrowse_session
+  const session = w.JBrowseSession
   const view = session?.views?.find(v => v.type === 'ProteinView')
   const structures = view?.structures ?? []
   if (
@@ -187,16 +187,14 @@ function readView() {
       identity: s.alignmentQuality?.identity,
       aligned: s.alignmentQuality?.aligned,
       models: s.molstarStructures?.length,
-      selected:
-        s.clickedStructureRanges ??
-        (s.clickedStructureRange ? [s.clickedStructureRange] : []),
+      selected: s.clickedStructureRanges,
     })),
   }
 }
 
 function superposedAtLeast(n) {
   const w = /** @type {Record<string, any>} */ (window)
-  const session = w.JBrowseSession ?? w.__jbrowse_session
+  const session = w.JBrowseSession
   const view = session?.views?.find(v => v.type === 'ProteinView')
   return view?.superposedCount >= n
 }
@@ -374,7 +372,7 @@ for (const demo of demos) {
     const text = await page
       .evaluate(() => {
         const w = /** @type {Record<string, any>} */ (window)
-        const session = w.JBrowseSession ?? w.__jbrowse_session
+        const session = w.JBrowseSession
         const view = session?.views?.find(v => v.type === 'ProteinView')
         const waiting = view?.structures?.map(s =>
           s.error

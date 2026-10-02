@@ -101,13 +101,6 @@ function url(version, withSpec) {
   return `https://jbrowse.org/code/jb2/${version}/?config=${encodeURIComponent(CONFIG)}${spec}`
 }
 
-// The app's session global has been renamed across the range this probes, so
-// read whichever one this host defines rather than assuming.
-function readSession() {
-  const w = /** @type {Record<string, any>} */ (window)
-  return w.JBrowseSession ?? w.__jbrowse_session ?? w.JBrowseRootModel?.session
-}
-
 // Serving a candidate build means answering requests under the store path from
 // the local dist instead.
 //
@@ -216,7 +209,7 @@ async function probeContextMenu(page) {
   const featureAt = () =>
     page.evaluate(() => {
       const w = /** @type {Record<string, any>} */ (window)
-      const session = w.JBrowseSession ?? w.__jbrowse_session
+      const session = w.JBrowseSession
       const view = session?.views?.find(v => v.type === 'LinearGenomeView')
       return view?.tracks?.[0]?.displays?.[0]?.featureIdUnderMouse
     })
@@ -296,14 +289,12 @@ async function probeOne(browser, version) {
       timeout: 60_000,
     })
 
-    // Readiness is the session global (jbrowse-web has set it since v1.0.1, so
-    // it is available across this whole matrix) or the error page. Do NOT wait on
-    // markup: the loading spinner is an svg, so an element-presence wait returns
+    // Readiness is the session global or the error page. Do NOT wait on markup: the loading spinner is an svg, so an element-presence wait returns
     // before plugins have loaded and reads every host as broken.
     result.settled = await page
       .waitForFunction(
         () =>
-          !!(window.JBrowseSession ?? window.__jbrowse_session) ||
+          !!window.JBrowseSession ||
           /JBrowse Error|Fatal error/.test(document.body.innerText),
         { timeout: 45_000 },
       )
@@ -333,7 +324,7 @@ async function probeOne(browser, version) {
 
     result.structures = await page.evaluate(() => {
       const w = /** @type {Record<string, any>} */ (window)
-      const session = w.JBrowseSession ?? w.__jbrowse_session
+      const session = w.JBrowseSession
       return session?.views
         ?.find(v => v.type === 'ProteinView')
         ?.structures?.map(s => ({
@@ -344,7 +335,7 @@ async function probeOne(browser, version) {
 
     result.sessionViews = await page.evaluate(() => {
       const w = /** @type {Record<string, any>} */ (window)
-      const session = w.JBrowseSession ?? w.__jbrowse_session
+      const session = w.JBrowseSession
       return session?.views?.map(v => v.type)
     })
 
@@ -360,16 +351,11 @@ async function probeOne(browser, version) {
   return result
 }
 
-// `--use-gl=swiftshader` alone is not enough: Chrome deprecated the automatic
-// fallback, so without `--enable-unsafe-swiftshader` Mol* gets no WebGL at all
-// and the probe measured a session whose 3D viewer never had a context. See
-// docs/live-checks.md.
 const browser = await puppeteer.launch({
   headless: true,
   args: ['--no-sandbox', '--disable-setuid-sandbox'],
   defaultViewport: { width: 1400, height: 900 },
 })
-
 
 console.log(
   values.bundle
