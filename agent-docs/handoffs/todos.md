@@ -48,4 +48,3 @@ Still open on the todo:
 - Superseded alignments still run to completion in the worker; only their
   answers are dropped.
 - Two unused p2s_mapper functions to drop at its next major version.
-

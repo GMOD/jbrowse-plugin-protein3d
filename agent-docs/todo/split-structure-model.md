@@ -1,10 +1,14 @@
 ---
 name: split-structure-model
-description: structureModel.ts is 1,650 lines; move the alignment decision and per-residue track getters out.
+description:
+  structureModel.ts is 1,650 lines; move the alignment decision and per-residue
+  track getters out.
 metadata:
   category: ready
   area: structure
-  first_move: "Move the load autorun, alignInWorker and its supersede bookkeeping into their own module."
+  first_move:
+    'Move the load autorun, alignInWorker and its supersede bookkeeping into
+    their own module.'
   order: 2
 ---
 
