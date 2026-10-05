@@ -1,3 +1,11 @@
+## [1.1.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.0.1...v1.1.0) (2026-10-05)
+
+### Other Changes
+
+- Triage agent-docs into todo, ideas and reference ([523c67f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/523c67f9ed061e88a3d5ce0ecd4e664e9559e7a5))
+- Split a launched protein view off with the host's moveViewToSplit where it has it ([b3fee2a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b3fee2a47f7f613d7f65e3a183bf073a439ae824))
+- Format the triaged agent-docs with prettier ([685884d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/685884de669bdbb93dbe524ebd43c68cfcf94331))
+
 ## [1.0.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.0.0...v1.0.1) (2026-10-02)
 
 ### Other Changes
