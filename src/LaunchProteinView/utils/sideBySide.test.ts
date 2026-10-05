@@ -14,6 +14,20 @@ function makeSession(actions: Record<string, unknown>) {
   return actions as unknown as AbstractSessionModel
 }
 
+test('a host with moveViewToSplit gets it, not setPendingMove', () => {
+  const calls: unknown[] = []
+  const session = makeSession({
+    moveViewToSplit: (viewId: unknown, direction: unknown) =>
+      calls.push({ viewId, direction }),
+    setPendingMove: (move: unknown) => calls.push(move),
+    setUseWorkspaces: (on: unknown) => calls.push(on),
+  })
+
+  launchViewSideBySide(session, 'view-1')
+
+  expect(calls).toEqual([{ viewId: 'view-1', direction: 'row' }])
+})
+
 test('asks for the split when the session can place a view', () => {
   const calls: unknown[] = []
   const session = makeSession({

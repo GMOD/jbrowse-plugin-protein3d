@@ -20,9 +20,14 @@ export function setLaunchSideBySide(value: boolean) {
   writeStorage(SIDE_BY_SIDE_KEY, value ? 'true' : 'false')
 }
 
-// The workspaces split is driven by two session actions that only exist on the
-// web/desktop session (MultipleViews + DockviewLayout mixins). Embedded sessions
-// lack them, so feature-detect before using.
+// The split is a session action that only the web/desktop session has, so
+// feature-detect before using. A host whose workspace is always on has
+// `moveViewToSplit`, the action its View menu uses; one from before has the
+// pair below.
+interface SessionWithMoves {
+  moveViewToSplit: (viewId: string, direction: 'row' | 'column') => unknown
+}
+
 interface SessionWithWorkspaces {
   setUseWorkspaces: (useWorkspaces: boolean) => void
   setPendingMove: (move: { type: 'splitRight'; viewId: string }) => void
@@ -31,6 +36,12 @@ interface SessionWithWorkspaces {
 const hasAction = (session: AbstractSessionModel, name: string) =>
   name in session &&
   typeof (session as unknown as Record<string, unknown>)[name] === 'function'
+
+function isSessionWithMoves(
+  session: AbstractSessionModel,
+): session is AbstractSessionModel & SessionWithMoves {
+  return hasAction(session, 'moveViewToSplit')
+}
 
 // Warned at most once: this is a property of the host, so it is the same answer
 // every launch, and a dialog the user reopens should not stack up console noise.
@@ -59,17 +70,16 @@ function isSessionWithWorkspaces(
 }
 
 /**
- * Place a freshly-added view to the right of the others in a workspaces (tiled)
- * layout. Mirrors the "Move to split view" view-menu action: queue a splitRight
- * pending move for this view, then enable workspaces so TiledViewsContainer
- * consumes the move on mount (other views land in the left panel, this one in a
- * new right panel). No-op on sessions without workspaces support.
+ * Place a freshly-added view in a cell to the right of its own, the View menu's
+ * "Move to split view (right)". No-op on sessions without a workspace.
  */
 export function launchViewSideBySide(
   session: AbstractSessionModel,
   viewId: string,
 ) {
-  if (isSessionWithWorkspaces(session)) {
+  if (isSessionWithMoves(session)) {
+    session.moveViewToSplit(viewId, 'row')
+  } else if (isSessionWithWorkspaces(session)) {
     session.setPendingMove({ type: 'splitRight', viewId })
     session.setUseWorkspaces(true)
   }
