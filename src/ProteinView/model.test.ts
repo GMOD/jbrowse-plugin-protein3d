@@ -207,3 +207,11 @@ test('dragging the track handle resizes every lane, within limits', () => {
   expect(view.trackHeight).toBeUndefined()
   expect(structure.trackHeight).toBe(12)
 })
+
+// dragging the resize handle past the top of the canvas used to leave a
+// negative height the pointer had to travel all the way back out of
+test('the canvas height has a floor', () => {
+  const view = makeView()
+  view.setHeight(-200)
+  expect(view.height).toBe(100)
+})

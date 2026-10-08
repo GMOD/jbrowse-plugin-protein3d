@@ -1,3 +1,4 @@
+import { Sequence } from 'molstar/lib/mol-model/sequence'
 import { getProteinOneLetterCode } from 'molstar/lib/mol-model/sequence/constants'
 import {
   Bond,
@@ -65,7 +66,8 @@ function oneLetterCode(l: StructureElement.Location) {
     model.sequence.byEntityKey[model.entities.getEntityIndex(entityId)]
       ?.sequence
   const canonical = canonicalSequences(model).get(entityId)
-  return sequence?.kind === 'protein' && canonical?.length === sequence.length
+  return sequence?.kind === Sequence.Kind.Protein &&
+    canonical?.length === sequence.length
     ? (canonical[sequence.index(StructureProperties.residue.label_seq_id(l))] ??
         code)
     : code

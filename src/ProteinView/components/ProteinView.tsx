@@ -136,7 +136,7 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
       <ResizeHandle
         style={{ height: 4, background: 'grey' }}
         onDrag={delta => {
-          return model.setHeight(model.height + delta)
+          model.setHeight(model.height + delta)
         }}
       />
       <ManualAlignmentDialog model={model} />

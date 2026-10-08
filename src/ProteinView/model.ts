@@ -41,6 +41,8 @@ import type { AlignmentAlgorithm } from 'p2s_mapper'
 // What a click and a highlight do, as opposed to what the panel shows. Named
 // here rather than in storedSettings because these are deliberately not
 // remembered across views.
+const MIN_HEIGHT = 100
+
 const BEHAVIOR_SETTINGS = [
   ['showHighlight', 'Pairwise alignment as green highlight'],
   ['zoomToBaseLevel', 'Zoom to base level on click'],
@@ -194,8 +196,7 @@ function stateModelFactory() {
        * #action
        */
       setHeight(n: number) {
-        self.height = n
-        return n
+        self.height = Math.max(n, MIN_HEIGHT)
       },
       /**
        * #action

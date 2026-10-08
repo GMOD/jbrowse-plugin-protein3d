@@ -26,7 +26,7 @@ export default function useProteinView({
   model?: JBrowsePluginProteinViewModel
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
-  const pluginRef = useRef<PluginContext | null>(null)
+  const [plugin, setPlugin] = useState<PluginContext>()
   const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
 
@@ -40,11 +40,11 @@ export default function useProteinView({
       plugin?: PluginContext
       host?: HTMLDivElement
     } = { cancelled: false }
+    // read through a call, which the compiler does not narrow across an await
+    const isCancelled = () => state.cancelled
     void (async () => {
+      let created: PluginContext | undefined
       try {
-        if (!parentRef.current) {
-          return
-        }
         const {
           Color,
           GeometryExport,
@@ -57,13 +57,18 @@ export default function useProteinView({
           renderReact18,
           css,
         } = await loadMolstar()
+        // the view can close or minimize while the Mol* chunk downloads
+        const parent = parentRef.current
+        if (isCancelled() || !parent) {
+          return
+        }
         injectMolstarCss(css)
 
         const host = document.createElement('div')
-        parentRef.current.append(host)
+        parent.append(host)
         state.host = host
         const defaultSpec = DefaultPluginUISpec()
-        const created = await createPluginUI({
+        created = await createPluginUI({
           target: host,
           render: renderReact18,
           spec: {
@@ -92,15 +97,19 @@ export default function useProteinView({
           renderer: { selectColor: Color(0xff00ff), selectStrength: 1 },
           marking: { selectEdgeColor: Color(0xff00ff) },
         })
-        if (state.cancelled) {
+        if (isCancelled()) {
           created.dispose()
           host.remove()
         } else {
           state.plugin = created
-          pluginRef.current = created
+          setPlugin(created)
           model?.setMolstarPluginContext(created)
         }
       } catch (e) {
+        if (created && state.plugin !== created) {
+          created.dispose()
+          state.host?.remove()
+        }
         console.error(e)
         setError(e)
       } finally {
@@ -109,7 +118,6 @@ export default function useProteinView({
     })()
     return () => {
       state.cancelled = true
-      pluginRef.current = null
       // Drop the stale reference before disposing so model autoruns don't act
       // on a torn-down plugin.
       if (model && isAlive(model)) {
@@ -125,23 +133,28 @@ export default function useProteinView({
   }, [])
 
   // Show/hide the Mol* controls panel at runtime without rebuilding the plugin.
+  // Depending on the plugin applies a toggle made while it was being created.
   useEffect(() => {
     const state = { cancelled: false }
     void (async () => {
-      const plugin = pluginRef.current
-      if (plugin) {
-        const { PluginCommands } = await loadMolstar()
-        if (!state.cancelled) {
-          await PluginCommands.Layout.Update(plugin, {
-            state: { showControls },
-          })
+      try {
+        if (plugin) {
+          const { PluginCommands } = await loadMolstar()
+          if (!state.cancelled) {
+            await PluginCommands.Layout.Update(plugin, {
+              state: { showControls },
+            })
+          }
         }
+      } catch (e) {
+        console.error(e)
+        setError(e)
       }
     })()
     return () => {
       state.cancelled = true
     }
-  }, [showControls])
+  }, [plugin, showControls])
 
   return { parentRef, error, loading }
 }
