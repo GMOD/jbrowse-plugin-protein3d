@@ -25,11 +25,27 @@ const GPU_NOISE = [
   'Failed to create WebGPU Context Provider',
 ]
 
+// jbrowse-web's index.html preloads a set of its own chunks (since the build
+// hosted on `main` 2026-10-08), and Chrome warns about each one a session did
+// not get to within a few seconds of load. Which ones depends on the views the
+// session opens, so a ProteinView launch leaves two unused. Scoped to the
+// host's static chunks: the same warning about a plugin file would be ours.
+function isHostPreloadHint(text) {
+  return (
+    text.includes('was preloaded using link preload but not used') &&
+    /\/static\/js\/[\w.]+\.chunk\.js/.test(text) &&
+    !text.includes('jbrowse-plugin-')
+  )
+}
+
 /**
  * @param {string} text
  * @returns {boolean}
  */
 export function isBrowserConsoleNoise(text) {
+  if (isHostPreloadHint(text)) {
+    return true
+  }
   if (text.includes('[WebGL2Hal #')) {
     return !text.includes('context LOST') && !text.includes('GL error')
   }

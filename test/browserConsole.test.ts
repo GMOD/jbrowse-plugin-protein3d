@@ -20,3 +20,22 @@ test('a real GPU failure is not noise even inside the WebGL2Hal prefix', () => {
   expect(isBrowserConsoleNoise('[WebGL2Hal #3] context LOST')).toBe(false)
   expect(isBrowserConsoleNoise('[WebGL2Hal #3] GL error 1285')).toBe(false)
 })
+
+test("the host's unused preload hint is noise, a plugin chunk's is not", () => {
+  const hint = (url: string) =>
+    `The resource ${url} was preloaded using link preload but not used within a few seconds from the window's load event.`
+  expect(
+    isBrowserConsoleNoise(
+      hint(
+        'https://jbrowse.org/code/jb2/main/static/js/62604.a8ea5de0.chunk.js',
+      ),
+    ),
+  ).toBe(true)
+  expect(
+    isBrowserConsoleNoise(
+      hint(
+        'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/latest/dist/chunks/chunk-ABC.js',
+      ),
+    ),
+  ).toBe(false)
+})
