@@ -5,7 +5,6 @@ import CloseIcon from '@mui/icons-material/Close'
 import { IconButton } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import ManualAlignmentDialog from './ManualAlignmentDialog'
 import ProteinViewHeader from './ProteinViewHeader'
 import useProteinView from '../useProteinView'
 
@@ -139,7 +138,6 @@ const ProteinViewContainer = observer(function ProteinViewContainer({
           model.setHeight(model.height + delta)
         }}
       />
-      <ManualAlignmentDialog model={model} />
     </div>
   )
 })

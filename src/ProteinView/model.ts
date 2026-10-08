@@ -1,4 +1,7 @@
+import { lazy } from 'react'
+
 import { BaseViewModel } from '@jbrowse/core/pluggableElementTypes'
+import { getSession } from '@jbrowse/core/util'
 import { ElementId } from '@jbrowse/core/util/types/mst'
 import { addDisposer, getPath, types } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
@@ -42,6 +45,13 @@ import type { AlignmentAlgorithm } from 'p2s_mapper'
 // here rather than in storedSettings because these are deliberately not
 // remembered across views.
 const MIN_HEIGHT = 100
+
+// Queued on the session rather than mounted in the view's body, which is not
+// there while Mol* loads, after it fails, or while the view is minimized
+const AddStructureDialog = lazy(() => import('./components/AddStructureDialog'))
+const ManualAlignmentDialog = lazy(
+  () => import('./components/ManualAlignmentDialog'),
+)
 
 const BEHAVIOR_SETTINGS = [
   ['showHighlight', 'Pairwise alignment as green highlight'],
@@ -178,14 +188,6 @@ function stateModelFactory() {
       molstarPluginContext: undefined as PluginContext | undefined,
       /**
        * #volatile
-       */
-      showManualAlignmentDialog: false,
-      /**
-       * #volatile
-       */
-      showAddStructureDialog: false,
-      /**
-       * #volatile
        * how many loaded structures the last TM-align superposition covered
        */
       superposedCount: 0,
@@ -234,18 +236,6 @@ function stateModelFactory() {
           }
         }
         self.molstarPluginContext = p
-      },
-      /**
-       * #action
-       */
-      setShowManualAlignmentDialog(val: boolean) {
-        self.showManualAlignmentDialog = val
-      },
-      /**
-       * #action
-       */
-      setShowAddStructureDialog(val: boolean) {
-        self.showAddStructureDialog = val
       },
       setSuperposedCount(count: number) {
         self.superposedCount = count
@@ -516,7 +506,10 @@ function stateModelFactory() {
           {
             label: 'Add structure...',
             onClick: () => {
-              self.setShowAddStructureDialog(true)
+              getSession(self).queueDialog(handleClose => [
+                AddStructureDialog,
+                { model: self, handleClose },
+              ])
             },
           },
           ...(self.structures.length > 0
@@ -541,7 +534,10 @@ function stateModelFactory() {
           {
             label: 'Import manual alignment...',
             onClick: () => {
-              self.setShowManualAlignmentDialog(true)
+              getSession(self).queueDialog(handleClose => [
+                ManualAlignmentDialog,
+                { model: self, handleClose },
+              ])
             },
           },
           {

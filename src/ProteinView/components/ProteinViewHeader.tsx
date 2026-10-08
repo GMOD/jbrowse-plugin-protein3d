@@ -13,7 +13,6 @@ import MenuItem from '@mui/material/MenuItem'
 import Tooltip from '@mui/material/Tooltip'
 import { observer } from 'mobx-react'
 
-import AddStructureDialog from './AddStructureDialog'
 import { MolstarLegendKey } from './ColorKey'
 import HeaderStructureRows from './HeaderStructureRow'
 import ProteinAlignment from './ProteinAlignment'
@@ -179,7 +178,6 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
       ) : showAlignment && alignmentStructure?.alignmentPending ? (
         <LoadingEllipses message="Loading pairwise alignment" />
       ) : null}
-      <AddStructureDialog model={model} />
     </div>
   )
 })

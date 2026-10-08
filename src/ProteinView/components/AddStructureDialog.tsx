@@ -28,8 +28,13 @@ import type { ProteinStructureSpec } from '../proteinViewSpec'
 
 const AddStructureDialog = observer(function AddStructureDialog({
   model,
+  handleClose,
 }: {
-  model: JBrowsePluginProteinViewModel
+  model: Pick<
+    JBrowsePluginProteinViewModel,
+    'primaryStructure' | 'addStructure'
+  >
+  handleClose: () => void
 }) {
   const [file, setFile] = useState<File>()
   const [pdbId, setPdbId] = useState('')
@@ -38,17 +43,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
   const [structureURL, setStructureURL] = useState('')
   const [error, setError] = useState<unknown>()
   const [mapToTranscript, setMapToTranscript] = useState(true)
-  const { showAddStructureDialog } = model
   const canMap = !!model.primaryStructure?.userProvidedTranscriptSequence
-
-  const handleClose = () => {
-    setFile(undefined)
-    setPdbId('')
-    setUniprotId('')
-    setStructureURL('')
-    setError(undefined)
-    model.setShowAddStructureDialog(false)
-  }
 
   // The Structure model resolves the `pdbId`/`uniprotId` shorthands into a url
   // at hydration, so the dialog states the source rather than rebuilding the
@@ -87,10 +82,6 @@ const AddStructureDialog = observer(function AddStructureDialog({
       console.error(e)
       setError(e)
     }
-  }
-
-  if (!showAddStructureDialog) {
-    return null
   }
 
   const pdbIdInvalid = pdbId !== '' && !isPdbId(pdbId)
@@ -217,13 +208,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
         </Typography>
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={() => {
-            handleClose()
-          }}
-        >
-          Cancel
-        </Button>
+        <Button onClick={handleClose}>Cancel</Button>
         <Button
           onClick={() => {
             void handleAdd()

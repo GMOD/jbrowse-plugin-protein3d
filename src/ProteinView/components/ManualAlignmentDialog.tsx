@@ -18,18 +18,14 @@ import type { JBrowsePluginProteinViewModel } from '../model'
 
 const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
   model,
+  handleClose,
 }: {
-  model: JBrowsePluginProteinViewModel
+  model: Pick<JBrowsePluginProteinViewModel, 'alignmentStructure'>
+  handleClose: () => void
 }) {
   const [alignment, setAlignment] = useState('')
   const [parseError, setParseError] = useState<string>()
-  const { showManualAlignmentDialog, alignmentStructure } = model
-
-  const handleClose = () => {
-    setAlignment('')
-    setParseError(undefined)
-    model.setShowManualAlignmentDialog(false)
-  }
+  const { alignmentStructure } = model
 
   const handleApply = () => {
     if (alignment.trim()) {
@@ -63,13 +59,12 @@ const ManualAlignmentDialog = observer(function ManualAlignmentDialog({
     }
   }
 
-  if (!showManualAlignmentDialog) {
-    return null
-  }
-
   return (
     <Dialog open onClose={handleClose} maxWidth="md" fullWidth>
-      <DialogTitle>Import manual alignment</DialogTitle>
+      <DialogTitle>
+        Import manual alignment
+        {alignmentStructure?.label ? ` for ${alignmentStructure.label}` : ''}
+      </DialogTitle>
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
           Paste a pre-computed alignment in Clustal format. The first sequence
@@ -99,13 +94,7 @@ structure   MKAAYLSMFGKEDHKPFGDDEVELFRAVPGLKLKIAG`}
         ) : null}
       </DialogContent>
       <DialogActions>
-        <Button
-          onClick={() => {
-            handleClose()
-          }}
-        >
-          Cancel
-        </Button>
+        <Button onClick={handleClose}>Cancel</Button>
         <Button
           onClick={() => {
             handleApply()
