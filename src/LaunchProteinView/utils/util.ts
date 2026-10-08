@@ -1,6 +1,7 @@
 import { isGeneLikeType } from '@jbrowse/core/util'
 import { isRecognizedDatabaseId, matchDbIdPattern } from 'p2s_mapper'
 
+import { isRecord } from './isRecord'
 import { codingTranscripts } from '../codingFeature'
 
 import type { Feature } from '@jbrowse/core/util'
@@ -14,20 +15,12 @@ import type { Isoform } from 'p2s_mapper'
  * absent/unparseable so callers can fall back to a default organism.
  */
 export function extractTaxonId(metadata: unknown): number | undefined {
-  if (metadata === null || typeof metadata !== 'object') {
+  if (!isRecord(metadata)) {
     return undefined
   }
-  const m = metadata as Record<string, unknown>
-  const ucsc =
-    m.ucsc !== null && typeof m.ucsc === 'object'
-      ? (m.ucsc as Record<string, unknown>)
-      : undefined
-  const n = Number(m.taxId ?? m.taxonId ?? ucsc?.taxId)
+  const ucsc = isRecord(metadata.ucsc) ? metadata.ucsc : undefined
+  const n = Number(metadata.taxId ?? metadata.taxonId ?? ucsc?.taxId)
   return Number.isFinite(n) && n > 0 ? n : undefined
-}
-
-export function getId(val?: Feature): string {
-  return val === undefined ? '' : val.id()
 }
 
 function firstString(...vals: unknown[]) {

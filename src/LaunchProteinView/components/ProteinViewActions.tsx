@@ -60,6 +60,13 @@ export default function ProteinViewActions({
   error,
 }: ProteinViewActionsProps) {
   const [menuAnchor, setMenuAnchor] = useState<HTMLElement | null>(null)
+  const closeMenu = () => {
+    setMenuAnchor(null)
+  }
+  const { runLaunch, launchError, launching } = useSafeLaunch(
+    handleClose,
+    closeMenu,
+  )
 
   const missingReasons = getLaunchMissingReasons({
     uniprotId,
@@ -70,16 +77,11 @@ export default function ProteinViewActions({
   })
   // Loading or errored, SWR's keepPreviousData can still hold the previous
   // accession's structure, which Launch would open under the new name.
-  const canLaunch = !isLoading && !error && missingReasons.length === 0
+  const canLaunch =
+    !isLoading && !error && !launching && missingReasons.length === 0
   // Suppress the derived reasons while loading or while a real upstream error
   // is displayed above via <ErrorMessage> — a duplicate hint would mislead.
   const showMissingReasons = !isLoading && !error && missingReasons.length > 0
-
-  const closeMenu = () => {
-    setMenuAnchor(null)
-  }
-
-  const { runLaunch, launchError } = useSafeLaunch(handleClose, closeMenu)
 
   const launch3DParams = {
     session,

@@ -11,7 +11,6 @@ import type {
   SessionWithAddSessionTrack,
 } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 interface LaunchViewParams {
   session: AbstractSessionModel
@@ -25,8 +24,6 @@ interface Launch3DExtraParams {
   url?: string
   data?: string
   userProvidedTranscriptSequence?: string
-  alignmentAlgorithm?: AlignmentAlgorithm
-  displayName?: string
 }
 
 export function formatViewName(
@@ -56,8 +53,6 @@ export function launch3DProteinView({
   url,
   data,
   userProvidedTranscriptSequence,
-  alignmentAlgorithm,
-  displayName,
   sideBySide,
 }: Omit<LaunchViewParams, 'view'> &
   Launch3DExtraParams & {
@@ -67,10 +62,12 @@ export function launch3DProteinView({
     sideBySide?: boolean
   }) {
   const snap = proteinViewSnapshot({
-    alignmentAlgorithm,
-    displayName:
-      displayName ??
-      formatViewName('Protein view', feature, selectedTranscript, uniprotId),
+    displayName: formatViewName(
+      'Protein view',
+      feature,
+      selectedTranscript,
+      uniprotId,
+    ),
     structures: [
       {
         url,

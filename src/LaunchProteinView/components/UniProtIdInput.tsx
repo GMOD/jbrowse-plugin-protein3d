@@ -10,6 +10,7 @@ import {
 } from '@mui/material'
 
 import ExternalLink from '../../components/ExternalLink'
+import { UNIPROT_ACCESSION_HINT } from '../utils/uniprotAccession'
 
 export type LookupMode = 'auto' | 'manual' | 'feature'
 
@@ -24,6 +25,7 @@ interface UniProtIdInputProps {
   onLookupModeChange: (mode: LookupMode) => void
   manualUniprotId: string
   onManualUniprotIdChange: (id: string) => void
+  manualUniprotIdInvalid?: boolean
   featureUniprotId?: string
   /** false hides the lookup radio: there is no identifier for it to run on */
   hasSearchableIdentifier?: boolean
@@ -35,6 +37,7 @@ export default function UniProtIdInput({
   onLookupModeChange,
   manualUniprotId,
   onManualUniprotIdChange,
+  manualUniprotIdInvalid,
   featureUniprotId,
   hasSearchableIdentifier = true,
   endContent,
@@ -85,6 +88,10 @@ export default function UniProtIdInput({
             placeholder="e.g. P68871"
             size="small"
             value={manualUniprotId}
+            error={manualUniprotIdInvalid}
+            helperText={
+              manualUniprotIdInvalid ? UNIPROT_ACCESSION_HINT : undefined
+            }
             onChange={e => {
               onManualUniprotIdChange(e.target.value)
             }}

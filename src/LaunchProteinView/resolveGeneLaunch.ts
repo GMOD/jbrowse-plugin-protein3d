@@ -23,8 +23,31 @@ export interface GeneLaunch {
   userProvidedTranscriptSequence: string
   /** undefined when the gene's identifiers name no single UniProt entry */
   uniprotId?: string
+  /** why the UniProt search gave no answer, as opposed to answering "none" */
+  lookupError?: unknown
   /** the AlphaFold model of that entry; undefined when it has none */
   url?: string
+}
+
+interface EntryLookup {
+  uniprotId?: string
+  lookupError?: unknown
+}
+
+/** Why a resolved gene has no structure to open. */
+export function describeMissingStructure(
+  geneName: string,
+  { uniprotId, lookupError }: Pick<GeneLaunch, 'uniprotId' | 'lookupError'>,
+) {
+  return uniprotId
+    ? `AlphaFold DB has no model for ${uniprotId}`
+    : lookupError === undefined
+      ? `No single UniProt entry found for ${geneName}`
+      : `UniProt lookup failed for ${geneName}: ${errorText(lookupError)}`
+}
+
+function errorText(e: unknown) {
+  return e instanceof Error ? e.message : `${e}`
 }
 
 /**
@@ -84,15 +107,19 @@ export function sessionGeneLaunchHost(
  * The accession a feature's identifiers name, or undefined where a person has
  * to choose. A gene symbol means a different protein in every species, so
  * without the assembly's taxon only the database ids are searched. An
- * unreachable UniProt is a missing answer too: the dialog takes a typed
- * accession, and a spec can name one.
+ * unreachable UniProt resolves rather than throws, because the dialog takes a
+ * typed accession and a spec can name one, and carries the error so a caller
+ * does not report an outage as a gene with no entry.
  */
-async function searchForEntry(host: GeneLaunchHost, ids: FeatureIdentifiers) {
+async function searchForEntry(
+  host: GeneLaunchHost,
+  ids: FeatureIdentifiers,
+): Promise<EntryLookup> {
   try {
     const organismId = await host.taxonId()
     const geneName = organismId === undefined ? undefined : ids.geneName
     if (ids.recognizedIds.length === 0 && !geneName) {
-      return undefined
+      return {}
     }
     const { entries } = await host.searchUniProtEntries({
       recognizedIds: ids.recognizedIds,
@@ -100,10 +127,9 @@ async function searchForEntry(host: GeneLaunchHost, ids: FeatureIdentifiers) {
       geneName,
       organismId,
     })
-    return unambiguousEntry(entries)?.accession
+    return { uniprotId: unambiguousEntry(entries)?.accession }
   } catch (e) {
-    console.warn('UniProt lookup failed', e)
-    return undefined
+    return { lookupError: e }
   }
 }
 
@@ -128,12 +154,15 @@ export async function resolveGeneLaunch({
   findStructure?: boolean
 }): Promise<GeneLaunch> {
   const ids = extractFeatureIdentifiers(feature, preferredTranscriptId)
-  const [translations, uniprotId] = await Promise.all([
+  const namedUniprotId =
+    givenUniprotId ?? (findStructure ? ids.uniprotId : undefined)
+  const lookup: EntryLookup | Promise<EntryLookup> =
+    namedUniprotId !== undefined || !findStructure
+      ? { uniprotId: namedUniprotId }
+      : searchForEntry(host, ids)
+  const [translations, { uniprotId, lookupError }] = await Promise.all([
     host.translate(codingTranscripts(feature)),
-    givenUniprotId ??
-      (findStructure
-        ? (ids.uniprotId ?? searchForEntry(host, ids))
-        : undefined),
+    lookup,
   ])
   const translated = translations.flatMap(({ feature: transcript, seq }) =>
     seq ? [{ transcript, seq }] : [],
@@ -182,6 +211,7 @@ export async function resolveGeneLaunch({
     transcript: chosen.transcript,
     userProvidedTranscriptSequence: chosen.seq,
     uniprotId,
+    lookupError,
     url,
   }
 }

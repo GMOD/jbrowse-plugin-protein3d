@@ -22,6 +22,10 @@ import {
   STRUCTURE_FILE_ACCEPT,
   readStructureFile,
 } from '../../LaunchProteinView/utils/readStructureFile'
+import {
+  UNIPROT_ACCESSION_HINT,
+  isUniProtAccession,
+} from '../../LaunchProteinView/utils/uniprotAccession'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 import type { ProteinStructureSpec } from '../proteinViewSpec'
@@ -85,11 +89,12 @@ const AddStructureDialog = observer(function AddStructureDialog({
   }
 
   const pdbIdInvalid = pdbId !== '' && !isPdbId(pdbId)
+  const uniprotIdInvalid = uniprotId !== '' && !isUniProtAccession(uniprotId)
   const canAdd =
     (choice === 'url' && structureURL !== '') ||
     (choice === 'file' && file !== undefined) ||
     (choice === 'pdb' && isPdbId(pdbId)) ||
-    (choice === 'uniprot' && uniprotId !== '')
+    (choice === 'uniprot' && isUniProtAccession(uniprotId))
 
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
@@ -146,7 +151,12 @@ const AddStructureDialog = observer(function AddStructureDialog({
             }}
             label="UniProt ID (e.g. P04637)"
             placeholder="Enter UniProt ID"
-            helperText="Fetches the AlphaFold predicted structure"
+            error={uniprotIdInvalid}
+            helperText={
+              uniprotIdInvalid
+                ? UNIPROT_ACCESSION_HINT
+                : 'Fetches the AlphaFold predicted structure'
+            }
             sx={{ mb: 2 }}
           />
         ) : null}

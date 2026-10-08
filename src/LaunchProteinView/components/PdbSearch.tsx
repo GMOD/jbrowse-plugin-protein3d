@@ -16,7 +16,7 @@ import PdbResultsTable from './PdbResultsTable'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
-import UniProtResultsTable from './UniProtResultsTable'
+import UniProtLookupResults from './UniProtLookupResults'
 import ExternalLink from '../../components/ExternalLink'
 import useDebouncedValue from '../hooks/useDebouncedValue'
 import usePdbBestStructures from '../hooks/usePdbBestStructures'
@@ -65,7 +65,7 @@ const PdbSearch = observer(function PdbSearch({
   onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
-  const { uniprotId, isAutoMode, isLookupLoading } = lookup
+  const { uniprotId, isLookupLoading } = lookup
   const {
     entries,
     error: pdbError,
@@ -174,29 +174,7 @@ const PdbSearch = observer(function PdbSearch({
 
         <PartialFailureNotice message={isoformPartialFailure} />
 
-        {isAutoMode && lookup.uniprotEntries.length > 0 ? (
-          <>
-            <Typography variant="body2" color="textSecondary">
-              Searched UniProt by {lookup.searchDescription}
-            </Typography>
-            <UniProtResultsTable
-              entries={lookup.uniprotEntries}
-              selectedAccession={lookup.selectedTableAccession}
-              onSelect={lookup.setSelectedUniprotId}
-            />
-          </>
-        ) : null}
-
-        {isAutoMode &&
-        !isLookupLoading &&
-        lookup.uniprotEntries.length === 0 ? (
-          <Typography variant="body2" color="textSecondary">
-            No UniProt entries found for {lookup.searchDescriptionOr}. Try a
-            different identifier above, or search{' '}
-            <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
-            directly and use "Enter manually".
-          </Typography>
-        ) : null}
+        <UniProtLookupResults lookup={lookup} />
 
         <TextField
           size="small"

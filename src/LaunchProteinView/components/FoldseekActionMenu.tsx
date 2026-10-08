@@ -55,7 +55,10 @@ export default function FoldseekActionMenu({
     setAnchorEl(null)
   }
 
-  const { runLaunch, launchError } = useSafeLaunch(onClose, handleMenuClose)
+  const { runLaunch, launchError, launching } = useSafeLaunch(
+    onClose,
+    handleMenuClose,
+  )
 
   const baseParams = { session, view, feature, selectedTranscript, uniprotId }
 
@@ -86,7 +89,12 @@ export default function FoldseekActionMenu({
   return (
     <>
       {launchError ? <ErrorMessage error={launchError} /> : null}
-      <Button size="small" variant="outlined" onClick={handleClick}>
+      <Button
+        size="small"
+        variant="outlined"
+        disabled={launching}
+        onClick={handleClick}
+      >
         Load
       </Button>
       <Menu anchorEl={anchorEl} open={open} onClose={handleMenuClose}>

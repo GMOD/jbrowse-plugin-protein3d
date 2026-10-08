@@ -6,11 +6,11 @@ import { getSession } from '@jbrowse/core/util'
 import useDebouncedValue from './useDebouncedValue'
 import useUniProtSearch from './useUniProtSearch'
 import getSearchDescription from '../utils/getSearchDescription'
+import { isUniProtAccession } from '../utils/uniprotAccession'
 import { extractFeatureIdentifiers, extractTaxonId } from '../utils/util'
 
 import type { LookupMode } from '../components/UniProtIdInput'
 import type { Feature } from '@jbrowse/core/util'
-import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export function describeOrganism(
   taxonId: number | undefined,
@@ -35,7 +35,7 @@ export default function useUniProtIdLookup({
   preferredTranscriptId,
 }: {
   feature: Feature
-  view: LinearGenomeViewModel
+  view: { assemblyNames: string[] }
   preferredTranscriptId?: string
 }) {
   const geneIds = extractFeatureIdentifiers(feature, preferredTranscriptId)
@@ -84,7 +84,7 @@ export default function useUniProtIdLookup({
 
   const {
     entries: uniprotEntries,
-    isLoading: isLookupLoading,
+    isLoading: isSearchLoading,
     error: lookupError,
     partialFailure: lookupPartialFailure,
   } = useUniProtSearch({
@@ -96,9 +96,12 @@ export default function useUniProtIdLookup({
     enabled: isAutoMode,
   })
 
-  // Debounce manual entry so fetches don't fire on every keystroke and
-  // pollute the SWR cache with partial-ID 404s.
   const debouncedManualUniprotId = useDebouncedValue(manualUniprotId, 400)
+  // Launch reads the debounced accession, so inside the debounce it would open
+  // the accession typed before this one
+  const isManualPending =
+    lookupMode === 'manual' && manualUniprotId !== debouncedManualUniprotId
+  const isLookupLoading = isSearchLoading || isManualPending
 
   // a row picked from an earlier search (another taxon, another identifier)
   // stops counting once the table no longer lists it
@@ -113,13 +116,19 @@ export default function useUniProtIdLookup({
       ? featureUniprotId
       : isAutoMode
         ? (pickedUniprotId ?? autoUniprotId)
-        : debouncedManualUniprotId
+        : isUniProtAccession(debouncedManualUniprotId)
+          ? debouncedManualUniprotId
+          : undefined
 
   return {
     lookupMode,
     setLookupMode,
     manualUniprotId,
-    setManualUniprotId,
+    setManualUniprotId: (text: string) => {
+      setManualUniprotId(text.trim().toUpperCase())
+    },
+    manualUniprotIdInvalid:
+      manualUniprotId !== '' && !isUniProtAccession(manualUniprotId),
     taxonId: taxonIdInput,
     setTaxonId: setTaxonIdInput,
     taxonIdError,

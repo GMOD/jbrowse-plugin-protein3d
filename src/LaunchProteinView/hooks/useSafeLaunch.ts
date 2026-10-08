@@ -5,16 +5,24 @@ import { safeLaunch } from '../utils/launchHelpers'
 /**
  * Shared launch-button wiring for the action components: holds the launch
  * error state and returns a `runLaunch` factory that closes any open menu,
- * runs the launch via safeLaunch, and surfaces failures inline.
+ * runs the launch via safeLaunch, and surfaces failures inline. `launching`
+ * is true while an async launch is in flight, and a click then is dropped, so
+ * a download cannot be launched twice.
  */
 export function useSafeLaunch(
   onSuccess: () => void,
   onBeforeLaunch?: () => void,
 ) {
   const [launchError, setLaunchError] = useState<unknown>()
+  const [launching, setLaunching] = useState(false)
   const runLaunch = (fn: () => unknown) => () => {
     onBeforeLaunch?.()
-    void safeLaunch(fn, onSuccess, setLaunchError)
+    if (!launching) {
+      setLaunching(true)
+      void safeLaunch(fn, onSuccess, setLaunchError).then(() => {
+        setLaunching(false)
+      })
+    }
   }
-  return { runLaunch, launchError }
+  return { runLaunch, launchError, launching }
 }

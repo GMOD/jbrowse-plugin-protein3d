@@ -83,7 +83,10 @@ import type {
 } from 'p2s_mapper'
 
 type LGV = LinearGenomeViewModel
-type MaybeLGV = LGV | undefined
+// `connectedViewId` comes from a spec, which can name any view of the session
+function isGenomeView(view: { id: string }): view is LGV {
+  return 'assemblyNames' in view
+}
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
 
 export interface ParentProteinView {
@@ -418,7 +421,7 @@ const Structure = types
      */
     get connectedView() {
       const { views } = getSession(self)
-      return views.find(f => f.id === self.connectedViewId) as MaybeLGV
+      return views.filter(isGenomeView).find(f => f.id === self.connectedViewId)
     },
   }))
   .actions(self => ({

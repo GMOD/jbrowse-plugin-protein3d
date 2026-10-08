@@ -35,6 +35,7 @@ export default function UniProtLookupControls({
         onLookupModeChange={lookup.setLookupMode}
         manualUniprotId={lookup.manualUniprotId}
         onManualUniprotIdChange={lookup.setManualUniprotId}
+        manualUniprotIdInvalid={lookup.manualUniprotIdInvalid}
         featureUniprotId={lookup.featureUniprotId}
         hasSearchableIdentifier={lookup.hasSearchableIdentifier}
         endContent={

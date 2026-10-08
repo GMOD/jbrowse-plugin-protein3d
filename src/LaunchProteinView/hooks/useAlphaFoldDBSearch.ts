@@ -20,7 +20,7 @@ export default function useAlphaFoldDBSearch({
   lookup: UniProtIdLookup
   preferredTranscriptId?: string
 }) {
-  const { uniprotId, isAutoMode, isLookupLoading } = lookup
+  const { uniprotId, isLookupLoading } = lookup
 
   const {
     isLoading: isAlphaFoldLoading,
@@ -98,16 +98,6 @@ export default function useAlphaFoldDBSearch({
       structureSequence
         ? stripStopCodon(userSelectedProteinSequence.seq) === structureSequence
         : undefined,
-
-    showUniprotResults:
-      !!isoformSequences &&
-      isAutoMode &&
-      (lookup.uniprotEntries.length > 0 || isLookupLoading),
-    showNoResults:
-      !!isoformSequences &&
-      isAutoMode &&
-      !isLookupLoading &&
-      lookup.uniprotEntries.length === 0,
     isLoading,
   }
 }

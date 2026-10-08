@@ -1,7 +1,7 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { expect, test, vi } from 'vitest'
 
-import { resolveTarget } from '.'
+import { resolveTarget, withProteinMenuItems } from '.'
 
 const cds = (id: string) => ({
   uniqueId: id,
@@ -58,4 +58,42 @@ test('a click on the gene itself names no isoform', () => {
   })
   expect(target?.type).toBe('gene')
   expect(target?.preferredTranscriptId).toBeUndefined()
+})
+
+const hostItems = [{ label: 'Host row', onClick: () => {} }]
+
+test('a gene gets the protein rows after the host rows', () => {
+  const items = withProteinMenuItems(
+    {
+      contextMenuItems: () => [],
+      contextMenuInfo: {
+        item: { featureId: 'gene', type: 'gene' },
+        displayedRegionIndex: 0,
+      },
+      fetchFullFeature: () => Promise.resolve(gene),
+    },
+    hostItems,
+  )
+  expect(items.map(i => ('label' in i ? i.label : undefined))).toEqual([
+    'Host row',
+    'Open AlphaFold structure',
+    'Launch protein view',
+  ])
+})
+
+test('a host shape this plugin cannot read leaves the host rows standing', () => {
+  const error = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const items = withProteinMenuItems(
+    {
+      contextMenuItems: () => [],
+      get contextMenuInfo(): never {
+        throw new Error('host shape changed')
+      },
+      fetchFullFeature: () => Promise.resolve(gene),
+    },
+    hostItems,
+  )
+  expect(items).toBe(hostItems)
+  expect(error).toHaveBeenCalledOnce()
+  error.mockRestore()
 })

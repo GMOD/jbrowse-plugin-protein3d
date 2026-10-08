@@ -14,7 +14,6 @@ import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescri
 import * as util from '../src/LaunchProteinView/utils/util' // Import all utilities from util
 
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
-import type { Feature } from '@jbrowse/core/util'
 
 // Use vi.mock for Vitest
 vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
@@ -34,7 +33,6 @@ vi.mock('../src/LaunchProteinView/utils/util', async importOriginal => {
   return {
     ...actual,
     extractFeatureIdentifiers: vi.fn(), // Mock extractFeatureIdentifiers to control its output
-    getId: vi.fn((f?: Feature) => f?.id() || ''),
   }
 })
 vi.mock('../src/LaunchProteinView/codingFeature', async importOriginal => {
@@ -49,7 +47,6 @@ const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
 const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = vi.mocked(util.extractFeatureIdentifiers)
 const mockGetTranscriptFeatures = vi.mocked(codingFeature.codingTranscripts)
-const mockGetId = vi.mocked(util.getId)
 
 describe('useAlphaFoldDBSearch', () => {
   let mockFeature: SimpleFeature
@@ -77,7 +74,6 @@ describe('useAlphaFoldDBSearch', () => {
       entries: [],
       isLoading: false,
       error: null,
-      hasValidId: false,
       partialFailure: undefined,
     })
     mockGetSearchDescription.mockReturnValue('mock search description')
@@ -93,7 +89,6 @@ describe('useAlphaFoldDBSearch', () => {
 
     // Mocking getTranscriptFeatures to return an empty array by default
     mockGetTranscriptFeatures.mockReturnValue([])
-    mockGetId.mockImplementation(f => f?.id() || '')
 
     // Create a mock feature and view
     mockFeature = new SimpleFeature({

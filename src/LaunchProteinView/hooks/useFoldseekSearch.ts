@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
 import {
-  DEFAULT_DATABASES,
   predict3Di,
   submitFoldseekSearch,
   waitForFoldseekResults,
@@ -66,7 +65,7 @@ export default function useFoldseekSearch() {
   const search = async (
     aaSeq: string,
     di3Seq: string,
-    databases: FoldseekDatabaseId[] = DEFAULT_DATABASES,
+    databases: FoldseekDatabaseId[],
   ) => {
     const signal = startOperation()
     setIsLoading(true)

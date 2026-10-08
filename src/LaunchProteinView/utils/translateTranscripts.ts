@@ -3,9 +3,6 @@ import { translateTranscript } from '@jbrowse/core/util/translateTranscript'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 
-// No 4.x host re-exports `@jbrowse/core/util/translateTranscript`, so esbuild
-// bundles it rather than binding it to the host's JBrowseExports, and the
-// translation is the same whichever host loads the plugin.
 function translate(
   transcript: Feature,
   seq: string,
@@ -47,8 +44,11 @@ export async function fetchRegionSequence({
       },
     ],
   })
-  const seq = feat?.get('seq') as string | undefined
-  return { seq, assemblyGeneticCodeId: assembly.getGeneticCodeId(refName) }
+  const seq: unknown = feat?.get('seq')
+  return {
+    seq: typeof seq === 'string' ? seq : undefined,
+    assemblyGeneticCodeId: assembly.getGeneticCodeId(refName),
+  }
 }
 
 export async function fetchProteinSeq({

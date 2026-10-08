@@ -62,7 +62,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const [file, setFile] = useState<File>()
   const [choice, setChoice] = useState('file')
   const [structureURL, setStructureURL] = useState('')
-  const { runLaunch, launchError } = useSafeLaunch(handleClose)
+  const { runLaunch, launchError, launching } = useSafeLaunch(handleClose)
 
   const activeFile = choice === 'file' ? file : undefined
   const activeURL = choice === 'file' ? '' : structureURL
@@ -102,7 +102,10 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
   const error = isoformError ?? launchError ?? fileError
 
   const canLaunch =
-    !!(activeURL || activeFile) && !!protein && !!selectedTranscript
+    !!(activeURL || activeFile) &&
+    !!protein &&
+    !!selectedTranscript &&
+    !launching
   const sequencesDiffer =
     !!protein?.seq &&
     !!structureSequence &&

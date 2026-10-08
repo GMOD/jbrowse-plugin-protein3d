@@ -75,7 +75,6 @@ export default function useUniProtSearch({
     entries: data?.entries ?? [],
     isLoading,
     error,
-    hasValidId,
     partialFailure: data ? partialFailureNotice(data) : undefined,
   }
 }

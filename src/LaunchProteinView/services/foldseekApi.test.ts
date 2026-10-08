@@ -69,3 +69,53 @@ test('a rate-limited poll is reported, not waited out', async () => {
     /failed: RATELIMIT/,
   )
 })
+
+test('a poll answering without a status is named', async () => {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async () => new Response(JSON.stringify({ reason: 'down' }))),
+  )
+  await expect(waitForFoldseekResults({ ticketId: 'abc' })).rejects.toThrow(
+    'Foldseek returned no ticket status',
+  )
+})
+
+function stubCompletedSearch(result: unknown) {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(
+      async (url: unknown) =>
+        new Response(
+          JSON.stringify(
+            String(url).includes('/api/result/')
+              ? result
+              : [{ status: 'COMPLETE' }],
+          ),
+        ),
+    ),
+  )
+}
+
+test('a result without its databases is named, not dereferenced', async () => {
+  stubCompletedSearch({ error: 'expired' })
+  await expect(waitForFoldseekResults({ ticketId: 'abc' })).rejects.toThrow(
+    'Foldseek returned a result with no list of databases',
+  )
+})
+
+test('a result keeps its hits, and a database with none has no alignments', async () => {
+  stubCompletedSearch({
+    queries: [{ header: 'query', sequence: 'MK' }],
+    results: [
+      { db: 'pdb100', alignments: [[{ target: '1tup_A', prob: 1 }]] },
+      { db: 'afdb50', alignments: null },
+    ],
+  })
+  expect(await waitForFoldseekResults({ ticketId: 'abc' })).toEqual({
+    query: { header: 'query', sequence: 'MK' },
+    results: [
+      { db: 'pdb100', alignments: [[{ target: '1tup_A', prob: 1 }]] },
+      { db: 'afdb50', alignments: undefined },
+    ],
+  })
+})

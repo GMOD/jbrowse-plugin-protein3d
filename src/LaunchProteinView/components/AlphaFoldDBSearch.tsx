@@ -10,8 +10,7 @@ import PartialFailureNotice from './PartialFailureNotice'
 import ProteinViewActions from './ProteinViewActions'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtLookupControls from './UniProtLookupControls'
-import UniProtResultsTable from './UniProtResultsTable'
-import ExternalLink from '../../components/ExternalLink'
+import UniProtLookupResults from './UniProtLookupResults'
 import useAlphaFoldDBSearch from '../hooks/useAlphaFoldDBSearch'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -83,35 +82,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
 
         <PartialFailureNotice message={state.isoformPartialFailure} />
 
-        {state.showUniprotResults && (
-          <>
-            <Typography variant="body2" color="textSecondary">
-              Searched UniProt by {state.searchDescription}
-            </Typography>
-            <UniProtResultsTable
-              entries={state.uniprotEntries}
-              selectedAccession={state.selectedTableAccession}
-              onSelect={state.setSelectedUniprotId}
-            />
-            <Typography variant="body2" color="textSecondary">
-              If you don't see the entry you're looking for, try a different
-              identifier above or search{' '}
-              <ExternalLink href="https://www.uniprot.org/">
-                UniProt
-              </ExternalLink>{' '}
-              directly and use "Enter manually".
-            </Typography>
-          </>
-        )}
-
-        {state.showNoResults && (
-          <Typography variant="body2" color="textSecondary">
-            No UniProt entries found for {state.searchDescriptionOr}. Try a
-            different identifier above, or search{' '}
-            <ExternalLink href="https://www.uniprot.org/">UniProt</ExternalLink>{' '}
-            directly and use "Enter manually" above.
-          </Typography>
-        )}
+        <UniProtLookupResults lookup={lookup} />
 
         {state.ranking &&
         state.selectedTranscript &&

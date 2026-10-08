@@ -6,6 +6,7 @@ import {
   type ResolvedShortLaunch,
   resolveShortLaunch,
 } from './resolveShortLaunch'
+import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
@@ -160,12 +161,10 @@ export default function LaunchProteinViewExtensionPointF(
       const connectedView = connectedViewId
         ? givenConnectedView
         : (named?.connectedView ?? givenConnectedView)
-      if (named && !namesStructure && !named.url) {
+      if (gene && named && !namesStructure && !named.url) {
         return fail(
           new Error(
-            named.uniprotId
-              ? `AlphaFold DB has no model for ${named.uniprotId}, the UniProt entry of ${gene}; name a pdbId or url`
-              : `no single UniProt entry found for ${gene}; name a uniprotId or pdbId`,
+            `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
           ),
         )
       }

@@ -2,7 +2,7 @@ import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useIsoformRanking from './useIsoformRanking'
 import useTranscriptSelection from './useTranscriptSelection'
 import { codingTranscripts } from '../codingFeature'
-import { getId, rankableIsoforms } from '../utils/util'
+import { rankableIsoforms } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -44,7 +44,7 @@ export default function useTranscriptIsoformSelection({
     preferredTranscriptId,
     resetKey,
   })
-  const selectedTranscript = transcripts.find(f => getId(f) === userSelection)
+  const selectedTranscript = transcripts.find(f => f.id() === userSelection)
   const selectedIsoform = userSelection
     ? isoformSequences?.[userSelection]
     : undefined

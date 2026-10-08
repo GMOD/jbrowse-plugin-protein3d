@@ -6,7 +6,7 @@ import type { SessionWithAddSessionTrack } from '@jbrowse/core/util'
  * Sets up a temporary assembly for a protein sequence from UniProt
  */
 export function setupProteinAssembly(
-  session: SessionWithAddSessionTrack,
+  session: Pick<SessionWithAddSessionTrack, 'addTemporaryAssembly'>,
   uniprotId: string,
 ) {
   session.addTemporaryAssembly?.({

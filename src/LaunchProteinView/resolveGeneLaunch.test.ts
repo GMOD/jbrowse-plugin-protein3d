@@ -1,7 +1,11 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import { expect, test, vi } from 'vitest'
+import { expect, test } from 'vitest'
 
-import { resolveGeneLaunch, unambiguousEntry } from './resolveGeneLaunch'
+import {
+  describeMissingStructure,
+  resolveGeneLaunch,
+  unambiguousEntry,
+} from './resolveGeneLaunch'
 import { rankIsoforms } from '../AlignTranscriptRpc'
 
 import type { GeneLaunchHost } from './resolveGeneLaunch'
@@ -144,8 +148,12 @@ test('an ambiguous search resolves the longest isoform and no structure', async 
   })
   const launch = await resolveGeneLaunch({ host: h, feature: gene() })
   expect(launch.uniprotId).toBeUndefined()
+  expect(launch.lookupError).toBeUndefined()
   expect(launch.url).toBeUndefined()
   expect(launch.transcript.id()).toBe('long')
+  expect(describeMissingStructure('GENE1', launch)).toBe(
+    'No single UniProt entry found for GENE1',
+  )
 })
 
 // a gene symbol names a different protein in every species
@@ -156,14 +164,16 @@ test('a gene name is not searched on an assembly with no taxon', async () => {
   expect(launch.uniprotId).toBeUndefined()
 })
 
-test('an unreachable UniProt leaves the entry unresolved', async () => {
-  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-  const { host: h } = host({ entries: new Error('Failed to fetch') })
+test('an unreachable UniProt leaves the entry unresolved and says why', async () => {
+  const outage = new Error('Failed to fetch')
+  const { host: h } = host({ entries: outage })
   const launch = await resolveGeneLaunch({ host: h, feature: gene() })
   expect(launch.uniprotId).toBeUndefined()
+  expect(launch.lookupError).toBe(outage)
+  expect(describeMissingStructure('GENE1', launch)).toBe(
+    'UniProt lookup failed for GENE1: Failed to fetch',
+  )
   expect(launch.transcript.id()).toBe('long')
-  expect(warn).toHaveBeenCalledOnce()
-  warn.mockRestore()
 })
 
 test('a caller naming its own structure does not ask UniProt', async () => {

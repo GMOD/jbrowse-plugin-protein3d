@@ -103,6 +103,7 @@ export async function resolveGeneNameLaunch({
     feature: launch.transcript.toJSON(),
     userProvidedTranscriptSequence: launch.userProvidedTranscriptSequence,
     uniprotId: launch.uniprotId,
+    lookupError: launch.lookupError,
     url: launch.url,
     displayName: formatViewName(
       'Protein view',

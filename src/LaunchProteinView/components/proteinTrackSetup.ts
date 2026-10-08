@@ -5,10 +5,14 @@ import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
 
 import type { SessionWithAddSessionTrack } from '@jbrowse/core/util'
 
+type TrackSession = Pick<SessionWithAddSessionTrack, 'addSessionTrackConf'>
+
 /**
  * Fetches UniProt GFF data and extracts unique feature types
  */
-async function fetchUniProtFeatureTypes(uniprotId: string): Promise<string[]> {
+export async function fetchUniProtFeatureTypes(
+  uniprotId: string,
+): Promise<string[]> {
   const data = await (await myfetch(uniprotGffUrl(uniprotId))).text()
 
   return [
@@ -32,7 +36,7 @@ function addUniProtFeatureTracks({
   uniprotId,
   featureTypes,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
   featureTypes: string[]
 }) {
@@ -67,7 +71,7 @@ function addAntigenTrack({
   session,
   uniprotId,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
 }) {
   session.addSessionTrackConf({
@@ -91,7 +95,7 @@ function addVariationTrack({
   session,
   uniprotId,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
 }) {
   session.addSessionTrackConf({
@@ -116,7 +120,7 @@ function addAlphaFoldConfidenceTrack({
   uniprotId,
   confidenceUrl,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
   confidenceUrl: string | undefined
 }) {
@@ -150,7 +154,7 @@ function addAlphaMissenseTrack({
   session,
   uniprotId,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
 }) {
   session.addSessionTrackConf({
@@ -183,16 +187,17 @@ function addAlphaMissenseTrack({
 /**
  * Adds all protein annotation tracks for a given UniProt ID
  */
-export async function addAllProteinTracks({
+export function addAllProteinTracks({
   session,
   uniprotId,
+  featureTypes,
   confidenceUrl,
 }: {
-  session: SessionWithAddSessionTrack
+  session: TrackSession
   uniprotId: string
+  featureTypes: string[]
   confidenceUrl: string | undefined
 }) {
-  const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
   addUniProtFeatureTracks({
     session,
     uniprotId,

@@ -1,5 +1,8 @@
 import { setupProteinAssembly } from './proteinAssemblySetup'
-import { addAllProteinTracks } from './proteinTrackSetup'
+import {
+  addAllProteinTracks,
+  fetchUniProtFeatureTypes,
+} from './proteinTrackSetup'
 import { formatViewName } from '../utils/launchViewUtils'
 
 import type { Protein1DLinkage } from '../../Protein1DLinkage'
@@ -15,7 +18,10 @@ export async function launchProteinAnnotationView({
   connectedViewId,
   connectedAssemblyName,
 }: {
-  session: SessionWithAddSessionTrack
+  session: Pick<
+    SessionWithAddSessionTrack,
+    'addView' | 'addTemporaryAssembly' | 'addSessionTrackConf'
+  >
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
@@ -23,11 +29,14 @@ export async function launchProteinAnnotationView({
   connectedViewId?: string
   connectedAssemblyName?: string
 }) {
+  // Fetched before anything is added: a failed download would otherwise leave
+  // a temporary assembly behind with no view on it
+  const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
   setupProteinAssembly(session, uniprotId)
-
-  await addAllProteinTracks({
+  addAllProteinTracks({
     session,
     uniprotId,
+    featureTypes,
     confidenceUrl,
   })
 

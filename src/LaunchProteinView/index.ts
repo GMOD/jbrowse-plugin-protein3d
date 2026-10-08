@@ -8,7 +8,11 @@ import AddIcon from '@mui/icons-material/Add'
 
 import { isCodingFeature } from './codingFeature'
 import LaunchProteinViewDialog from './components/LaunchProteinViewDialog'
-import { resolveGeneLaunch, sessionGeneLaunchHost } from './resolveGeneLaunch'
+import {
+  describeMissingStructure,
+  resolveGeneLaunch,
+  sessionGeneLaunchHost,
+} from './resolveGeneLaunch'
 import { launch3DProteinView } from './utils/launchViewUtils'
 import { getGeneDisplayName } from './utils/util'
 
@@ -134,12 +138,13 @@ function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
       return
     }
     session.notify(`Looking up the AlphaFold structure of ${name}`, 'info')
+    const launch = await resolveGeneLaunch({
+      host: sessionGeneLaunchHost(session, assemblyName),
+      feature,
+      preferredTranscriptId: target.preferredTranscriptId,
+    })
     const { transcript, userProvidedTranscriptSequence, uniprotId, url } =
-      await resolveGeneLaunch({
-        host: sessionGeneLaunchHost(session, assemblyName),
-        feature,
-        preferredTranscriptId: target.preferredTranscriptId,
-      })
+      launch
     if (url) {
       launch3DProteinView({
         session,
@@ -152,14 +157,48 @@ function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
       })
     } else {
       session.notify(
-        uniprotId
-          ? `AlphaFold DB has no model for ${uniprotId}`
-          : `No single UniProt entry found for ${name}`,
-        'info',
+        describeMissingStructure(name, launch),
+        launch.lookupError === undefined ? 'info' : 'warning',
       )
       openDialog(self, target, feature)
     }
   })
+}
+
+function proteinMenuItems(self: DisplayModel): MenuItem[] {
+  const target = resolveTarget(self)
+  return target && isGeneLikeType(target.type)
+    ? [
+        {
+          label: 'Open AlphaFold structure',
+          icon: AddIcon,
+          onClick: () => {
+            openAlphaFoldStructure(self, target)
+          },
+        },
+        {
+          label: 'Launch protein view',
+          icon: AddIcon,
+          onClick: () => {
+            launchProteinView(self, target)
+          },
+        },
+      ]
+    : []
+}
+
+// `contextMenuInfo` is the host's shape and changes between releases; a throw
+// while reading it would take the host's whole context menu down with it
+export function withProteinMenuItems(
+  self: DisplayModel,
+  hostItems: MenuItem[],
+) {
+  try {
+    return [...hostItems, ...proteinMenuItems(self)]
+  } catch (e) {
+    console.error('Protein view menu items failed', e)
+    return hostItems
+  }
 }
 
 function extendStateModel(stateModel: IAnyModelType) {
@@ -167,28 +206,7 @@ function extendStateModel(stateModel: IAnyModelType) {
     const superContextMenuItems = self.contextMenuItems
     return {
       contextMenuItems() {
-        const target = resolveTarget(self)
-        return [
-          ...superContextMenuItems(),
-          ...(target && isGeneLikeType(target.type)
-            ? [
-                {
-                  label: 'Open AlphaFold structure',
-                  icon: AddIcon,
-                  onClick: () => {
-                    openAlphaFoldStructure(self, target)
-                  },
-                },
-                {
-                  label: 'Launch protein view',
-                  icon: AddIcon,
-                  onClick: () => {
-                    launchProteinView(self, target)
-                  },
-                },
-              ]
-            : []),
-        ]
+        return withProteinMenuItems(self, superContextMenuItems())
       },
     }
   })

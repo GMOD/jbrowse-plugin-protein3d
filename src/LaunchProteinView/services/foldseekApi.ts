@@ -1,5 +1,7 @@
 import { abortError, httpError, jsonfetch, rawfetch, timeout } from 'p2s_mapper'
 
+import { isRecord } from '../utils/isRecord'
+
 export const FOLDSEEK_DATABASES = [
   { id: 'pdb100', label: 'PDB (100% redundancy)' },
   { id: 'afdb-swissprot', label: 'AlphaFold DB (Swiss-Prot)' },
@@ -156,11 +158,10 @@ function parseTicket(text: string): FoldseekTicketResponse | undefined {
   } catch {
     return undefined
   }
-  if (typeof body !== 'object' || body === null) {
+  if (!isRecord(body)) {
     return undefined
   }
-  const id: unknown = Reflect.get(body, 'id')
-  const status: unknown = Reflect.get(body, 'status')
+  const { id, status } = body
   return typeof id === 'string' &&
     (status === 'PENDING' ||
       status === 'RUNNING' ||
@@ -195,40 +196,62 @@ async function pollFoldseekStatus({
     throw await httpError(response, url)
   }
 
-  const results = (await response.json()) as {
-    status: string
-    error?: string
-  }[]
+  return parseTicketStatus(await response.json())
+}
 
-  // Return the first (and only) result
-  const result = results[0]
-  if (!result) {
-    throw new Error('No ticket status returned')
+function parseTicketStatus(body: unknown) {
+  const first: unknown = Array.isArray(body) ? body[0] : undefined
+  if (!isRecord(first) || typeof first.status !== 'string') {
+    throw new Error('Foldseek returned no ticket status')
   }
-  return result
+  return {
+    status: first.status,
+    error: typeof first.error === 'string' ? first.error : undefined,
+  }
 }
 
-interface FoldseekApiResponse {
-  mode: string
-  queries: { header: string; sequence: string }[]
-  results: {
-    db: string
-    alignments: FoldseekAlignment[][]
-    taxonomyreports: unknown[]
-  }[]
-}
-
-async function getFoldseekResults({
-  ticketId,
-  signal,
-}: {
-  ticketId: string
-  signal?: AbortSignal
-}): Promise<FoldseekApiResponse> {
-  return jsonfetch<FoldseekApiResponse>(
-    `https://search.foldseek.com/api/result/${ticketId}/0`,
-    { signal },
+function isQuery(value: unknown): value is FoldseekResult['query'] {
+  return (
+    isRecord(value) &&
+    typeof value.header === 'string' &&
+    typeof value.sequence === 'string'
   )
+}
+
+function isAlignmentRows(value: unknown): value is FoldseekAlignment[][] {
+  return (
+    Array.isArray(value) &&
+    value.every(
+      (row: unknown) =>
+        Array.isArray(row) &&
+        row.every(
+          (hit: unknown) => isRecord(hit) && typeof hit.target === 'string',
+        ),
+    )
+  )
+}
+
+function parseFoldseekResult(body: unknown): FoldseekResult {
+  if (!isRecord(body) || !Array.isArray(body.results)) {
+    throw new Error('Foldseek returned a result with no list of databases')
+  }
+  const firstQuery: unknown = Array.isArray(body.queries)
+    ? body.queries[0]
+    : undefined
+  return {
+    query: isQuery(firstQuery) ? firstQuery : { header: '', sequence: '' },
+    results: body.results.map((result: unknown) => {
+      if (!isRecord(result) || typeof result.db !== 'string') {
+        throw new Error('Foldseek returned a result naming no database')
+      }
+      return {
+        db: result.db,
+        alignments: isAlignmentRows(result.alignments)
+          ? result.alignments
+          : undefined,
+      }
+    }),
+  }
 }
 
 export async function waitForFoldseekResults({
@@ -255,18 +278,12 @@ export async function waitForFoldseekResults({
 
     if (status.status === 'COMPLETE') {
       onStatusChange?.('Fetching results...')
-      const apiResponse = await getFoldseekResults({ ticketId, signal })
-
-      // Transform API response to our format
-      const results: FoldseekResult = {
-        query: apiResponse.queries[0] ?? { header: '', sequence: '' },
-        results: apiResponse.results.map(r => ({
-          db: r.db,
-          alignments: r.alignments,
-        })),
-      }
-
-      return results
+      return parseFoldseekResult(
+        await jsonfetch(
+          `https://search.foldseek.com/api/result/${ticketId}/0`,
+          { signal },
+        ),
+      )
     }
 
     // the server also answers RATELIMIT, MAINTENANCE and UNKNOWN, none of
