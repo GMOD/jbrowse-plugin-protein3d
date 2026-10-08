@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest'
 
 import { connectedHoverTranscriptPos } from './connectedHover'
+import { literalNaming } from './util'
 
 // residues 0 and 1 of a minus-strand transcript on chr17
 const mapping = {
@@ -27,6 +28,7 @@ const genomeHover = (coord: number, refName = 'chr17') => ({
 test('a genome hover names the residue its base is in', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: genomeHover(102),
       views: [],
       mapping,
@@ -41,6 +43,7 @@ test('a genome hover names the residue its base is in', () => {
 test('an alignment hover is read through the codon it maps to', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: undefined,
       views: [msa('lgv', 103)],
       mapping,
@@ -53,6 +56,7 @@ test('an alignment hover is read through the codon it maps to', () => {
 test('the genome hover wins while both are set', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: genomeHover(101),
       views: [msa('lgv', 103)],
       mapping,
@@ -65,6 +69,7 @@ test('the genome hover wins while both are set', () => {
 test('an alignment on another genome view, or another chromosome, names nothing', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: undefined,
       views: [msa('other-lgv', 103)],
       mapping,
@@ -74,6 +79,7 @@ test('an alignment on another genome view, or another chromosome, names nothing'
   ).toBeUndefined()
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: genomeHover(102, 'chr1'),
       views: [],
       mapping,
@@ -86,6 +92,7 @@ test('an alignment on another genome view, or another chromosome, names nothing'
 test('a structure with no connected genome view hears no alignment', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: undefined,
       views: [msa('lgv', 103)],
       mapping,
@@ -100,6 +107,7 @@ test('a structure with no connected genome view hears no alignment', () => {
 test('an alignment hover reaches the structure from any connected alignment', () => {
   expect(
     connectedHoverTranscriptPos({
+      naming: literalNaming,
       hovered: undefined,
       views: [msa('lgv'), msa('lgv', 100)],
       mapping,

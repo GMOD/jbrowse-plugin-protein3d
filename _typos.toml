@@ -20,3 +20,5 @@ Superposer = "Superposer"
 mis = "mis"
 unparseable = "unparseable"
 Unparseable = "Unparseable"
+# a deliberately misspelled spec key in normalizeLaunch.test.ts
+hiden = "hiden"

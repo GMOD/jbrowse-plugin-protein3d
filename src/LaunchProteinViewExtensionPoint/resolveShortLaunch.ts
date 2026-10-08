@@ -100,14 +100,9 @@ export async function resolveShortLaunch({
   connectedView,
 }: {
   session: AbstractSessionModel
-  transcriptId?: string
+  transcriptId: string
   connectedView?: ConnectedViewSpec
 }): Promise<ResolvedShortLaunch> {
-  if (!transcriptId) {
-    throw new Error(
-      '`transcriptId` is required to look a transcript up in `connectedView`',
-    )
-  }
   const assemblyName = connectedView?.assembly
   const loc = connectedView?.loc
   const trackSpecs = connectedView?.tracks ?? []

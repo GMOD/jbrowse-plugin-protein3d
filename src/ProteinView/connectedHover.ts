@@ -1,4 +1,4 @@
-import { genomeHoverToTranscriptPos, literalNaming } from './util'
+import { genomeHoverToTranscriptPos } from './util'
 
 import type { GenomeNaming } from './util'
 import type { Region } from '@jbrowse/core/util/types'
@@ -32,7 +32,7 @@ export function connectedHoverTranscriptPos({
   mapping,
   connectedViewId,
   genomeViewReady,
-  naming = literalNaming,
+  naming,
 }: {
   hovered: unknown
   views: MsaViewLike[]
@@ -40,7 +40,7 @@ export function connectedHoverTranscriptPos({
   connectedViewId: string | undefined
   genomeViewReady: boolean
   /** the connected genome view's assembly */
-  naming?: GenomeNaming
+  naming: GenomeNaming
 }): { transcriptPos: number; source: 'genome' | 'msa' } | undefined {
   const fromGenome = genomeViewReady
     ? genomeHoverToTranscriptPos(hovered, mapping, naming)

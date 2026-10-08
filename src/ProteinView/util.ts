@@ -96,7 +96,7 @@ export function checkHovered(hovered: unknown): hovered is HoveredState {
 export function genomeHoverToTranscriptPos(
   hovered: unknown,
   mapping: { g2p: Record<number, number>; refName: string } | undefined,
-  naming: GenomeNaming = literalNaming,
+  naming: GenomeNaming,
 ): number | undefined {
   if (!mapping || !checkHovered(hovered)) {
     return undefined

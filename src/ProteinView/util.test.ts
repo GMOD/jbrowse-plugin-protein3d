@@ -13,14 +13,20 @@ const hoveredAt = (refName: string, coord: number, assemblyName?: string) => ({
 })
 
 test('genomeHoverToTranscriptPos maps a hover on the transcript refName', () => {
-  expect(genomeHoverToTranscriptPos(hoveredAt('chr17', 1000), mapping)).toBe(4)
+  expect(
+    genomeHoverToTranscriptPos(
+      hoveredAt('chr17', 1000),
+      mapping,
+      literalNaming,
+    ),
+  ).toBe(4)
 })
 
 test('genomeHoverToTranscriptPos ignores a hover on another refName', () => {
   // the same numeric coordinate on an unrelated chromosome matches a g2p key,
   // so without the refName gate this reported residue 4 for a different locus
   expect(
-    genomeHoverToTranscriptPos(hoveredAt('chr1', 1000), mapping),
+    genomeHoverToTranscriptPos(hoveredAt('chr1', 1000), mapping, literalNaming),
   ).toBeUndefined()
 })
 
@@ -44,16 +50,26 @@ test('genomeHoverToTranscriptPos resolves aliases before comparing refNames', ()
 
 test('genomeHoverToTranscriptPos returns undefined off the CDS', () => {
   expect(
-    genomeHoverToTranscriptPos(hoveredAt('chr17', 1001), mapping),
+    genomeHoverToTranscriptPos(
+      hoveredAt('chr17', 1001),
+      mapping,
+      literalNaming,
+    ),
   ).toBeUndefined()
 })
 
 test('genomeHoverToTranscriptPos tolerates no mapping and no hover', () => {
   expect(
-    genomeHoverToTranscriptPos(hoveredAt('chr17', 1000), undefined),
+    genomeHoverToTranscriptPos(
+      hoveredAt('chr17', 1000),
+      undefined,
+      literalNaming,
+    ),
   ).toBeUndefined()
-  expect(genomeHoverToTranscriptPos(undefined, mapping)).toBeUndefined()
-  expect(genomeHoverToTranscriptPos({}, mapping)).toBeUndefined()
+  expect(
+    genomeHoverToTranscriptPos(undefined, mapping, literalNaming),
+  ).toBeUndefined()
+  expect(genomeHoverToTranscriptPos({}, mapping, literalNaming)).toBeUndefined()
 })
 
 function assemblyManager(loaded: boolean) {
