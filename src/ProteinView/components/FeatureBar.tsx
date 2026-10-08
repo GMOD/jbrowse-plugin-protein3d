@@ -51,17 +51,19 @@ function FeatureTooltipContent({
 const FeatureBar = observer(function FeatureBar({
   layout,
   top,
+  height,
   selected,
   model,
 }: {
   layout: FeatureLayout
-  top: number
+  top: string
+  height: string
   selected: boolean
   model: JBrowsePluginProteinStructureModel
 }) {
   const [isHovered, setIsHovered] = useState(false)
   const { feature, alignmentStart, alignmentEnd } = layout
-  const { columnWidth, trackHeight } = model
+  const { columnWidth } = model
 
   return (
     <Tooltip
@@ -111,7 +113,7 @@ const FeatureBar = observer(function FeatureBar({
           left: alignmentStart * columnWidth,
           top,
           width: (alignmentEnd - alignmentStart + 1) * columnWidth,
-          height: trackHeight,
+          height,
           backgroundColor: getFeatureColor(feature.type),
           opacity: isHovered || selected ? 0.9 : 0.6,
           cursor: 'pointer',

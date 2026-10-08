@@ -19,9 +19,9 @@ const Cells = observer(function Cells({
   colorFor: (value: number) => string
   model: JBrowsePluginProteinStructureModel
 }) {
-  const { columnWidth, trackHeight } = model
+  const { columnWidth, trackGap } = model
   return (
-    <div style={{ position: 'relative', height: trackHeight }}>
+    <div style={{ position: 'relative', height: `calc(100% - ${trackGap}px)` }}>
       {cells.map(cell => (
         <div
           key={cell.col}
@@ -29,7 +29,7 @@ const Cells = observer(function Cells({
             position: 'absolute',
             left: cell.col * columnWidth,
             width: columnWidth,
-            height: trackHeight,
+            height: '100%',
             backgroundColor: colorFor(cell.value),
           }}
         />
@@ -69,7 +69,7 @@ const ResidueValueTrack = observer(function ResidueValueTrack({
       title={hoveredValue === undefined ? '' : formatValue(hoveredValue)}
       followCursor
     >
-      <div>
+      <div style={{ height: '100%' }}>
         <Cells cells={cells} colorFor={colorFor} model={model} />
       </div>
     </Tooltip>
