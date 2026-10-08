@@ -679,7 +679,7 @@ const Structure = types
      */
     get hydrophobicityCells() {
       const seq = this.mappedStructureSeq
-      return seq
+      return seq && !this.mappedEntity?.nucleicAcid
         ? mapResidueValuesToColumns(
             kyteDoolittleScores(stripStopCodon(seq)),
             this.structurePositionToAlignmentMap,

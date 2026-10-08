@@ -26,6 +26,13 @@ beforeAll(async () => {
       canonical: 'IRGM',
     },
     { asym: 'B', entity: '2', residues: ['HOH'] },
+    {
+      asym: 'C',
+      entity: '3',
+      residues: ['DA', 'DC', 'DG', 'DT'],
+      canonical: 'ACGT',
+      polyType: 'polydeoxyribonucleotide',
+    },
   ])
   withoutCanonical = await parseStructure([
     { asym: 'A', entity: '1', residues: ['ILE', 'MSE'] },
@@ -56,6 +63,10 @@ test('paints each residue the colour the alignment strip gives its score', () =>
     GLY: hydrophobicityColor(-0.4),
     MSE: hydrophobicityColor(1.9),
     HOH: Color.toStyle(NON_AMINO_ACID_COLOR),
+    DA: Color.toStyle(NON_AMINO_ACID_COLOR),
+    DC: Color.toStyle(NON_AMINO_ACID_COLOR),
+    DG: Color.toStyle(NON_AMINO_ACID_COLOR),
+    DT: Color.toStyle(NON_AMINO_ACID_COLOR),
   })
 })
 

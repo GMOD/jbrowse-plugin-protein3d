@@ -50,6 +50,8 @@ function canonicalSequences(model: Model) {
 
 // Mol* codes a modified residue (MSE, TPO) as X; the mmCIF canonical sequence
 // names its parent, which is where the alignment strip's letters come from.
+// A nucleotide codes as X too, and its canonical letters are amino-acid
+// letters, so only a protein entity is looked up.
 function oneLetterCode(l: StructureElement.Location) {
   const code = getProteinOneLetterCode(
     StructureProperties.atom.label_comp_id(l),
@@ -63,7 +65,7 @@ function oneLetterCode(l: StructureElement.Location) {
     model.sequence.byEntityKey[model.entities.getEntityIndex(entityId)]
       ?.sequence
   const canonical = canonicalSequences(model).get(entityId)
-  return sequence && canonical?.length === sequence.length
+  return sequence?.kind === 'protein' && canonical?.length === sequence.length
     ? (canonical[sequence.index(StructureProperties.residue.label_seq_id(l))] ??
         code)
     : code

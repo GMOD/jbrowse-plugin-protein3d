@@ -10,13 +10,14 @@ export interface TestChain {
   /** entity_poly.pdbx_seq_one_letter_code_can, which names a modified
    * residue's parent (MSE is M) */
   canonical?: string
+  polyType?: string
 }
 
 function entityPolyLoop(chains: TestChain[]) {
   const byEntity = new Map<string, string>()
-  for (const { entity, canonical } of chains) {
+  for (const { entity, canonical, polyType } of chains) {
     if (canonical) {
-      byEntity.set(entity, `${entity} 'polypeptide(L)' ${canonical}`)
+      byEntity.set(entity, `${entity} '${polyType ?? 'polypeptide(L)'}' ${canonical}`)
     }
   }
   const rows = [...byEntity.values()]
