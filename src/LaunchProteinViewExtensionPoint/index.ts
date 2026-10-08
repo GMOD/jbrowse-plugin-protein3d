@@ -1,6 +1,7 @@
-import { coerceAlignmentAlgorithm, resolveStructureUrl } from 'p2s_mapper'
+import { coerceAlignmentAlgorithm } from 'p2s_mapper'
 
 import { resolveGeneNameLaunch } from './findGeneByName'
+import { normalizeLaunch } from './normalizeLaunch'
 import {
   type ConnectedViewSpec,
   type ResolvedShortLaunch,
@@ -11,34 +12,13 @@ import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 
+import type { LaunchStructure } from './normalizeLaunch'
 import type {
   ProteinStructureSpec,
   ProteinViewSpec,
 } from '../ProteinView/proteinViewSpec'
-import type { ResidueRanges } from '../ProteinView/residueRanges'
 import type PluginManager from '@jbrowse/core/PluginManager'
-import type {
-  AbstractSessionModel,
-  SimpleFeatureSerialized,
-} from '@jbrowse/core/util'
-
-// One structure of a launch: where it comes from, plus the per-structure
-// settings a spec may carry. The transcript mapping is shared across all of
-// them and comes from the launch's own transcriptId/feature/sequence.
-interface LaunchStructure {
-  url?: string
-  data?: string
-  uniprotId?: string
-  pdbId?: string
-  initialSelection?: ResidueRanges
-  initialResidues?: ResidueRanges
-  initialTranscriptResidues?: ResidueRanges
-  mappedEntityId?: string
-  // per-structure mapping, overriding the launch-wide one below
-  userProvidedTranscriptSequence?: string
-  feature?: SimpleFeatureSerialized
-  connectedViewId?: string
-}
+import type { AbstractSessionModel } from '@jbrowse/core/util'
 
 // The view's own settings, which pass straight through to its snapshot, so a
 // setting ProteinViewSpec gains reaches a launch without being listed here too.
@@ -68,36 +48,21 @@ export function launchViewSnapshot(
   })
 }
 
-interface LaunchArgs extends LaunchViewSettings {
+// The structure keys written on the launch itself are the one-structure
+// shorthand, and `feature`, `userProvidedTranscriptSequence` and
+// `connectedViewId` the defaults every entry of `structures` shares.
+interface LaunchArgs extends LaunchViewSettings, ProteinStructureSpec {
   session: AbstractSessionModel
-  url?: string
-  uniprotId?: string
-  // RCSB entry id, the experimental-structure counterpart of uniprotId
-  pdbId?: string
-  // several structures in one view, each mapped to the same transcript and
-  // superposed; the top-level url/uniprotId/pdbId is the one-structure
-  // shorthand for this
   structures?: LaunchStructure[]
   // a gene name, looked up in the assembly's text search index; alone it
   // launches the gene's AlphaFold model beside a genome view on the gene
   gene?: string
   transcriptId?: string
-  userProvidedTranscriptSequence?: string
-  feature?: SimpleFeatureSerialized
-  connectedViewId?: string
   connectedView?: ConnectedViewSpec
   // when this launch creates its own connected genome view, place the protein
   // view side-by-side (left genome | right protein). Explicit override; falls
   // back to the launch-dialog localStorage preference.
   sideBySide?: boolean
-  // 0-based half-open structure-residue ranges, one or an array, to pre-select
-  // on load, lit across the 3D structure, connected genome view and alignment
-  // as a domain click would
-  initialSelection?: ResidueRanges
-  // the same, by inclusive author residue numbers (R248 is 248-248)
-  initialResidues?: ResidueRanges
-  // the same, by 1-based inclusive residues of the transcript's translation
-  initialTranscriptResidues?: ResidueRanges
 }
 
 export default function LaunchProteinViewExtensionPointF(
@@ -115,10 +80,18 @@ export default function LaunchProteinViewExtensionPointF(
     async (args: LaunchArgs) => {
       const {
         session,
-        url,
+        structures: _structures,
+        url: _url,
+        data: _data,
+        pdbId: _pdbId,
+        initialSelection: _initialSelection,
+        initialResidues: _initialResidues,
+        initialTranscriptResidues: _initialTranscriptResidues,
+        mappedEntityId: _mappedEntityId,
+        pairwiseAlignment: _pairwiseAlignment,
+        alignmentImported: _alignmentImported,
+        hidden: _hidden,
         uniprotId,
-        pdbId,
-        structures: requestedStructures,
         transcriptId,
         userProvidedTranscriptSequence,
         feature,
@@ -126,9 +99,6 @@ export default function LaunchProteinViewExtensionPointF(
         connectedView: givenConnectedView,
         gene,
         sideBySide,
-        initialSelection,
-        initialResidues,
-        initialTranscriptResidues,
         ...settings
       } = args
       const fail = (e: unknown) => {
@@ -137,11 +107,20 @@ export default function LaunchProteinViewExtensionPointF(
         return args
       }
 
+      const { session: _session, ...launch } = args
+      const normalized = normalizeLaunch(launch)
+      for (const warning of normalized.warnings) {
+        console.warn(warning)
+        session.notify(`Protein view launch: ${warning}`, 'warning')
+      }
+      if ('error' in normalized) {
+        return fail(normalized.error)
+      }
+      const { geneModel } = normalized
+
       // A gene name alone: the host's text search finds the gene, and the
       // launch dialog's defaults pick its isoform and AlphaFold model. A
       // structure, transcript or locus the spec names wins over those.
-      const namesStructure =
-        !!url || !!uniprotId || !!pdbId || !!requestedStructures?.length
       let named: Awaited<ReturnType<typeof resolveGeneNameLaunch>> | undefined
       if (gene && !userProvidedTranscriptSequence) {
         try {
@@ -150,7 +129,7 @@ export default function LaunchProteinViewExtensionPointF(
             gene,
             transcriptId,
             uniprotId,
-            findStructure: !namesStructure,
+            findStructure: geneModel === 'required',
             connectedView: givenConnectedView,
             connectedViewId,
           })
@@ -161,37 +140,17 @@ export default function LaunchProteinViewExtensionPointF(
       const connectedView = connectedViewId
         ? givenConnectedView
         : (named?.connectedView ?? givenConnectedView)
-      if (gene && named && !namesStructure && !named.url) {
+      if (gene && named && geneModel === 'required' && !named.url) {
         return fail(
           new Error(
             `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
           ),
         )
       }
-      const requested: LaunchStructure[] = requestedStructures?.length
-        ? requestedStructures
-        : [
-            {
-              url: url ?? (uniprotId || !pdbId ? named?.url : undefined),
-              uniprotId,
-              pdbId,
-              initialSelection,
-              initialResidues,
-              initialTranscriptResidues,
-            },
-          ]
-      const urls = requested.map(s => resolveStructureUrl(s))
-      const primary = requested[0]!
-      const primaryUrl = urls[0]
-      if (
-        !primaryUrl &&
-        primary.data === undefined &&
-        primary.uniprotId === undefined
-      ) {
-        return fail(
-          'No url, uniprotId, pdbId or gene provided when launching protein view',
-        )
-      }
+      const requested =
+        named && geneModel
+          ? normalized.requested.map(s => ({ ...s, url: named.url }))
+          : normalized.requested
 
       // Short form: a `transcriptId` plus a `connectedView` in place of an
       // explicit `feature` + sequence. resolveShortLaunch derives both from the
@@ -228,14 +187,8 @@ export default function LaunchProteinViewExtensionPointF(
             }).id
           : undefined)
 
-      const structures: ProteinStructureSpec[] = requested.map((s, i) => ({
-        url: urls[i],
-        uniprotId: s.uniprotId,
-        data: s.data,
-        initialSelection: s.initialSelection,
-        initialResidues: s.initialResidues,
-        initialTranscriptResidues: s.initialTranscriptResidues,
-        mappedEntityId: s.mappedEntityId,
+      const structures = requested.map(s => ({
+        ...s,
         userProvidedTranscriptSequence:
           s.userProvidedTranscriptSequence ??
           resolved?.userProvidedTranscriptSequence ??
