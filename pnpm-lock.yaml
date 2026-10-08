@@ -27,8 +27,8 @@ importers:
         specifier: ^5.13.0
         version: 5.13.0(@types/react@19.3.0)(fp-ts@2.16.11)(pngjs@7.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
       p2s_mapper:
-        specifier: ^1.2.1
-        version: 1.2.1
+        specifier: ^1.2.2
+        version: 1.2.2
       swr:
         specifier: ^2.5.1
         version: 2.5.1(react@19.3.0)
@@ -212,10 +212,6 @@ packages:
 
   '@babel/runtime@7.29.10':
     resolution: {integrity: sha512-NpugTzbKgGrNe45Ui32cN8vCFFMxVtP/9rtfwv0nP5FRDAjvYBxJcLVpYA9mr1jxP6cnIT7x9LUzuDTbWYYNRA==}
-    engines: {node: '>=6.9.0'}
-
-  '@babel/runtime@7.29.7':
-    resolution: {integrity: sha512-Nq8OhGWiZIZGV6hLHoyAKLLcJihP/xFeBMGJoUrxTX2psI8dCifzLhZISFb+VWS3wFMRDmCGw5R+dOySCqPLhw==}
     engines: {node: '>=6.9.0'}
 
   '@babel/runtime@8.0.7':
@@ -2901,8 +2897,8 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
-  p2s_mapper@1.2.1:
-    resolution: {integrity: sha512-LdTDNd3Z26M3TwSS19OTIwrAyAL7Gz97G/3+yAeXIlPs20WqRKgGPJ6b1rc1vGF3OImZXTGGMlZGIoMFjpKI7g==}
+  p2s_mapper@1.2.2:
+    resolution: {integrity: sha512-bwqyfOVsEF47A10UPYJcRMLQuL1QyhTwfDwAHN+W60FD/HyjShvUWGiN9Klz8zZdTYImZ/MB1qZOU2rlpsF3fg==}
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -3876,8 +3872,6 @@ snapshots:
 
   '@babel/runtime@7.29.10': {}
 
-  '@babel/runtime@7.29.7': {}
-
   '@babel/runtime@8.0.7': {}
 
   '@babel/template@7.29.7':
@@ -4649,7 +4643,7 @@ snapshots:
   '@testing-library/dom@10.4.1':
     dependencies:
       '@babel/code-frame': 7.29.7
-      '@babel/runtime': 7.29.7
+      '@babel/runtime': 7.29.10
       '@types/aria-query': 5.0.4
       aria-query: 5.3.0
       dom-accessibility-api: 0.5.16
@@ -6945,7 +6939,7 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
-  p2s_mapper@1.2.1:
+  p2s_mapper@1.2.2:
     dependencies:
       g2p_mapper: 2.1.7
 

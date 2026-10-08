@@ -74,10 +74,17 @@ widens to the taxon's descendants when the taxon itself has no entry.
 
 <!-- expect {"chain":"A","minIdentity":0.99,"minAligned":515} -->
 
-Viruses. AlphaFold DB holds no viral proteins, so a viral link names a PDB entry
-beside the gene. The spike link opens the trimer 6VXX beside the SARS-CoV-2
+Viruses. AlphaFold DB serves predicted models for the reference proteins of
+SARS-CoV-2 and HIV-1, so a viral gene opens by name like any other; the ORF3a
+link does, and needs plugin 1.2.2, the first to look up the `YP_` RefSeq
+proteins viral genomes carry. A PDB entry beside the gene opens the assembly a
+monomer cannot show: the spike link opens the trimer 6VXX beside the SARS-CoV-2
 genome, the gag link the HIV-1 capsid hexamer 3H47 on the gag polyprotein, and
 the cI link the lambda repressor bound to its operator.
+
+[SARS-CoV-2 ORF3a by name](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F009%2F858%2F895%2FGCF_009858895.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22ORF3a%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":275} -->
 
 [SARS-CoV-2 spike on 6VXX](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F009%2F858%2F895%2FGCF_009858895.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22S%22%2C%22pdbId%22%3A%226VXX%22%7D%5D%7D)
 
