@@ -36,7 +36,7 @@ import { parseArgs } from 'node:util'
 
 import puppeteer from 'puppeteer'
 
-import { isBrowserConsoleNoise } from './browserConsole.mjs'
+import { collectPageComplaints } from './browserConsole.mjs'
 
 const { values } = parseArgs({
   options: {
@@ -103,6 +103,7 @@ async function serveCandidateBundle(page) {
       { urlPattern: '*plugin-store*plugins.json*', requestStage: 'Response' },
     ],
   })
+  const served = { candidateEntry: 0 }
   client.on(
     'Fetch.requestPaused',
     async ({ requestId, request, responseHeaders }) => {
@@ -142,7 +143,7 @@ async function serveCandidateBundle(page) {
       if (file === undefined) {
         client.send('Fetch.continueRequest', { requestId }).catch(() => {})
       } else {
-        client
+        const fulfilled = await client
           .send('Fetch.fulfillRequest', {
             requestId,
             responseCode: 200,
@@ -152,10 +153,17 @@ async function serveCandidateBundle(page) {
             ],
             body: fs.readFileSync(file).toString('base64'),
           })
-          .catch(() => {})
+          .then(
+            () => true,
+            () => false,
+          )
+        if (fulfilled && file === values.bundle) {
+          served.candidateEntry++
+        }
       }
     },
   )
+  return served
 }
 
 // SIFTS arrives after the view settles, and the fusion unmapping waits on it
@@ -321,30 +329,17 @@ const browser = await puppeteer.launch({
   defaultViewport: { width: 1400, height: 900 },
 })
 let failed = 0
+let checked = 0
 for (const demo of demos) {
   const host = hostOf(demo.url)
   if (host !== 'main') {
     console.log(`skip ${demo.name} (hosted on ${host})`)
     continue
   }
+  checked++
   const page = await browser.newPage()
-  const complaints = []
-  const heard = (type, text) => {
-    if (!isBrowserConsoleNoise(text)) {
-      complaints.push(`[${type}] ${text.slice(0, 200)}`)
-    }
-  }
-  page.on('console', m => {
-    if (m.type() === 'error' || m.type() === 'warn') {
-      heard(m.type(), m.text())
-    }
-  })
-  page.on('pageerror', e => {
-    heard('pageerror', String(e))
-  })
-  if (values.bundle) {
-    await serveCandidateBundle(page)
-  }
+  const complaints = collectPageComplaints(page)
+  const served = values.bundle ? await serveCandidateBundle(page) : undefined
   let found
   let view
   try {
@@ -389,7 +384,12 @@ for (const demo of demos) {
       .catch(() => '')
     found = [`did not settle: ${String(e).slice(0, 120)} | ${text}`]
   }
-  found.push(...[...new Set(complaints)].map(c => `the page said ${c}`))
+  if (served?.candidateEntry === 0) {
+    found.push(
+      `the host never fetched ${values.bundle}, so this checked some other build`,
+    )
+  }
+  found.push(...[...new Set(complaints())].map(c => `the page said ${c}`))
   if (values.screenshots) {
     fs.mkdirSync(values.screenshots, { recursive: true })
     await page.screenshot({
@@ -416,4 +416,7 @@ for (const demo of demos) {
   )
 }
 await browser.close()
-process.exit(failed ? 1 : 0)
+if (checked === 0) {
+  console.error(`no demo in ${values.file} is hosted on main: nothing checked`)
+}
+process.exit(failed || checked === 0 ? 1 : 0)

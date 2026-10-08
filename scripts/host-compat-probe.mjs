@@ -32,7 +32,7 @@ import { parseArgs } from 'node:util'
 
 import puppeteer from 'puppeteer'
 
-import { isBrowserConsoleNoise } from './browserConsole.mjs'
+import { collectPageComplaints } from './browserConsole.mjs'
 
 // The ESM build needs JBrowse 5, and `main` is the only hosted 5.x build until
 // 5.0.0 is released. v4 hosts load the frozen 0.15.3 UMD from pinned urls.
@@ -154,11 +154,20 @@ async function interceptConfigAndBundle(page) {
         ],
         body,
       })
-      .catch(() => {})
-  client.on('Fetch.requestPaused', ({ requestId, request }) => {
+      .then(
+        () => true,
+        () => false,
+      )
+  const served = { candidateEntry: 0 }
+  client.on('Fetch.requestPaused', async ({ requestId, request }) => {
     const { pathname } = new URL(request.url)
     if (pathname.endsWith('/protein3d_config.json')) {
       fulfill(requestId, 'application/json', esmConfigBody)
+      return
+    }
+    // the config pattern also matches the page's own `?config=` url
+    if (dir === undefined) {
+      client.send('Fetch.continueRequest', { requestId }).catch(() => {})
       return
     }
     const rel = pathname.split('/dist/').slice(1).join('/dist/')
@@ -173,14 +182,18 @@ async function interceptConfigAndBundle(page) {
           : values.bundle
     if (file === undefined) {
       client.send('Fetch.continueRequest', { requestId }).catch(() => {})
-    } else {
-      fulfill(
+    } else if (
+      (await fulfill(
         requestId,
         'application/javascript',
         fs.readFileSync(file).toString('base64'),
-      )
+      )) &&
+      file === values.bundle
+    ) {
+      served.candidateEntry++
     }
   })
+  return served
 }
 
 // Right-click a gene in the connected view and read the menu back. This is the
@@ -260,30 +273,17 @@ async function probeContextMenu(page) {
 
 async function probeOne(browser, version) {
   const page = await browser.newPage()
-  await interceptConfigAndBundle(page)
-  const consoleErrors = []
+  const served = await interceptConfigAndBundle(page)
   // Warnings too, and filtered through the same rules the e2e uses. The e2e
   // covers one `jbrowse create` install; these are the hosted releases a
-  // publish actually reaches, and until now a console line here was a footnote
-  // printed only once the host had already failed some other way.
-  const consoleComplaints = []
-  const heard = (type, text) => {
-    const line = `[${type}] ${text.slice(0, 200)}`
+  // publish actually reaches. `consoleErrors` keeps the noise as well, printed
+  // only beside a failure.
+  const consoleErrors = []
+  const complaints = collectPageComplaints(page, line => {
     consoleErrors.push(line)
-    if (!isBrowserConsoleNoise(text)) {
-      consoleComplaints.push(line)
-    }
-  }
-  page.on('console', m => {
-    if (m.type() === 'error' || m.type() === 'warn') {
-      heard(m.type(), m.text())
-    }
-  })
-  page.on('pageerror', e => {
-    heard('pageerror', String(e))
   })
 
-  const result = { version, consoleErrors, consoleComplaints }
+  const result = { version, consoleErrors }
   try {
     await page.goto(url(version, true), {
       waitUntil: 'domcontentloaded',
@@ -348,6 +348,8 @@ async function probeOne(browser, version) {
   } catch (e) {
     result.threw = String(e).slice(0, 200)
   }
+  result.consoleComplaints = complaints()
+  result.candidateEntryServed = served.candidateEntry
   await page.close()
   return result
 }
@@ -389,21 +391,23 @@ function failure(r) {
     ? `SESSION FAILED: ${r.appError}`
     : !r.registered
       ? 'plugin not registered'
-      : !specApplied(r)
-        ? 'no view launched, so nothing was asserted'
-        : !r.viewReady
-          ? 'view did NOT settle'
-          : r.structures?.[1]?.mappedEntityId !== '2'
-            ? `1YCR mapped the transcript to entity ${r.structures?.[1]?.mappedEntityId}, not the p53 peptide${r.structures?.[1]?.error ? `: ${r.structures[1].error}` : ''}`
-            : !r.contextMenu?.reached
-              ? `no context menu: ${r.contextMenu?.why}`
-              : !r.contextMenu.hostRows
-                ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
-                : r.contextMenu.ours
-                  ? r.consoleComplaints.length > 0
-                    ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
-                    : undefined
-                  : 'no "Launch protein view" row in the feature context menu'
+      : values.bundle && r.candidateEntryServed === 0
+        ? `the host never fetched ${values.bundle}, so this probed some other build`
+        : !specApplied(r)
+          ? 'no view launched, so nothing was asserted'
+          : !r.viewReady
+            ? 'view did NOT settle'
+            : r.structures?.[1]?.mappedEntityId !== '2'
+              ? `1YCR mapped the transcript to entity ${r.structures?.[1]?.mappedEntityId}, not the p53 peptide${r.structures?.[1]?.error ? `: ${r.structures[1].error}` : ''}`
+              : !r.contextMenu?.reached
+                ? `no context menu: ${r.contextMenu?.why}`
+                : !r.contextMenu.hostRows
+                  ? `the feature context menu lost the host's own rows: [${r.contextMenu.labels.join(' | ')}]`
+                  : r.contextMenu.ours
+                    ? r.consoleComplaints.length > 0
+                      ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
+                      : undefined
+                    : 'no "Launch protein view" row in the feature context menu'
 }
 
 async function probeWithRetry(version) {

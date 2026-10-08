@@ -6,10 +6,12 @@
 //
 // The file is rewritten only when the render differs beyond pngSnapshot's
 // tolerance, so an unchanged figure leaves the tree clean. Exits non-zero
-// without writing when the view does not finish loading or the page errors.
+// without writing when the view does not finish loading or the page logs at warn
+// or error beyond what browserConsole.mjs excuses.
 
 import puppeteer from 'puppeteer'
 
+import { collectPageComplaints } from './browserConsole.mjs'
 import {
   PAINTED_FEATURES,
   ensureServer,
@@ -54,8 +56,7 @@ try {
   })
   const page = await browser.newPage()
   await page.setViewport({ width: 1600, height: 760, deviceScaleFactor: 1.5 })
-  const errors = []
-  page.on('pageerror', e => errors.push(e.message))
+  const complaints = collectPageComplaints(page)
   await page.goto(specUrl(spec), { waitUntil: 'networkidle2', timeout: 90_000 })
   await page.waitForSelector('[data-testid="protein-view-ready"]', {
     timeout: 120_000,
@@ -65,8 +66,9 @@ try {
   await page.addStyleTag({
     content: '.msp-background-tasks { display: none !important; }',
   })
-  if (errors.length) {
-    throw new Error(`page errored: ${errors.join('; ')}`)
+  const said = complaints()
+  if (said.length) {
+    throw new Error(`the page complained: ${[...new Set(said)].join('; ')}`)
   }
   saveStableScreenshot(await page.screenshot(), out)
 } finally {

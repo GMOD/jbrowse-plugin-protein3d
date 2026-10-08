@@ -21,6 +21,7 @@
 
 import puppeteer from 'puppeteer'
 
+import { collectPageComplaints } from './browserConsole.mjs'
 import {
   PAINTED_FEATURES,
   ensureServer,
@@ -126,6 +127,13 @@ const check = (name, ok, detail) => {
   )
   if (!ok) failures.push(name)
 }
+const checkQuiet = (leg, complaints) => {
+  check(
+    `${leg}: the page logged nothing at warn or error`,
+    complaints.length === 0,
+    [...new Set(complaints)].slice(0, 3).join(' / '),
+  )
+}
 // --- run --------------------------------------------------------------------
 let browser
 try {
@@ -139,8 +147,7 @@ try {
   {
     const page = await browser.newPage()
     await page.setViewport({ width: 1100, height: 800 })
-    const errors = []
-    page.on('pageerror', e => errors.push(e.message))
+    const complaints = collectPageComplaints(page)
     await page.goto(specUrl(standaloneSpec), {
       waitUntil: 'networkidle2',
       timeout: 90_000,
@@ -161,7 +168,7 @@ try {
       state.seqLen > 300,
       `seqLen=${state.seqLen}`,
     )
-    check('standalone: no page errors', errors.length === 0, errors[0])
+    checkQuiet('standalone', complaints())
     await page.close()
   }
 
@@ -173,11 +180,7 @@ try {
       height: 1400,
       deviceScaleFactor: 1.5,
     })
-    const errors = []
-    page.on('pageerror', e => errors.push(e.message))
-    page.on('console', m => {
-      if (m.type() === 'error') errors.push(m.text())
-    })
+    const complaints = collectPageComplaints(page)
     await page.goto(specUrl(connectedSpec), {
       waitUntil: 'networkidle2',
       timeout: 90_000,
@@ -220,7 +223,7 @@ try {
       state.painted > 0,
       `painted=${state.painted}`,
     )
-    check('connected: no console/page errors', errors.length === 0, errors[0])
+    checkQuiet('connected', complaints())
 
     saveStableScreenshot(
       await page.screenshot(),
@@ -237,11 +240,7 @@ try {
       height: 1400,
       deviceScaleFactor: 1.5,
     })
-    const errors = []
-    page.on('pageerror', e => errors.push(e.message))
-    page.on('console', m => {
-      if (m.type() === 'error') errors.push(m.text())
-    })
+    const complaints = collectPageComplaints(page)
     await page.goto(specUrl(shortSpec), {
       waitUntil: 'networkidle2',
       timeout: 90_000,
@@ -300,7 +299,7 @@ try {
       state.resolvedProtein === TP53_PROTEIN,
       `len=${state.resolvedProtein.length}`,
     )
-    check('short: no console/page errors', errors.length === 0, errors[0])
+    checkQuiet('short', complaints())
 
     saveStableScreenshot(
       await page.screenshot(),
@@ -317,11 +316,7 @@ try {
       height: 1400,
       deviceScaleFactor: 1.5,
     })
-    const errors = []
-    page.on('pageerror', e => errors.push(e.message))
-    page.on('console', m => {
-      if (m.type() === 'error') errors.push(m.text())
-    })
+    const complaints = collectPageComplaints(page)
     await page.goto(specUrl(pdbShortSpec), {
       waitUntil: 'networkidle2',
       timeout: 90_000,
@@ -371,7 +366,7 @@ try {
       state.hasAlignment && state.mappedSeqLen === 219,
       `mappedSeqLen=${state.mappedSeqLen}`,
     )
-    check('pdb: no console/page errors', errors.length === 0, errors[0])
+    checkQuiet('pdb', complaints())
 
     saveStableScreenshot(
       await page.screenshot(),

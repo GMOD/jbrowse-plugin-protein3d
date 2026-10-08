@@ -51,3 +51,36 @@ export function isBrowserConsoleNoise(text) {
   }
   return GPU_NOISE.some(n => text.includes(n))
 }
+
+/**
+ * Listens to a page's console at warn and error, and to its uncaught errors.
+ * The returned function drains what the page said since the last call, minus
+ * noise. `onHeard` receives every line, noise included, for diagnostics.
+ *
+ * @param {import('puppeteer').Page} page
+ * @param {(line: string) => void} [onHeard]
+ * @returns {() => string[]}
+ */
+export function collectPageComplaints(page, onHeard) {
+  let complaints = []
+  const hear = (type, text) => {
+    const line = `[${type}] ${text.slice(0, 200)}`
+    onHeard?.(line)
+    if (!isBrowserConsoleNoise(text)) {
+      complaints.push(line)
+    }
+  }
+  page.on('console', m => {
+    if (m.type() === 'error' || m.type() === 'warn') {
+      hear(m.type(), m.text())
+    }
+  })
+  page.on('pageerror', e => {
+    hear('pageerror', String(e))
+  })
+  return () => {
+    const drained = complaints
+    complaints = []
+    return drained
+  }
+}
