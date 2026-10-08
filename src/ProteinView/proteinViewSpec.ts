@@ -67,11 +67,6 @@ export interface ProteinViewSpec {
 }
 
 /**
- * The single source of truth for turning a ProteinViewSpec into the snapshot
- * handed to `session.addView('ProteinView', ...)`. Every launch path funnels
- * through here so they can't drift into different subsets of the same view.
- */
-/**
  * The name a view gets when its snapshot carries none: the transcript it maps
  * and each structure's label, so a session written by hand or by a page opens
  * as "Protein view - TP53 - 1TUP" rather than "Untitled view".
@@ -93,6 +88,11 @@ export function defaultDisplayName(structures: ProteinStructureSpec[]) {
     .join(' - ')
 }
 
+/**
+ * The single source of truth for turning a ProteinViewSpec into the snapshot
+ * handed to `session.addView('ProteinView', ...)`. Every launch path funnels
+ * through here so they can't drift into different subsets of the same view.
+ */
 export function proteinViewSnapshot(spec: ProteinViewSpec) {
   const { structures, ...view } = spec
   return {

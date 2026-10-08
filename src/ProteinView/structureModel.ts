@@ -456,7 +456,18 @@ const Structure = types
      * #action
      */
     setHoveredPosition(arg?: { structureSeqPos?: number; chain?: string }) {
-      self.hoverPosition = arg ? { ...arg, source: 'structure' } : undefined
+      const current = self.hoverPosition
+      // the pointer reports every pixel of a residue, and each write re-renders
+      // the header and the connected view's highlight
+      if (
+        arg === undefined
+          ? current !== undefined
+          : current?.source !== 'structure' ||
+            current.structureSeqPos !== arg.structureSeqPos ||
+            current.chain !== arg.chain
+      ) {
+        self.hoverPosition = arg ? { ...arg, source: 'structure' } : undefined
+      }
     },
     /**
      * #action
@@ -929,7 +940,6 @@ const Structure = types
         assemblyName: self.connectedView?.assemblyNames[0],
         model: {
           genomeToTranscriptSeqMapping: this.genomeToTranscriptSeqMapping,
-          pairwiseAlignment: this.alignment,
           structureSeqToTranscriptSeqPosition:
             this.structureSeqToTranscriptSeqPosition,
         },

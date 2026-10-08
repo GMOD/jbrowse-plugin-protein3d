@@ -6,7 +6,6 @@ import type { ResidueRange } from './residueRanges'
 import type { Region } from '@jbrowse/core/util/types'
 import type { IAnyStateTreeNode } from '@jbrowse/mobx-state-tree'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
-import type { PairwiseAlignment } from 'p2s_mapper'
 
 interface GenomeToTranscriptSeqMapping {
   p2gCodon: Record<number, number[]>
@@ -19,7 +18,6 @@ interface GenomeToTranscriptSeqMapping {
  */
 interface ProteinGenomeMappingModel {
   genomeToTranscriptSeqMapping: GenomeToTranscriptSeqMapping | undefined
-  pairwiseAlignment: PairwiseAlignment | undefined
   structureSeqToTranscriptSeqPosition: Record<number, number> | undefined
 }
 
@@ -40,7 +38,7 @@ function structureRangeSpans(
   ranges: readonly ResidueRange[],
 ) {
   const mapping = model.genomeToTranscriptSeqMapping
-  if (!mapping || !model.pairwiseAlignment) {
+  if (!mapping) {
     return []
   }
   const transcriptPositions: number[] = []

@@ -27,7 +27,7 @@ function parseTrajectory(
 }
 
 /** Download or ingest a structure and parse it into a trajectory, with the
- * format sniffed from the content or the url unless the caller says otherwise.
+ * format sniffed from the content or the url.
  * Needs no renderer, so a headless plugin can run it to read sequences.
  *
  * A parse that fails resolves with no trajectory, and a file read with the
@@ -38,25 +38,21 @@ export async function parseStructureTrajectory({
   plugin,
   data,
   url,
-  format,
-  dataLabel,
 }: {
   plugin: PluginContext
   data?: string
   url?: string
-  format?: BuiltInTrajectoryFormat
-  dataLabel?: string
 }) {
   let raw: RawStructure
   let parsedAs: BuiltInTrajectoryFormat
   if (data !== undefined) {
-    parsedAs = format ?? structureFormatFromContent(data)
+    parsedAs = structureFormatFromContent(data)
     raw = await plugin.builders.data.rawData(
-      { data, label: dataLabel },
+      { data },
       { state: { isGhost: true } },
     )
   } else if (url !== undefined) {
-    parsedAs = format ?? structureFormatFromName(url)
+    parsedAs = structureFormatFromName(url)
     raw = await plugin.builders.data.download(
       { url, isBinary: isBinaryStructureUrl(url) },
       { state: { isGhost: true } },
@@ -67,7 +63,7 @@ export async function parseStructureTrajectory({
   const trajectory = await parseTrajectory(plugin, raw, parsedAs)
   if (!trajectory?.obj?.data.frameCount) {
     throw new Error(
-      `No model could be read from ${url ?? dataLabel ?? 'the structure data'} as ${parsedAs}`,
+      `No model could be read from ${url ?? 'the structure data'} as ${parsedAs}`,
     )
   }
   return trajectory
