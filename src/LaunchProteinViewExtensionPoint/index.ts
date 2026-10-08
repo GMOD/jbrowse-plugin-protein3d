@@ -1,5 +1,6 @@
 import { coerceAlignmentAlgorithm, resolveStructureUrl } from 'p2s_mapper'
 
+import { resolveGeneNameLaunch } from './findGeneByName'
 import {
   type ConnectedViewSpec,
   type ResolvedShortLaunch,
@@ -76,6 +77,9 @@ interface LaunchArgs extends LaunchViewSettings {
   // superposed; the top-level url/uniprotId/pdbId is the one-structure
   // shorthand for this
   structures?: LaunchStructure[]
+  // a gene name, looked up in the assembly's text search index; alone it
+  // launches the gene's AlphaFold model beside a genome view on the gene
+  gene?: string
   transcriptId?: string
   userProvidedTranscriptSequence?: string
   feature?: SimpleFeatureSerialized
@@ -118,18 +122,56 @@ export default function LaunchProteinViewExtensionPointF(
         userProvidedTranscriptSequence,
         feature,
         connectedViewId,
-        connectedView,
+        connectedView: givenConnectedView,
+        gene,
         sideBySide,
         initialSelection,
         initialResidues,
         initialTranscriptResidues,
         ...settings
       } = args
+      const fail = (e: unknown) => {
+        console.error(e)
+        session.notify(`Could not launch protein view: ${e}`, 'error')
+        return args
+      }
+
+      // A gene name alone: the host's text search finds the gene, and the
+      // launch dialog's defaults pick its isoform and AlphaFold model. Anything
+      // the spec names itself (a structure, a transcript, a locus) wins.
+      let named: Awaited<ReturnType<typeof resolveGeneNameLaunch>> | undefined
+      if (gene && !userProvidedTranscriptSequence) {
+        try {
+          named = await resolveGeneNameLaunch({
+            session,
+            gene,
+            transcriptId,
+            uniprotId,
+            connectedView: givenConnectedView,
+          })
+        } catch (e) {
+          return fail(e)
+        }
+      }
+      const connectedView = connectedViewId
+        ? givenConnectedView
+        : (named?.connectedView ?? givenConnectedView)
+      const namesStructure =
+        !!url || !!uniprotId || !!pdbId || !!requestedStructures?.length
+      if (named && !namesStructure && !named.url) {
+        return fail(
+          new Error(
+            named.uniprotId
+              ? `AlphaFold DB has no model for ${named.uniprotId}, the UniProt entry of ${gene}; name a pdbId or url`
+              : `no single UniProt entry found for ${gene}; name a uniprotId or pdbId`,
+          ),
+        )
+      }
       const requested: LaunchStructure[] = requestedStructures?.length
         ? requestedStructures
         : [
             {
-              url,
+              url: url ?? (uniprotId || !pdbId ? named?.url : undefined),
               uniprotId,
               pdbId,
               initialSelection,
@@ -145,11 +187,9 @@ export default function LaunchProteinViewExtensionPointF(
         primary.data === undefined &&
         primary.uniprotId === undefined
       ) {
-        const message =
-          'No url, uniprotId or pdbId provided when launching protein view'
-        console.error(message)
-        session.notify(`Could not launch protein view: ${message}`, 'error')
-        return args
+        return fail(
+          'No url, uniprotId, pdbId or gene provided when launching protein view',
+        )
       }
 
       // Short form: a `transcriptId` plus a `connectedView` in place of an
@@ -157,8 +197,8 @@ export default function LaunchProteinViewExtensionPointF(
       // connected track, and the same mapping then applies to every structure
       // of the launch. Failures surface via notify and abort — we never leave a
       // half-wired view.
-      let resolved: ResolvedShortLaunch | undefined
-      if (!userProvidedTranscriptSequence && transcriptId) {
+      let resolved: ResolvedShortLaunch | undefined = named
+      if (!resolved && !userProvidedTranscriptSequence && transcriptId) {
         try {
           resolved = await resolveShortLaunch({
             session,
@@ -166,9 +206,7 @@ export default function LaunchProteinViewExtensionPointF(
             connectedView,
           })
         } catch (e) {
-          console.error(e)
-          session.notify(`Could not launch protein view: ${e}`, 'error')
-          return args
+          return fail(e)
         }
       }
 
@@ -207,7 +245,10 @@ export default function LaunchProteinViewExtensionPointF(
 
       const proteinView = session.addView(
         'ProteinView',
-        launchViewSnapshot(settings, structures),
+        launchViewSnapshot(
+          { displayName: named?.displayName, ...settings },
+          structures,
+        ),
       )
 
       if (ownsConnectedView) {

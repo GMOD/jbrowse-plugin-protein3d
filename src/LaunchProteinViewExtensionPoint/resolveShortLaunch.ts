@@ -23,7 +23,7 @@ export interface ResolvedShortLaunch {
   userProvidedTranscriptSequence: string
 }
 
-function getTrackId(track: string | Record<string, unknown>) {
+export function getTrackId(track: string | Record<string, unknown>) {
   if (typeof track === 'string') {
     return track
   }
@@ -32,7 +32,7 @@ function getTrackId(track: string | Record<string, unknown>) {
 }
 
 // `transcript_id` because Ensembl's GFF3 prefixes the ID (`transcript:ENST…`)
-function transcriptMatches(transcript: Feature, transcriptId: string) {
+export function transcriptMatches(transcript: Feature, transcriptId: string) {
   const target = stripTrailingVersion(transcriptId)
   return [
     transcript.get('name'),
@@ -49,7 +49,7 @@ function transcriptMatches(transcript: Feature, transcriptId: string) {
 
 // Gene models live on feature tracks; a spec's variant or alignments track
 // would be fetched for nothing
-function isFeatureTrack(trackConf: AnyConfigurationModel) {
+export function isFeatureTrack(trackConf: AnyConfigurationModel) {
   return readConfObject(trackConf, 'type') === 'FeatureTrack'
 }
 

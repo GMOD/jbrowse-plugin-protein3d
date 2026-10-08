@@ -26,7 +26,37 @@ that connection for you. A demo link or an embedding app builds the same
 connected session declaratively, in one of two ways depending on whether a track
 in the genome view already serves the transcript.
 
-### Short form (recommended): `uniprotId` / `pdbId` + `transcriptId`
+### By gene name: `gene`
+
+On a config whose assembly has a text search index over a gene track, a gene
+name is the whole spec:
+
+```
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","gene":"TP53"}]}
+```
+
+The plugin looks the name up as the genome view's search box does, opens a
+genome view on the gene with the track the index found it in, and works out the
+rest as the **Open AlphaFold structure** menu item does: the UniProt entry from
+the gene's identifiers, the AlphaFold model of that entry, and the isoform that
+model was folded from. Anything else the spec names wins over what the lookup
+would pick:
+
+- `pdbId`, `uniprotId`, `url` or `structures` choose the structure,
+- `transcriptId` chooses the isoform, among the gene's own,
+- `connectedView.assembly` chooses the assembly (the session's first otherwise),
+  and `connectedView.loc` and `tracks` replace the gene's span and the indexed
+  track.
+
+```
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","gene":"TP53","pdbId":"1TUP","initialResidues":{"start":248,"end":248}}]}
+```
+
+The launch fails with an on-screen error when the name has no search hit, when
+two reviewed UniProt entries answer to the gene, or when AlphaFold DB has no
+model for its entry; name a `uniprotId` or `pdbId` to settle the last two.
+
+### Short form: `uniprotId` / `pdbId` + `transcriptId`
 
 If the connected genome view serves a gene track that contains the transcript,
 this is all you need — the plugin resolves the structure, the feature, and the

@@ -315,7 +315,13 @@ describe('extractFeatureIdentifiers', () => {
       type: 'transcript',
       uniprot,
       subfeatures: [
-        { uniqueId: `${uniqueId}-cds`, start: 0, end: 99, type: 'CDS' },
+        {
+          uniqueId: `${uniqueId}-cds`,
+          refName: 'chr1',
+          start: 0,
+          end: 99,
+          type: 'CDS',
+        },
       ],
     })
     const gene = new SimpleFeature({

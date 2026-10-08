@@ -12,6 +12,18 @@ every link in this file with the local build and checks the expectation under
 it; run it after changing a link or the mapping. Run without `--bundle`
 (`node scripts/check-demos.mjs`), it checks the published plugin instead.
 
+## A gene by name
+
+The whole spec of this link is `{"type":"ProteinView","gene":"BRAF"}`. The
+plugin finds BRAF through the hub's text search index, opens the genome on it,
+looks up its UniProt entry and that entry's AlphaFold model, and maps the
+isoform the model was folded from. The link uses JBrowse `main`, and `gene`
+arrives with the first plugin release after 1.1.0.
+
+[BRAF by name](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":700} -->
+
 ## A short peptide bound to a larger partner
 
 1H26 holds an 11-residue p53 peptide bound to CDK2 and cyclin A. The kinase

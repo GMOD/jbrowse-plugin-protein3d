@@ -179,6 +179,29 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 120_000)
 
+  // The dialog's defaults with no dialog: one click from the gene to a linked
+  // structure, which is the whole point of the item.
+  it('opens the AlphaFold structure in one click', async () => {
+    await page.evaluate(() => {
+      const session = window.JBrowseSession!
+      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
+        session.removeView!(view)
+      }
+    })
+    const items = await openFeatureContextMenu(page)
+    expect(items).toContain('Open AlphaFold structure')
+    await clickMenuItem(page, 'Open AlphaFold structure')
+    await waitForStructureRendered(page)
+
+    expect(await page.$(LAUNCH_DIALOG)).toBeNull()
+    const state = await getProteinViewState(page)
+    expect(state.structureCount).toBe(1)
+    expect(state.structureSeqLength).toBe(STRUCTURE_RESIDUES)
+    expect(state.hasAlignment).toBe(true)
+    expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 240_000)
+
   // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
   // the first row preselected, launched against the RCSB file. NRAS has
   // dozens of crystals, every one a fragment with partners, so the alignment

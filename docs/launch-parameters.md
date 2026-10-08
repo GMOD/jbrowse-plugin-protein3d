@@ -12,6 +12,7 @@ working links.
 | `uniprotId`                      | Yes\*    | UniProt accession: the AlphaFold model, or beside `url` the UniProt tracks' entry |
 | `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url`                                            |
 | `structures`                     | Yes\*    | Several structures in one view, each `{ url \| uniprotId \| pdbId, … }`           |
+| `gene`                           | Yes\*    | Gene name, found through the assembly's text search index; enough on its own      |
 | `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form) |
 | `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                    |
 | `feature`                        | No       | Genomic feature for cross-linking                                                 |
@@ -34,10 +35,13 @@ working links.
 | `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)     |
 | `initialSelection`               | No       | The same as 0-based half-open position ranges, for callers that already have them |
 
-\* Provide `url` (explicit structure), **or** `uniprotId` / `pdbId` (short
-form). `url` wins over both, and `uniprotId` wins over `pdbId` — the same
-precedence a `structures: [...]` snapshot uses, since both go through
-`resolveStructureUrl` and then the structure loader.
+\* Provide `gene` alone, `url` (explicit structure), **or** `uniprotId` /
+`pdbId` (short form, which also needs `transcriptId` and a `connectedView` to
+link the structure to the genome). `gene` finds the transcript, the AlphaFold
+model and the genome view itself, and takes any of the others as an override.
+`url` wins over both, and `uniprotId` wins over `pdbId` — the same precedence a
+`structures: [...]` snapshot uses, since both go through `resolveStructureUrl`
+and then the structure loader.
 
 ## `connectedView`
 

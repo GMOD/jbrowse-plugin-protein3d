@@ -28,6 +28,7 @@
 // Usage:
 //   pnpm check-demos
 //   node scripts/check-demos.mjs --bundle dist/jbrowse-plugin-protein3d.esm.js
+//   node scripts/check-demos.mjs --screenshots <dir>   # a png of each demo
 //
 import fs from 'node:fs'
 import path from 'node:path'
@@ -42,6 +43,7 @@ const { values } = parseArgs({
     bundle: { type: 'string' },
     file: { type: 'string', default: 'docs/demos.md' },
     timeout: { type: 'string', default: '300000' },
+    screenshots: { type: 'string' },
   },
 })
 const timeout = Number(values.timeout)
@@ -388,6 +390,15 @@ for (const demo of demos) {
     found = [`did not settle: ${String(e).slice(0, 120)} | ${text}`]
   }
   found.push(...[...new Set(complaints)].map(c => `the page said ${c}`))
+  if (values.screenshots) {
+    fs.mkdirSync(values.screenshots, { recursive: true })
+    await page.screenshot({
+      path: path.join(
+        values.screenshots,
+        `${demo.name.replace(/[^\w]+/g, '-').toLowerCase()}.png`,
+      ),
+    })
+  }
   await page.close()
   if (found.length > 0) {
     failed++
