@@ -1,4 +1,4 @@
-import { residueNumber, transcriptPos } from 'p2s_mapper'
+import { residueNumber } from 'p2s_mapper'
 
 import type { CoordinateMapper, Entity } from 'p2s_mapper'
 
@@ -42,12 +42,6 @@ export function positionRuns(positions: Iterable<number>) {
   return runs
 }
 
-function* inclusive({ start, end }: ResidueRange) {
-  for (let n = start; n <= end; n++) {
-    yield n
-  }
-}
-
 /**
  * The runs of positions whose author number falls in any of the ranges. A
  * fusion numbers its partner apart (2RH1's lysozyme is 1002–1161), so a range
@@ -75,24 +69,31 @@ export function transcriptRuns(
   mapper: CoordinateMapper,
   ranges: ResidueRanges,
 ) {
+  const list = rangeList(ranges)
   const positions: number[] = []
-  for (const range of rangeList(ranges)) {
-    for (const residue of inclusive(range)) {
-      const pos = mapper.transcriptToStructure(transcriptPos(residue - 1))
-      if (pos !== undefined) {
-        positions.push(pos)
-      }
+  for (const [transcript, structure] of Object.entries(
+    mapper.maps.transcriptSeqToStructureSeqPosition,
+  )) {
+    const residue = Number(transcript) + 1
+    if (list.some(r => residue >= r.start && residue <= r.end)) {
+      positions.push(structure)
     }
   }
   return positionRuns(positions)
 }
 
+/** Sorted [start, end) runs covering the ranges, overlaps and neighbours merged. */
 export function positionRangeRuns(ranges: ResidueRanges) {
-  const positions: number[] = []
-  for (const { start, end } of rangeList(ranges)) {
-    for (let pos = start; pos < end; pos++) {
-      positions.push(pos)
+  const runs: ResidueRange[] = []
+  for (const { start, end } of rangeList(ranges)
+    .filter(r => r.end > r.start)
+    .toSorted((a, b) => a.start - b.start)) {
+    const last = runs.at(-1)
+    if (last && start <= last.end) {
+      last.end = Math.max(last.end, end)
+    } else {
+      runs.push({ start, end })
     }
   }
-  return positionRuns(positions)
+  return runs
 }

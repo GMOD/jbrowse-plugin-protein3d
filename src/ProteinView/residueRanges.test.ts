@@ -98,3 +98,21 @@ test('transcriptRuns selects what the transcript pairs with, split where the str
     { start: 7, end: 8 },
   ])
 })
+
+// each of these used to list every integer of the range before anything
+// clamped it to the structure
+test('a range far past the structure costs nothing to resolve', () => {
+  expect(positionRangeRuns({ start: 0, end: Infinity })).toEqual([
+    { start: 0, end: Infinity },
+  ])
+  const mapper = makeCoordinateMapper({
+    consensus: '|||',
+    alns: [
+      { id: 'a', seq: 'MKA' },
+      { id: 'b', seq: 'MKA' },
+    ],
+  })
+  expect(transcriptRuns(mapper, { start: 2, end: 1e12 })).toEqual([
+    { start: 1, end: 3 },
+  ])
+})

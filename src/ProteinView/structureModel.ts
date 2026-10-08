@@ -1184,7 +1184,7 @@ const Structure = types
       if (residues && !entityChosen) {
         return undefined
       }
-      if (transcriptResidues && (!mapper || self.loading)) {
+      if (transcriptResidues && self.loading) {
         return undefined
       }
       return positionRangeRuns([

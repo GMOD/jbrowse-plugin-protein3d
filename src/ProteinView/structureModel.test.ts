@@ -993,6 +993,21 @@ test('focusResidues works on a structure opened without a transcript', async () 
   ])
 })
 
+// nothing will ever align such a structure, and a transcript range used to
+// wait for a mapper until the timeout
+test('focusResidues names no residue for a transcript range on a structure without a transcript', async () => {
+  const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
+  const [s] = parent.structures
+  s!.setStructureData({ entities: NUMBERED_FROM_94 })
+  s!.setLoadedToMolstar(true)
+  expect(
+    await s!.focusResidues(
+      { transcriptResidues: { start: 1, end: 2 } },
+      { timeout: 2000 },
+    ),
+  ).toEqual([])
+})
+
 // with no chain aligned the entity decision is still made, and an author
 // number used to wait for it until the timeout
 test('focusResidues resolves author numbers when no chain could be aligned', async () => {
