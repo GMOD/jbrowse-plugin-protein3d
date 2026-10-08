@@ -157,8 +157,7 @@ const StructureRow = observer(function StructureRow({
       ) : null}
       <UniProtLink structure={structure} />
       <div style={{ flex: 1 }} />
-      {(open && model.showAlignment) ||
-      !structure.userProvidedTranscriptSequence ? (
+      {model.offersChainPicker(structure) ? (
         <ChainSelect model={structure} />
       ) : null}
       {quality && isLowSimilarity(quality) ? (
@@ -211,9 +210,9 @@ const StructureRow = observer(function StructureRow({
  * One line per structure, in the header the reader always sees. The identity
  * and coverage readout used to live only inside the pairwise panel, which the
  * same reader can hide — so how much of the transcript a structure speaks for,
- * and whether the mapping is chance, were one click away from invisible. The
- * open structure's row also carries what used to head its alignment panel:
- * the mapped-chain picker.
+ * and whether the mapping is chance, were one click away from invisible. A row
+ * also carries what used to head the alignment panel, the mapped-chain picker:
+ * the open structure's row, or every row while the panel is hidden.
  *
  * A hovered residue is read out on its structure's row, in place of the
  * coverage line until the pointer leaves. A genome or MSA hover that reaches

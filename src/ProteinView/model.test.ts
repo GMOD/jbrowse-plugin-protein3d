@@ -1,9 +1,12 @@
 import { expect, test, vi } from 'vitest'
 
+import { COMPACT_TRACK_HEIGHT, NORMAL_TRACK_HEIGHT } from './constants'
 import stateModelFactory from './model'
 import { removeMolstarStructure } from './removeStructure'
+import { PERSISTED_SETTINGS } from './storedSettings'
 
 import type { ProteinStructureSpec } from './proteinViewSpec'
+import type { PersistedSetting, PersistedSettings } from './storedSettings'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
@@ -21,11 +24,31 @@ const ProteinView = stateModelFactory()
 // hands it to removeMolstarStructure, which is mocked.
 const plugin = {} as unknown as PluginContext
 
-function makeView() {
+function makeView(settings: PersistedSettings = {}) {
   return ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }, { url: 'b.cif' }],
+    ...settings,
   })
+}
+
+type View = ReturnType<typeof makeView>
+
+function toggleOf(view: View, key: PersistedSetting) {
+  const toggle = view.displayToggles.find(t => t.key === key)
+  if (!toggle) {
+    throw new Error(`no ${key} toggle`)
+  }
+  return toggle
+}
+
+function stubStorage() {
+  const writes: string[] = []
+  vi.stubGlobal('localStorage', {
+    getItem: () => null,
+    setItem: (_key: string, value: string) => writes.push(value),
+  })
+  return writes
 }
 
 test('removing a structure leaves the others as they were', () => {
@@ -210,12 +233,103 @@ test('dragging the track handle resizes every lane, within limits', () => {
   expect(structure.trackHeight).toBe(2)
   structure.resizeTracks(1000)
   expect(structure.trackHeight).toBe(40)
+})
 
-  vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {} })
-  view.toggleSetting('compactTracks')
+// A drag writes `trackHeight` and leaves `compactTracks` alone, so the box read
+// checked over 40px lanes and its first click gave 12px rather than 8.
+test('the compact toggle reads the lane height, not the flag under it', () => {
+  const dragged = makeView()
+  dragged.structures[0]!.resizeTracks(1000)
+  expect(toggleOf(dragged, 'compactTracks').checked).toBe(false)
+
+  const writes = stubStorage()
+  toggleOf(dragged, 'compactTracks').toggle()
+  expect(dragged.compactTracks).toBe(true)
+  expect(dragged.trackHeight).toBeUndefined()
+  expect(dragged.structures[0]!.trackHeight).toBe(COMPACT_TRACK_HEIGHT)
+  expect(writes).toEqual([JSON.stringify({ compactTracks: true })])
+
+  const declared = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+    trackHeight: 5,
+    compactTracks: false,
+  })
+  expect(toggleOf(declared, 'compactTracks').checked).toBe(true)
+  toggleOf(declared, 'compactTracks').toggle()
   vi.unstubAllGlobals()
-  expect(view.trackHeight).toBeUndefined()
-  expect(structure.trackHeight).toBe(12)
+  expect(declared.trackHeight).toBeUndefined()
+  expect(declared.structures[0]!.trackHeight).toBe(NORMAL_TRACK_HEIGHT)
+})
+
+const TRACK_TOGGLES = ['showAllFeatureTracks', 'compactTracks'] as const
+const PANEL_TOGGLES = ['showProteinTracks', 'autoScrollAlignment'] as const
+
+function disabledKeys(view: View) {
+  return view.displayToggles.filter(t => t.disabled).map(t => t.key)
+}
+
+// The alignment panel holds the track rows, so with either hidden the toggles
+// under it were enabled no-ops that still wrote a preference.
+test('a toggle is disabled while a setting it needs is off', () => {
+  expect(disabledKeys(makeView())).toEqual([])
+
+  const noPanel = makeView({ showAlignment: false })
+  expect(new Set(disabledKeys(noPanel))).toEqual(
+    new Set([...PANEL_TOGGLES, ...TRACK_TOGGLES]),
+  )
+
+  const noTracks = makeView({ showProteinTracks: false })
+  expect(new Set(disabledKeys(noTracks))).toEqual(new Set(TRACK_TOGGLES))
+})
+
+test('a disabled toggle changes nothing and stores nothing', () => {
+  const view = makeView({ showAlignment: false })
+  const writes = stubStorage()
+  for (const key of [...PANEL_TOGGLES, ...TRACK_TOGGLES]) {
+    const before = view[key]
+    toggleOf(view, key).toggle()
+    expect(view[key]).toBe(before)
+  }
+  expect(writes).toEqual([])
+
+  toggleOf(view, 'showAlignment').toggle()
+  vi.unstubAllGlobals()
+  expect(view.showAlignment).toBe(true)
+  expect(writes).toEqual([JSON.stringify({ showAlignment: true })])
+})
+
+test('the Tune menu offers exactly the remembered settings', () => {
+  expect(new Set(makeView().displayToggles.map(t => t.key))).toEqual(
+    new Set(PERSISTED_SETTINGS),
+  )
+})
+
+// The tutorial links open a multi-chain entry with the panel hidden, where no
+// row is the open one and so no row had a picker.
+test('every row offers the chain picker while the alignment panel is hidden', () => {
+  const structures = [
+    { url: 'a.cif', userProvidedTranscriptSequence: 'MEEPQ' },
+    { url: 'b.cif', userProvidedTranscriptSequence: 'MEEPQ' },
+    { url: 'c.cif' },
+  ]
+  const shown = ProteinView.create({ type: 'ProteinView', structures })
+  expect(shown.structures.map(s => shown.offersChainPicker(s))).toEqual([
+    true,
+    false,
+    true,
+  ])
+
+  const hidden = ProteinView.create({
+    type: 'ProteinView',
+    structures,
+    showAlignment: false,
+  })
+  expect(hidden.structures.map(s => hidden.offersChainPicker(s))).toEqual([
+    true,
+    true,
+    true,
+  ])
 })
 
 // dragging the resize handle past the top of the canvas used to leave a

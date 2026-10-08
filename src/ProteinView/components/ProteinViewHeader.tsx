@@ -72,10 +72,12 @@ const ColorSchemeMenu = observer(function ColorSchemeMenu({
 function ToggleMenuItem({
   checked,
   label,
+  disabled,
   onToggle,
 }: {
   checked: boolean
   label: string
+  disabled?: boolean
   onToggle: () => void
 }) {
   return (
@@ -83,6 +85,7 @@ function ToggleMenuItem({
       onClick={() => {
         onToggle()
       }}
+      disabled={disabled}
       dense
     >
       <ListItemIcon>
@@ -123,9 +126,10 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
       >
         {model.displayToggles.map(toggle => (
           <ToggleMenuItem
-            key={toggle.label}
+            key={toggle.key}
             checked={toggle.checked}
             label={toggle.label}
+            disabled={toggle.disabled}
             onToggle={toggle.toggle}
           />
         ))}

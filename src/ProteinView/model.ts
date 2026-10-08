@@ -16,7 +16,12 @@ import {
   applyColorTheme,
   colorSchemeLegend,
 } from './applyColorTheme'
-import { MAX_TRACK_HEIGHT, MIN_TRACK_HEIGHT, trackHeightOf } from './constants'
+import {
+  MAX_TRACK_HEIGHT,
+  MIN_TRACK_HEIGHT,
+  NORMAL_TRACK_HEIGHT,
+  trackHeightOf,
+} from './constants'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
 import { defaultDisplayName } from './proteinViewSpec'
@@ -50,11 +55,45 @@ const ManualAlignmentDialog = lazy(
   () => import('./components/ManualAlignmentDialog'),
 )
 
+interface DisplaySetting {
+  key: PersistedSetting
+  label: string
+  requires?: readonly PersistedSetting[]
+}
+
+// `requires` names the settings a toggle does nothing without: the alignment
+// panel holds the track rows, and the track rows are all the track settings
+// change.
+const DISPLAY_SETTINGS: readonly DisplaySetting[] = [
+  { key: 'showAlignment', label: 'Show alignment' },
+  {
+    key: 'showProteinTracks',
+    label: 'Show feature tracks',
+    requires: ['showAlignment'],
+  },
+  {
+    key: 'showAllFeatureTracks',
+    label: 'Show all feature tracks',
+    requires: ['showAlignment', 'showProteinTracks'],
+  },
+  {
+    key: 'compactTracks',
+    label: 'Compact tracks',
+    requires: ['showAlignment', 'showProteinTracks'],
+  },
+  {
+    key: 'autoScrollAlignment',
+    label: 'Auto-scroll alignment to hovered position',
+    requires: ['showAlignment'],
+  },
+  { key: 'showControls', label: 'Show Mol* controls' },
+]
+
 // What a click and a highlight do, as opposed to what the panel shows. Named
-// here rather than in storedSettings because these are deliberately not
-// remembered across views.
+// here rather than in storedSettings because the view deliberately does not
+// remember them for the next one.
 const BEHAVIOR_SETTINGS = [
-  ['showHighlight', 'Pairwise alignment as green highlight'],
+  ['showHighlight', 'Highlight aligned residues'],
   ['zoomToBaseLevel', 'Zoom to base level on click'],
 ] as const
 
@@ -300,6 +339,16 @@ function stateModelFactory() {
         }
       },
     }))
+    .views(self => ({
+      /**
+       * #getter
+       * Whether the track lanes are drawn compact, read from their height
+       * because a drag on the resize handle overrides `compactTracks`.
+       */
+      get tracksCompact() {
+        return trackHeightOf(self) < NORMAL_TRACK_HEIGHT
+      },
+    }))
     .actions(self => ({
       /**
        * #action
@@ -307,7 +356,7 @@ function stateModelFactory() {
        * persists: a spec's value is not the reader's preference.
        */
       toggleSetting(key: PersistedSetting) {
-        const value = !self[key]
+        const value = key === 'compactTracks' ? !self.tracksCompact : !self[key]
         self[key] = value
         if (key === 'compactTracks') {
           self.trackHeight = undefined
@@ -461,28 +510,24 @@ function stateModelFactory() {
        * #getter
        * What the header's Tune menu offers: the layout choices, remembered for
        * views opened later. The view menu carries actions instead, so a reader
-       * looking for a toggle has one place to look.
+       * looking for a toggle has one place to look. A toggle is disabled while
+       * a setting it requires is off, when it would change nothing on screen.
        */
       get displayToggles() {
-        return (
-          [
-            ['showAlignment', 'Show alignment'],
-            ['showProteinTracks', 'Show feature tracks'],
-            ['showAllFeatureTracks', 'Show all feature tracks'],
-            ['compactTracks', 'Compact tracks'],
-            [
-              'autoScrollAlignment',
-              'Auto-scroll alignment to hovered position',
-            ],
-            ['showControls', 'Show Mol* controls'],
-          ] as const
-        ).map(([key, label]) => ({
-          label,
-          checked: self[key],
-          toggle: () => {
-            self.toggleSetting(key)
-          },
-        }))
+        return DISPLAY_SETTINGS.map(({ key, label, requires = [] }) => {
+          const disabled = requires.some(required => !self[required])
+          return {
+            key,
+            label,
+            checked: key === 'compactTracks' ? self.tracksCompact : self[key],
+            disabled,
+            toggle: () => {
+              if (!disabled) {
+                self.toggleSetting(key)
+              }
+            },
+          }
+        })
       },
       /**
        * #getter
@@ -501,6 +546,19 @@ function stateModelFactory() {
       },
     }))
     .views(self => ({
+      /**
+       * #method
+       * Whether a structure's header row carries the mapped-chain picker. With
+       * the alignment panel hidden every row does, since no row is the open
+       * one and the picker is the way out of a wrongly mapped chain.
+       */
+      offersChainPicker(structure: JBrowsePluginProteinStructureModel) {
+        return (
+          !self.showAlignment ||
+          self.alignmentStructure === structure ||
+          !structure.userProvidedTranscriptSequence
+        )
+      },
       menuItems() {
         return [
           {

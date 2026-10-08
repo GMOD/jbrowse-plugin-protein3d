@@ -3,11 +3,11 @@ import { readStoredJson, writeStorage } from '../storage'
 const SETTINGS_KEY = 'proteinView-settings'
 
 /**
- * What a reader's last choice should still be true of the next view: how the
- * panel is laid out. Deliberately not what a click or a highlight does —
- * `zoomToBaseLevel` and `showHighlight` change behavior, and carrying a
- * behavior from one session's view into another's leaves a reader wondering
- * why the same click does something different.
+ * The settings a Tune-menu toggle remembers for views opened later; every
+ * other setting stays with its view. `zoomToBaseLevel` and `showHighlight` are
+ * left out on purpose: they change what a click or a highlight does, and
+ * carrying that from one session's view into another's leaves a reader
+ * wondering why the same click does something different.
  */
 export const PERSISTED_SETTINGS = [
   'showAlignment',
