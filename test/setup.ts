@@ -319,10 +319,21 @@ export async function cleanupJBrowse(): Promise<void> {
   }
 }
 
+// EBI's proteins API answers a `HeadlessChrome` user agent with no response at
+// all, which the page reports as a CORS failure of the antigen and variation
+// tracks (measured 2026-10-08: the same fetch returns 200 under this one). Set
+// at launch rather than on the page, so the RPC worker's fetches carry it too.
+const USER_AGENT =
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+
 export async function launchBrowser(headless = true): Promise<Browser> {
   return launch({
     headless,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    args: [
+      '--no-sandbox',
+      '--disable-setuid-sandbox',
+      `--user-agent=${USER_AGENT}`,
+    ],
   })
 }
 

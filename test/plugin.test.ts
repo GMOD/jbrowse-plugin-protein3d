@@ -272,16 +272,17 @@ describe('Protein3d Plugin E2E', () => {
       expect.arrayContaining(['Chain', 'Antigen', 'Variation']),
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
-    expect(pageComplaintsSince()).toEqual([])
 
-    // the legs after this one find the gene track by its container
-    await page.evaluate(() => {
-      const session = window.JBrowseSession!
-      for (const view of session.views!.filter(v => v.proteinLinkage)) {
-        session.removeView!(view)
-      }
-    })
-  }, 240_000)
+    // Seventeen tracks are still fetching and drawing when the last one
+    // opens, and whatever they say belongs to this leg.
+    await page.waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
+    expect(pageComplaintsSince()).toEqual([])
+    // The view stays open. Closing it, even idle, makes the host warn once per
+    // display that it "is no longer part of a state tree" (jbrowse nightly
+    // 5.0.0-beta.11, 2026-10-08): the track's config now dies with it, and
+    // something in the display still reads `configuration` afterwards. The
+    // gene track the later legs look for is the first on the page either way.
+  }, 300_000)
 
   // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
   // the first row preselected, launched against the RCSB file. NRAS has

@@ -202,7 +202,20 @@ keep:
   rejects and resolves undefined; the launch reports only a rejection, by track
   name, and keeps opening the rest.
 
-The e2e leg asserts the view's tracks and an empty console.
+The e2e leg asserts the view's tracks and an empty console once they have drawn,
+and its first runs (2026-10-08) turned up two things that are not the plugin's:
+
+- **EBI's proteins API refuses a `HeadlessChrome` user agent** with no response
+  at all, which the page reports as a CORS failure of the antigen and variation
+  tracks. The same fetch returns 200 under an ordinary user agent, so the e2e
+  launches Chrome with one (`launchBrowser` in `test/setup.ts`). A probe that
+  opens those tracks headless needs the same.
+- **Closing the 1D view makes the host warn** once per display that it "is no
+  longer part of a state tree … Subpath: 'configuration'", on the nightly
+  (5.0.0-beta.11) and with the view idle. The leg leaves the view open. Whether
+  a view of session tracks warns the same way was not measured; an inline config
+  dying with its track is the likely difference, which would make it a host bug
+  in the ADR-084 path.
 
 ## An MSA reaches a structure through the genome, never by column
 
