@@ -94,16 +94,11 @@ const PdbSearch = observer(function PdbSearch({
   // The chosen entry's residues, which rank the isoforms and label the picker,
   // the same annotation the AlphaFold tab shows. Their failure costs the
   // ranking rather than the launch, which reads the structure file itself.
-  //
-  // While another entry's answer is in flight keepPreviousData still holds the
-  // last one, so isValidating withholds it rather than labelling these rows
-  // with the previous entry's chains.
   const {
-    sequences,
+    sequences: structureSequences,
     error: moleculesError,
     isValidating: isMoleculesValidating,
   } = usePdbEntryMolecules(selectedPdbId)
-  const structureSequences = isMoleculesValidating ? undefined : sequences
 
   const {
     transcripts,
@@ -128,7 +123,7 @@ const PdbSearch = observer(function PdbSearch({
   // Until the entry's chains arrive the ranking has no structure and orders
   // the isoforms by length, so a launch that takes the ranked default waits.
   // The right-clicked isoform needs no ranking and launches at once.
-  // An entry PDBe cannot describe stops holding the launch, retries included.
+  // An entry PDBe cannot describe stops holding the launch.
   const awaitsChains =
     isMoleculesValidating &&
     !moleculesError &&

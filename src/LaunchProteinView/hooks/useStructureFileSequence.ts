@@ -18,8 +18,7 @@ async function fetchSequences({ file, url }: { file?: File; url?: string }) {
 }
 
 // Extract protein sequences from a structure given either a local File or a
-// remote URL (exactly one is expected). Used directly for user-provided
-// structures and wrapped by useAlphaFoldData for AlphaFoldDB URLs.
+// remote URL (exactly one is expected).
 export default function useStructureFileSequence({
   file,
   url,
@@ -32,7 +31,7 @@ export default function useStructureFileSequence({
     : url
       ? (['structure-url', url] as const)
       : null
-  const { data, error, isLoading, isValidating } = useSWR<string[] | undefined>(
+  const { data, error, isLoading } = useSWR<string[] | undefined>(
     key,
     async () => {
       const seq = await fetchSequences({ file, url })
@@ -41,14 +40,7 @@ export default function useStructureFileSequence({
       }
       return seq
     },
-    {
-      ...STATIC_SWR_OPTIONS,
-      keepPreviousData: true,
-    },
+    STATIC_SWR_OPTIONS,
   )
-
-  // isValidating distinguishes "fetching for the current key" from the stale
-  // data keepPreviousData keeps around during a key change. Consumers comparing
-  // this sequence against another need it to avoid matching against stale data.
-  return { error, isLoading, isValidating, sequences: data }
+  return { error, isLoading, sequences: data }
 }
