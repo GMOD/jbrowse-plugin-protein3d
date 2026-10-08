@@ -993,6 +993,26 @@ test('focusResidues works on a structure opened without a transcript', async () 
   ])
 })
 
+// with no chain aligned the entity decision is still made, and an author
+// number used to wait for it until the timeout
+test('focusResidues resolves author numbers when no chain could be aligned', async () => {
+  const parent = TestParent.create({
+    structures: [{ url: 'x.cif', userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const [s] = parent.structures
+  s!.setStructureData({
+    entities: NUMBERED_FROM_94.map(e => ({ ...e, nucleicAcid: true })),
+  })
+  s!.setLoadedToMolstar(true)
+  expect(
+    await s!.focusResidues(
+      { residues: { start: 95, end: 95 } },
+      { timeout: 2000 },
+    ),
+  ).toEqual([{ start: 1, end: 2 }])
+  expect(s!.alignmentSkipped).toMatch(/no protein chain/)
+})
+
 test('a structure with no transcript switches chain without aligning', () => {
   const parent = TestParent.create({ structures: [{ url: 'complex.cif' }] })
   const [s] = parent.structures

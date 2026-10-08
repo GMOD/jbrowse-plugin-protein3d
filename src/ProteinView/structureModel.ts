@@ -1289,10 +1289,10 @@ const Structure = types
               } aa transcript`
             : 'This structure has no protein chain to align the transcript to',
         )
-        return
+      } else {
+        self.setMappedEntityId(entities[selection.index]?.entityId)
+        self.setAlignment(selection.alignment)
       }
-      self.setMappedEntityId(entities[selection.index]?.entityId)
-      self.setAlignment(selection.alignment)
       self.setEntityChosen()
     },
     /**
