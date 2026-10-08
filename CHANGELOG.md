@@ -1,3 +1,15 @@
+## [1.2.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.1.0...v1.2.0) (2026-10-08)
+
+### Other Changes
+
+- Bump deps ([cca26b6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cca26b6780ed3fbad8b9892e3d0ef0177e698114))
+- Resolve author residue numbers on a structure no chain could be aligned to ([5a16cb7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5a16cb7e27ab4dca31545348273942d80d046c6b))
+- Fix three launch-dialog selection bugs ([64becf9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/64becf916e5f3c1da3a9121989900b146338962e))
+- Add a one-click Open AlphaFold structure item to the gene context menu ([9da92f7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9da92f72b4b290308352bd359637e15aadd093d6))
+- Launch a protein view from a gene name alone ([08d9bf5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/08d9bf5a7063f90793a032d6a9e6de917a98b353))
+- Validate ids in the add-structure dialog and drop finished notes ([d83558a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d83558a61e24e9d4dc4b0526ec786d4485078cc1))
+- Keep a gene launch working when UniProt is not needed or not answering ([175d62f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/175d62fa6dea10c8acba59dc1d0ce4b98758c7b3))
+
 ## [1.1.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.0.1...v1.1.0) (2026-10-05)
 
 ### Other Changes
