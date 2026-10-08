@@ -25,6 +25,7 @@ import { execFileSync } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
 
 const WORKFLOW = 'Push'
+const WORKFLOW_FILE = 'push.yml'
 const POLL_MS = 15_000
 const WAIT_MS = Number(process.env.CI_WAIT_MINUTES ?? 45) * 60_000
 
@@ -40,15 +41,21 @@ function pushed(sha) {
   return !!git('branch', '-r', '--contains', sha)
 }
 
+// Asked of the one workflow: a commit that stays main's tip collects scheduled
+// runs of the others, and thirty of them push Push off the first page of the
+// repo-wide listing.
 function latestRun(sha) {
   const { workflow_runs } = JSON.parse(
     execFileSync(
       'gh',
-      ['api', `repos/:owner/:repo/actions/runs?head_sha=${sha}`],
+      [
+        'api',
+        `repos/:owner/:repo/actions/workflows/${WORKFLOW_FILE}/runs?head_sha=${sha}`,
+      ],
       { encoding: 'utf8' },
     ),
   )
-  return workflow_runs.find(r => r.name === WORKFLOW)
+  return workflow_runs[0]
 }
 
 function fail(problem) {
@@ -112,7 +119,7 @@ async function main() {
           'check the workflow still triggers on this branch',
       )
     }
-    if (waited > WAIT_MS) {
+    if (run && waited > WAIT_MS) {
       fail(
         `${WORKFLOW} is still ${run.status} after ${WAIT_MS / 60_000} minutes: ${run.html_url}`,
       )

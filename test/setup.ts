@@ -285,20 +285,23 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
 
 export async function stopServer(proc: ChildProcess): Promise<void> {
   return new Promise(resolve => {
-    if (proc.killed) {
+    // `killed` says a signal was sent, not that the process went away
+    const exited = () => proc.exitCode !== null || proc.signalCode !== null
+    if (exited()) {
       resolve()
       return
     }
-    proc.on('close', () => {
-      resolve()
-    })
-    proc.kill('SIGTERM')
-    setTimeout(() => {
-      if (!proc.killed) {
+    const escalate = setTimeout(() => {
+      if (!exited()) {
         proc.kill('SIGKILL')
       }
       resolve()
     }, 5000)
+    proc.on('close', () => {
+      clearTimeout(escalate)
+      resolve()
+    })
+    proc.kill('SIGTERM')
   })
 }
 

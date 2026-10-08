@@ -21,6 +21,7 @@ import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import {
   DEFAULT_DATABASES,
+  cleanFoldseekSequence,
   foldseekLengthProblem,
 } from '../services/foldseekApi'
 
@@ -120,7 +121,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
   const isBusy = isLoading || isPredicting
   const lengthProblem = foldseekLengthProblem(sequence)
   const canSearch =
-    sequence.trim().length > 0 &&
+    cleanFoldseekSequence(sequence).length > 0 &&
     !lengthProblem &&
     selectedDatabases.length > 0 &&
     !isBusy

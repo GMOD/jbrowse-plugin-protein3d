@@ -150,9 +150,11 @@ const PdbSearch = observer(function PdbSearch({
   // A typed PDB ID exists to get around a lookup that is slow, failing or
   // wrong, so only the isoforms it is ranked against hold its launch back
   const typedIdOverrides = isPdbId(debouncedTypedPdbId)
-  const launchWaiting = typedIdOverrides
-    ? isoformStatuses.some(Boolean)
-    : isLoading
+  // A typed id that is no PDB id selects nothing, and a launch would open
+  // whichever entry the table had selected instead
+  const launchWaiting =
+    typedPdbIdInvalid ||
+    (typedIdOverrides ? isoformStatuses.some(Boolean) : isLoading)
   const launchError = typedIdOverrides
     ? launchWaiting
       ? undefined

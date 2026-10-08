@@ -15,10 +15,15 @@ import path from 'node:path'
 
 const DIR = path.join(process.cwd(), '.test-jbrowse-nightly')
 const MAX_AGE_DAYS = 7
-const MAX_AGE_MS = MAX_AGE_DAYS * 24 * 60 * 60 * 1000
+const STAMP = path.join(DIR, '.fetched')
 
-function ageInDays(dir) {
-  return (Date.now() - fs.statSync(dir).mtimeMs) / (24 * 60 * 60 * 1000)
+// Not the directory's own mtime: the e2e recreates plugin/ inside it on every
+// run, which kept a copy of any age looking minutes old. A copy fetched before
+// the stamp existed is dated by index.html, which carries the build's time.
+function ageInDays() {
+  const dated =
+    [STAMP, path.join(DIR, 'index.html')].find(f => fs.existsSync(f)) ?? DIR
+  return (Date.now() - fs.statSync(dated).mtimeMs) / (24 * 60 * 60 * 1000)
 }
 
 const exists = fs.existsSync(DIR)
@@ -27,17 +32,17 @@ if (exists && process.env.CI) {
   process.exit(0)
 }
 
-const stale = exists && Date.now() - fs.statSync(DIR).mtimeMs > MAX_AGE_MS
+const stale = exists && ageInDays() > MAX_AGE_DAYS
 if (exists && !stale) {
   console.log(
-    `.test-jbrowse-nightly is ${ageInDays(DIR).toFixed(1)} days old, keeping it`,
+    `.test-jbrowse-nightly is ${ageInDays().toFixed(1)} days old, keeping it`,
   )
   process.exit(0)
 }
 
 console.log(
   exists
-    ? `.test-jbrowse-nightly is ${ageInDays(DIR).toFixed(1)} days old (>${MAX_AGE_DAYS}), refreshing`
+    ? `.test-jbrowse-nightly is ${ageInDays().toFixed(1)} days old (>${MAX_AGE_DAYS}), refreshing`
     : 'creating .test-jbrowse-nightly',
 )
 
@@ -67,4 +72,5 @@ try {
 }
 fs.rmSync(DIR, { recursive: true, force: true })
 fs.renameSync(TMP, DIR)
+fs.writeFileSync(STAMP, '')
 console.log('.test-jbrowse-nightly refreshed')
