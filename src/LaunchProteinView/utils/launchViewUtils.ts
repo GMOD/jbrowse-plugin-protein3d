@@ -99,12 +99,17 @@ async function launch1DProteinView({
   uniprotId: string
   confidenceUrl?: string
 }) {
+  // UniProt publishes features for the entry, not for `P04637-7`, whose GFF is
+  // a header alone. The view aligns the transcript to the entry's sequence, so
+  // an isoform's residues still land on their own codons; its pLDDT is in the
+  // isoform's numbering and has no place on the entry.
+  const entry = uniprotId.replace(/-\d+$/, '')
   await launchProteinAnnotationView({
     session,
     selectedTranscript,
     feature,
-    uniprotId,
-    confidenceUrl,
+    uniprotId: entry,
+    confidenceUrl: entry === uniprotId ? confidenceUrl : undefined,
     connectedViewId: view.id,
     connectedAssemblyName: view.assemblyNames[0],
   })

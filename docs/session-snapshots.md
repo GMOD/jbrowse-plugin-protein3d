@@ -101,6 +101,13 @@ from, the transcript `feature`, and the `uniprotId`. The plugin adds the
 property to every LinearGenomeView, so a hand-authored snapshot can set it and
 the 1D↔genome hover highlight works after a reload or from a shared session.
 
+The snapshot carries no alignment. Each time the view opens, the plugin
+translates the transcript and aligns it to the sequence of the UniProt entry the
+view shows, so an isoform's residues land on their own codons: the Δ133 isoform
+of p53 maps 132 residues into P04637. A residue with no counterpart on the other
+side lights nothing, and an entry too dissimilar to the transcript is not linked
+at all.
+
 ## UniProt feature tracks
 
 A snapshot names no accession or numbering for the UniProt tracks; the plugin

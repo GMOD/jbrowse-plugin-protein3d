@@ -155,6 +155,31 @@ Note this does **not** mean the two names should be made equal.
 and both of their consumers resolve aliases; the e2e asserts coordinates rather
 than refName equality for that reason.
 
+## A 1D protein view's residue is not the transcript's
+
+The 1D view shows a UniProt entry; the transcript it was launched from may be
+another isoform. Until 2026-10-08 both hover bridges used one position for both:
+on TP53's Δ133 isoform (ENST00000504937, the entry from residue 133) the R248
+codon lit serine 116, and 16 of 261 residues landed right. The right-clicked
+isoform is the dialog's default, so no further choice was needed to hit it, and
+a Foldseek hit linked the transcript to another protein altogether.
+
+`withProteinLinkage` aligns the two in `afterAttach` and keeps the alignment
+volatile (`resolveLinkageAlignment`, over the host in `sessionLinkageHost`).
+Nothing is saved: the temporary assembly fetches the entry afresh on every load,
+so a stored alignment could describe a sequence the view no longer shows.
+Unaligned, pending or failed, both directions light nothing. Keep
+Smith-Waterman: a global alignment stretches p53β's ten private C-terminal
+residues across to the entry's end.
+
+The 1D launch strips an isoform suffix (`P04637-7`), whose UniProt GFF is a
+header alone, and opens the entry. A hover names no view, so every 1D view of an
+entry launched from the genome view answers, with shared codons merged.
+
+No e2e leg opens a 1D view. `afterAttach` composing with the genome view's own,
+the sequence fetch from the temporary assembly and the worker path were read
+from source on 2026-10-08, not run on a host.
+
 ## An MSA reaches a structure through the genome, never by column
 
 msaview and this plugin share one coordinate: the genome. A structure hover

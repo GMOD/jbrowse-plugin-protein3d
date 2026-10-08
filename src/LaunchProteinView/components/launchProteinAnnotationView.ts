@@ -21,7 +21,7 @@ export async function launchProteinAnnotationView({
   session: Pick<
     SessionWithAddSessionTrack,
     'addView' | 'addTemporaryAssembly' | 'addSessionTrackConf'
-  >
+  > & { assemblyManager: { get: (name: string) => unknown } }
   feature: Feature
   selectedTranscript?: Feature
   uniprotId: string
@@ -29,16 +29,20 @@ export async function launchProteinAnnotationView({
   connectedViewId?: string
   connectedAssemblyName?: string
 }) {
-  // Fetched before anything is added: a failed download would otherwise leave
-  // a temporary assembly behind with no view on it
-  const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
-  setupProteinAssembly(session, uniprotId)
-  addAllProteinTracks({
-    session,
-    uniprotId,
-    featureTypes,
-    confidenceUrl,
-  })
+  // A second view of an entry, another isoform's say, shares the first's
+  // assembly and tracks; adding them again makes the host warn
+  if (!session.assemblyManager.get(uniprotId)) {
+    // Fetched before anything is added: a failed download would otherwise
+    // leave a temporary assembly behind with no view on it
+    const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
+    setupProteinAssembly(session, uniprotId)
+    addAllProteinTracks({
+      session,
+      uniprotId,
+      featureTypes,
+      confidenceUrl,
+    })
+  }
 
   // The linkage drives the 1D<->genome hover highlight. It is a property of
   // the view (see Protein1DLinkage) so it is saved with the session.
