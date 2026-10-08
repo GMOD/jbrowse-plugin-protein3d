@@ -144,10 +144,6 @@
               "name": "jexl:get(feature,'gene_name')"
             }
           }
-        },
-        {
-          "type": "ChordVariantDisplay",
-          "displayId": "clinvar_ncbi_hg38-ChordVariantDisplay"
         }
       ]
     }

@@ -33,7 +33,7 @@
     "build:bundle": "NODE_ENV=production node esbuild.mjs",
     "check-molstar-css": "node scripts/fetch-molstar-css.mjs --check",
     "lint": "eslint src test --report-unused-disable-directives --max-warnings 0 && pnpm check-molstar-css",
-    "typecheck:test": "tsc --noEmit -p tsconfig.test.json",
+    "typecheck:test": "tsc --noEmit -p tsconfig.test.json && tsc --noEmit -p harness/tsconfig.json",
     "pretest": "node scripts/ensure-nightly.mjs",
     "prepack": "pnpm build",
     "check-ci": "node scripts/require-green-ci.mjs",

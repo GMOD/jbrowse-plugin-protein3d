@@ -79,8 +79,8 @@ Working on the plugin:
 
 - [DEVELOPERS.md](DEVELOPERS.md): running it locally and publishing.
 - [Testing](docs/testing.md): the unit, e2e, documentation and demo checks.
-- [Host compatibility](docs/host-compatibility.md): keeping the published bundle
-  working on JBrowse releases years old.
+- [Host compatibility](docs/host-compatibility.md): which JBrowse hosts load the
+  published bundle, and the gate that boots it on one.
 - [Live checks](docs/live-checks.md): serving a local build to a session on
   jbrowse.org.
 

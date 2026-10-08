@@ -172,11 +172,16 @@ async function interceptConfigAndBundle(page) {
     const file =
       !dir || !rel.endsWith('.js')
         ? undefined
-        : rel.includes('/') && fs.existsSync(local)
+        : rel.includes('/')
           ? local
           : values.bundle
     if (file === undefined) {
       client.send('Fetch.continueRequest', { requestId }).catch(() => {})
+    } else if (!fs.existsSync(file)) {
+      // answering a missing chunk with the entry reads as an incompatibility
+      client
+        .send('Fetch.failRequest', { requestId, errorReason: 'Failed' })
+        .catch(() => {})
     } else if (
       (await fulfill(
         requestId,

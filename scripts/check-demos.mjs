@@ -66,6 +66,10 @@ function parseDemos(markdown) {
   return demos
 }
 
+if (values.bundle && !fs.existsSync(values.bundle)) {
+  throw new Error(`no bundle at ${values.bundle}`)
+}
+
 const CANDIDATE_ESM_URL =
   'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/candidate/dist/jbrowse-plugin-protein3d.esm.js'
 
@@ -137,11 +141,15 @@ async function serveCandidateBundle(page) {
       const local = path.join(dir, rel)
       const file = !rel.endsWith('.js')
         ? undefined
-        : rel.includes('/') && fs.existsSync(local)
+        : rel.includes('/')
           ? local
           : values.bundle
       if (file === undefined) {
         client.send('Fetch.continueRequest', { requestId }).catch(() => {})
+      } else if (!fs.existsSync(file)) {
+        client
+          .send('Fetch.failRequest', { requestId, errorReason: 'Failed' })
+          .catch(() => {})
       } else {
         const fulfilled = await client
           .send('Fetch.fulfillRequest', {

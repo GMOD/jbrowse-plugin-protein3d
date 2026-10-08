@@ -2,7 +2,7 @@
 // real browser, so the docs can't silently rot (e.g. an AlphaFold URL version
 // bump, or a regression in the connectedView launch wiring).
 //
-// It loads three specs through the local dev app:
+// It loads four specs through the local dev app:
 //   1. standalone ProteinView (structure streams + sequence extracted)
 //   2. connected ProteinView + LinearGenomeView via the `connectedView` param
 //      (genome<->protein mapping built, structure aligned, genome tracks render)
@@ -16,7 +16,7 @@
 //   pnpm test:docs                 # auto-starts `pnpm start` if :9000 is down
 //   pnpm start & pnpm test:docs    # reuse an already-running dev server
 //
-// Exits non-zero on the first failed assertion. Writes a screenshot of the
+// Exits non-zero if any assertion failed. Writes a screenshot of the
 // connected view to test-screenshots/docs-connected.png on success.
 
 import puppeteer from 'puppeteer'

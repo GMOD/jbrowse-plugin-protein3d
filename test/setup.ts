@@ -106,7 +106,8 @@ declare global {
 
 /**
  * Set up a local JBrowse instance for testing.
- * Assumes `jbrowse create .test-jbrowse` was already run by the pretest script.
+ * Assumes `jbrowse create .test-jbrowse-nightly` was already run by the pretest
+ * script.
  */
 export function setupJBrowse() {
   if (!fs.existsSync(TEST_JBROWSE_DIR)) {
@@ -139,7 +140,6 @@ export function setupJBrowse() {
     }
   }
 
-  // Copy the distconfig.json to JBrowse directory as config.json
   const testConfig = createTestConfig()
   fs.writeFileSync(
     path.join(TEST_JBROWSE_DIR, 'config.json'),
