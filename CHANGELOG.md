@@ -1,3 +1,15 @@
+## [1.2.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.2.0...v1.2.1) (2026-10-08)
+
+### Documentation
+
+- Gene-name demos on the mouse and yeast hubs ([77640bf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/77640bfad9cd56b1b203a6b20990f5b83913d220))
+
+### Other Changes
+
+- Read the protein's UniProt and RefSeq accessions off the CDS record ([c3503e4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c3503e4058edec2bd951721024304223ea22b73f))
+- Bump deps ([9f6761a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9f6761a99dfe127325187672d6aa94c91864876e))
+- Bump p2s_mapper to 1.2.1 and add bacterial, fungal and viral demos ([2c51104](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2c511045ad5f21c90f0c4035677b2605b8dd275f))
+
 ## [1.2.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.1.0...v1.2.0) (2026-10-08)
 
 ### Other Changes
