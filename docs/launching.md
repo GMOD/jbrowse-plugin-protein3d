@@ -9,7 +9,7 @@ the view exists. To restore a view exactly as it was saved instead, see
 [session snapshots](session-snapshots.md).
 
 [Launch parameters](launch-parameters.md) lists every argument, the precedence
-between `url`, `uniprotId` and `pdbId`, and the `feature` shape.
+between `data`, `url`, `uniprotId` and `pdbId`, and the `feature` shape.
 
 ## A structure on its own
 
@@ -158,13 +158,16 @@ details.
 
 `structures` opens one view holding several structures, superposed with TM-align
 and each mapped to the same transcript — what the view's **Add structure...**
-dialog builds by hand. Each entry takes `url`, `uniprotId` or `pdbId`, and may
-carry its own `initialTranscriptResidues`, `initialResidues` or
-`initialSelection`, a `mappedEntityId`, and a `feature` and
-`userProvidedTranscriptSequence` of its own where the launch-wide ones do not
-apply. The top-level `url`/`uniprotId`/`pdbId` is the one-structure shorthand
-for it. [Residue numbering](residue-numbering.md) covers how a residue number in
-a spec becomes a position in the file.
+dialog builds by hand. Each entry takes `url`, `data`, `uniprotId` or `pdbId`,
+and may carry its own `initialTranscriptResidues`, `initialResidues` or
+`initialSelection`, a `mappedEntityId`, a `pairwiseAlignment`, `hidden`, and a
+`feature` and `userProvidedTranscriptSequence` of its own where the launch-wide
+ones do not apply. Those same keys written on the launch are the one-structure
+shorthand; beside `structures` a source or a selection written there applies to
+no structure, and the launch says so in a warning and opens the rest.
+[Launch parameters](launch-parameters.md#structures) lists what the launch
+reports, and [residue numbering](residue-numbering.md) covers how a residue
+number in a spec becomes a position in the file.
 
 ```
 https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
