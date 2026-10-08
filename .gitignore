@@ -22,4 +22,6 @@ host-compat.json
 test-screenshots/docs-connected.png
 test-screenshots/docs-short.png
 test-screenshots/docs-pdb-short.png
+# reference screenshots are committed for nightly only
+test-screenshots/v*/
 test-screenshots/failed/
