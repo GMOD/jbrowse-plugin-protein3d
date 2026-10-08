@@ -37,6 +37,7 @@ function FeatureTooltipContent({
       {differs ? (
         <div>
           Structure residue: {first}-{last}
+          {layout.clipped ? ' (the structure lacks the rest)' : ''}
         </div>
       ) : null}
       {feature.description ? <div>{feature.description}</div> : null}

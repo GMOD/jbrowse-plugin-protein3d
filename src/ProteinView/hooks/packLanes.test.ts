@@ -17,6 +17,7 @@ function layout(alignmentStart: number, alignmentEnd: number): FeatureLayout {
     structureEnd: alignmentEnd + 1,
     alignmentStart,
     alignmentEnd,
+    clipped: false,
     lane: -1,
   }
 }

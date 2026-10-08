@@ -16,6 +16,8 @@ export interface FeatureLayout {
   /** inclusive alignment columns */
   alignmentStart: number
   alignmentEnd: number
+  /** the structure lacks some of the feature's residues */
+  clipped: boolean
   lane: number
 }
 
@@ -25,6 +27,10 @@ export interface FeatureGroup {
   laneCount: number
 }
 
+// A bond's two positions are its whole meaning, so one residue of a pair says
+// nothing true about the structure.
+const ENDPOINT_PAIR_TYPES = new Set(['Disulfide bond', 'Cross-link'])
+
 /**
  * Places a UniProt feature: its 1-based inclusive UniProt range becomes a
  * 0-based half-open structure range (identity for AlphaFold, SIFTS-offset for
@@ -32,30 +38,46 @@ export interface FeatureGroup {
  * UniProt->structure coordinate conversion in the tracks; every consumer reads
  * `structureStart`/`structureEnd` off the layout.
  *
- * Returns undefined when either endpoint falls outside the structure or has no
- * alignment column, so an unmappable feature is dropped rather than drawn at a
- * misleading position.
+ * A feature reaching past the residues the structure has is clipped to the
+ * ones it does have, and says so (`clipped`): a crystallized fragment used to
+ * lose every region straddling the construct's ends. Returns undefined when no
+ * residue of the feature has an alignment column.
  */
 export function layoutFeature(
   feature: UniProtFeature,
   structurePositionToAlignmentMap: Record<number, number>,
   mapUniProtPosition: MapUniProtPosition,
 ): FeatureLayout | undefined {
-  const structureStart = mapUniProtPosition(feature.start)
-  const structureLast = mapUniProtPosition(feature.end)
-  if (structureStart === undefined || structureLast === undefined) {
-    return undefined
+  const placed = (uniprotPos: number) => {
+    const structurePos = mapUniProtPosition(uniprotPos)
+    const column =
+      structurePos === undefined
+        ? undefined
+        : structurePositionToAlignmentMap[structurePos]
+    return structurePos === undefined || column === undefined
+      ? undefined
+      : { structurePos, column }
   }
-  const alignmentStart = structurePositionToAlignmentMap[structureStart]
-  const alignmentEnd = structurePositionToAlignmentMap[structureLast]
-  return alignmentStart === undefined || alignmentEnd === undefined
+  let first = feature.start
+  let start = placed(first)
+  while (!start && first < feature.end) {
+    start = placed(++first)
+  }
+  let last = feature.end
+  let end = placed(last)
+  while (!end && last > first) {
+    end = placed(--last)
+  }
+  const clipped = first !== feature.start || last !== feature.end
+  return !start || !end || (clipped && ENDPOINT_PAIR_TYPES.has(feature.type))
     ? undefined
     : {
         feature,
-        structureStart,
-        structureEnd: structureLast + 1,
-        alignmentStart,
-        alignmentEnd,
+        structureStart: start.structurePos,
+        structureEnd: end.structurePos + 1,
+        alignmentStart: start.column,
+        alignmentEnd: end.column,
+        clipped,
         lane: 0,
       }
 }

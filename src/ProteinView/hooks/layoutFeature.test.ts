@@ -21,6 +21,11 @@ const ungapped = Object.fromEntries(
   Array.from({ length: 219 }, (_, i) => [i, i]),
 )
 
+// 1TUP: UniProt 94-312 is SEQRES 1-219, i.e. structure positions 0-218
+const map1tup = makeUniProtPositionMap([
+  { entityId: '3', unpStart: 94, unpEnd: 312, structStart: 0, structEnd: 218 },
+])
+
 test('alphafold: uniprot positions are structure positions', () => {
   const layout = layoutFeature(
     feature(102, 292),
@@ -32,16 +37,6 @@ test('alphafold: uniprot positions are structure positions', () => {
 })
 
 test('pdb: a sifts offset shifts the feature onto the modeled residues', () => {
-  // 1TUP: UniProt 94-312 is SEQRES 1-219, i.e. structure positions 0-218
-  const map1tup = makeUniProtPositionMap([
-    {
-      entityId: '3',
-      unpStart: 94,
-      unpEnd: 312,
-      structStart: 0,
-      structEnd: 218,
-    },
-  ])
   // p53 DNA-binding domain, UniProt 102-292
   const layout = layoutFeature(feature(102, 292), ungapped, map1tup)
   expect(layout?.structureStart).toBe(8)
@@ -50,35 +45,38 @@ test('pdb: a sifts offset shifts the feature onto the modeled residues', () => {
   expect(layout?.alignmentEnd).toBe(198)
 })
 
-test('pdb: features outside the modeled region are dropped, not misplaced', () => {
-  const map1tup = makeUniProtPositionMap([
-    {
-      entityId: '3',
-      unpStart: 94,
-      unpEnd: 312,
-      structStart: 0,
-      structEnd: 218,
-    },
-  ])
+test('pdb: a feature absent from the modeled region is dropped', () => {
   // p53's transactivation domain (UniProt 1-42) is absent from 1TUP
   expect(layoutFeature(feature(1, 42), ungapped, map1tup)).toBeUndefined()
-  // a feature straddling the end of the modeled region
-  expect(layoutFeature(feature(300, 350), ungapped, map1tup)).toBeUndefined()
 })
 
-test('drops features whose structure position has no alignment column', () => {
-  // structure position 8 is present, 198 is not (short alignment)
-  const shortAlignment = { 8: 8 }
-  const map1tup = makeUniProtPositionMap([
-    {
-      entityId: '3',
-      unpStart: 94,
-      unpEnd: 312,
-      structStart: 0,
-      structEnd: 218,
-    },
-  ])
-  expect(
-    layoutFeature(feature(102, 292), shortAlignment, map1tup),
-  ).toBeUndefined()
+test('pdb: a feature straddling the construct is clipped to what is there', () => {
+  const tail = layoutFeature(feature(300, 350), ungapped, map1tup)
+  expect(tail?.structureStart).toBe(206)
+  expect(tail?.structureEnd).toBe(219)
+  expect(tail?.clipped).toBe(true)
+
+  const whole = layoutFeature(feature(1, 393), ungapped, map1tup)
+  expect(whole?.alignmentStart).toBe(0)
+  expect(whole?.alignmentEnd).toBe(218)
+
+  expect(layoutFeature(feature(102, 292), ungapped, map1tup)?.clipped).toBe(
+    false,
+  )
+})
+
+test('a bond with one residue missing is dropped, not drawn as half a bond', () => {
+  const bond = { ...feature(90, 100), type: 'Disulfide bond' }
+  expect(layoutFeature(bond, ungapped, map1tup)).toBeUndefined()
+})
+
+test('clips to the residues that have an alignment column', () => {
+  // a local alignment that kept structure position 8 alone
+  const layout = layoutFeature(feature(102, 292), { 8: 8 }, map1tup)
+  expect(layout?.alignmentStart).toBe(8)
+  expect(layout?.alignmentEnd).toBe(8)
+  expect(layout?.structureEnd).toBe(9)
+  expect(layout?.clipped).toBe(true)
+
+  expect(layoutFeature(feature(102, 292), {}, map1tup)).toBeUndefined()
 })
