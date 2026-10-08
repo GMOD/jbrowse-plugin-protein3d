@@ -162,14 +162,15 @@ async function interceptConfigAndBundle(page) {
       return
     }
     const rel = pathname.split('/dist/').slice(1).join('/dist/')
-    const local = path.join(dir, rel)
+    const local = path.join(dir ?? '', rel)
     // the published entry name and the local one can differ (a watch build
     // writes out.js), so the entry request maps to --bundle; the rest by path
-    const file = !rel.endsWith('.js')
-      ? undefined
-      : rel.includes('/') && fs.existsSync(local)
-        ? local
-        : values.bundle
+    const file =
+      !dir || !rel.endsWith('.js')
+        ? undefined
+        : rel.includes('/') && fs.existsSync(local)
+          ? local
+          : values.bundle
     if (file === undefined) {
       client.send('Fetch.continueRequest', { requestId }).catch(() => {})
     } else {
