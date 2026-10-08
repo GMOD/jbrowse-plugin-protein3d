@@ -11,6 +11,15 @@ depends on the kind of structure.
 The filename answers both. The URL carries the accession, and the model _is_ the
 UniProt sequence, so UniProt position `p` is structure position `p - 1`.
 
+That holds for the entry's own model. AlphaFold DB also folds isoforms
+(`AF-P04637-7-F1` is p53's Δ133 isoform), and the view opens one when the
+transcript translates to exactly that sequence. UniProt publishes features for
+the entry only, numbered for the canonical sequence, so on an isoform model the
+view shows no UniProt tracks and a line saying why. Drawn one to one they sat on
+the wrong residues: R248 of the entry on a histidine 132 residues from the real
+one. The genome mapping and the pLDDT track are the model's own and are
+unaffected.
+
 ## PDB entries
 
 The URL answers neither. It has no accession, and the deposited construct is

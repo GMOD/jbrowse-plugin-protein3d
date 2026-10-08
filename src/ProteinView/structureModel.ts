@@ -607,6 +607,9 @@ const Structure = types
       return structureUniProt({
         uniprotId: self.uniprotId,
         pdbId: this.pdbId,
+        modelAccession: self.url
+          ? getUniprotIdFromAlphaFoldTarget(self.url)
+          : undefined,
         uniProtMappings: self.uniProtMappings,
         uniProtMappingsError: self.uniProtMappingsError,
         mappedEntity: this.mappedEntity,
@@ -1713,7 +1716,8 @@ const Structure = types
 // exactly when it matters: asked for P04637, the loader may open the isoform
 // file AF-P04637-2-F1, and reading the accession back off that url would
 // save P04637-2 — which UniProt's GFF endpoint does not serve, so a reopened
-// session lost its feature tracks and its entry link.
+// session lost its entry link. The entry's features are numbered for the
+// entry, not the isoform file, so `structureUniProt` withholds them.
 //
 // A snapshot carrying an alignment but no alignmentImported predates the
 // flag or was written by hand; either way the alignment is used as given.

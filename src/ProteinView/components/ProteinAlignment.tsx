@@ -118,12 +118,17 @@ const ProteinAlignment = observer(function ProteinAlignment({
     mapUniProtPosition,
     isLoading: uniprotLoading,
     error: uniprotError,
+    isoformAccession,
   } = model.uniProtEntry
   const {
     groups,
     isLoading: trackLoading,
     error: trackError,
-  } = useProteinFeatureTrackData(model, uniprotId, mapUniProtPosition)
+  } = useProteinFeatureTrackData(
+    model,
+    isoformAccession ? undefined : uniprotId,
+    mapUniProtPosition,
+  )
   const featureLoading = uniprotLoading || trackLoading
   // Two different failures reach one row, and "Error" alone leaves the reader
   // guessing whether the structure has no UniProt entry or the entry's
@@ -197,7 +202,12 @@ const ProteinAlignment = observer(function ProteinAlignment({
     selectsResidue: true,
   })
   const featureStatus =
-    featureErrorMessage ?? (featureLoading ? 'Loading UniProt features...' : '')
+    featureErrorMessage ??
+    (isoformAccession
+      ? `UniProt features are numbered for ${uniprotId}; this model is isoform ${isoformAccession}`
+      : featureLoading
+        ? 'Loading UniProt features...'
+        : '')
 
   // Two rows rather than the pairwise `|`/`:` consensus between them: whether
   // the residues agree is shaded onto the structure's own letters, so it costs

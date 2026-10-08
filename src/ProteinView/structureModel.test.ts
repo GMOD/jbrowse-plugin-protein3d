@@ -157,6 +157,11 @@ test('a saved session keeps the accession that was asked for, not the file its m
   expect(reopened.structures[0]!.url).toBe(
     'https://alphafold.ebi.ac.uk/files/AF-P04637-2-F1-model_v6.cif',
   )
+  // the entry's features are not numbered for the isoform file
+  const entry = reopened.structures[0]!.uniProtEntry
+  expect(entry.uniprotId).toBe('P04637')
+  expect(entry.isoformAccession).toBe('P04637-2')
+  expect(entry.mapUniProtPosition(248)).toBeUndefined()
 })
 
 // A grey canvas for the seconds a fetch, a parse, an alignment and a SIFTS

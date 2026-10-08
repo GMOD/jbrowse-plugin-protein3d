@@ -19,7 +19,11 @@ export interface StructureUniProt {
   mapUniProtPosition: MapUniProtPosition
   isLoading: boolean
   error: unknown
+  /** the AlphaFold isoform model opened, whose numbering is not the entry's */
+  isoformAccession?: string
 }
+
+const ISOFORM_SUFFIX = /-\d+$/
 
 /**
  * Which UniProt entry a loaded structure represents, and how UniProt positions
@@ -36,12 +40,15 @@ export interface StructureUniProt {
 export function structureUniProt({
   uniprotId: alphaFoldUniprotId,
   pdbId,
+  modelAccession,
   uniProtMappings,
   uniProtMappingsError,
   mappedEntity,
 }: {
   uniprotId: string | undefined
   pdbId: string | undefined
+  /** the accession the opened AlphaFold file names */
+  modelAccession?: string
   uniProtMappings: UniProtStructureMapping[] | undefined
   uniProtMappingsError: unknown
   mappedEntity: SegmentEntity | undefined
@@ -49,12 +56,23 @@ export function structureUniProt({
   // A PDB entry named beside an accession is still a construct with its own
   // numbering, so it goes through SIFTS like any other
   if (alphaFoldUniprotId && !pdbId) {
+    // An isoform model (AF-P04637-7) is numbered for the isoform, and UniProt
+    // publishes features for the entry alone. Mapped one to one, 1,080 of
+    // P04637's features sat on the wrong residue of that model, R248 on a
+    // histidine 132 away. Until the two sequences are aligned, an isoform
+    // model shows none of them.
+    const isoformAccession = [modelAccession, alphaFoldUniprotId].find(
+      a => a !== undefined && ISOFORM_SUFFIX.test(a),
+    )
     return {
-      uniprotId: alphaFoldUniprotId,
+      uniprotId: alphaFoldUniprotId.replace(ISOFORM_SUFFIX, ''),
       uniprotName: undefined,
-      mapUniProtPosition: identityUniProtPositionMap,
+      mapUniProtPosition: isoformAccession
+        ? () => undefined
+        : identityUniProtPositionMap,
       isLoading: false,
       error: undefined,
+      isoformAccession,
     }
   }
   const sifts = uniProtMappings
