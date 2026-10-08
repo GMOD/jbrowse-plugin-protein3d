@@ -99,12 +99,19 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     preferredTranscriptId,
   })
 
-  const error = isoformError ?? launchError ?? fileError
+  const error = isoformError ?? fileError ?? launchError
 
+  // Until the structure is read the ranking has none and orders the isoforms
+  // by length, so a launch that takes the ranked default waits. The
+  // right-clicked isoform needs no ranking and launches at once.
+  const awaitsStructure =
+    (isStructureLoading || activeURL !== debouncedURL || isRanking) &&
+    userSelection !== preferredTranscriptId
   const canLaunch =
     !!(activeURL || activeFile) &&
     !!protein &&
     !!selectedTranscript &&
+    !awaitsStructure &&
     !launching
   const sequencesDiffer =
     !!protein?.seq &&

@@ -65,7 +65,7 @@ const PdbSearch = observer(function PdbSearch({
   onSideBySideChange: (value: boolean) => void
 }) {
   const { classes } = useStyles()
-  const { uniprotId, isLookupLoading } = lookup
+  const { uniprotId, isLookupLoading, lookupError } = lookup
   const {
     entries,
     error: pdbError,
@@ -146,7 +146,7 @@ const PdbSearch = observer(function PdbSearch({
   const isLoading = loadingStatuses.length > 0
   const error = isLoading
     ? undefined
-    : (isoformError ?? lookup.lookupError ?? pdbError)
+    : (isoformError ?? lookupError ?? pdbError)
   // A typed PDB ID exists to get around a lookup that is slow, failing or
   // wrong, so only the isoforms it is ranked against hold its launch back
   const typedIdOverrides = isPdbId(debouncedTypedPdbId)
@@ -160,6 +160,10 @@ const PdbSearch = observer(function PdbSearch({
       ? undefined
       : isoformError
     : error
+  // Loading or failed, the lookup can still hold the previous query's
+  // accession, which would name the view and its 1D entry
+  const launchUniprotId =
+    typedIdOverrides && (isLookupLoading || lookupError) ? undefined : uniprotId
 
   return (
     <>
@@ -226,7 +230,7 @@ const PdbSearch = observer(function PdbSearch({
       <DialogActions>
         <ProteinViewActions
           handleClose={handleClose}
-          uniprotId={uniprotId}
+          uniprotId={launchUniprotId}
           userSelectedProteinSequence={selectedIsoform}
           selectedTranscript={selectedTranscript}
           url={structureUrl}

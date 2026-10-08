@@ -35,8 +35,8 @@ export default function useStructureFileSequence({
     key,
     async () => {
       const seq = await fetchSequences({ file, url })
-      if (!seq) {
-        throw new Error('no sequences detected in file')
+      if (!seq?.length) {
+        throw new Error('No protein sequence found in this structure')
       }
       return seq
     },

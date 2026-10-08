@@ -19,6 +19,7 @@ export function useSafeLaunch(
     onBeforeLaunch?.()
     if (!launching) {
       setLaunching(true)
+      setLaunchError(undefined)
       void safeLaunch(fn, onSuccess, setLaunchError).then(() => {
         setLaunching(false)
       })

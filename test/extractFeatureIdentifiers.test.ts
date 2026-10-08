@@ -367,6 +367,18 @@ describe('extractFeatureIdentifiers', () => {
     expect(identifiers.geneName).toBe('recA')
   })
 
+  it('trims a comma-joined entry of a dbxref array', () => {
+    const gene = new SimpleFeature({
+      uniqueId: 'gene-joined',
+      refName: 'chr1',
+      start: 0,
+      end: 100,
+      type: 'gene',
+      dbxref: ['GeneID:947170, UniProtKB/Swiss-Prot:P0A7G6'],
+    })
+    expect(actualExtractFeatureIdentifiers(gene).uniprotId).toBe('P0A7G6')
+  })
+
   it('should extract identifiers from the parent gene if it is not of type "gene" or has no transcripts', () => {
     const mockGeneWithoutTranscripts = new SimpleFeature({
       uniqueId: 'ParentGeneID',

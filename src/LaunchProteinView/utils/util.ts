@@ -44,18 +44,10 @@ export function getGeneDisplayName(val?: Feature): string {
  * - Array of strings
  */
 function parseDbxref(dbxref: unknown): string[] {
-  if (!dbxref) {
-    return []
-  }
-  if (Array.isArray(dbxref)) {
-    return dbxref.flatMap(item =>
-      typeof item === 'string' ? item.split(',') : [],
-    )
-  }
-  if (typeof dbxref === 'string') {
-    return dbxref.split(',').map(s => s.trim())
-  }
-  return []
+  const items: unknown[] = Array.isArray(dbxref) ? dbxref : [dbxref]
+  return items.flatMap(item =>
+    typeof item === 'string' ? item.split(',').map(s => s.trim()) : [],
+  )
 }
 
 /**
