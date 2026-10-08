@@ -36,6 +36,61 @@ sacCer3, each with its own species' AlphaFold model.
 
 <!-- expect {"chain":"A","minIdentity":0.99,"minAligned":298} -->
 
+## Bacteria, fungi and viruses by name
+
+The same one-field spec works on the GenArk hubs, which cover every RefSeq
+assembly UCSC hosts. Each link below names a gene and nothing else about it, and
+needs plugin 1.2.1 or later.
+
+Bacteria. A prokaryotic gene has no transcript record, so the plugin reads the
+protein's accession off the CDS: NCBI writes E. coli K-12's UniProt entry there,
+and for the others the RefSeq protein maps to one.
+
+[E. coli recA](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F005%2F845%2FGCF_000005845.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22recA%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":353} -->
+
+[M. tuberculosis katG](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F195%2F955%2FGCF_000195955.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22katG%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":740} -->
+
+[B. subtilis ftsZ](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F009%2F045%2FGCF_000009045.1%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22ftsZ%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":382} -->
+
+Fungi. The fission yeast assembly names the species (taxon 4896) and Swiss-Prot
+files its proteins under the reference strain (284812), so the gene-name search
+widens to the taxon's descendants when the taxon itself has no entry.
+
+[S. pombe cdc2](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F002%2F945%2FGCF_000002945.1%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22cdc2%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":297} -->
+
+[C. albicans ERG11](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F182%2F965%2FGCF_000182965.3%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22ERG11%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":528} -->
+
+[A. fumigatus cyp51A](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F002%2F655%2FGCF_000002655.1%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22cyp51A%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":515} -->
+
+Viruses. AlphaFold DB holds no viral proteins, so a viral link names a PDB entry
+beside the gene. The spike link opens the trimer 6VXX beside the SARS-CoV-2
+genome, the gag link the HIV-1 capsid hexamer 3H47 on the gag polyprotein, and
+the cI link the lambda repressor bound to its operator.
+
+[SARS-CoV-2 spike on 6VXX](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F009%2F858%2F895%2FGCF_009858895.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22S%22%2C%22pdbId%22%3A%226VXX%22%7D%5D%7D)
+
+<!-- expect {"minIdentity":0.98,"minAligned":1200} -->
+
+[HIV-1 gag on 3H47](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F864%2F765%2FGCF_000864765.1%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22gag%22%2C%22pdbId%22%3A%223H47%22%7D%5D%7D)
+
+<!-- expect {"minIdentity":0.95,"minAligned":225} -->
+
+[Phage lambda cI on 1LMB](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F000%2F840%2F245%2FGCF_000840245.1%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22cI%22%2C%22pdbId%22%3A%221LMB%22%7D%5D%7D)
+
+<!-- expect {"minIdentity":0.99,"minAligned":90} -->
+
 ## A short peptide bound to a larger partner
 
 1H26 holds an 11-residue p53 peptide bound to CDK2 and cyclin A. The kinase
