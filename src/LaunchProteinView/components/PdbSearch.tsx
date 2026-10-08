@@ -91,11 +91,9 @@ const PdbSearch = observer(function PdbSearch({
     ? getPdbStructureUrl(selectedPdbId)
     : undefined
 
-  // The chosen entry's residues, so the isoform picker can say which transcript
-  // matches it — the same annotation the AlphaFold tab shows. It is a label and
-  // nothing more: its failure costs the label rather than the launch, which
-  // reads the structure file itself. Launch waits only while the isoforms are
-  // ranked against it, and not at all for the isoform the user right-clicked.
+  // The chosen entry's residues, which rank the isoforms and label the picker,
+  // the same annotation the AlphaFold tab shows. Their failure costs the
+  // ranking rather than the launch, which reads the structure file itself.
   //
   // While another entry's answer is in flight keepPreviousData still holds the
   // last one, so isValidating withholds it rather than labelling these rows
@@ -124,9 +122,18 @@ const PdbSearch = observer(function PdbSearch({
     resetKey: uniprotId,
   })
 
+  // Until the entry's chains arrive the ranking has no structure and orders
+  // the isoforms by length, so a launch that takes the ranked default waits.
+  // The right-clicked isoform needs no ranking and launches at once.
+  const awaitsChains =
+    isMoleculesValidating && selectedTranscriptId !== preferredTranscriptId
   const isoformStatuses = [
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isRanking && 'Aligning isoforms to the structure',
+    awaitsChains && 'Reading the chains of the entry from PDBe',
+    // the selection reads the debounced id, so a launch inside the debounce
+    // opened the entry selected before the typing
+    trimmedTypedPdbId !== debouncedTypedPdbId && 'Reading the typed PDB ID',
   ]
   const lookupStatuses = [
     isLookupLoading && 'Looking up UniProt ID',

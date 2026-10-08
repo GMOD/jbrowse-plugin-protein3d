@@ -151,11 +151,14 @@ export interface FeatureIdentifiers {
 
 /**
  * Extract all useful identifiers from a feature for UniProt lookup.
- * If the feature is a gene, prioritizes identifiers from its first transcript.
- * Otherwise, extracts identifiers from the feature itself.
- * geneId and geneName are always extracted from the parent feature 'f'.
+ * If the feature is a gene, prioritizes identifiers from the preferred
+ * transcript, else its first. Otherwise, extracts identifiers from the feature
+ * itself. geneId and geneName are always extracted from the parent feature 'f'.
  */
-export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
+export function extractFeatureIdentifiers(
+  f?: Feature,
+  preferredTranscriptId?: string,
+): FeatureIdentifiers {
   if (!f) {
     return { recognizedIds: [] }
   }
@@ -163,7 +166,11 @@ export function extractFeatureIdentifiers(f?: Feature): FeatureIdentifiers {
   let featureToProcess = f // Default to the parent feature
 
   if (isGeneLikeType(f.get('type'))) {
-    featureToProcess = codingTranscripts(f)[0] ?? f
+    const transcripts = codingTranscripts(f)
+    featureToProcess =
+      transcripts.find(t => t.id() === preferredTranscriptId) ??
+      transcripts[0] ??
+      f
   }
 
   // --- Extracting Recognized IDs and UniProt ID from featureToProcess ---

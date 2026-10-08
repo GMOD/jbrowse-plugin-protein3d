@@ -34,7 +34,11 @@ export default function LaunchProteinViewDialog({
   // One lookup for the whole dialog: the tabs stay mounted once visited, so a
   // lookup per tab meant the same UniProt search ran twice and a row picked on
   // one tab left the other pointing at a different gene.
-  const lookup = useUniProtIdLookup({ feature, view })
+  const lookup = useUniProtIdLookup({
+    feature,
+    view,
+    preferredTranscriptId,
+  })
   // Also the dialog's, for the same reason: a tab that has been mounted since
   // before the user changed this would otherwise launch with its own stale copy.
   const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())

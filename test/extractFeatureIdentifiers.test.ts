@@ -306,6 +306,32 @@ describe('extractFeatureIdentifiers', () => {
     expect(identifiers.geneName).toBe('SHH_gene_name_fallback')
   })
 
+  it('reads the preferred transcript rather than the first', () => {
+    const transcript = (uniqueId: string, uniprot: string) => ({
+      uniqueId,
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      type: 'transcript',
+      uniprot,
+      subfeatures: [
+        { uniqueId: `${uniqueId}-cds`, start: 0, end: 99, type: 'CDS' },
+      ],
+    })
+    const gene = new SimpleFeature({
+      uniqueId: 'gene',
+      start: 0,
+      end: 100,
+      refName: 'chr1',
+      type: 'gene',
+      subfeatures: [transcript('t1', 'P11111'), transcript('t2', 'P22222')],
+    })
+    expect(actualExtractFeatureIdentifiers(gene, 't2').uniprotId).toBe('P22222')
+    expect(actualExtractFeatureIdentifiers(gene, 'gone').uniprotId).toBe(
+      'P11111',
+    )
+  })
+
   it('should extract identifiers from the parent gene if it is not of type "gene" or has no transcripts', () => {
     const mockGeneWithoutTranscripts = new SimpleFeature({
       uniqueId: 'ParentGeneID',

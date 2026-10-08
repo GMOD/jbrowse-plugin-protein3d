@@ -32,11 +32,13 @@ export type UniProtIdLookup = ReturnType<typeof useUniProtIdLookup>
 export default function useUniProtIdLookup({
   feature,
   view,
+  preferredTranscriptId,
 }: {
   feature: Feature
   view: LinearGenomeViewModel
+  preferredTranscriptId?: string
 }) {
-  const geneIds = extractFeatureIdentifiers(feature)
+  const geneIds = extractFeatureIdentifiers(feature, preferredTranscriptId)
   const featureUniprotId = geneIds.uniprotId
   const hasSearchableIdentifier =
     geneIds.recognizedIds.length > 0 || !!geneIds.geneName
