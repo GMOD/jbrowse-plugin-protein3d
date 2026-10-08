@@ -1,6 +1,10 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 
-import { assemblyNaming, genomeHoverToTranscriptPos } from '../ProteinView/util'
+import {
+  assemblyNaming,
+  genomeHoverToTranscriptPos,
+  viewAssemblyName,
+} from '../ProteinView/util'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { NamingAssemblyManager } from '../ProteinView/util'
@@ -38,12 +42,23 @@ export function getProteinLinkageMapping(view: unknown) {
   return (view as LinkableView | undefined)?.proteinLinkageMapping
 }
 
-/** The 1D view showing this UniProt entry, if one is open. */
+/**
+ * The 1D view showing this UniProt entry that was launched from this genome
+ * view. One entry can be open from several genome views, and the first of
+ * them is not this one's.
+ */
 export function findProteinLinkedView(
   session: { views: { id: string }[] },
   uniprotId: string,
+  connectedViewId: string,
 ) {
-  return session.views.find(v => getProteinLinkage(v)?.uniprotId === uniprotId)
+  return session.views.find(v => {
+    const linkage = getProteinLinkage(v)
+    return (
+      linkage?.uniprotId === uniprotId &&
+      linkage.connectedViewId === connectedViewId
+    )
+  })
 }
 
 /** The assembly of the genome view a 1D view was launched from. */
@@ -51,13 +66,9 @@ export function linkedGenomeAssemblyName(
   session: { views: { id: string }[] },
   linkage: Protein1DLinkage,
 ) {
-  if (linkage.assemblyName) {
-    return linkage.assemblyName
-  }
-  const view = session.views.find(v => v.id === linkage.connectedViewId)
-  const names = view && 'assemblyNames' in view ? view.assemblyNames : undefined
-  const first: unknown = Array.isArray(names) ? names[0] : undefined
-  return typeof first === 'string' ? first : undefined
+  return (
+    linkage.assemblyName ?? viewAssemblyName(session, linkage.connectedViewId)
+  )
 }
 
 /** The residue a genome hover names on a 1D view, read through the assembly

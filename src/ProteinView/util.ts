@@ -21,6 +21,17 @@ export const literalNaming: GenomeNaming = {
   isAssembly: () => true,
 }
 
+/** The first assembly of the session's view with this id, if it shows one. */
+export function viewAssemblyName(
+  session: { views: { id: string }[] },
+  viewId: string,
+) {
+  const view = session.views.find(v => v.id === viewId)
+  const names = view && 'assemblyNames' in view ? view.assemblyNames : undefined
+  const first: unknown = Array.isArray(names) ? names[0] : undefined
+  return typeof first === 'string' ? first : undefined
+}
+
 interface NamingAssembly {
   name: string
   initialized?: boolean

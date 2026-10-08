@@ -46,7 +46,9 @@ export function structureUniProt({
   uniProtMappingsError: unknown
   mappedEntity: SegmentEntity | undefined
 }): StructureUniProt {
-  if (alphaFoldUniprotId) {
+  // A PDB entry named beside an accession is still a construct with its own
+  // numbering, so it goes through SIFTS like any other
+  if (alphaFoldUniprotId && !pdbId) {
     return {
       uniprotId: alphaFoldUniprotId,
       uniprotName: undefined,

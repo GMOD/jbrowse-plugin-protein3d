@@ -78,8 +78,25 @@ test('finds the open 1D view for a UniProt entry by its linkage', () => {
     { id: 'p1d', proteinLinkage: linkage },
     { id: 'other', proteinLinkage: { ...linkage, uniprotId: 'X' } },
   ]
-  expect(findProteinLinkedView({ views }, 'SPLIT_TEST')?.id).toBe('p1d')
-  expect(findProteinLinkedView({ views }, 'NOPE')).toBeUndefined()
+  const { connectedViewId } = linkage
+  expect(
+    findProteinLinkedView({ views }, 'SPLIT_TEST', connectedViewId)?.id,
+  ).toBe('p1d')
+  expect(
+    findProteinLinkedView({ views }, 'NOPE', connectedViewId),
+  ).toBeUndefined()
+})
+
+// the first view for the accession used to answer for every genome view, so a
+// second 1D view of the same entry painted nothing on its own
+test("one entry open from two genome views resolves to each one's own", () => {
+  const views = [
+    { id: 'first', proteinLinkage: { ...linkage, connectedViewId: 'lgvA' } },
+    { id: 'second', proteinLinkage: { ...linkage, connectedViewId: 'lgvB' } },
+  ]
+  expect(findProteinLinkedView({ views }, 'SPLIT_TEST', 'lgvB')?.id).toBe(
+    'second',
+  )
 })
 
 test('a linked view carries its genome mapping, an unlinked one none', () => {

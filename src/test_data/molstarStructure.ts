@@ -17,7 +17,10 @@ function entityPolyLoop(chains: TestChain[]) {
   const byEntity = new Map<string, string>()
   for (const { entity, canonical, polyType } of chains) {
     if (canonical) {
-      byEntity.set(entity, `${entity} '${polyType ?? 'polypeptide(L)'}' ${canonical}`)
+      byEntity.set(
+        entity,
+        `${entity} '${polyType ?? 'polypeptide(L)'}' ${canonical}`,
+      )
     }
   }
   const rows = [...byEntity.values()]

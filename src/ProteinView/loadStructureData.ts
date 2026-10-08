@@ -44,7 +44,10 @@ function pdbExperimentalMethods(source: ModelFormat, { PdbFormat }: Molstar) {
 
 // Mol* converts a PDB file to mmCIF without filling `exptl`, so its method is
 // read from the EXPDTA records of the file it kept.
-function experimentalMethods(source: ModelFormat | undefined, molstar: Molstar) {
+function experimentalMethods(
+  source: ModelFormat | undefined,
+  molstar: Molstar,
+) {
   if (!source || !molstar.MmcifFormat.is(source)) {
     return []
   }

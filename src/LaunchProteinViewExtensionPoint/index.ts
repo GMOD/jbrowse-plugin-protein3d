@@ -151,6 +151,7 @@ export default function LaunchProteinViewExtensionPointF(
             uniprotId,
             findStructure: !namesStructure,
             connectedView: givenConnectedView,
+            connectedViewId,
           })
         } catch (e) {
           return fail(e)
