@@ -18,6 +18,7 @@ import type DisplayType from '@jbrowse/core/pluggableElementTypes/DisplayType'
 import type { MenuItem } from '@jbrowse/core/ui'
 import type { Feature } from '@jbrowse/core/util'
 import type { IAnyModelType } from '@jbrowse/mobx-state-tree'
+
 function isDisplay(elt: { name: string }): elt is DisplayType {
   return elt.name === 'LinearBasicDisplay'
 }

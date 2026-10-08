@@ -14,6 +14,7 @@ import { alignOffThread } from '../ProteinView/alignOffThread'
 
 import type { IsoformRanking } from '../AlignTranscriptRpc'
 import type { TranscriptTranslation } from './utils/translateTranscripts'
+import type { FeatureIdentifiers } from './utils/util'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { Isoform, UniProtEntry } from 'p2s_mapper'
 
@@ -80,6 +81,33 @@ export function sessionGeneLaunchHost(
 }
 
 /**
+ * The accession a feature's identifiers name, or undefined where a person has
+ * to choose. A gene symbol means a different protein in every species, so
+ * without the assembly's taxon only the database ids are searched. An
+ * unreachable UniProt is a missing answer too: the dialog takes a typed
+ * accession, and a spec can name one.
+ */
+async function searchForEntry(host: GeneLaunchHost, ids: FeatureIdentifiers) {
+  try {
+    const organismId = await host.taxonId()
+    const geneName = organismId === undefined ? undefined : ids.geneName
+    if (ids.recognizedIds.length === 0 && !geneName) {
+      return undefined
+    }
+    const { entries } = await host.searchUniProtEntries({
+      recognizedIds: ids.recognizedIds,
+      geneId: ids.geneId,
+      geneName,
+      organismId,
+    })
+    return unambiguousEntry(entries)?.accession
+  } catch (e) {
+    console.warn('UniProt lookup failed', e)
+    return undefined
+  }
+}
+
+/**
  * Everything the launch dialog works out from a gene, without the dialog: the
  * UniProt entry from the feature's identifiers, the AlphaFold model of that
  * entry, and the isoform to map — the preferred one when it translates, else
@@ -90,31 +118,21 @@ export async function resolveGeneLaunch({
   feature,
   preferredTranscriptId,
   uniprotId: givenUniprotId,
+  findStructure = true,
 }: {
   host: GeneLaunchHost
   feature: Feature
   preferredTranscriptId?: string
   uniprotId?: string
+  /** false when the caller names the structure, so UniProt is not asked */
+  findStructure?: boolean
 }): Promise<GeneLaunch> {
   const ids = extractFeatureIdentifiers(feature, preferredTranscriptId)
   const [translations, uniprotId] = await Promise.all([
     host.translate(codingTranscripts(feature)),
     givenUniprotId ??
-      ids.uniprotId ??
-      (ids.recognizedIds.length > 0 || ids.geneName
-        ? host.taxonId().then(
-            async organismId =>
-              unambiguousEntry(
-                (
-                  await host.searchUniProtEntries({
-                    recognizedIds: ids.recognizedIds,
-                    geneId: ids.geneId,
-                    geneName: ids.geneName,
-                    organismId,
-                  })
-                ).entries,
-              )?.accession,
-          )
+      (findStructure
+        ? (ids.uniprotId ?? searchForEntry(host, ids))
         : undefined),
   ])
   const translated = translations.flatMap(({ feature: transcript, seq }) =>

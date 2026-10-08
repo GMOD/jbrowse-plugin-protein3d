@@ -55,12 +55,14 @@ export async function resolveGeneNameLaunch({
   gene,
   transcriptId,
   uniprotId,
+  findStructure,
   connectedView,
 }: {
   session: AbstractSessionModel
   gene: string
   transcriptId?: string
   uniprotId?: string
+  findStructure?: boolean
   connectedView?: ConnectedViewSpec
 }) {
   const assemblyName = connectedView?.assembly ?? session.assemblyNames[0]
@@ -86,6 +88,7 @@ export async function resolveGeneNameLaunch({
     feature,
     preferredTranscriptId: preferred?.id(),
     uniprotId,
+    findStructure,
   })
   return {
     feature: launch.transcript.toJSON(),
@@ -99,6 +102,7 @@ export async function resolveGeneNameLaunch({
       launch.uniprotId,
     ),
     connectedView: {
+      ...connectedView,
       assembly: assemblyName,
       loc:
         connectedView?.loc ??

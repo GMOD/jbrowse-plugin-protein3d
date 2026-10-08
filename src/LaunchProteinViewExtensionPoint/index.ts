@@ -137,8 +137,10 @@ export default function LaunchProteinViewExtensionPointF(
       }
 
       // A gene name alone: the host's text search finds the gene, and the
-      // launch dialog's defaults pick its isoform and AlphaFold model. Anything
-      // the spec names itself (a structure, a transcript, a locus) wins.
+      // launch dialog's defaults pick its isoform and AlphaFold model. A
+      // structure, transcript or locus the spec names wins over those.
+      const namesStructure =
+        !!url || !!uniprotId || !!pdbId || !!requestedStructures?.length
       let named: Awaited<ReturnType<typeof resolveGeneNameLaunch>> | undefined
       if (gene && !userProvidedTranscriptSequence) {
         try {
@@ -147,6 +149,7 @@ export default function LaunchProteinViewExtensionPointF(
             gene,
             transcriptId,
             uniprotId,
+            findStructure: !namesStructure,
             connectedView: givenConnectedView,
           })
         } catch (e) {
@@ -156,8 +159,6 @@ export default function LaunchProteinViewExtensionPointF(
       const connectedView = connectedViewId
         ? givenConnectedView
         : (named?.connectedView ?? givenConnectedView)
-      const namesStructure =
-        !!url || !!uniprotId || !!pdbId || !!requestedStructures?.length
       if (named && !namesStructure && !named.url) {
         return fail(
           new Error(

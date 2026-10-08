@@ -98,8 +98,11 @@ const PdbSearch = observer(function PdbSearch({
   // While another entry's answer is in flight keepPreviousData still holds the
   // last one, so isValidating withholds it rather than labelling these rows
   // with the previous entry's chains.
-  const { sequences, isValidating: isMoleculesValidating } =
-    usePdbEntryMolecules(selectedPdbId)
+  const {
+    sequences,
+    error: moleculesError,
+    isValidating: isMoleculesValidating,
+  } = usePdbEntryMolecules(selectedPdbId)
   const structureSequences = isMoleculesValidating ? undefined : sequences
 
   const {
@@ -125,8 +128,11 @@ const PdbSearch = observer(function PdbSearch({
   // Until the entry's chains arrive the ranking has no structure and orders
   // the isoforms by length, so a launch that takes the ranked default waits.
   // The right-clicked isoform needs no ranking and launches at once.
+  // An entry PDBe cannot describe stops holding the launch, retries included.
   const awaitsChains =
-    isMoleculesValidating && selectedTranscriptId !== preferredTranscriptId
+    isMoleculesValidating &&
+    !moleculesError &&
+    selectedTranscriptId !== preferredTranscriptId
   const isoformStatuses = [
     isIsoformLoading && 'Loading protein sequences from transcript isoforms',
     isRanking && 'Aligning isoforms to the structure',

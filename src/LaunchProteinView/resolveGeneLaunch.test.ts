@@ -1,5 +1,5 @@
 import { SimpleFeature } from '@jbrowse/core/util'
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import { resolveGeneLaunch, unambiguousEntry } from './resolveGeneLaunch'
 import { rankIsoforms } from '../AlignTranscriptRpc'
@@ -58,8 +58,10 @@ function host({
   entries = [entry('P11111', true)],
   models = [model('P11111', SHORT)],
   seqs = { short: SHORT, long: LONG },
+  taxonId = 9606,
 }: {
-  entries?: UniProtEntry[]
+  entries?: UniProtEntry[] | Error
+  taxonId?: number | null
   models?: AlphaFoldModel[] | Error
   seqs?: Record<string, string>
 } = {}) {
@@ -67,11 +69,14 @@ function host({
   const h: GeneLaunchHost = {
     translate: async transcripts =>
       transcripts.map(feature => ({ feature, seq: seqs[feature.id()] })),
-    taxonId: async () => 9606,
+    taxonId: async () => taxonId ?? undefined,
     rankIsoforms: async (isoforms, structureSequences) =>
       rankIsoforms(isoforms, structureSequences),
     searchUniProtEntries: async args => {
       searched.push(args)
+      if (entries instanceof Error) {
+        throw entries
+      }
       return { entries, attemptedCount: 1, failedCount: 0 }
     },
     fetchAlphaFoldModels: async () => {
@@ -141,6 +146,36 @@ test('an ambiguous search resolves the longest isoform and no structure', async 
   expect(launch.uniprotId).toBeUndefined()
   expect(launch.url).toBeUndefined()
   expect(launch.transcript.id()).toBe('long')
+})
+
+// a gene symbol names a different protein in every species
+test('a gene name is not searched on an assembly with no taxon', async () => {
+  const { host: h, searched } = host({ taxonId: null })
+  const launch = await resolveGeneLaunch({ host: h, feature: gene() })
+  expect(searched).toEqual([])
+  expect(launch.uniprotId).toBeUndefined()
+})
+
+test('an unreachable UniProt leaves the entry unresolved', async () => {
+  const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+  const { host: h } = host({ entries: new Error('Failed to fetch') })
+  const launch = await resolveGeneLaunch({ host: h, feature: gene() })
+  expect(launch.uniprotId).toBeUndefined()
+  expect(launch.transcript.id()).toBe('long')
+  expect(warn).toHaveBeenCalledOnce()
+  warn.mockRestore()
+})
+
+test('a caller naming its own structure does not ask UniProt', async () => {
+  const { host: h, searched } = host()
+  const launch = await resolveGeneLaunch({
+    host: h,
+    feature: gene(),
+    findStructure: false,
+  })
+  expect(searched).toEqual([])
+  expect(launch.url).toBeUndefined()
+  expect(launch.userProvidedTranscriptSequence).toBe(LONG)
 })
 
 test('an entry AlphaFold has not folded has no url', async () => {
