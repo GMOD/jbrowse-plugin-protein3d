@@ -105,7 +105,7 @@ export async function resolveShortLaunch({
 }): Promise<ResolvedShortLaunch> {
   if (!transcriptId) {
     throw new Error(
-      'transcriptId is required to launch from a uniprotId or pdbId',
+      '`transcriptId` is required to look a transcript up in `connectedView`',
     )
   }
   const assemblyName = connectedView?.assembly
@@ -113,7 +113,7 @@ export async function resolveShortLaunch({
   const trackSpecs = connectedView?.tracks ?? []
   if (!assemblyName || !loc) {
     throw new Error(
-      'connectedView with assembly + loc is required to launch from a uniprotId',
+      '`transcriptId` is looked up through `connectedView: { assembly, loc, tracks }`, and this launch gives no `connectedView` with an assembly and loc; a `connectedViewId` alone does not supply them',
     )
   }
 

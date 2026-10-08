@@ -129,3 +129,12 @@ test('says which tracks it searched when none has the transcript', async () => {
     }),
   ).rejects.toThrow(/"NM_000546.6" not found .*\[ensembl\]/)
 })
+
+test('a transcriptId without a connectedView says what the lookup needs, whatever the structure', async () => {
+  const { session } = fakeSession({}, {})
+  const failure = resolveShortLaunch({ session, transcriptId: 'NM_000546.6' })
+  await expect(failure).rejects.toThrow(
+    /`connectedView: \{ assembly, loc, tracks \}`.*`connectedViewId` alone/,
+  )
+  await expect(failure).rejects.not.toThrow(/uniprotId/)
+})
