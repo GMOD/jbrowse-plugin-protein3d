@@ -338,6 +338,40 @@ describe('extractFeatureIdentifiers', () => {
     )
   })
 
+  // E. coli K-12's recA as NCBI's GFF3 gives it: no transcript record, and
+  // the protein's accessions on the CDS
+  it('reads the UniProt and RefSeq protein accessions off the CDS record', () => {
+    const gene = new SimpleFeature({
+      uniqueId: 'gene-b2699',
+      refName: 'NC_000913.3',
+      start: 2822707,
+      end: 2823769,
+      type: 'gene',
+      name: 'recA',
+      dbxref: ['ASAP:ABE-0008876', 'ECOCYC:EG10823', 'GeneID:947170'],
+      subfeatures: [
+        {
+          uniqueId: 'cds-NP_417179.1',
+          refName: 'NC_000913.3',
+          start: 2822707,
+          end: 2823769,
+          type: 'CDS',
+          name: 'NP_417179.1',
+          protein_id: 'NP_417179.1',
+          dbxref: [
+            'UniProtKB/Swiss-Prot:P0A7G6',
+            'GenBank:NP_417179.1',
+            'GeneID:947170',
+          ],
+        },
+      ],
+    })
+    const identifiers = actualExtractFeatureIdentifiers(gene)
+    expect(identifiers.uniprotId).toBe('P0A7G6')
+    expect(identifiers.recognizedIds).toContain('NP_417179')
+    expect(identifiers.geneName).toBe('recA')
+  })
+
   it('should extract identifiers from the parent gene if it is not of type "gene" or has no transcripts', () => {
     const mockGeneWithoutTranscripts = new SimpleFeature({
       uniqueId: 'ParentGeneID',
