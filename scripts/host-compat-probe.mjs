@@ -165,11 +165,6 @@ async function interceptConfigAndBundle(page) {
       fulfill(requestId, 'application/json', esmConfigBody)
       return
     }
-    // the config pattern also matches the page's own `?config=` url
-    if (dir === undefined) {
-      client.send('Fetch.continueRequest', { requestId }).catch(() => {})
-      return
-    }
     const rel = pathname.split('/dist/').slice(1).join('/dist/')
     const local = path.join(dir ?? '', rel)
     // the published entry name and the local one can differ (a watch build
