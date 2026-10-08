@@ -15,9 +15,11 @@ export function trackHeightOf({
   trackHeight?: number
   compactTracks: boolean
 }) {
-  return (
-    trackHeight ?? (compactTracks ? COMPACT_TRACK_HEIGHT : NORMAL_TRACK_HEIGHT)
-  )
+  return trackHeight === undefined
+    ? compactTracks
+      ? COMPACT_TRACK_HEIGHT
+      : NORMAL_TRACK_HEIGHT
+    : Math.min(MAX_TRACK_HEIGHT, Math.max(MIN_TRACK_HEIGHT, trackHeight))
 }
 
 export function trackGapOf(trackHeight: number) {
