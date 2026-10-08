@@ -176,9 +176,19 @@ The 1D launch strips an isoform suffix (`P04637-7`), whose UniProt GFF is a
 header alone, and opens the entry. A hover names no view, so every 1D view of an
 entry launched from the genome view answers, with shared codons merged.
 
-No e2e leg opens a 1D view. `afterAttach` composing with the genome view's own,
-the sequence fetch from the temporary assembly and the worker path were read
-from source on 2026-10-08, not run on a host.
+The e2e leg `aligns a 1D protein view to its UniProt entry on the host` covers
+`afterAttach` composing with the genome view's own and the sequence fetch from
+the temporary assembly. NRAS's transcript is its entry, so the leg takes the
+identity path: the worker alignment and a real hover on a 1D view have run on no
+host.
+
+That leg's first run showed the 1D launch breaking the host's session contract
+(ADR-084 in jbrowse-components): `addSessionTrackConf` parks each UniProt track
+in `sessionTracks`, which the host rejects for a temporary assembly with one
+console error per track. The leg expects exactly those lines by name. The fix is
+passing each config to the view's `showTrack` as `inlineConf`, which also
+decides whether the tracks open with the view rather than waiting in the
+selector.
 
 ## An MSA reaches a structure through the genome, never by column
 

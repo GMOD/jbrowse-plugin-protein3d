@@ -202,6 +202,74 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 240_000)
 
+  // The 1D view aligns its transcript to the UniProt entry when it attaches,
+  // through three things no unit test reaches: the plugin's afterAttach
+  // running beside the genome view's own, the entry's sequence read back out
+  // of the temporary assembly, and the transcript translated from a feature
+  // stored on the view. NRAS's transcript is the entry, so the map is the
+  // identity; another isoform's offset is pinned in linkage.test.ts.
+  it('aligns a 1D protein view to its UniProt entry on the host', async () => {
+    await page.evaluate(() => {
+      const session = window.JBrowseSession!
+      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
+        session.removeView!(view)
+      }
+    })
+    await openFeatureContextMenu(page)
+    await clickMenuItem(page, 'Launch protein view')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await waitForLaunchEnabled(page)
+    await page.click(
+      '[role="tabpanel"]:not([hidden]) [data-testid="protein-launch-options-button"]',
+    )
+    await page.click('[data-testid="protein-launch-option-1d"]')
+
+    const linked = await page.waitForFunction(
+      () => {
+        const view = window.JBrowseSession?.views?.find(v => v.proteinLinkage)
+        const map =
+          view?.proteinLinkageCoordinates?.maps
+            .transcriptSeqToStructureSeqPosition
+        return view?.proteinLinkage && map
+          ? {
+              uniprotId: view.proteinLinkage.uniprotId,
+              residues: Object.keys(map).length,
+              first: map[0],
+              last: map[188],
+            }
+          : false
+      },
+      { timeout: 90_000 },
+    )
+    expect(await linked.jsonValue()).toEqual({
+      uniprotId: 'P01111',
+      residues: STRUCTURE_RESIDUES,
+      first: 0,
+      last: 188,
+    })
+    // Not empty yet, and named rather than skipped: the launch still parks its
+    // tracks in `sessionTracks`, which the host's session contract (ADR-084 in
+    // jbrowse-components) rejects for a temporary assembly, once per track.
+    // The first run of this leg, 2026-10-08, is what showed it. Anything else
+    // the page says fails; delete this filter with the move to `showTrack`'s
+    // `inlineConf`.
+    const SESSION_TRACK_CONTRACT =
+      '[jbrowse session contract] sessionTracks was given "P01111-'
+    const complaints = pageComplaintsSince()
+    expect(complaints.filter(c => !c.includes(SESSION_TRACK_CONTRACT))).toEqual(
+      [],
+    )
+    expect(complaints.length).toBeGreaterThan(0)
+
+    // the legs after this one find the gene track by its container
+    await page.evaluate(() => {
+      const session = window.JBrowseSession!
+      for (const view of session.views!.filter(v => v.proteinLinkage)) {
+        session.removeView!(view)
+      }
+    })
+  }, 240_000)
+
   // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
   // the first row preselected, launched against the RCSB file. NRAS has
   // dozens of crystals, every one a fragment with partners, so the alignment
