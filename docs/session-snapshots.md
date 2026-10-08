@@ -88,10 +88,12 @@ measurements behind the rule.
 
 ## Stored preferences
 
-Persisted UI preferences (`showAlignment`, `zoomToBaseLevel` and the like, in
-localStorage) only fill settings the snapshot does not name, so an explicitly
-declared value always wins over a sticky preference, even when it equals the
-property default.
+The view keeps six preferences in localStorage: `showAlignment`,
+`showProteinTracks`, `showAllFeatureTracks`, `compactTracks`,
+`autoScrollAlignment` and `showControls`. A stored preference only fills a
+setting the snapshot does not name, so an explicitly declared value always wins
+over a sticky preference, even when it equals the property default. Every other
+setting, `showHighlight` and `zoomToBaseLevel` among them, stays with its view.
 
 ## The 1D annotation view's link back to the genome
 

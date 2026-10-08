@@ -23,13 +23,13 @@ working links.
 | `displayName`                    | No       | View name; defaults to the transcript and structure labels                        |
 | `height`                         | No       | View height in pixels (default: 650)                                              |
 | `showControls`                   | No       | Show Mol\* controls panel                                                         |
-| `showHighlight`                  | No       | Show alignment highlight on structure                                             |
+| `showHighlight`                  | No       | Mark the aligned residues on the structure and in the alignment panel †           |
 | `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                 |
-| `showProteinTracks`              | No       | Show the feature tracks (default: true)                                           |
-| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true)                         |
-| `trackHeight`                    | No       | Height in px of one feature-track lane, overriding `compactTracks`                |
-| `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track                    |
-| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue                                       |
+| `showProteinTracks`              | No       | Show the feature tracks (default: true) ‡                                         |
+| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true) ‡                       |
+| `trackHeight`                    | No       | Height in px of one feature-track lane, 2 to 40, overriding `compactTracks` ‡     |
+| `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track ‡                  |
+| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue ‡                                     |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                       |
 | `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view               |
 | `initialTranscriptResidues`      | No       | `{ start, end }` or an array of them: 1-based transcript residues lit on load     |
@@ -43,6 +43,16 @@ model and the genome view itself, and takes any of the others as an override.
 `url` wins over both, and `uniprotId` wins over `pdbId` — the same precedence a
 `structures: [...]` snapshot uses, since both go through `resolveStructureUrl`
 and then the structure loader.
+
+† `showHighlight` selects every aligned residue on the structure and bands the
+matching columns in the alignment panel. A selection made afterwards replaces
+the highlight on the structure.
+
+‡ `showProteinTracks` and `autoScrollAlignment` act inside the alignment panel,
+so each needs `showAlignment`. `showAllFeatureTracks`, `compactTracks` and
+`trackHeight` change the feature tracks, so each needs `showAlignment` and
+`showProteinTracks`. The view clamps a `trackHeight` outside 2 to 40 px to the
+nearer limit.
 
 ## `connectedView`
 
