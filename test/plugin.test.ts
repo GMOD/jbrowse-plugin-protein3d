@@ -247,19 +247,32 @@ describe('Protein3d Plugin E2E', () => {
       first: 0,
       last: 188,
     })
-    // Not empty yet, and named rather than skipped: the launch still parks its
-    // tracks in `sessionTracks`, which the host's session contract (ADR-084 in
-    // jbrowse-components) rejects for a temporary assembly, once per track.
-    // The first run of this leg, 2026-10-08, is what showed it. Anything else
-    // the page says fails; delete this filter with the move to `showTrack`'s
-    // `inlineConf`.
-    const SESSION_TRACK_CONTRACT =
-      '[jbrowse session contract] sessionTracks was given "P01111-'
-    const complaints = pageComplaintsSince()
-    expect(complaints.filter(c => !c.includes(SESSION_TRACK_CONTRACT))).toEqual(
-      [],
+    // The launch opens the AlphaMissense track last, and each track's config
+    // rides on the view under an id the view prefixes
+    const opened = await page.waitForFunction(
+      () => {
+        const view = window.JBrowseSession?.views?.find(v => v.proteinLinkage)
+        const trackIds =
+          view?.tracks?.map(t => t.configuration?.trackId ?? '') ?? []
+        return view && trackIds.some(id => id.endsWith('-AlphaMissense-scores'))
+          ? { viewId: view.id, trackIds }
+          : false
+      },
+      { timeout: 90_000 },
     )
-    expect(complaints.length).toBeGreaterThan(0)
+    const launched = await opened.jsonValue()
+    if (!launched) {
+      throw new Error('the 1D view opened no tracks')
+    }
+    const { viewId, trackIds } = launched
+    const prefix = `${viewId}-P01111-`
+    expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
+    const names = trackIds.map(id => id.slice(prefix.length))
+    expect(names).toEqual(
+      expect.arrayContaining(['Chain', 'Antigen', 'Variation']),
+    )
+    expect(new Set(trackIds).size).toBe(trackIds.length)
+    expect(pageComplaintsSince()).toEqual([])
 
     // the legs after this one find the gene track by its container
     await page.evaluate(() => {

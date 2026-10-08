@@ -1,15 +1,23 @@
 import { uniprotFastaUrl } from 'p2s_mapper'
 
-import type { SessionWithAddSessionTrack } from '@jbrowse/core/util'
+export interface TemporaryAssemblySession {
+  addTemporaryAssembly: (conf: Record<string, unknown>) => void
+}
+
+export function canAddTemporaryAssembly<
+  T extends { addTemporaryAssembly?: (conf: Record<string, unknown>) => void },
+>(session: T): session is T & TemporaryAssemblySession {
+  return session.addTemporaryAssembly !== undefined
+}
 
 /**
  * Sets up a temporary assembly for a protein sequence from UniProt
  */
 export function setupProteinAssembly(
-  session: Pick<SessionWithAddSessionTrack, 'addTemporaryAssembly'>,
+  session: TemporaryAssemblySession,
   uniprotId: string,
 ) {
-  session.addTemporaryAssembly?.({
+  session.addTemporaryAssembly({
     name: uniprotId,
     sequence: {
       type: 'ReferenceSequenceTrack',

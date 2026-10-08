@@ -3,13 +3,13 @@ import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 import { thresholdBandColor } from './wiggleBandColors'
 import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
 
-import type { SessionWithAddSessionTrack } from '@jbrowse/core/util'
+export interface ProteinTrackConf {
+  [key: string]: unknown
+  type: string
+  trackId: string
+  name: string
+}
 
-type TrackSession = Pick<SessionWithAddSessionTrack, 'addSessionTrackConf'>
-
-/**
- * Fetches UniProt GFF data and extracts unique feature types
- */
 export async function fetchUniProtFeatureTypes(
   uniprotId: string,
 ): Promise<string[]> {
@@ -28,21 +28,18 @@ export async function fetchUniProtFeatureTypes(
   ]
 }
 
-/**
- * Adds UniProt feature tracks for each feature type
- */
-function addUniProtFeatureTracks({
-  session,
+function uniProtFeatureTrackConfs({
   uniprotId,
   featureTypes,
+  idPrefix,
 }: {
-  session: TrackSession
   uniprotId: string
   featureTypes: string[]
-}) {
-  featureTypes.forEach(type => {
-    const trackId = `${uniprotId}-${type}`
-    session.addSessionTrackConf({
+  idPrefix: string
+}): ProteinTrackConf[] {
+  return featureTypes.map(type => {
+    const trackId = `${idPrefix}-${type}`
+    return {
       type: 'FeatureTrack',
       trackId,
       name: type,
@@ -60,23 +57,17 @@ function addUniProtFeatureTracks({
           jexlFilters: [`get(feature,'type')=='${type}'`],
         },
       ],
-    })
+    }
   })
 }
 
-/**
- * Adds antigen annotation track from EBI
- */
-function addAntigenTrack({
-  session,
-  uniprotId,
-}: {
-  session: TrackSession
-  uniprotId: string
-}) {
-  session.addSessionTrackConf({
+function antigenTrackConf(
+  uniprotId: string,
+  idPrefix: string,
+): ProteinTrackConf {
+  return {
     type: 'FeatureTrack',
-    trackId: `${uniprotId}-Antigen`,
+    trackId: `${idPrefix}-Antigen`,
     name: 'Antigen',
     adapter: {
       type: 'Gff3Adapter',
@@ -85,22 +76,16 @@ function addAntigenTrack({
       },
     },
     assemblyNames: [uniprotId],
-  })
+  }
 }
 
-/**
- * Adds variation track from EBI
- */
-function addVariationTrack({
-  session,
-  uniprotId,
-}: {
-  session: TrackSession
-  uniprotId: string
-}) {
-  session.addSessionTrackConf({
+function variationTrackConf(
+  uniprotId: string,
+  idPrefix: string,
+): ProteinTrackConf {
+  return {
     type: 'FeatureTrack',
-    trackId: `${uniprotId}-Variation`,
+    trackId: `${idPrefix}-Variation`,
     name: 'Variation',
     adapter: {
       type: 'UniProtVariationAdapter',
@@ -109,57 +94,46 @@ function addVariationTrack({
       },
     },
     assemblyNames: [uniprotId],
-  })
-}
-
-/**
- * Adds AlphaFold confidence track
- */
-function addAlphaFoldConfidenceTrack({
-  session,
-  uniprotId,
-  confidenceUrl,
-}: {
-  session: TrackSession
-  uniprotId: string
-  confidenceUrl: string | undefined
-}) {
-  if (confidenceUrl) {
-    session.addSessionTrackConf({
-      type: 'QuantitativeTrack',
-      trackId: `${uniprotId}-AlphaFold-confidence`,
-      name: 'AlphaFold confidence',
-      adapter: {
-        type: 'AlphaFoldConfidenceAdapter',
-        location: {
-          uri: confidenceUrl,
-        },
-      },
-      assemblyNames: [uniprotId],
-      displays: [
-        {
-          type: 'LinearWiggleDisplay',
-          displayId: `${uniprotId}-AlphaFold-confidence-LinearWiggleDisplay`,
-          color: thresholdBandColor('score', PLDDT_BANDS),
-        },
-      ],
-    })
   }
 }
 
-/**
- * Adds AlphaMissense pathogenicity scores track
- */
-function addAlphaMissenseTrack({
-  session,
+function alphaFoldConfidenceTrackConf({
   uniprotId,
+  confidenceUrl,
+  idPrefix,
 }: {
-  session: TrackSession
   uniprotId: string
-}) {
-  session.addSessionTrackConf({
+  confidenceUrl: string
+  idPrefix: string
+}): ProteinTrackConf {
+  return {
+    type: 'QuantitativeTrack',
+    trackId: `${idPrefix}-AlphaFold-confidence`,
+    name: 'AlphaFold confidence',
+    adapter: {
+      type: 'AlphaFoldConfidenceAdapter',
+      location: {
+        uri: confidenceUrl,
+      },
+    },
+    assemblyNames: [uniprotId],
+    displays: [
+      {
+        type: 'LinearWiggleDisplay',
+        displayId: `${idPrefix}-AlphaFold-confidence-LinearWiggleDisplay`,
+        color: thresholdBandColor('score', PLDDT_BANDS),
+      },
+    ],
+  }
+}
+
+function alphaMissenseTrackConf(
+  uniprotId: string,
+  idPrefix: string,
+): ProteinTrackConf {
+  return {
     type: 'MultiQuantitativeTrack',
-    trackId: `${uniprotId}-AlphaMissense-scores`,
+    trackId: `${idPrefix}-AlphaMissense-scores`,
     name: 'AlphaMissense scores',
     assemblyNames: [uniprotId],
     adapter: {
@@ -171,7 +145,7 @@ function addAlphaMissenseTrack({
     displays: [
       {
         type: 'LinearWiggleDisplay',
-        displayId: `${uniprotId}-AlphaMissense-scores-LinearWiggleDisplay`,
+        displayId: `${idPrefix}-AlphaMissense-scores-LinearWiggleDisplay`,
         defaultRendering: 'density',
         color: {
           field: 'score',
@@ -181,43 +155,32 @@ function addAlphaMissenseTrack({
         },
       },
     ],
-  })
+  }
 }
 
 /**
- * Adds all protein annotation tracks for a given UniProt ID
+ * Every annotation track of a UniProt entry, as configs for the view to carry.
+ * `idPrefix` has to be unique to the view: two views of one entry each hold
+ * their own copy, and a session tree cannot hold one trackId twice.
  */
-export function addAllProteinTracks({
-  session,
+export function proteinTrackConfs({
   uniprotId,
   featureTypes,
   confidenceUrl,
+  idPrefix,
 }: {
-  session: TrackSession
   uniprotId: string
   featureTypes: string[]
   confidenceUrl: string | undefined
-}) {
-  addUniProtFeatureTracks({
-    session,
-    uniprotId,
-    featureTypes,
-  })
-  addAntigenTrack({
-    session,
-    uniprotId,
-  })
-  addVariationTrack({
-    session,
-    uniprotId,
-  })
-  addAlphaFoldConfidenceTrack({
-    session,
-    uniprotId,
-    confidenceUrl,
-  })
-  addAlphaMissenseTrack({
-    session,
-    uniprotId,
-  })
+  idPrefix: string
+}): ProteinTrackConf[] {
+  return [
+    ...uniProtFeatureTrackConfs({ uniprotId, featureTypes, idPrefix }),
+    antigenTrackConf(uniprotId, idPrefix),
+    variationTrackConf(uniprotId, idPrefix),
+    ...(confidenceUrl
+      ? [alphaFoldConfidenceTrackConf({ uniprotId, confidenceUrl, idPrefix })]
+      : []),
+    alphaMissenseTrackConf(uniprotId, idPrefix),
+  ]
 }

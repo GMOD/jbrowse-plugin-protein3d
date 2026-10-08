@@ -47,6 +47,7 @@ interface MolstarCell {
   state: { isHidden?: boolean }
 }
 interface SessionView {
+  id?: string
   type: string
   proteinLinkage?: { uniprotId: string }
   proteinLinkageCoordinates?: {
@@ -55,7 +56,10 @@ interface SessionView {
   structures?: ProteinViewStructure[]
   superposedCount?: number
   menuItems?: () => { label?: string; onClick?: () => void }[]
-  tracks?: { displays?: { featureIdUnderMouse?: string }[] }[]
+  tracks?: {
+    configuration?: { trackId?: string }
+    displays?: { featureIdUnderMouse?: string }[]
+  }[]
   molstarPluginContext?: {
     helpers: {
       substructureParent: {

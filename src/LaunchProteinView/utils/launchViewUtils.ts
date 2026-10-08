@@ -1,15 +1,11 @@
-import { isSessionWithAddSessionTrack } from '@jbrowse/core/util'
-
 import { maybeLaunchSideBySide } from './sideBySide'
 import { getGeneDisplayName, getTranscriptDisplayName } from './util'
 import { proteinViewSnapshot } from '../../ProteinView/proteinViewSpec'
 import { launchProteinAnnotationView } from '../components/launchProteinAnnotationView'
+import { canAddTemporaryAssembly } from '../components/proteinAssemblySetup'
 
-import type {
-  AbstractSessionModel,
-  Feature,
-  SessionWithAddSessionTrack,
-} from '@jbrowse/core/util'
+import type { TemporaryAssemblySession } from '../components/proteinAssemblySetup'
+import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 interface LaunchViewParams {
@@ -83,10 +79,10 @@ export function launch3DProteinView({
   return proteinView
 }
 
-// The 1D annotation view adds temporary tracks/assemblies, so it requires a
-// SessionWithAddSessionTrack and a known uniprotId. Demanding both in the signature
-// forces callers to narrow up front — there's no silent no-op when a wide
-// session or missing id slips through.
+// The 1D annotation view adds a temporary assembly, so it requires a session
+// that takes one and a known uniprotId. Demanding both in the signature forces
+// callers to narrow up front — there's no silent no-op when a wide session or
+// missing id slips through.
 async function launch1DProteinView({
   session,
   view,
@@ -95,7 +91,7 @@ async function launch1DProteinView({
   uniprotId,
   confidenceUrl,
 }: Omit<LaunchViewParams, 'session' | 'uniprotId'> & {
-  session: SessionWithAddSessionTrack
+  session: AbstractSessionModel & TemporaryAssemblySession
   uniprotId: string
   confidenceUrl?: string
 }) {
@@ -125,10 +121,12 @@ export const PROTEIN_LAUNCH_LABELS = {
 } as const
 
 // The 1D-annotation launch has the same availability rule on both the AlphaFold
-// and Foldseek launch menus: a session it can add tracks to, and a uniprotId.
-// Returning it as a ready-to-run thunk (or undefined when unavailable) is the
-// single source of truth — an unavailable action is unrepresentable rather than
-// a menu item that silently no-ops.
+// and Foldseek launch menus: a session that takes a temporary assembly, and a
+// uniprotId. The tracks ride on the view, so a session that refuses session
+// tracks (`disableAddTracks`) still qualifies. Returning it as a ready-to-run
+// thunk (or undefined when unavailable) is the single source of truth — an
+// unavailable action is unrepresentable rather than a menu item that silently
+// no-ops.
 export function getConditionalProteinLaunches({
   session,
   view,
@@ -137,15 +135,13 @@ export function getConditionalProteinLaunches({
   uniprotId,
   confidenceUrl,
 }: LaunchViewParams & { confidenceUrl?: string }) {
-  const addTracksSession = isSessionWithAddSessionTrack(session)
-    ? session
-    : undefined
+  const assemblySession = canAddTemporaryAssembly(session) ? session : undefined
   return {
     launch1D:
-      addTracksSession && uniprotId
+      assemblySession && uniprotId
         ? () =>
             launch1DProteinView({
-              session: addTracksSession,
+              session: assemblySession,
               view,
               feature,
               selectedTranscript,

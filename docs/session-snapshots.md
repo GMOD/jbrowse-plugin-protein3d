@@ -110,6 +110,19 @@ of p53 maps 132 residues into P04637. A residue with no counterpart on the other
 side lights nothing, and an entry too dissimilar to the transcript is not linked
 at all.
 
+## The 1D annotation view's tracks
+
+A 1D protein-annotation view opens with every track it has: one per UniProt
+feature type, antigen, variation, AlphaMissense scores, and AlphaFold confidence
+when the entry has a model. Each track's whole configuration is stored on the
+track inside the view's snapshot, under a trackId prefixed with the view's id,
+so a saved or shared session restores the tracks with the view and closing the
+view removes them.
+
+The session's own track list holds none of the 1D view's tracks, so the track
+selector does not list them and a closed one cannot be reopened from there.
+Launch the 1D view again to get a closed track back.
+
 ## UniProt feature tracks
 
 A snapshot names no accession or numbering for the UniProt tracks; the plugin

@@ -182,13 +182,27 @@ the temporary assembly. NRAS's transcript is its entry, so the leg takes the
 identity path: the worker alignment and a real hover on a 1D view have run on no
 host.
 
-That leg's first run showed the 1D launch breaking the host's session contract
-(ADR-084 in jbrowse-components): `addSessionTrackConf` parks each UniProt track
-in `sessionTracks`, which the host rejects for a temporary assembly with one
-console error per track. The leg expects exactly those lines by name. The fix is
-passing each config to the view's `showTrack` as `inlineConf`, which also
-decides whether the tracks open with the view rather than waiting in the
-selector.
+The 1D launch hands each track's config to the view's `launchTrack` as
+`inlineConf`, so the config rides on the track node and leaves with the view
+(ADR-084 in jbrowse-components). Until 2026-10-08 `addSessionTrackConf` parked
+about 17 configs per entry in `sessionTracks`, which the host rejects for a
+temporary assembly with one console error per track, and the view opened empty.
+`proteinTrackConfs` builds the configs and `ProteinAnnotationSession` has no
+`addSessionTrackConf`, so the type refuses a regression. Three consequences to
+keep:
+
+- The track selector lists `session.tracks` only, so a closed 1D track cannot be
+  reopened. The launch therefore opens every track.
+- Every launch fetches the feature types and opens its own tracks, under ids
+  prefixed with the view's id: a session tree cannot hold one trackId twice.
+  Only the temporary assembly is shared, because adding it twice makes the host
+  warn.
+- `launchTrack`, not `showTrack`: `showTrack` returns undefined and defers when
+  the display's state model is still lazy. The host snackbars a config it
+  rejects and resolves undefined; the launch reports only a rejection, by track
+  name, and keeps opening the rest.
+
+The e2e leg asserts the view's tracks and an empty console.
 
 ## An MSA reaches a structure through the genome, never by column
 
