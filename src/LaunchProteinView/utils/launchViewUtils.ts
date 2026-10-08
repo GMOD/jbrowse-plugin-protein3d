@@ -59,8 +59,9 @@ export function launch3DProteinView({
   alignmentAlgorithm,
   displayName,
   sideBySide,
-}: LaunchViewParams &
+}: Omit<LaunchViewParams, 'view'> &
   Launch3DExtraParams & {
+    view: { id: string }
     // explicit override; when undefined the launch-dialog localStorage
     // preference decides (left genome | right protein)
     sideBySide?: boolean
