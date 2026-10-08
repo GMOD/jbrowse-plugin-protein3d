@@ -1,3 +1,37 @@
+## [1.4.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.3.0...v1.4.0) (2026-10-08)
+
+### Other Changes
+
+- Read a PDB file's EXPDTA before drawing B-factors as pLDDT, and fail an empty structure ([524c2c1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/524c2c127de6cb78d0424fbd79ff6bebed60fb2b))
+- Grey nucleic acids under the hydrophobicity scheme ([978b281](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/978b281fdd21fb0ce435c0c0d7ac989a50a7f854))
+- Resolve selection ranges as intervals, and stop a transcript range waiting on a mapper that never comes ([02ef808](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/02ef80833a83bd7db28da732a061f1684ffd612c))
+- Survive an unmount during the Mol* download, apply a controls toggle made meanwhile, and floor the canvas height ([ebbbf6e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ebbbf6e2ffa7c31cd36d660c5c7aa7144899f76a))
+- Stop the launch dialog ranking against the previous structure's chains, and retrying a failed fetch forever ([4a8eb20](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4a8eb208ca49ee96de6bebec8fab2bd11d79d91b))
+- Hold a launch on an invalid PDB id or an empty Foldseek query, and fix three release-tooling gaps ([36d1aaa](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/36d1aaa23183774058ff6f7f7b6f81987322c718))
+- Send a PDB entry through SIFTS whatever accession sits beside it, and resolve a 1D hover and a gene lookup by the connected view ([361072b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/361072ba5a5ea8869eab1e126083fda57bb35c93))
+- Open the add-structure and manual-alignment dialogs through the session ([fe0cbdb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/fe0cbdb6f22d5751e66f026ab4392a3a103b102c))
+- Tie the shipped Mol* css to the installed Mol*, and make the probes prove what they checked ([ab43afb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ab43afb7287a3196a90648f05d82d40c14022f4f))
+- Write a structure hover once per residue, and drop dead parameters and two unreferenced config files ([481f46d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/481f46dad54fc7097e5ecb183d5c625a3e1360f4))
+- Validate a typed UniProt accession, hold a launch already in flight, and say when UniProt failed to answer ([fd4f3ab](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/fd4f3abd8e3dc7210cdcb39117c1bfefdbee24ff))
+- Drop four dependencies nothing imports ([84586b0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/84586b05feb15bc231ab2a1a2ce1157110cab202))
+- Align a 1D protein view's transcript to its UniProt entry instead of sharing one index ([5f5e2ef](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5f5e2ef84e9b37209129e0e03be031924f3a724b))
+- Withhold UniProt features from an AlphaFold isoform model instead of misplacing them ([6433a1b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6433a1b72e3dd87121ee69da74d34890657dbd16))
+- Run a 1D protein view on the host in the e2e ([6afe6b6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6afe6b627ab63545547de08fa6cf985693e8c349))
+- Drop a second guard for the published-mode probe, which main already handles ([1a49671](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1a49671b5ac2882eff5784aa450bd110359b7ab6))
+- Hold a File or URL launch until its structure is read, and clear a launch error on the next try ([5e0f542](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5e0f5429d4f7a570ebca5e9936f76780614d3c3c))
+- Make an alignment-panel click one selection for the view, and stop superposition hanging in a hidden tab ([47f388c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/47f388cb387f7599395318cbd37ee8584902bdf2))
+- Fail a missing chunk in the candidate probes instead of answering with the entry, and clear stale tooling ([d292d8f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d292d8f482a31d870ed8b048f8c50d9aee8d6800))
+- Keep ignoring per-version screenshot directories ([0e39472](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0e394723f2f8044b2941cd57391423d79a10b67e))
+- Clamp a declared trackHeight where the lane height is read ([b95fd0f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b95fd0fd1aaddf3868f7cf434cca3f31c50bc1cd))
+- Make the Tune menu report what the view does ([5abfa3f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5abfa3f55d134c007f8cfe57bf68797d2b4ea8fb))
+- Document which settings depend on the alignment panel and which persist ([710b9da](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/710b9da21df6a5b7e8dc756670aaf42aad1d88c0))
+- Normalize a protein view launch before it resolves anything ([cb8fb72](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cb8fb724d37b43e5e3a8aad8ad0f2e446c7f8a29))
+- Say what a transcriptId lookup needs, whatever structure the launch names ([37ea4f7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/37ea4f7a298b4ef0c9f753fa7e3c76039dd7d037))
+- Document the order a structure's sources are read in and what a launch reports ([1c23037](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1c23037cd6ac52f2b5ec1f420fd4ed327d329c70))
+- Carry a 1D protein view's tracks on the view instead of in sessionTracks ([11d2db9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/11d2db9f86dc31671d852dc65d7c2b2a2a2325e9))
+- Give the e2e an ordinary user agent, and wait for a 1D view's tracks before reading the console ([568701a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/568701a1c2e22eb75bad91313c7f2437e3f80bd7))
+- Require the assembly naming a hover is compared through, and pin the CI drift ([a821af9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a821af9265d7452a2363f2e0b8477d023360afcb))
+
 ## [1.3.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.2.1...v1.3.0) (2026-10-08)
 
 ### Other Changes
