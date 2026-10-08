@@ -4,6 +4,7 @@ import loadMolstar from './loadMolstar'
 import { loadStructure } from './structurePipeline'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
+import type { ModelFormat } from 'molstar/lib/mol-model-formats/format'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { Entity, EntityConfidence } from 'p2s_mapper'
 
@@ -20,6 +21,38 @@ export interface StructureData {
   /** Ids of every Mol* model this load created, which is how an interaction
    * on the shared plugin is told apart from one on another structure. */
   modelIds?: string[]
+}
+
+type Molstar = Awaited<ReturnType<typeof loadMolstar>>
+
+function pdbExperimentalMethods(source: ModelFormat, { PdbFormat }: Molstar) {
+  if (!PdbFormat.is(source)) {
+    return []
+  }
+  const { data, indices, count } = source.data.lines
+  const methods: string[] = []
+  for (let i = 0; i < count; i++) {
+    const line = data.substring(indices[2 * i]!, indices[2 * i + 1])
+    if (line.startsWith('EXPDTA')) {
+      methods.push(...line.slice(10).split(';'))
+    } else if (line.startsWith('ATOM') || line.startsWith('HETATM')) {
+      break
+    }
+  }
+  return methods.map(m => m.trim()).filter(m => m !== '')
+}
+
+// Mol* converts a PDB file to mmCIF without filling `exptl`, so its method is
+// read from the EXPDTA records of the file it kept.
+function experimentalMethods(source: ModelFormat | undefined, molstar: Molstar) {
+  if (!source || !molstar.MmcifFormat.is(source)) {
+    return []
+  }
+  const { db, source: original } = source.data
+  return [
+    ...Array.from<string>(db.exptl.method.toArray()),
+    ...(original ? pdbExperimentalMethods(original, molstar) : []),
+  ]
 }
 
 /**
@@ -40,18 +73,13 @@ export async function loadStructureData({
     model,
     structures: molstarStructures,
     modelIds,
-  } = data || url
-    ? await loadStructure({ plugin, data: data || undefined, url })
-    : { model: undefined, structures: [], modelIds: [] }
+  } = await loadStructure({ plugin, data: data || undefined, url })
   // An experimental entry's B-factors are not confidence: read as pLDDT they
   // invert, drawing a well-ordered residue as "very low".
-  const { MmcifFormat } = await loadMolstar()
-  const source = model?.obj?.data.sourceData
-  const methods =
-    source && MmcifFormat.is(source)
-      ? Array.from(source.data.db.exptl.method.toArray())
-      : []
-  const experimental = methods.some(m => m !== 'THEORETICAL MODEL')
+  const experimental = experimentalMethods(
+    model?.obj?.data.sourceData,
+    await loadMolstar(),
+  ).some(m => m !== 'THEORETICAL MODEL')
   return {
     entities: model ? extractEntities(model) : undefined,
     confidence:

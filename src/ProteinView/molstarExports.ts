@@ -9,6 +9,7 @@ export {
 } from 'molstar/lib/mol-model/structure'
 export { tmAlign } from 'molstar/lib/mol-model/structure/structure/util/tm-align'
 export { MmcifFormat } from 'molstar/lib/mol-model-formats/structure/mmcif'
+export { PdbFormat } from 'molstar/lib/mol-model-formats/structure/pdb'
 export { setSubtreeVisibility } from 'molstar/lib/mol-plugin/behavior/static/state'
 export { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 export { PluginConfig } from 'molstar/lib/mol-plugin/config'
