@@ -1,3 +1,15 @@
+## [1.3.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.2.1...v1.3.0) (2026-10-08)
+
+### Other Changes
+
+- Add a resize handle that scales every feature-track lane ([f26727e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f26727e081451c60dcc2026a62051e9262cabdb1))
+- Probe the published bundle without crashing ([be864fd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/be864fd5a964856c755585f54a73e80e7e3620bb))
+- Clip a UniProt feature to the residues the structure has ([872ba4f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/872ba4fa0dac57105b2ec4bdbc2144cdb7bb9ec2))
+- Place feature bars as fractions of their row ([9e8096b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9e8096b01f05dc4e605ccb8123b2f4cbbefbc7f4))
+- Refresh e2e screenshots for the track resize handle ([94e48c6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/94e48c6d5e000b86a31b901bc120a409fe72ba10))
+- Allow the host's unused-preload hint in the console gates ([eb5c65d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/eb5c65d0e184cd33693c914ad7761f910cf11bfe))
+- Bump p2s_mapper to 1.2.2, which looks up YP_ RefSeq proteins ([4a1002f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4a1002fef9ea2c96b4a6be74b2dae4c441d89fbd))
+
 ## [1.2.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.2.0...v1.2.1) (2026-10-08)
 
 ### Documentation
