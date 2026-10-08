@@ -1,6 +1,7 @@
 import loadMolstar from './loadMolstar'
 import { structureRootCell } from './structureCells'
 
+import type * as MolstarExports from './molstarExports'
 import type { Mat4 } from 'molstar/lib/mol-math/linear-algebra'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -69,24 +70,28 @@ export async function superposeStructures(
       loci,
     )
     for (const cell of cells) {
-      await applyTransform(plugin, cell, bTransform, coordinateSystem)
+      await applyTransform(molstar, plugin, cell, bTransform, coordinateSystem)
     }
     plugin.log.info(
       `TM-align: TM-score=${tmScoreA.toFixed(4)}/${tmScoreB.toFixed(4)}, RMSD=${rmsd.toFixed(2)} Å, aligned ${alignedLength} residues.`,
     )
   }
 
-  await new Promise(res => requestAnimationFrame(res))
+  // a hidden tab runs no animation frame, and the wait would never end
+  await new Promise(res => {
+    requestAnimationFrame(res)
+    setTimeout(res, 100)
+  })
   await PluginCommands.Camera.Reset(plugin)
 }
 
 async function applyTransform(
+  { Mat4, StateObjectRef, StateTransforms }: typeof MolstarExports,
   plugin: PluginContext,
   s: StateObjectRef,
   matrix: Mat4,
   coordinateSystem: { matrix: Mat4 } | undefined,
 ) {
-  const { Mat4, StateObjectRef, StateTransforms } = await loadMolstar()
   const r = StateObjectRef.resolveAndCheck(plugin.state.data, s)
   if (!r) {
     return

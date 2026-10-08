@@ -5,7 +5,6 @@ import { observer } from 'mobx-react'
 
 import { HOVERED_BORDER, SELECTED_BORDER } from '../constants'
 import { getFeatureColor } from '../hooks/useUniProtFeatures'
-import { clickProteinToGenome } from '../proteinToGenomeMapping'
 
 import type { FeatureLayout } from '../hooks/useProteinFeatureTrackData'
 import type { UniProtFeature } from '../hooks/useUniProtFeatures'
@@ -86,15 +85,8 @@ const FeatureBar = observer(function FeatureBar({
             model.setSelectedFeatureId(undefined)
             model.setClickedStructureRanges([])
           } else {
+            model.selectResidues(layout.structureStart, layout.structureEnd)
             model.setSelectedFeatureId(feature.uniqueId)
-            clickProteinToGenome({
-              model,
-              structureSeqPos: layout.structureStart,
-              structureSeqEndPos: layout.structureEnd,
-            }).catch((e: unknown) => {
-              console.error(e)
-              model.setViewError(e)
-            })
           }
         }}
         onMouseEnter={() => {

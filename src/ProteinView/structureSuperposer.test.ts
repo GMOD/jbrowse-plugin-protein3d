@@ -125,6 +125,17 @@ test('reports superposition errors', async () => {
   logged.mockRestore()
 })
 
+test('a failure from a plugin swapped away mid-run is not reported', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  mockSuperpose.mockRejectedValueOnce(new Error('plugin disposed'))
+  const { host, run } = setup({}, 2)
+  run()
+  host.setPlugin({})
+  await tick()
+  expect(host.errors).toEqual([])
+  logged.mockRestore()
+})
+
 // The view's structures, each with every model of its load, in view order: the
 // first is the pivot. Reading Mol*'s own list instead aligned each model of an
 // NMR ensemble on its own.

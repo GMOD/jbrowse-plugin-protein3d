@@ -139,6 +139,16 @@ test('clearing the selection puts every structure down', () => {
   }
 })
 
+test('a selection made in one alignment panel puts the other structures down', () => {
+  const view = makeView()
+  const [first, second] = view.structures
+  second!.setClickedStructureRanges([{ start: 1, end: 2 }])
+
+  first!.selectResidues(3, 7)
+  expect(first!.clickedStructureRanges).toEqual([{ start: 3, end: 7 }])
+  expect(second!.clickedStructureRanges).toEqual([])
+})
+
 test('one alignment panel is open: the seeded structure, else the first', () => {
   const plain = ProteinView.create({
     type: 'ProteinView',

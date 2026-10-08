@@ -65,9 +65,9 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
       superposing = true
       superposeStructures(plugin, loads)
         .catch((e: unknown) => {
-          if (isAlive(host)) {
+          console.error(e)
+          if (isAlive(host) && host.molstarPluginContext === plugin) {
             host.setError(e)
-            console.error(e)
           }
         })
         .finally(() => {

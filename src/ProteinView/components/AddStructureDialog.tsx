@@ -46,6 +46,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
   const [choice, setChoice] = useState('pdb')
   const [structureURL, setStructureURL] = useState('')
   const [error, setError] = useState<unknown>()
+  const [adding, setAdding] = useState(false)
   const [mapToTranscript, setMapToTranscript] = useState(true)
   const canMap = !!model.primaryStructure?.userProvidedTranscriptSequence
 
@@ -53,6 +54,8 @@ const AddStructureDialog = observer(function AddStructureDialog({
   // at hydration, so the dialog states the source rather than rebuilding the
   // AlphaFold/RCSB url formats a second time.
   const handleAdd = async () => {
+    setAdding(true)
+    setError(undefined)
     try {
       const source: ProteinStructureSpec | undefined =
         choice === 'pdb' && pdbId
@@ -85,6 +88,8 @@ const AddStructureDialog = observer(function AddStructureDialog({
     } catch (e) {
       console.error(e)
       setError(e)
+    } finally {
+      setAdding(false)
     }
   }
 
@@ -225,7 +230,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
           }}
           variant="contained"
           color="primary"
-          disabled={!canAdd}
+          disabled={!canAdd || adding}
         >
           Add structure
         </Button>

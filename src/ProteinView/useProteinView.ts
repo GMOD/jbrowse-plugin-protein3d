@@ -23,7 +23,7 @@ export default function useProteinView({
   model,
 }: {
   showControls: boolean
-  model?: JBrowsePluginProteinViewModel
+  model: JBrowsePluginProteinViewModel
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
@@ -103,7 +103,7 @@ export default function useProteinView({
         } else {
           state.plugin = created
           setPlugin(created)
-          model?.setMolstarPluginContext(created)
+          model.setMolstarPluginContext(created)
         }
       } catch (e) {
         if (created && state.plugin !== created) {
@@ -120,7 +120,7 @@ export default function useProteinView({
       state.cancelled = true
       // Drop the stale reference before disposing so model autoruns don't act
       // on a torn-down plugin.
-      if (model && isAlive(model)) {
+      if (isAlive(model)) {
         model.setMolstarPluginContext(undefined)
       }
       // dispose() (not unmount()) is what frees the WebGL context, canvas3d and
@@ -148,13 +148,15 @@ export default function useProteinView({
         }
       } catch (e) {
         console.error(e)
-        setError(e)
+        if (isAlive(model)) {
+          model.setError(e)
+        }
       }
     })()
     return () => {
       state.cancelled = true
     }
-  }, [plugin, showControls])
+  }, [plugin, showControls, model])
 
   return { parentRef, error, loading }
 }

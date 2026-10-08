@@ -1449,6 +1449,24 @@ const Structure = types
     },
     /**
      * #action
+     * A click in the alignment panel: one selection for the whole view, as a
+     * click in Mol* is, so every other structure's selection goes down.
+     */
+    selectResidues(structureSeqPos: number, structureSeqEndPos?: number) {
+      self.parentView.clearSelection()
+      clickProteinToGenome({
+        model: self,
+        structureSeqPos,
+        structureSeqEndPos,
+      }).catch((e: unknown) => {
+        console.error(e)
+        self.parentView.setError(e)
+      })
+    },
+  }))
+  .actions(self => ({
+    /**
+     * #action
      */
     clickAlignmentPosition(alignmentPos: number) {
       const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
@@ -1456,13 +1474,7 @@ const Structure = types
       )
       self.setSelectedFeatureId(undefined)
       if (structureSeqPos !== undefined) {
-        clickProteinToGenome({
-          model: self,
-          structureSeqPos,
-        }).catch((e: unknown) => {
-          console.error(e)
-          self.parentView.setError(e)
-        })
+        self.selectResidues(structureSeqPos)
       } else {
         self.setClickedStructureRanges([])
       }

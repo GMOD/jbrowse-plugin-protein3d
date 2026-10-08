@@ -5,19 +5,25 @@ import type { AbstractSessionModel } from '@jbrowse/core/util'
  * What the highlight/hover bridges need from a ProteinView. Declared
  * structurally (like ParentProteinView in structureModel.ts) because the MST
  * Instance type of `structures` widens to a snapshot union at the array
- * boundary, which would force a cast at every call site.
+ * boundary.
  */
 export interface HighlightSourceProteinView {
   id: string
   structures: JBrowsePluginProteinStructureModel[]
 }
 
+type SessionView = AbstractSessionModel['views'][number]
+
+function isProteinView(
+  v: SessionView,
+): v is SessionView & HighlightSourceProteinView {
+  return v.type === 'ProteinView' && 'structures' in v
+}
+
 export function getProteinViews(
   session: AbstractSessionModel,
 ): HighlightSourceProteinView[] {
-  return session.views.filter(
-    v => v.type === 'ProteinView',
-  ) as unknown as HighlightSourceProteinView[]
+  return session.views.filter(isProteinView)
 }
 
 interface ConnectableStructure {
