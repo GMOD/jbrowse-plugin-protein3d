@@ -13,6 +13,7 @@ import {
   applyColorTheme,
   colorSchemeLegend,
 } from './applyColorTheme'
+import { MAX_TRACK_HEIGHT, MIN_TRACK_HEIGHT, trackHeightOf } from './constants'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import { makeLociChannel } from './lociChannel'
 import { defaultDisplayName } from './proteinViewSpec'
@@ -118,6 +119,12 @@ function stateModelFactory() {
         compactTracks: true,
         /**
          * #property
+         * px height of one feature-track lane once the tracks' resize handle
+         * has been dragged; unset, `compactTracks` decides
+         */
+        trackHeight: types.maybe(types.number),
+        /**
+         * #property
          * also draw the feature types in MINOR_FEATURE_TYPES and the
          * hydrophobicity track
          */
@@ -189,6 +196,17 @@ function stateModelFactory() {
       setHeight(n: number) {
         self.height = n
         return n
+      },
+      /**
+       * #action
+       * Every lane of every feature track grows by the same px, so the track
+       * area scales in proportion.
+       */
+      resizeTracks(distance: number) {
+        self.trackHeight = Math.min(
+          MAX_TRACK_HEIGHT,
+          Math.max(MIN_TRACK_HEIGHT, trackHeightOf(self) + distance),
+        )
       },
       /**
        * #action
@@ -300,6 +318,9 @@ function stateModelFactory() {
       toggleSetting(key: PersistedSetting) {
         const value = !self[key]
         self[key] = value
+        if (key === 'compactTracks') {
+          self.trackHeight = undefined
+        }
         storeSetting(key, value)
       },
       /**

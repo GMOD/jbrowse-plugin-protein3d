@@ -6,7 +6,7 @@ import UnfoldMoreIcon from '@mui/icons-material/UnfoldMore'
 import { IconButton, Tooltip } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { HIDE_BUTTON_COLOR } from '../constants'
+import { HIDE_BUTTON_COLOR, NORMAL_TRACK_HEIGHT } from '../constants'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
 
@@ -20,7 +20,7 @@ const FeatureTypeLabel = observer(function FeatureTypeLabel({
   model: JBrowsePluginProteinStructureModel
 }) {
   const expanded = model.expandedFeatureTypes.has(type)
-  const iconSize = model.trackHeight
+  const iconSize = Math.min(model.trackHeight, NORMAL_TRACK_HEIGHT)
   return (
     <Tooltip title={type} placement="left">
       <div

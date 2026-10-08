@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { packLanes } from './useProteinFeatureTrackData'
+import { packLanes, widestFirst } from './useProteinFeatureTrackData'
 
 import type { FeatureLayout } from './useProteinFeatureTrackData'
 
@@ -54,4 +54,9 @@ describe('packLanes', () => {
   it('returns at least one lane for an empty group', () => {
     expect(packLanes([])).toBe(1)
   })
+})
+
+it('paints a collapsed track widest first, so a short bar stays reachable', () => {
+  const order = widestFirst([layout(0, 9), layout(0, 300), layout(20, 20)])
+  expect(order.map(l => l.feature.uniqueId)).toEqual(['0-300', '0-9', '20-20'])
 })

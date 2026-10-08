@@ -8,7 +8,6 @@ export interface UniProtFeature {
   start: number
   end: number
   description: string
-  id?: string
   uniqueId: string
 }
 
@@ -71,26 +70,18 @@ async function fetchUniProtFeatures(url: string): Promise<UniProtFeature[]> {
     const end = Number.parseInt(parts[4] ?? '', 10)
     const attributes = parts[8] ?? ''
 
-    let description = ''
-    let id: string | undefined
-    for (const attr of attributes.split(';')) {
-      const [key, value] = attr.split('=')
-      if (key === 'Note') {
-        description = decodeURIComponent(value ?? '')
-      } else if (key === 'ID') {
-        id = value
-      }
-    }
+    const note = attributes
+      .split(';')
+      .find(attr => attr.startsWith('Note='))
+      ?.slice('Note='.length)
 
     if (type && start >= 1 && end >= start) {
-      const uniqueId = `${type}-${start}-${end}-${features.length}`
       features.push({
         type,
         start,
         end,
-        description,
-        id,
-        uniqueId,
+        description: decodeURIComponent(note ?? ''),
+        uniqueId: `${type}-${start}-${end}-${features.length}`,
       })
     }
   }

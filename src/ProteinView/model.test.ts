@@ -186,3 +186,24 @@ test('minor feature types are omitted until every track is shown', () => {
   expect(structure.omittedFeatureTypes.has('Helix')).toBe(false)
   expect(structure.omittedFeatureTypes.has('Natural variant')).toBe(true)
 })
+
+test('dragging the track handle resizes every lane, within limits', () => {
+  const view = makeView()
+  const structure = view.structures[0]!
+  expect(structure.laneHeight).toBe(9)
+
+  structure.resizeTracks(6)
+  expect(view.trackHeight).toBe(14)
+  expect(view.structures[1]!.laneHeight).toBe(16)
+
+  structure.resizeTracks(-100)
+  expect(structure.trackHeight).toBe(2)
+  structure.resizeTracks(1000)
+  expect(structure.trackHeight).toBe(40)
+
+  vi.stubGlobal('localStorage', { getItem: () => null, setItem: () => {} })
+  view.toggleSetting('compactTracks')
+  vi.unstubAllGlobals()
+  expect(view.trackHeight).toBeUndefined()
+  expect(structure.trackHeight).toBe(12)
+})

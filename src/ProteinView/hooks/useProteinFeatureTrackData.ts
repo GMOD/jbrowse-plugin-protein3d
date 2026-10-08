@@ -84,6 +84,18 @@ export function packLanes(layouts: FeatureLayout[]): number {
   return Math.max(laneEnds.length, 1)
 }
 
+/**
+ * Paint order for a collapsed track, where every bar shares one row: a wide
+ * bar painted last covers the short ones inside it, which can then be neither
+ * hovered nor clicked.
+ */
+export function widestFirst(layouts: FeatureLayout[]) {
+  return [...layouts].sort(
+    (a, b) =>
+      b.alignmentEnd - b.alignmentStart - (a.alignmentEnd - a.alignmentStart),
+  )
+}
+
 export default function useProteinFeatureTrackData(
   model: JBrowsePluginProteinStructureModel,
   uniprotId: string | undefined,
@@ -120,8 +132,8 @@ export default function useProteinFeatureTrackData(
     }
     return [...byType].map(([type, layouts]) => ({
       type,
-      layouts,
       laneCount: packLanes(layouts),
+      layouts: widestFirst(layouts),
     }))
   }, [
     features,

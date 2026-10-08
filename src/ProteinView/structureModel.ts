@@ -35,11 +35,9 @@ import { alignOffThread, isIdentical } from './alignOffThread'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   CHAR_WIDTH,
-  COMPACT_TRACK_GAP,
-  COMPACT_TRACK_HEIGHT,
   MINOR_FEATURE_TYPES,
-  NORMAL_TRACK_GAP,
-  NORMAL_TRACK_HEIGHT,
+  trackGapOf,
+  trackHeightOf,
 } from './constants'
 import { entityAlignedTo } from './entityAlignedTo'
 import { frameResidues } from './frameSelection'
@@ -94,11 +92,13 @@ export interface ParentProteinView {
   showHighlight: boolean
   showProteinTracks: boolean
   compactTracks: boolean
+  trackHeight: number | undefined
   showAllFeatureTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
   molstarPluginContext: PluginContext | undefined
   settled: boolean
   setError: (e: unknown) => void
+  resizeTracks: (distance: number) => void
   clearSelection: () => void
 }
 
@@ -1143,14 +1143,17 @@ const Structure = types
       return CHAR_WIDTH
     },
     get trackHeight(): number {
-      return this.parentView.compactTracks
-        ? COMPACT_TRACK_HEIGHT
-        : NORMAL_TRACK_HEIGHT
+      return trackHeightOf(this.parentView)
     },
     get trackGap(): number {
-      return this.parentView.compactTracks
-        ? COMPACT_TRACK_GAP
-        : NORMAL_TRACK_GAP
+      return trackGapOf(this.trackHeight)
+    },
+    /**
+     * #getter
+     * What one lane of the feature tracks takes, bar and gap
+     */
+    get laneHeight(): number {
+      return this.trackHeight + this.trackGap
     },
     get alignmentAlgorithm(): AlignmentAlgorithm {
       return this.parentView.alignmentAlgorithm
@@ -1349,6 +1352,12 @@ const Structure = types
      */
     setViewError(e: unknown) {
       self.parentView.setError(e)
+    },
+    /**
+     * #action
+     */
+    resizeTracks(distance: number) {
+      self.parentView.resizeTracks(distance)
     },
     /**
      * #action

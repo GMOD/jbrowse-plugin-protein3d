@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react'
 
+import { ResizeHandle } from '@jbrowse/core/ui'
 import { Tooltip } from '@mui/material'
 import { autorun } from 'mobx'
 import { observer } from 'mobx-react'
@@ -15,7 +16,7 @@ import { ColorKey, GradientKey } from './ColorKey'
 import ColumnOverlays, { SelectionBackdrop } from './ColumnOverlays'
 import FeatureTypeLabel from './FeatureTypeLabel'
 import MismatchShading from './MismatchShading'
-import ProteinFeatureTrack, { featureTrackHeight } from './ProteinFeatureTrack'
+import ProteinFeatureTrack from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString from './SplitString'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
@@ -104,8 +105,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
     label,
     confidenceCells,
     columnWidth,
-    trackHeight,
-    trackGap,
+    laneHeight,
   } = model
   const hydrophobicityCells = showAllFeatureTracks
     ? model.hydrophobicityCells
@@ -178,7 +178,6 @@ const ProteinAlignment = observer(function ProteinAlignment({
   }
 
   const columns = alignmentLength(alignment)
-  const valueRowHeight = trackHeight + trackGap
   const sequenceRow = (
     key: string,
     rowLabel: string,
@@ -234,6 +233,16 @@ const ProteinAlignment = observer(function ProteinAlignment({
     },
   ]
   const sequenceHeight = sequenceRows.length * ROW_HEIGHT
+  let trackLanes = 0
+  const trackRow = (
+    key: string,
+    lanes: number,
+    rowLabel: React.ReactNode,
+    content: React.ReactNode,
+  ) => {
+    trackLanes += lanes
+    rows.push({ key, height: lanes * laneHeight, label: rowLabel, content })
+  }
   if (showProteinTracks) {
     if (featureStatus) {
       rows.push({
@@ -253,75 +262,65 @@ const ProteinAlignment = observer(function ProteinAlignment({
       })
     }
     for (const group of groups ?? []) {
-      rows.push({
-        key: `feature-${group.type}`,
-        height: featureTrackHeight(model, group),
-        label: (
-          <FeatureTypeLabel
-            type={group.type}
-            laneCount={group.laneCount}
-            model={model}
-          />
-        ),
-        content: <ProteinFeatureTrack group={group} model={model} />,
-      })
+      trackRow(
+        `feature-${group.type}`,
+        model.expandedFeatureTypes.has(group.type) ? group.laneCount : 1,
+        <FeatureTypeLabel
+          type={group.type}
+          laneCount={group.laneCount}
+          model={model}
+        />,
+        <ProteinFeatureTrack group={group} model={model} />,
+      )
     }
     if (confidenceCells.length > 0) {
-      rows.push({
-        key: 'plddt',
-        height: valueRowHeight,
-        label: (
-          <GutterLabel
-            label="pLDDT"
-            title={
-              <ColorKey
-                title="AlphaFold per-residue confidence (pLDDT)"
-                entries={PLDDT_BANDS}
-                color="inherit"
-              />
-            }
-          />
-        ),
-        content: (
-          <ResidueValueTrack
-            cells={confidenceCells}
-            colorFor={plddtColor}
-            formatValue={v => `pLDDT ${v.toFixed(0)}`}
-            model={model}
-          />
-        ),
-      })
+      trackRow(
+        'plddt',
+        1,
+        <GutterLabel
+          label="pLDDT"
+          title={
+            <ColorKey
+              title="AlphaFold per-residue confidence (pLDDT)"
+              entries={PLDDT_BANDS}
+              color="inherit"
+            />
+          }
+        />,
+        <ResidueValueTrack
+          cells={confidenceCells}
+          colorFor={plddtColor}
+          formatValue={v => `pLDDT ${v.toFixed(0)}`}
+          model={model}
+        />,
+      )
     }
     if (hydrophobicityCells.length > 0) {
-      rows.push({
-        key: 'hydrophobicity',
-        height: valueRowHeight,
-        label: (
-          <GutterLabel
-            label="hydro"
-            title={
-              <GradientKey
-                title="Kyte-Doolittle hydrophobicity"
-                testId="hydrophobicity-legend"
-                minLabel="hydrophilic"
-                maxLabel="hydrophobic"
-                colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
-                  hydrophobicityColor(score),
-                )}
-                color="inherit"
-              />
-            }
-          />
-        ),
-        content: (
-          <ResidueValueTrack
-            cells={hydrophobicityCells}
-            colorFor={hydrophobicityColor}
-            formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
-            model={model}
-          />
-        ),
-      })
+      trackRow(
+        'hydrophobicity',
+        1,
+        <GutterLabel
+          label="hydro"
+          title={
+            <GradientKey
+              title="Kyte-Doolittle hydrophobicity"
+              testId="hydrophobicity-legend"
+              minLabel="hydrophilic"
+              maxLabel="hydrophobic"
+              colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
+                hydrophobicityColor(score),
+              )}
+              color="inherit"
+            />
+          }
+        />,
+        <ResidueValueTrack
+          cells={hydrophobicityCells}
+          colorFor={hydrophobicityColor}
+          formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
+          model={model}
+        />,
+      )
     }
   }
 
@@ -414,6 +413,17 @@ const ProteinAlignment = observer(function ProteinAlignment({
           </div>
         </div>
       </div>
+      {trackLanes > 0 ? (
+        <ResizeHandle
+          bar
+          title="Drag to resize the feature tracks"
+          data-testid="feature-tracks-resize-handle"
+          gain={trackLanes}
+          onDrag={distance => {
+            model.resizeTracks(distance)
+          }}
+        />
+      ) : null}
     </div>
   )
 })

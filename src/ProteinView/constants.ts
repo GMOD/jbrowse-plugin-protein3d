@@ -4,7 +4,27 @@ export const COMPACT_TRACK_HEIGHT = 8
 export const COMPACT_TRACK_GAP = 1
 export const NORMAL_TRACK_HEIGHT = 12
 export const NORMAL_TRACK_GAP = 2
+export const MIN_TRACK_HEIGHT = 2
+export const MAX_TRACK_HEIGHT = 40
 export const LABEL_WIDTH = 124
+
+export function trackHeightOf({
+  trackHeight,
+  compactTracks,
+}: {
+  trackHeight?: number
+  compactTracks: boolean
+}) {
+  return (
+    trackHeight ?? (compactTracks ? COMPACT_TRACK_HEIGHT : NORMAL_TRACK_HEIGHT)
+  )
+}
+
+export function trackGapOf(trackHeight: number) {
+  return trackHeight < NORMAL_TRACK_HEIGHT
+    ? COMPACT_TRACK_GAP
+    : NORMAL_TRACK_GAP
+}
 
 export const MINOR_FEATURE_TYPES = new Set([
   'Chain',
