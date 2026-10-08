@@ -18,11 +18,23 @@ The whole spec of this link is `{"type":"ProteinView","gene":"BRAF"}`. The
 plugin finds BRAF through the hub's text search index, opens the genome on it,
 looks up its UniProt entry and that entry's AlphaFold model, and maps the
 isoform the model was folded from. The link uses JBrowse `main`, and `gene`
-arrives with the first plugin release after 1.1.0.
+needs plugin 1.2.0 or later.
 
 [BRAF by name](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%7D%5D%7D)
 
 <!-- expect {"chain":"A","minIdentity":0.99,"minAligned":700} -->
+
+Any hub whose assembly has a text search index over its gene track takes the
+same spec. The mouse link opens Trp53 on mm39, and the yeast link CDC28 on
+sacCer3, each with its own species' AlphaFold model.
+
+[Mouse Trp53 by name](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fmm39%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22Trp53%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":390} -->
+
+[Yeast CDC28 by name](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2FsacCer3%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22CDC28%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":298} -->
 
 ## A short peptide bound to a larger partner
 
