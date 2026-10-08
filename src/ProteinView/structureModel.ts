@@ -651,12 +651,6 @@ const Structure = types
     },
     /**
      * #getter
-     */
-    get transcriptPositionToAlignmentMap() {
-      return this.coordinateMapper?.maps.transcriptPositionToAlignmentMap
-    },
-    /**
-     * #getter
      * Per-residue pLDDT of the mapped entity, mapped to alignment columns and
      * shown only when the B-factor column actually looks like AlphaFold
      * confidence. Values are looked up by label_seq_id through the entity's own

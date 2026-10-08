@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material'
 import { observer } from 'mobx-react'
+import { isPdbId } from 'p2s_mapper'
 
 import {
   STRUCTURE_FILE_ACCEPT,
@@ -92,10 +93,11 @@ const AddStructureDialog = observer(function AddStructureDialog({
     return null
   }
 
+  const pdbIdInvalid = pdbId !== '' && !isPdbId(pdbId)
   const canAdd =
     (choice === 'url' && structureURL !== '') ||
     (choice === 'file' && file !== undefined) ||
-    (choice === 'pdb' && pdbId !== '') ||
+    (choice === 'pdb' && isPdbId(pdbId)) ||
     (choice === 'uniprot' && uniprotId !== '')
 
   return (
@@ -130,10 +132,16 @@ const AddStructureDialog = observer(function AddStructureDialog({
             fullWidth
             value={pdbId}
             onChange={event => {
-              setPdbId(event.target.value.toUpperCase())
+              setPdbId(event.target.value.trim().toUpperCase())
             }}
             label="PDB ID (e.g. 1CRN)"
             placeholder="Enter PDB ID"
+            error={pdbIdInvalid}
+            helperText={
+              pdbIdInvalid
+                ? 'A PDB ID is four characters beginning with a digit'
+                : undefined
+            }
             sx={{ mb: 2 }}
           />
         ) : null}
@@ -143,11 +151,11 @@ const AddStructureDialog = observer(function AddStructureDialog({
             fullWidth
             value={uniprotId}
             onChange={event => {
-              setUniprotId(event.target.value.toUpperCase())
+              setUniprotId(event.target.value.trim().toUpperCase())
             }}
             label="UniProt ID (e.g. P04637)"
             placeholder="Enter UniProt ID"
-            helperText="Will fetch the AlphaFold v6 predicted structure"
+            helperText="Fetches the AlphaFold predicted structure"
             sx={{ mb: 2 }}
           />
         ) : null}
@@ -158,7 +166,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
             label="Structure URL"
             value={structureURL}
             onChange={event => {
-              setStructureURL(event.target.value)
+              setStructureURL(event.target.value.trim())
             }}
             placeholder="https://files.rcsb.org/download/1CRN.cif"
             sx={{ mb: 2 }}
