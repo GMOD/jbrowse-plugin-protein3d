@@ -8,6 +8,9 @@ importers:
 
   .:
     dependencies:
+      '@gmod/tabix':
+        specifier: ^3.10.1
+        version: 3.10.1
       '@jbrowse/plugin-linear-genome-view':
         specifier: 5.0.0-beta.9
         version: 5.0.0-beta.9(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
@@ -572,6 +575,12 @@ packages:
 
   '@gmod/shared-read-cache@1.7.2':
     resolution: {integrity: sha512-N71dzJHYYSEAZYQCl38QGZ8cx468lFZE9VdS29N2DhRbKMf/X7Qb+cJsuIt1MeVDmpvKui5wDiNILgkQREpwlw==}
+
+  '@gmod/shared-read-cache@2.0.0':
+    resolution: {integrity: sha512-nU4HPB+DlvZqRVJZvtIbJ3zS+kSKfOhibCu3Y7Sia9D4GwA1MotdBNH19hM8/gP/tYuHGaSdvpGhZ0FfJbw/Hg==}
+
+  '@gmod/tabix@3.10.1':
+    resolution: {integrity: sha512-bynf5MGr50O6Re2asEbt3kEfULUhXb2J87dqFK/78xXfJIWWrKfuQCA+ADSp3QJtdODvTf7ftWiTnc8yLQ0Yrw==}
 
   '@gmod/vcf@7.2.0':
     resolution: {integrity: sha512-F5uZ3j1hzpEBtPppveZt+ngJ/6CbGy9wfqNdExBQ6h853ABr/2mOWnuuq5Uv5ekslhQEgxWr0+r9z0JSZU596w==}
@@ -4099,6 +4108,15 @@ snapshots:
       generic-filehandle2: 2.5.0
 
   '@gmod/shared-read-cache@1.7.2': {}
+
+  '@gmod/shared-read-cache@2.0.0': {}
+
+  '@gmod/tabix@3.10.1':
+    dependencies:
+      '@gmod/bgzf-filehandle': 6.7.0
+      '@gmod/shared-read-cache': 2.0.0
+      '@jbrowse/quick-lru': 8.0.0
+      generic-filehandle2: 2.5.0
 
   '@gmod/vcf@7.2.0': {}
 

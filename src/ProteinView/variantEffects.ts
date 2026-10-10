@@ -1,5 +1,3 @@
-import type { MapUniProtPosition } from 'p2s_mapper'
-
 export const VARIANT_EFFECT_SCHEMES = ['alphamissense', 'clinvar'] as const
 
 export type VariantEffectScheme = (typeof VARIANT_EFFECT_SCHEMES)[number]
@@ -17,13 +15,21 @@ export const VARIANT_EFFECT_SOURCE_NAMES: Record<VariantEffectScheme, string> =
   }
 
 /**
- * A value per 1-based position of a UniProt entry, beside the sequence the
- * source numbers those positions on
+ * A source's values by the coordinate it numbers. AlphaMissense numbers the
+ * 1-based positions of a UniProt entry, beside the sequence it numbers; ClinVar
+ * is read off the genome, so its values sit on the 0-based residues of the
+ * structure's transcript.
  */
-export interface UniProtValues {
-  sequence: string
-  byPosition: ReadonlyMap<number, number>
-}
+export type VariantEffectValues =
+  | {
+      numbering: 'uniprot'
+      sequence: string
+      byPosition: ReadonlyMap<number, number>
+    }
+  | {
+      numbering: 'transcript'
+      byPosition: ReadonlyMap<number, number>
+    }
 
 /** Values of one entity's residues, keyed by label_seq_id */
 export interface PlacedValues {
@@ -38,7 +44,7 @@ export interface PlacedValues {
  */
 export function meanScoreByPosition(
   rows: readonly { start: number; score: number; ref: string }[],
-): UniProtValues {
+): VariantEffectValues {
   const sums = new Map<number, { total: number; count: number }>()
   const residues: (string | undefined)[] = []
   for (const { start, score, ref } of rows) {
@@ -52,6 +58,7 @@ export function meanScoreByPosition(
     }
   }
   return {
+    numbering: 'uniprot',
     sequence: Array.from(residues, r => r ?? 'X').join(''),
     byPosition: new Map(
       [...sums].map(([position, { total, count }]) => [
@@ -62,72 +69,19 @@ export function meanScoreByPosition(
   }
 }
 
-export interface VariationEntry {
-  sequence?: string
-  features: readonly {
-    begin: string
-    end: string
-    mutatedType?: string
-    consequenceType?: string
-    clinicalSignificances?: readonly { type: string; sources?: string[] }[]
-  }[]
-}
-
-const PATHOGENIC_SIGNIFICANCE = new Set(['Pathogenic', 'Likely pathogenic'])
-
 /**
- * How many distinct missense substitutions ClinVar calls pathogenic or likely
- * pathogenic at each residue of the entry, from the EBI proteins API's
- * variation record. Every residue of the entry gets a count, zero included,
- * so a residue with none is told apart from one the structure cannot place.
- * A substitution reported by several ClinVar records (two codon changes to
- * one amino acid) counts once; a significance only Ensembl or UniProt
- * asserts does not count.
- */
-export function pathogenicCountByPosition({
-  sequence = '',
-  features,
-}: VariationEntry): UniProtValues {
-  const substitutions = new Map<number, Set<string>>()
-  for (const f of features) {
-    if (
-      f.consequenceType === 'missense' &&
-      f.clinicalSignificances?.some(
-        c =>
-          PATHOGENIC_SIGNIFICANCE.has(c.type) && c.sources?.includes('ClinVar'),
-      )
-    ) {
-      for (let pos = +f.begin; pos <= +f.end; pos++) {
-        const seen = substitutions.get(pos) ?? new Set()
-        seen.add(`${f.begin}-${f.end}${f.mutatedType ?? ''}`)
-        substitutions.set(pos, seen)
-      }
-    }
-  }
-  return {
-    sequence,
-    byPosition: new Map(
-      Array.from(sequence, (_, i) => [
-        i + 1,
-        substitutions.get(i + 1)?.size ?? 0,
-      ]),
-    ),
-  }
-}
-
-/**
- * Carries an entry's per-position values onto one entity's residues through
- * `mapUniProtPosition` (see structureUniProt), which places only what it can:
- * a residue the map does not reach gets no value rather than a neighbour's.
+ * Carries a source's per-position values onto one entity's residues through
+ * `toStructurePosition`, which places only what it can: a residue the map
+ * does not reach gets no value rather than a neighbour's.
  */
 export function placeValues(
-  values: UniProtValues,
-  mapUniProtPosition: MapUniProtPosition,
+  byPosition: ReadonlyMap<number, number>,
+  toStructurePosition: (position: number) => number | undefined,
   entity: { entityId: string; seqIds: readonly number[] },
 ): PlacedValues {
   const byLabelSeqId = new Map<number, number>()
-  for (const [position, value] of values.byPosition) {
-    const structurePos = mapUniProtPosition(position)
+  for (const [position, value] of byPosition) {
+    const structurePos = toStructurePosition(position)
     const labelSeqId =
       structurePos === undefined ? undefined : entity.seqIds[structurePos]
     if (labelSeqId !== undefined) {

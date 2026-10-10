@@ -1,36 +1,35 @@
-import { fetchVariantEffects } from './variantEffectSource'
-
-import type { UniProtValues, VariantEffectScheme } from './variantEffects'
+import type { VariantEffectRequest } from './variantEffectSource'
+import type { VariantEffectValues } from './variantEffects'
 
 /**
- * One structure's request for a variant-effect source: which entry it asked,
- * and the answer once it came. `accession` is undefined when the structure
- * has no UniProt entry to place values on, which is final.
+ * Whether a structure can ask the view's variant-effect source anything yet:
+ * `waiting` while what the request is built from is still on its way (SIFTS
+ * for a PDB entry), `unavailable` when it never can be, with the reason.
  */
+export type VariantEffectAsk =
+  | { status: 'waiting' }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'ready'; request: VariantEffectRequest }
+
+/** The key of a structure's request to a variant-effect source, and its answer */
 export interface VariantEffectState {
-  scheme: VariantEffectScheme
-  accession: string | undefined
-  values?: UniProtValues
+  key: string
+  values?: VariantEffectValues
   error?: unknown
 }
 
+/** `variantEffectAsk` is undefined while the view colours by no source */
 export interface VariantEffectHost {
-  readonly variantEffectScheme: VariantEffectScheme | undefined
-  readonly uniProtEntry: {
-    readonly uniprotId: string | undefined
-    readonly isoformAccession?: string
-    readonly isLoading: boolean
-  }
+  readonly variantEffectAsk: VariantEffectAsk | undefined
   readonly variantEffects: VariantEffectState | undefined
   setVariantEffects(state: VariantEffectState | undefined): void
 }
 
 /**
  * Builds the body of the autorun that fetches the values the view's
- * variant-effect scheme colours a structure by, once its UniProt entry is
- * known. An isoform model is numbered for the isoform while the sources
- * number the entry, so it asks nothing. An answer that arrives after the
- * scheme or entry changed, or after the structure left the view, is dropped.
+ * variant-effect scheme colours a structure by, once the structure can say
+ * what to ask for. An answer that arrives after the request changed, or after
+ * the structure left the view, is dropped.
  *
  * Leaving the variant-effect schemes forgets the answer, so choosing one again
  * asks again: a failure is retried then, and a success comes from the
@@ -40,44 +39,35 @@ export interface VariantEffectHost {
 export function makeVariantEffectLoader(
   host: VariantEffectHost,
   isAlive: () => boolean,
-  fetchValues: typeof fetchVariantEffects = fetchVariantEffects,
+  fetchValues: (request: VariantEffectRequest) => Promise<VariantEffectValues>,
 ) {
   return function loadVariantEffects() {
-    const scheme = host.variantEffectScheme
-    const { uniprotId, isoformAccession, isLoading } = host.uniProtEntry
+    const ask = host.variantEffectAsk
     const current = host.variantEffects
-    const accession = isoformAccession ? undefined : uniprotId
-    if (!scheme) {
+    if (!ask) {
       if (current) {
         host.setVariantEffects(undefined)
       }
       return
     }
-    if (
-      isLoading ||
-      (current?.scheme === scheme && current.accession === accession)
-    ) {
+    if (ask.status !== 'ready' || current?.key === ask.request.key) {
       return
     }
-    host.setVariantEffects({ scheme, accession })
-    if (accession) {
-      const answer = (result: Omit<VariantEffectState, 'scheme'>) => {
-        if (
-          isAlive() &&
-          host.variantEffects?.scheme === scheme &&
-          host.variantEffects.accession === accession
-        ) {
-          host.setVariantEffects({ scheme, ...result })
-        }
+    const { request } = ask
+    const { key } = request
+    host.setVariantEffects({ key })
+    const answer = (result: Omit<VariantEffectState, 'key'>) => {
+      if (isAlive() && host.variantEffects?.key === key) {
+        host.setVariantEffects({ key, ...result })
       }
-      fetchValues(scheme, accession).then(
-        values => {
-          answer({ accession, values })
-        },
-        (error: unknown) => {
-          answer({ accession, error })
-        },
-      )
     }
+    fetchValues(request).then(
+      values => {
+        answer({ values })
+      },
+      (error: unknown) => {
+        answer({ error })
+      },
+    )
   }
 }

@@ -86,7 +86,7 @@ const STYLES: Record<
     color: count => rgbColor(clinVarRgb(count)),
     legend: CLINVAR_LEGEND,
     description:
-      'Colors residues by how many missense substitutions ClinVar calls pathogenic or likely pathogenic. Residues the entry cannot place are grey.',
+      'Colors residues by how many missense substitutions ClinVar calls pathogenic or likely pathogenic, read off the genome under the transcript. Residues the alignment to the transcript does not reach are grey.',
   },
 }
 

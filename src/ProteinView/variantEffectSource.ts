@@ -1,70 +1,175 @@
+import { SimpleFeature } from '@jbrowse/core/util'
+
+import { clinVarBuild } from './clinVar'
 import {
+  VARIANT_EFFECT_SOURCE_NAMES,
   meanScoreByPosition,
-  pathogenicCountByPosition,
 } from './variantEffects'
 import { parseAlphaMissense } from '../AlphaMissensePathogenicityAdapter/parseAlphaMissense'
 
+import type { ClinVarBuild } from './clinVar'
+import type { VariantEffectAsk } from './variantEffectLoader'
+import type { VariantEffectValues } from './variantEffects'
 import type {
-  UniProtValues,
-  VariantEffectScheme,
-  VariationEntry,
-} from './variantEffects'
+  AbstractSessionModel,
+  SimpleFeatureSerialized,
+} from '@jbrowse/core/util'
 
-function variantEffectUrl(scheme: VariantEffectScheme, accession: string) {
-  return scheme === 'alphamissense'
-    ? `https://alphafold.ebi.ac.uk/files/AF-${accession}-F1-aa-substitutions.csv`
-    : `https://www.ebi.ac.uk/proteins/api/variation/${accession}.json`
+/**
+ * What a structure asks a variant-effect source for: AlphaMissense by the
+ * UniProt entry it scores, ClinVar by the transcript whose genome it reads.
+ * `key` names the answer in the page-wide cache and tells a stale answer from
+ * a current one; `label` names the request in a message.
+ */
+export type VariantEffectRequest = {
+  key: string
+  label: string
+} & (
+  | { scheme: 'alphamissense'; accession: string }
+  | {
+      scheme: 'clinvar'
+      build: ClinVarBuild
+      assemblyName: string
+      feature: SimpleFeatureSerialized
+    }
+)
+
+/**
+ * AlphaMissense scores a UniProt entry, so a PDB entry waits for SIFTS to name
+ * one. An isoform model is numbered for the isoform while the scores number
+ * the entry, so it asks nothing.
+ */
+export function alphaMissenseAsk({
+  uniprotId,
+  isoformAccession,
+  isLoading,
+}: {
+  uniprotId: string | undefined
+  isoformAccession?: string
+  isLoading: boolean
+}): VariantEffectAsk {
+  const source = VARIANT_EFFECT_SOURCE_NAMES.alphamissense
+  return isLoading
+    ? { status: 'waiting' }
+    : isoformAccession
+      ? {
+          status: 'unavailable',
+          reason: `${source} are numbered for the canonical entry, not isoform ${isoformAccession}`,
+        }
+      : uniprotId
+        ? {
+            status: 'ready',
+            request: {
+              scheme: 'alphamissense',
+              key: `alphamissense:${uniprotId}`,
+              label: uniprotId,
+              accession: uniprotId,
+            },
+          }
+        : {
+            status: 'unavailable',
+            reason: `No UniProt entry to place ${source} on`,
+          }
 }
 
-function isVariationEntry(value: unknown): value is VariationEntry {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'features' in value &&
-    Array.isArray(value.features)
-  )
+/**
+ * ClinVar is read off the genome under the structure's transcript, so it needs
+ * the transcript and the assembly the genome view shows it on, which NCBI has
+ * to publish a VCF for. `assemblyNames` are that assembly's names and aliases.
+ */
+export function clinVarAsk({
+  feature,
+  assemblyName,
+  assemblyNames,
+}: {
+  feature: SimpleFeatureSerialized | undefined
+  assemblyName: string | undefined
+  assemblyNames: readonly string[]
+}): VariantEffectAsk {
+  const source = VARIANT_EFFECT_SOURCE_NAMES.clinvar
+  const build = clinVarBuild(assemblyNames)
+  if (!feature) {
+    return {
+      status: 'unavailable',
+      reason: `No transcript to place ${source} on`,
+    }
+  }
+  if (!assemblyName) {
+    return {
+      status: 'unavailable',
+      reason: `No genome view to read ${source} on`,
+    }
+  }
+  if (!build) {
+    return {
+      status: 'unavailable',
+      reason: `NCBI publishes ${source} on GRCh38 and GRCh37, not ${assemblyName}`,
+    }
+  }
+  const { refName, start, end, uniqueId } = feature
+  const name = [feature.name, feature.id].find(n => typeof n === 'string')
+  return {
+    status: 'ready',
+    request: {
+      scheme: 'clinvar',
+      key: `clinvar:${build}:${assemblyName}:${refName}:${start}-${end}:${uniqueId}`,
+      label: name ?? `${refName}:${start + 1}-${end}`,
+      build,
+      assemblyName,
+      feature,
+    },
+  }
 }
 
-// TP53's variation record is 14 MB; a stalled EBI should not leave a
+// TP53's ClinVar slice is under 1 MB, but a stalled host should not leave a
 // structure waiting on it for good
 const DOWNLOAD_TIMEOUT_MS = 60_000
 
-async function download(scheme: VariantEffectScheme, accession: string) {
-  const response = await fetch(variantEffectUrl(scheme, accession), {
-    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
-  })
-  if (!response.ok) {
-    throw new Error(`HTTP ${response.status}`)
-  }
-  if (scheme === 'alphamissense') {
+async function download(
+  request: VariantEffectRequest,
+  session: AbstractSessionModel,
+): Promise<VariantEffectValues> {
+  const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)
+  if (request.scheme === 'alphamissense') {
+    const response = await fetch(
+      `https://alphafold.ebi.ac.uk/files/AF-${request.accession}-F1-aa-substitutions.csv`,
+      { signal },
+    )
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`)
+    }
     return meanScoreByPosition(parseAlphaMissense(await response.text()))
   }
-  const entry: unknown = await response.json()
-  if (!isVariationEntry(entry)) {
-    throw new Error('the variation record lists no features')
+  const { fetchClinVarCounts } = await import('./clinVarSource')
+  return {
+    numbering: 'transcript',
+    byPosition: await fetchClinVarCounts({
+      build: request.build,
+      feature: new SimpleFeature(request.feature),
+      assemblyName: request.assemblyName,
+      session,
+      signal,
+    }),
   }
-  return pathogenicCountByPosition(entry)
 }
 
-const cache = new Map<string, Promise<UniProtValues>>()
+const cache = new Map<string, Promise<VariantEffectValues>>()
 
 /**
- * An entry's per-position values, downloaded once per accession and source
- * for every structure and view of the page. A failure is forgotten, so the
- * next request tries again.
+ * A request's values, fetched once per key for every structure and view of
+ * the page. A failure is forgotten, so the next request tries again.
  */
 export function fetchVariantEffects(
-  scheme: VariantEffectScheme,
-  accession: string,
-): Promise<UniProtValues> {
-  const key = `${scheme}:${accession}`
-  let values = cache.get(key)
+  request: VariantEffectRequest,
+  session: AbstractSessionModel,
+): Promise<VariantEffectValues> {
+  let values = cache.get(request.key)
   if (!values) {
-    values = download(scheme, accession)
+    values = download(request, session)
     values.catch(() => {
-      cache.delete(key)
+      cache.delete(request.key)
     })
-    cache.set(key, values)
+    cache.set(request.key, values)
   }
   return values
 }

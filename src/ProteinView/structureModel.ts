@@ -58,10 +58,11 @@ import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { assemblyNaming, errorMessage } from './util'
 import { makeVariantEffectLoader } from './variantEffectLoader'
 import {
-  VARIANT_EFFECT_SOURCE_NAMES,
-  isVariantEffectScheme,
-  placeValues,
-} from './variantEffects'
+  alphaMissenseAsk,
+  clinVarAsk,
+  fetchVariantEffects,
+} from './variantEffectSource'
+import { variantEffectStatus } from './variantEffectStatus'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { AlignmentMethod } from './alignOffThread'
@@ -73,7 +74,10 @@ import type {
   ResidueRanges,
   SelectionTarget,
 } from './residueRanges'
-import type { VariantEffectState } from './variantEffectLoader'
+import type {
+  VariantEffectAsk,
+  VariantEffectState,
+} from './variantEffectLoader'
 import type { PlacedValues } from './variantEffects'
 import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
@@ -345,8 +349,8 @@ const Structure = types
     uniProtMappingsError: undefined as unknown,
     /**
      * #volatile
-     * What the view's variant-effect colour scheme asked for this structure's
-     * UniProt entry, and the per-position values once they arrive
+     * The key of what the view's variant-effect colour scheme asked for this
+     * structure, and the values once they arrive
      */
     variantEffects: undefined as VariantEffectState | undefined,
     /**
@@ -633,103 +637,6 @@ const Structure = types
         uniProtMappingsError: self.uniProtMappingsError,
         mappedEntity: this.mappedEntity,
       })
-    },
-    /**
-     * #getter
-     * The view's colour scheme, when it colours by a variant-effect source
-     */
-    get variantEffectScheme() {
-      const scheme = this.parentView.colorScheme
-      return isVariantEffectScheme(scheme) ? scheme : undefined
-    },
-    /**
-     * #getter
-     * The entry a variant-effect source is asked for: the structure's UniProt
-     * entry, unless the model folds an isoform the sources do not number
-     */
-    get variantEffectAccession() {
-      const { uniprotId, isoformAccession } = this.uniProtEntry
-      return isoformAccession ? undefined : uniprotId
-    },
-    /**
-     * #getter
-     * The variant-effect state, while it answers the current scheme and entry
-     */
-    get currentVariantEffects() {
-      const state = self.variantEffects
-      return this.variantEffectScheme &&
-        !this.uniProtEntry.isLoading &&
-        state?.scheme === this.variantEffectScheme &&
-        state.accession === this.variantEffectAccession
-        ? state
-        : undefined
-    },
-    /**
-     * #getter
-     * Whether the source numbers a sequence other than the one this
-     * structure's chain spells, where the two are mapped one to one: an
-     * AlphaFold model folded from an older revision of the entry would take
-     * every value a residue off, and nothing else would say so. A PDB entry
-     * goes through SIFTS, which maps the construct to the current entry.
-     */
-    get variantEffectSequenceDiffers() {
-      const values = this.currentVariantEffects?.values
-      const entity = this.mappedEntity
-      return (
-        !!values && !!entity && !this.pdbId && values.sequence !== entity.seq
-      )
-    },
-    /**
-     * #getter
-     * The scheme's values on the mapped entity's residues, by label_seq_id.
-     * Only the residues the UniProt entry's map reaches get one (see
-     * structureUniProt): an AlphaFold model of the entry one to one, a PDB
-     * entry through SIFTS' segments.
-     */
-    get placedVariantEffects(): PlacedValues | undefined {
-      const values = this.currentVariantEffects?.values
-      const entity = this.mappedEntity
-      return values && entity && !this.variantEffectSequenceDiffers
-        ? placeValues(values, this.uniProtEntry.mapUniProtPosition, entity)
-        : undefined
-    },
-    /**
-     * #getter
-     * Whether the scheme's values are still on their way. Kept out of
-     * `loading`: colour arriving late only recolours, so selection, framing
-     * and the ready marker do not wait on a download that can run to 14 MB.
-     */
-    get variantEffectsPending() {
-      const state = this.currentVariantEffects
-      return (
-        !!this.variantEffectScheme &&
-        (!state ||
-          (state.accession !== undefined &&
-            !state.values &&
-            state.error === undefined))
-      )
-    },
-    /**
-     * #getter
-     * Why the scheme leaves this structure grey, once that is settled
-     */
-    get variantEffectMessage() {
-      const scheme = this.variantEffectScheme
-      const state = this.currentVariantEffects
-      if (!scheme || !state) {
-        return undefined
-      }
-      const source = VARIANT_EFFECT_SOURCE_NAMES[scheme]
-      const { isoformAccession } = this.uniProtEntry
-      return state.error !== undefined
-        ? `Could not fetch ${source} for ${state.accession}: ${errorMessage(state.error)}`
-        : this.variantEffectSequenceDiffers
-          ? `${source} for ${state.accession} number a sequence that differs from this model's`
-          : state.accession !== undefined
-            ? undefined
-            : isoformAccession
-              ? `${source} are numbered for the canonical entry, not isoform ${isoformAccession}`
-              : `No UniProt entry to place ${source} on`
     },
     /**
      * #getter
@@ -1204,19 +1111,6 @@ const Structure = types
     },
     /**
      * #getter
-     * What went wrong with this structure, for the line beside its label in
-     * the header: a failed load, or a structure with no chain the transcript
-     * can be aligned to. One line per structure, rather than a view-wide
-     * banner that names neither which structure nor what it was doing.
-     */
-    get statusMessage() {
-      const { error } = self
-      return error === undefined
-        ? (self.alignmentSkipped ?? this.variantEffectMessage)
-        : errorMessage(error)
-    },
-    /**
-     * #getter
      * Identity and coverage of the pairwise alignment, for the header readout
      * and the low-similarity warning. See p2s_mapper's alignmentQuality.ts.
      */
@@ -1294,6 +1188,83 @@ const Structure = types
     },
     get molstarPluginContext(): PluginContext | undefined {
       return this.parentView.molstarPluginContext
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
+     * What this structure can ask the view's variant-effect source for,
+     * undefined while the view colours by none. ClinVar reads the genome on
+     * the connected view's assembly.
+     */
+    get variantEffectAsk(): VariantEffectAsk | undefined {
+      const { colorScheme } = self.parentView
+      if (colorScheme === 'alphamissense') {
+        return alphaMissenseAsk(self.uniProtEntry)
+      }
+      if (colorScheme === 'clinvar') {
+        const assemblyName = self.connectedView?.assemblyNames[0]
+        const assembly = assemblyName
+          ? getSession(self).assemblyManager.get(assemblyName)
+          : undefined
+        return clinVarAsk({
+          feature: self.feature,
+          assemblyName,
+          assemblyNames: [
+            ...(assemblyName ? [assemblyName] : []),
+            ...(assembly ? [assembly.name, ...assembly.aliases] : []),
+          ],
+        })
+      }
+      return undefined
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
+     * The variant-effect request's standing and its values placed on the
+     * mapped entity; see variantEffectStatus
+     */
+    get variantEffectStatus() {
+      return variantEffectStatus({
+        ask: self.variantEffectAsk,
+        state: self.variantEffects,
+        entity: self.mappedEntity,
+        pdbId: self.pdbId,
+        mapUniProtPosition: self.uniProtEntry.mapUniProtPosition,
+        transcriptToStructure: self.transcriptSeqToStructureSeqPosition,
+      })
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
+     * The scheme's values on the mapped entity's residues, by label_seq_id
+     */
+    get placedVariantEffects(): PlacedValues | undefined {
+      return self.variantEffectStatus.placed
+    },
+    /**
+     * #getter
+     * Whether the scheme's values are still on their way, which the ready
+     * marker does not wait for
+     */
+    get variantEffectsPending() {
+      return self.variantEffectStatus.pending
+    },
+    /**
+     * #getter
+     * What went wrong with this structure, for the line beside its label in
+     * the header: a failed load, a structure with no chain the transcript
+     * can be aligned to, or a colour scheme that leaves it grey. One line per
+     * structure, rather than a view-wide banner that names neither which
+     * structure nor what it was doing.
+     */
+    get statusMessage() {
+      const { error } = self
+      return error === undefined
+        ? (self.alignmentSkipped ?? self.variantEffectStatus.message)
+        : errorMessage(error)
     },
   }))
   .views(self => ({
@@ -1671,7 +1642,13 @@ const Structure = types
       const { pdbId } = self
       addDisposer(
         self,
-        autorun(makeVariantEffectLoader(self, () => isAlive(self))),
+        autorun(
+          makeVariantEffectLoader(
+            self,
+            () => isAlive(self),
+            request => fetchVariantEffects(request, getSession(self)),
+          ),
+        ),
       )
       if (pdbId) {
         fetchUniProtStructureMappings(pdbId).then(

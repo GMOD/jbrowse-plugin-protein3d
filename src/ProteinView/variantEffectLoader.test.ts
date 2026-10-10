@@ -2,17 +2,19 @@ import { autorun, observable, runInAction } from 'mobx'
 import { expect, test, vi } from 'vitest'
 
 import { makeVariantEffectLoader } from './variantEffectLoader'
+import { alphaMissenseAsk } from './variantEffectSource'
 
 import type {
-  VariantEffectHost,
+  VariantEffectAsk,
   VariantEffectState,
 } from './variantEffectLoader'
-import type { UniProtValues, VariantEffectScheme } from './variantEffects'
+import type { VariantEffectRequest } from './variantEffectSource'
+import type { VariantEffectValues } from './variantEffects'
 
 function deferred() {
-  let resolve: (values: UniProtValues) => void = () => {}
+  let resolve: (values: VariantEffectValues) => void = () => {}
   let reject: (error: unknown) => void = () => {}
-  const promise = new Promise<UniProtValues>((res, rej) => {
+  const promise = new Promise<VariantEffectValues>((res, rej) => {
     resolve = res
     reject = rej
   })
@@ -20,31 +22,20 @@ function deferred() {
 }
 
 interface TestHost {
-  variantEffectScheme: VariantEffectScheme | undefined
-  uniProtEntry: VariantEffectHost['uniProtEntry']
+  variantEffectAsk: VariantEffectAsk | undefined
   variantEffects: VariantEffectState | undefined
   alive: boolean
-  setVariantEffects(state: VariantEffectState): void
+  setVariantEffects(state: VariantEffectState | undefined): void
 }
 
-function makeHost(initial: {
-  scheme?: VariantEffectScheme
-  uniprotId?: string
-  isoformAccession?: string
-  isLoading?: boolean
-}) {
+function makeHost(ask?: VariantEffectAsk) {
   // held by reference, as an MST volatile holds them
   const host = observable<TestHost>(
     {
-      variantEffectScheme: initial.scheme,
-      uniProtEntry: {
-        uniprotId: initial.uniprotId,
-        isoformAccession: initial.isoformAccession,
-        isLoading: initial.isLoading ?? false,
-      },
+      variantEffectAsk: ask,
       variantEffects: undefined,
       alive: true,
-      setVariantEffects(state: VariantEffectState) {
+      setVariantEffects(state: VariantEffectState | undefined) {
         host.variantEffects = state
       },
     },
@@ -56,107 +47,107 @@ function makeHost(initial: {
 
 function start(
   host: ReturnType<typeof makeHost>,
-  fetchValues: (
-    scheme: VariantEffectScheme,
-    accession: string,
-  ) => Promise<UniProtValues>,
+  fetchValues: (request: VariantEffectRequest) => Promise<VariantEffectValues>,
 ) {
   return autorun(makeVariantEffectLoader(host, () => host.alive, fetchValues))
 }
 
-const values: UniProtValues = {
+function ask(uniprotId: string) {
+  return alphaMissenseAsk({ uniprotId, isLoading: false })
+}
+
+const values: VariantEffectValues = {
+  numbering: 'uniprot',
   sequence: 'V',
   byPosition: new Map([[600, 0.95]]),
 }
 
-test('asks for the entry once the scheme wants it, and keeps the answer', async () => {
-  const host = makeHost({ uniprotId: 'P15056' })
+test('asks once the scheme wants something, and keeps the answer', async () => {
+  const host = makeHost()
   const fetchValues = vi.fn(async () => values)
   const dispose = start(host, fetchValues)
   expect(fetchValues).not.toHaveBeenCalled()
   runInAction(() => {
-    host.variantEffectScheme = 'alphamissense'
+    host.variantEffectAsk = ask('P15056')
   })
-  expect(host.variantEffects).toEqual({
-    scheme: 'alphamissense',
-    accession: 'P15056',
-  })
+  expect(host.variantEffects).toEqual({ key: 'alphamissense:P15056' })
   await vi.waitFor(() => {
     expect(host.variantEffects?.values).toBe(values)
   })
-  expect(fetchValues).toHaveBeenCalledExactlyOnceWith('alphamissense', 'P15056')
+  expect(fetchValues).toHaveBeenCalledExactlyOnceWith(
+    expect.objectContaining({ scheme: 'alphamissense', accession: 'P15056' }),
+  )
   dispose()
 })
 
-test('waits for SIFTS before asking for a PDB entry', () => {
-  const host = makeHost({ scheme: 'clinvar', isLoading: true })
+test('asks nothing while waiting or when nothing can be asked', () => {
+  const host = makeHost({ status: 'waiting' })
   const fetchValues = vi.fn(async () => values)
   const dispose = start(host, fetchValues)
+  runInAction(() => {
+    host.variantEffectAsk = { status: 'unavailable', reason: 'no entry' }
+  })
+  expect(fetchValues).not.toHaveBeenCalled()
   expect(host.variantEffects).toBeUndefined()
   runInAction(() => {
-    host.uniProtEntry = { uniprotId: 'P04637', isLoading: false }
+    host.variantEffectAsk = ask('P04637')
   })
-  expect(fetchValues).toHaveBeenCalledExactlyOnceWith('clinvar', 'P04637')
+  expect(fetchValues).toHaveBeenCalledOnce()
   dispose()
 })
 
-test('an isoform model or a structure without an entry asks nothing', () => {
-  for (const entry of [
-    { uniprotId: 'P04637', isoformAccession: 'P04637-7' },
-    { uniprotId: undefined },
-  ]) {
-    const host = makeHost({ scheme: 'alphamissense', ...entry })
-    const fetchValues = vi.fn(async () => values)
-    const dispose = start(host, fetchValues)
-    expect(fetchValues).not.toHaveBeenCalled()
-    expect(host.variantEffects).toEqual({
-      scheme: 'alphamissense',
-      accession: undefined,
-    })
-    dispose()
-  }
-})
-
-test('drops an answer to a scheme the view has since left', async () => {
-  const host = makeHost({ scheme: 'alphamissense', uniprotId: 'P15056' })
+test('drops an answer to a request the structure has since left', async () => {
+  const host = makeHost(ask('P15056'))
   const slow = deferred()
-  const fetchValues = vi.fn((scheme: VariantEffectScheme) =>
-    scheme === 'alphamissense' ? slow.promise : Promise.resolve(values),
+  const fetchValues = vi.fn((request: VariantEffectRequest) =>
+    request.label === 'P15056' ? slow.promise : Promise.resolve(values),
   )
   const dispose = start(host, fetchValues)
   runInAction(() => {
-    host.variantEffectScheme = 'clinvar'
+    host.variantEffectAsk = ask('P04637')
   })
   await vi.waitFor(() => {
     expect(host.variantEffects?.values).toBe(values)
   })
-  slow.resolve({ sequence: 'M', byPosition: new Map([[1, 0.1]]) })
-  await slow.promise
-  expect(host.variantEffects).toEqual({
-    scheme: 'clinvar',
-    accession: 'P15056',
-    values,
+  slow.resolve({
+    numbering: 'uniprot',
+    sequence: 'M',
+    byPosition: new Map([[1, 0.1]]),
   })
+  await slow.promise
+  expect(host.variantEffects).toEqual({ key: 'alphamissense:P04637', values })
   dispose()
 })
 
-test('records a failure for the header and ignores one after removal', async () => {
-  const host = makeHost({ scheme: 'alphamissense', uniprotId: 'Q00000' })
+test('leaving the schemes forgets the answer, so choosing one again asks again', async () => {
+  const host = makeHost(ask('Q00000'))
   const failure = new Error('HTTP 404')
-  const dispose = start(host, () => Promise.reject(failure))
+  const fetchValues = vi.fn(() => Promise.reject(failure))
+  const dispose = start(host, fetchValues)
   await vi.waitFor(() => {
     expect(host.variantEffects?.error).toBe(failure)
   })
+  expect(fetchValues).toHaveBeenCalledOnce()
+  runInAction(() => {
+    host.variantEffectAsk = undefined
+  })
+  expect(host.variantEffects).toBeUndefined()
+  runInAction(() => {
+    host.variantEffectAsk = ask('Q00000')
+  })
+  expect(fetchValues).toHaveBeenCalledTimes(2)
   dispose()
+})
 
-  const gone = makeHost({ scheme: 'alphamissense', uniprotId: 'Q00000' })
+test('ignores an answer that lands after removal', async () => {
+  const gone = makeHost(ask('Q00000'))
   const pending = deferred()
-  const disposeGone = start(gone, () => pending.promise)
+  const dispose = start(gone, () => pending.promise)
   runInAction(() => {
     gone.alive = false
   })
-  pending.reject(failure)
+  pending.reject(new Error('HTTP 404'))
   await pending.promise.catch(() => {})
   expect(gone.variantEffects?.error).toBeUndefined()
-  disposeGone()
+  dispose()
 })

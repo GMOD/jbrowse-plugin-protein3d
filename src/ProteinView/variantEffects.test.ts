@@ -6,7 +6,6 @@ import {
   alphaMissenseRgb,
   clinVarRgb,
   meanScoreByPosition,
-  pathogenicCountByPosition,
   placeValues,
 } from './variantEffects'
 import { parseAlphaMissense } from '../AlphaMissensePathogenicityAdapter/parseAlphaMissense'
@@ -21,102 +20,22 @@ test('averages every substitution at a residue, keyed by 1-based position', () =
       'V600A,1,LPath',
     ].join('\n'),
   )
-  const { byPosition: means, sequence } = meanScoreByPosition(rows)
+  const values = meanScoreByPosition(rows)
+  expect(values.numbering).toBe('uniprot')
+  const means = values.byPosition
   expect([...means.keys()]).toEqual([1, 600])
   expect(means.get(1)).toBeCloseTo(0.3)
   expect(means.get(600)).toBeCloseTo(0.95)
   // spelled from the reference residues, X where no row names one
-  expect(sequence).toBe(`M${'X'.repeat(598)}V`)
-})
-
-const clinVarPathogenic = {
-  type: 'Pathogenic',
-  sources: ['ClinVar'],
-}
-
-test('counts distinct ClinVar pathogenic missense substitutions per residue', () => {
-  const counts = pathogenicCountByPosition({
-    sequence: 'MKVAL',
-    features: [
-      {
-        begin: '3',
-        end: '3',
-        mutatedType: 'E',
-        consequenceType: 'missense',
-        clinicalSignificances: [clinVarPathogenic],
-      },
-      // a second codon change to the same amino acid
-      {
-        begin: '3',
-        end: '3',
-        mutatedType: 'E',
-        consequenceType: 'missense',
-        clinicalSignificances: [clinVarPathogenic],
-      },
-      {
-        begin: '3',
-        end: '3',
-        mutatedType: 'A',
-        consequenceType: 'missense',
-        clinicalSignificances: [
-          { type: 'Likely pathogenic', sources: ['ClinVar', 'Ensembl'] },
-        ],
-      },
-      // asserted by Ensembl alone
-      {
-        begin: '4',
-        end: '4',
-        mutatedType: 'P',
-        consequenceType: 'missense',
-        clinicalSignificances: [{ type: 'Pathogenic', sources: ['Ensembl'] }],
-      },
-      {
-        begin: '5',
-        end: '5',
-        mutatedType: 'R',
-        consequenceType: 'missense',
-        clinicalSignificances: [
-          { type: 'Variant of uncertain significance', sources: ['ClinVar'] },
-        ],
-      },
-      {
-        begin: '1',
-        end: '1',
-        consequenceType: 'stop gained',
-        clinicalSignificances: [clinVarPathogenic],
-      },
-    ],
-  })
-  expect(counts.sequence).toBe('MKVAL')
-  expect([...counts.byPosition]).toEqual([
-    [1, 0],
-    [2, 0],
-    [3, 2],
-    [4, 0],
-    [5, 0],
-  ])
-})
-
-test('a substitution spanning two residues counts at each', () => {
-  const counts = pathogenicCountByPosition({
-    sequence: 'MKVA',
-    features: [
-      {
-        begin: '2',
-        end: '3',
-        mutatedType: 'NE',
-        consequenceType: 'missense',
-        clinicalSignificances: [clinVarPathogenic],
-      },
-    ],
-  })
-  expect([...counts.byPosition.values()]).toEqual([0, 1, 1, 0])
+  expect(values.numbering === 'uniprot' && values.sequence).toBe(
+    `M${'X'.repeat(598)}V`,
+  )
 })
 
 const entity = { entityId: '1', seqIds: [1, 2, 3, 4, 5] }
 
 function entryValues(byPosition: [number, number][]) {
-  return { sequence: '', byPosition: new Map(byPosition) }
+  return new Map(byPosition)
 }
 
 test('an AlphaFold model of the entry places position p on label_seq_id p', () => {

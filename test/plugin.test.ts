@@ -542,14 +542,21 @@ describe('Protein3d Plugin E2E', () => {
 
   // The figure the protein browser's BRAF demo leans on: AlphaMissense on
   // the AlphaFold model, every residue placed, V600 among the darkest red.
-  // ClinVar after it on the same model, whose zeros on every uncalled residue
-  // would hide a parse that stopped finding pathogenic calls.
+  // ClinVar after it on the same model, read from NCBI's VCF under BRAF's
+  // minus-strand transcript; its zeros on every uncalled residue would hide a
+  // parse that stopped finding pathogenic calls.
   it('colours an AlphaFold model by AlphaMissense, then by ClinVar', async () => {
     await openSessionSpec(page, {
       views: [
         {
           type: 'ProteinView',
           structures: [{ uniprotId: 'P15056' }],
+          transcriptId: 'ENST00000646891.2',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr7:140,719,327-140,924,929',
+            tracks: [TRACK_ID],
+          },
           colorScheme: 'alphamissense',
         },
       ],
