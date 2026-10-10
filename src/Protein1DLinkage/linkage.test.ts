@@ -348,3 +348,15 @@ test('a mutually exclusive exon maps nothing, though it aligns column for column
   }
   expect(maps.transcriptSeqToStructureSeqPosition[230]).toBe(230)
 })
+
+// A Foldseek hit opens a 1D view of another species' protein. Its substitutions
+// are scattered, and the shared-stretch rule would unmap most of the chain.
+test('a homolog maps column for column, not by shared stretches', async () => {
+  const homolog = P53.replaceAll(/(.{3})(.)(.{2})/g, (_, a, aa, b) =>
+    aa === 'A' ? `${a}G${b}` : `${a}A${b}`,
+  )
+  const maps = await mapsFor(`${homolog}*`)
+  for (let pos = 0; pos < P53.length; pos++) {
+    expect(maps.transcriptSeqToStructureSeqPosition[pos]).toBe(pos)
+  }
+})

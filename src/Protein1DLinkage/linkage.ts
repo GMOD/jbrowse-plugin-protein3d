@@ -5,6 +5,7 @@ import {
   alignmentQuality,
   isLowSimilarity,
   keepSharedStretches,
+  mappedStructureIdentity,
   structurePos,
   transcriptPos,
 } from 'p2s_mapper'
@@ -181,14 +182,30 @@ export interface LinkageAlignmentHost {
 export type LinkageAlignment =
   { alignment: PairwiseAlignment } | { problem: string }
 
+// Two isoforms of one protein differ only in their alternative exons, so the
+// shared-stretch rule keeps most of their alignment: 92% for PKM1 on PKM2, 94%
+// for FGFR2 IIIc on IIIb. A homolog a Foldseek hit opened differs everywhere,
+// and the rule shreds it: mouse TP53 keeps 41%, HBB 28%, BRCA1 9%. Below this
+// the entry is another protein, and the alignment maps it column for column.
+const ISOFORM_KEPT_FRACTION = 0.8
+
+function isoformAlignment(pa: PairwiseAlignment) {
+  const kept = keepSharedStretches(pa)
+  return mappedStructureIdentity(kept).size >=
+    ISOFORM_KEPT_FRACTION * mappedStructureIdentity(pa).size
+    ? kept
+    : pa
+}
+
 /**
  * Align the linked transcript's translation to the sequence the 1D view
- * shows, keeping only the stretches the two isoforms share letter for letter:
- * a mutually exclusive exon aligns column for column against its partner, and
- * no codon of one encodes a residue of the other. Run when the view attaches rather than stored at launch: the
- * temporary assembly fetches the UniProt entry afresh on every load, so a
- * saved alignment could describe a sequence the view no longer shows, and a
- * snapshot written by hand or before this existed has none.
+ * shows. Where that is another isoform, only the stretches the two spell
+ * letter for letter map: a mutually exclusive exon aligns column for column
+ * against its partner, and no codon of one encodes a residue of the other.
+ * Run when the view attaches rather than stored at launch: the temporary
+ * assembly fetches the UniProt entry afresh on every load, so a saved
+ * alignment could describe a sequence the view no longer shows, and a snapshot
+ * written by hand or before this existed has none.
  */
 export async function resolveLinkageAlignment(
   host: LinkageAlignmentHost,
@@ -211,5 +228,5 @@ export async function resolveLinkageAlignment(
   }
   return isLowSimilarity(alignmentQuality(scored.alignment))
     ? { problem: 'the transcript and the UniProt entry are too dissimilar' }
-    : { alignment: keepSharedStretches(scored.alignment) }
+    : { alignment: isoformAlignment(scored.alignment) }
 }

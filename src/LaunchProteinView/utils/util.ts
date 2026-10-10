@@ -166,10 +166,12 @@ export function extractFeatureIdentifiers(
 
   if (isGeneLikeType(f.get('type'))) {
     const transcripts = codingTranscripts(f)
-    const representative =
-      preferredTranscriptId ?? flaggedTranscriptId(transcripts)
+    const flagged = flaggedTranscriptId(transcripts)
     featureToProcess =
-      transcripts.find(t => t.id() === representative) ?? transcripts[0] ?? f
+      transcripts.find(t => t.id() === preferredTranscriptId) ??
+      transcripts.find(t => t.id() === flagged) ??
+      transcripts[0] ??
+      f
   }
 
   // NCBI's GFF3 puts the protein on the CDS record, not the transcript: its

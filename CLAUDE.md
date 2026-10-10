@@ -178,7 +178,12 @@ The alignment keeps only stretches the two isoforms spell letter for letter
 its partner, so until 2026-10-10 a PKM1 transcript on PKM2's entry lit each exon
 9 codon's exon 10 counterpart: 45 of 531 residues are now unmapped, the same set
 a global alignment keeps. Not for a structure, where a mismatch is usually a
-construct's point mutation at the right place in the fold.
+construct's point mutation at the right place in the fold, and not for a
+homolog: a Foldseek hit opens a 1D view of another species' protein, whose
+scattered substitutions the rule shreds (mouse TP53 keeps 41%, BRCA1 9%), so
+`isoformAlignment` keeps the rule's result only where it retains 80% of the
+mapping. Isoform pairs measured 92–100%; a near-identical ortholog (mouse BRAF,
+92%) loses a few residues beside its substitutions and maps nothing wrongly.
 
 The 1D launch strips an isoform suffix (`P04637-7`), whose UniProt GFF is a
 header alone, and opens the entry. A hover names no view, so every 1D view of an
