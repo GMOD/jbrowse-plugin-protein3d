@@ -1,11 +1,6 @@
 import { Sequence } from 'molstar/lib/mol-model/sequence'
 import { getProteinOneLetterCode } from 'molstar/lib/mol-model/sequence/constants'
-import {
-  Bond,
-  StructureElement,
-  StructureProperties,
-  Unit,
-} from 'molstar/lib/mol-model/structure'
+import { StructureProperties } from 'molstar/lib/mol-model/structure'
 import { MmcifFormat } from 'molstar/lib/mol-model-formats/structure/mmcif'
 import { ColorThemeCategory } from 'molstar/lib/mol-theme/color/categories'
 import { Color } from 'molstar/lib/mol-util/color'
@@ -17,9 +12,9 @@ import {
   hydrophobicityRgb,
   kyteDoolittle,
 } from './residueTracks'
+import { atomicLocationReader } from './themeLocation'
 
-import type { Location } from 'molstar/lib/mol-model/location'
-import type { Model } from 'molstar/lib/mol-model/structure'
+import type { Model, StructureElement } from 'molstar/lib/mol-model/structure'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
 import type { ThemeDataContext } from 'molstar/lib/mol-theme/theme'
 
@@ -84,23 +79,7 @@ function KyteDoolittleColorTheme(
   ctx: ThemeDataContext,
   props: Record<string, never>,
 ): ColorTheme<Params> {
-  const bondEnd = ctx.structure
-    ? StructureElement.Location.create(ctx.structure.root)
-    : undefined
-  function atomicLocation(location: Location) {
-    let l: StructureElement.Location | undefined
-    if (StructureElement.Location.is(location)) {
-      l = location
-    } else if (bondEnd && Bond.isLocation(location)) {
-      const element = location.aUnit.elements[location.aIndex]
-      if (element !== undefined) {
-        bondEnd.unit = location.aUnit
-        bondEnd.element = element
-        l = bondEnd
-      }
-    }
-    return l && Unit.isAtomic(l.unit) ? l : undefined
-  }
+  const atomicLocation = atomicLocationReader(ctx.structure)
   return {
     factory: KyteDoolittleColorTheme,
     granularity: 'group',

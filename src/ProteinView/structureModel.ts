@@ -56,9 +56,16 @@ import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
 import { structureUniProt } from './structureUniProt'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { assemblyNaming, errorMessage } from './util'
+import { makeVariantEffectLoader } from './variantEffectLoader'
+import {
+  VARIANT_EFFECT_SOURCE_NAMES,
+  isVariantEffectScheme,
+  placeValues,
+} from './variantEffects'
 import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { AlignmentMethod } from './alignOffThread'
+import type { ProteinColorScheme } from './applyColorTheme'
 import type { EntityConfidence, StructureData } from './loadStructureData'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type {
@@ -66,6 +73,8 @@ import type {
   ResidueRanges,
   SelectionTarget,
 } from './residueRanges'
+import type { VariantEffectState } from './variantEffectLoader'
+import type { PlacedValues } from './variantEffects'
 import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
@@ -98,6 +107,7 @@ export interface ParentProteinView {
   trackHeight: number | undefined
   showAllFeatureTracks: boolean
   alignmentAlgorithm: AlignmentAlgorithm
+  colorScheme: ProteinColorScheme
   molstarPluginContext: PluginContext | undefined
   settled: boolean
   setError: (e: unknown) => void
@@ -335,6 +345,12 @@ const Structure = types
     uniProtMappingsError: undefined as unknown,
     /**
      * #volatile
+     * What the view's variant-effect colour scheme asked for this structure's
+     * UniProt entry, and the per-position values once they arrive
+     */
+    variantEffects: undefined as VariantEffectState | undefined,
+    /**
+     * #volatile
      * Why this structure could not be shown: a failed download, an unparseable
      * file, an alignment that threw. Per structure rather than a view-wide
      * banner, because with several open "Failed to fetch" names none of them.
@@ -363,6 +379,9 @@ const Structure = types
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
       self.uniProtMappingsError = error
+    },
+    setVariantEffects(state: VariantEffectState) {
+      self.variantEffects = state
     },
     setStructureData(data: StructureData) {
       self.entities = data.entities
@@ -614,6 +633,83 @@ const Structure = types
         uniProtMappingsError: self.uniProtMappingsError,
         mappedEntity: this.mappedEntity,
       })
+    },
+    /**
+     * #getter
+     * The view's colour scheme, when it colours by a variant-effect source
+     */
+    get variantEffectScheme() {
+      const scheme = this.parentView.colorScheme
+      return isVariantEffectScheme(scheme) ? scheme : undefined
+    },
+    /**
+     * #getter
+     * The entry a variant-effect source is asked for: the structure's UniProt
+     * entry, unless the model folds an isoform the sources do not number
+     */
+    get variantEffectAccession() {
+      const { uniprotId, isoformAccession } = this.uniProtEntry
+      return isoformAccession ? undefined : uniprotId
+    },
+    /**
+     * #getter
+     * The variant-effect state, while it answers the current scheme and entry
+     */
+    get currentVariantEffects() {
+      const state = self.variantEffects
+      return this.variantEffectScheme &&
+        !this.uniProtEntry.isLoading &&
+        state?.scheme === this.variantEffectScheme &&
+        state.accession === this.variantEffectAccession
+        ? state
+        : undefined
+    },
+    /**
+     * #getter
+     * The scheme's values on the mapped entity's residues, by label_seq_id.
+     * Only the residues the UniProt entry's map reaches get one (see
+     * structureUniProt): an AlphaFold model of the entry one to one, a PDB
+     * entry through SIFTS' segments.
+     */
+    get placedVariantEffects(): PlacedValues | undefined {
+      const values = this.currentVariantEffects?.values
+      const entity = this.mappedEntity
+      return values && entity
+        ? placeValues(values, this.uniProtEntry.mapUniProtPosition, entity)
+        : undefined
+    },
+    /**
+     * #getter
+     */
+    get variantEffectsPending() {
+      const state = this.currentVariantEffects
+      return (
+        !!this.variantEffectScheme &&
+        (!state ||
+          (state.accession !== undefined &&
+            !state.values &&
+            state.error === undefined))
+      )
+    },
+    /**
+     * #getter
+     * Why the scheme leaves this structure grey, once that is settled
+     */
+    get variantEffectMessage() {
+      const scheme = this.variantEffectScheme
+      const state = this.currentVariantEffects
+      if (!scheme || !state) {
+        return undefined
+      }
+      const source = VARIANT_EFFECT_SOURCE_NAMES[scheme]
+      const { isoformAccession } = this.uniProtEntry
+      return state.error !== undefined
+        ? `Could not fetch ${source} for ${state.accession}: ${errorMessage(state.error)}`
+        : state.accession !== undefined
+          ? undefined
+          : isoformAccession
+            ? `${source} are numbered for the canonical entry, not isoform ${isoformAccession}`
+            : `No UniProt entry to place ${source} on`
     },
     /**
      * #getter
@@ -1058,7 +1154,8 @@ const Structure = types
         this.alignmentPending ||
         (!!this.pdbId &&
           self.uniProtMappings === undefined &&
-          self.uniProtMappingsError === undefined)
+          self.uniProtMappingsError === undefined) ||
+        this.variantEffectsPending
       )
     },
     /**
@@ -1084,7 +1181,10 @@ const Structure = types
           ? `Aligning ${this.label} to ${name}`
           : `Aligning ${this.label}`
       }
-      return `Mapping ${this.label} to UniProt`
+      const scheme = this.variantEffectScheme
+      return scheme && !this.uniProtEntry.isLoading
+        ? `Fetching ${VARIANT_EFFECT_SOURCE_NAMES[scheme]} for ${this.variantEffectAccession}`
+        : `Mapping ${this.label} to UniProt`
     },
     /**
      * #getter
@@ -1095,7 +1195,9 @@ const Structure = types
      */
     get statusMessage() {
       const { error } = self
-      return error === undefined ? self.alignmentSkipped : errorMessage(error)
+      return error === undefined
+        ? (self.alignmentSkipped ?? this.variantEffectMessage)
+        : errorMessage(error)
     },
     /**
      * #getter
@@ -1551,6 +1653,10 @@ const Structure = types
   .actions(self => ({
     afterAttach() {
       const { pdbId } = self
+      addDisposer(
+        self,
+        autorun(makeVariantEffectLoader(self, () => isAlive(self))),
+      )
       if (pdbId) {
         fetchUniProtStructureMappings(pdbId).then(
           mappings => {

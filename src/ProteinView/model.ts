@@ -376,8 +376,8 @@ function stateModelFactory() {
       afterAttach() {
         // Apply the chosen color theme whenever it changes, a structure
         // finishes loading (structureSequences is set after its molstar
-        // representation is built, so the theme has something to recolor), or
-        // the mapped chain changes.
+        // representation is built, so the theme has something to recolor),
+        // the mapped chain changes, or a variant-effect source answers.
         addDisposer(
           self,
           autorun(() => {
@@ -387,6 +387,7 @@ function stateModelFactory() {
                 ? s.molstarStructures.map(molstarStructure => ({
                     molstarStructure,
                     entityId: s.mappedEntity?.entityId,
+                    placedValues: s.placedVariantEffects,
                   }))
                 : [],
             )

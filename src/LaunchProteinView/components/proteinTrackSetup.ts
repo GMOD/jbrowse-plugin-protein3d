@@ -2,6 +2,10 @@ import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 
 import { thresholdBandColor } from './wiggleBandColors'
 import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
+import {
+  ALPHAMISSENSE_MID,
+  ALPHAMISSENSE_RANGE,
+} from '../../ProteinView/variantEffects'
 
 export interface ProteinTrackConf {
   [key: string]: unknown
@@ -150,8 +154,8 @@ function alphaMissenseTrackConf(
         color: {
           field: 'score',
           scale: 'linear',
-          range: ['#2c7bb6', '#ffffff', '#d7191c'],
-          domainMid: 0.5,
+          range: [...ALPHAMISSENSE_RANGE],
+          domainMid: ALPHAMISSENSE_MID,
         },
       },
     ],

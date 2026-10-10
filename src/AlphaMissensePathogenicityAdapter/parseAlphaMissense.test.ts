@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest'
 
-import { parseAlphaMissense } from './AlphaMissensePathogenicityAdapter'
+import { parseAlphaMissense } from './parseAlphaMissense'
 
 test('parses well-formed rows, 1-based coord to half-open interval', () => {
   const rows = parseAlphaMissense(

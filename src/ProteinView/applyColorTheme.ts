@@ -1,6 +1,8 @@
 import loadMolstar from './loadMolstar'
 import { structureRootCell } from './structureCells'
+import { isVariantEffectScheme } from './variantEffects'
 
+import type { PlacedValues } from './variantEffects'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { Legend } from 'molstar/lib/mol-util/legend'
@@ -9,8 +11,9 @@ import type { Legend } from 'molstar/lib/mol-util/legend'
  * Color schemes offered in the protein view menu. A `value` is persisted in
  * sessions, so it names the scheme rather than the Mol* theme; `theme`, where
  * given, is the Mol* color-theme that draws it. `plddt-confidence` comes from
- * the MAQualityAssessment behavior, `mapped-chain` and `kyte-doolittle` from
- * registerColorThemes, the rest are built in.
+ * the MAQualityAssessment behavior, `mapped-chain`, `kyte-doolittle`,
+ * `alphamissense` and `clinvar` from registerColorThemes, the rest are built
+ * in.
  */
 export const COLOR_SCHEMES = [
   { value: 'default', label: 'Default (element/chain)' },
@@ -26,6 +29,8 @@ export const COLOR_SCHEMES = [
   { value: 'uncertainty', label: 'B-factor / uncertainty' },
   { value: 'molecule-type', label: 'Molecule type' },
   { value: 'mapped-chain', label: 'Mapped chain' },
+  { value: 'alphamissense', label: 'AlphaMissense pathogenicity' },
+  { value: 'clinvar', label: 'ClinVar pathogenic variants' },
 ] as const
 
 export type ProteinColorScheme = (typeof COLOR_SCHEMES)[number]['value']
@@ -42,12 +47,18 @@ export function molstarThemeName(colorScheme: ProteinColorScheme) {
   return scheme && 'theme' in scheme ? scheme.theme : colorScheme
 }
 
+let revision = 0
+
 /**
  * Recolor every representation of every structure in one Mol* state update.
  * The representations are found in the live state tree rather than through
  * `updateRepresentationsTheme`, whose components come from the hierarchy
  * snapshot (see structureRootCell). The non-ghost ones are what that call
  * reached: each component's, the focus representation's included.
+ *
+ * A variant-effect scheme's values reach its theme through the registry its
+ * theme reads (see variantEffectColorTheme), registered for each structure
+ * before the update; a structure without values is drawn grey.
  */
 export async function applyColorTheme({
   plugin,
@@ -56,16 +67,31 @@ export async function applyColorTheme({
 }: {
   plugin: PluginContext
   colorScheme: ProteinColorScheme
-  structures: readonly { molstarStructure: Structure; entityId?: string }[]
+  structures: readonly {
+    molstarStructure: Structure
+    entityId?: string
+    placedValues?: PlacedValues
+  }[]
 }) {
   const molstar = await loadMolstar()
-  const { StateSelection, StateTransforms, createStructureColorThemeParams } =
-    molstar
+  const {
+    StateSelection,
+    StateTransforms,
+    createStructureColorThemeParams,
+    registerPlacedValues,
+  } = molstar
   const theme =
     colorScheme === 'default' ? undefined : molstarThemeName(colorScheme)
+  const variantEffects = isVariantEffectScheme(colorScheme)
+  if (variantEffects) {
+    revision++
+  }
   const update = plugin.state.data.build()
   let recolored = 0
-  for (const { molstarStructure, entityId } of structures) {
+  for (const { molstarStructure, entityId, placedValues } of structures) {
+    if (variantEffects) {
+      registerPlacedValues(colorScheme, molstarStructure, placedValues)
+    }
     const cell = structureRootCell(plugin, molstar, molstarStructure)
     const representations = cell
       ? plugin.state.data.select(
@@ -76,7 +102,11 @@ export async function applyColorTheme({
         )
       : []
     const params =
-      colorScheme === 'mapped-chain' ? { entityId: entityId ?? '' } : undefined
+      colorScheme === 'mapped-chain'
+        ? { entityId: entityId ?? '' }
+        : variantEffects
+          ? { revision }
+          : undefined
     for (const representation of representations) {
       if (!representation.state.isGhost) {
         update.to(representation).update(prev => {
