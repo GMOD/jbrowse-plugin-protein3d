@@ -1,3 +1,14 @@
+## [1.5.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.4.0...v1.5.0) (2026-10-10)
+
+### Other Changes
+
+- Bump deps ([f28f281](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f28f281a5f0ae822361a45fb64c9cbbee3699a25))
+- Host every demo on main so check-demos covers it ([0cde1c1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0cde1c14283045efa4896eb16570416bc8bd948a))
+- 1D protein view maps only the stretches two isoforms share ([bad2798](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bad2798d7036ff4d4710a539fe025a0309111493))
+- Let MANE Select break isoform ties in the gene launch ([39f2c12](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/39f2c12fd68adee4677c219ec51dd97efe0b2954))
+- Add a BRAF V600E demo across genome, alignment and structure ([364118d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/364118d7680286a98c44da5860a317f5a2f02551))
+- Keep a homolog's 1D alignment whole; take MANE's identifiers after a non-coding pick ([85ec54d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/85ec54dc126a29b256e945bf102a87ce6ce57de8))
+
 ## [1.4.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.3.0...v1.4.0) (2026-10-08)
 
 ### Other Changes
