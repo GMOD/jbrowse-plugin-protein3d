@@ -380,7 +380,7 @@ const Structure = types
       self.uniProtMappings = mappings
       self.uniProtMappingsError = error
     },
-    setVariantEffects(state: VariantEffectState) {
+    setVariantEffects(state: VariantEffectState | undefined) {
       self.variantEffects = state
     },
     setStructureData(data: StructureData) {
@@ -666,6 +666,21 @@ const Structure = types
     },
     /**
      * #getter
+     * Whether the source numbers a sequence other than the one this
+     * structure's chain spells, where the two are mapped one to one: an
+     * AlphaFold model folded from an older revision of the entry would take
+     * every value a residue off, and nothing else would say so. A PDB entry
+     * goes through SIFTS, which maps the construct to the current entry.
+     */
+    get variantEffectSequenceDiffers() {
+      const values = this.currentVariantEffects?.values
+      const entity = this.mappedEntity
+      return (
+        !!values && !!entity && !this.pdbId && values.sequence !== entity.seq
+      )
+    },
+    /**
+     * #getter
      * The scheme's values on the mapped entity's residues, by label_seq_id.
      * Only the residues the UniProt entry's map reaches get one (see
      * structureUniProt): an AlphaFold model of the entry one to one, a PDB
@@ -674,12 +689,15 @@ const Structure = types
     get placedVariantEffects(): PlacedValues | undefined {
       const values = this.currentVariantEffects?.values
       const entity = this.mappedEntity
-      return values && entity
+      return values && entity && !this.variantEffectSequenceDiffers
         ? placeValues(values, this.uniProtEntry.mapUniProtPosition, entity)
         : undefined
     },
     /**
      * #getter
+     * Whether the scheme's values are still on their way. Kept out of
+     * `loading`: colour arriving late only recolours, so selection, framing
+     * and the ready marker do not wait on a download that can run to 14 MB.
      */
     get variantEffectsPending() {
       const state = this.currentVariantEffects
@@ -705,11 +723,13 @@ const Structure = types
       const { isoformAccession } = this.uniProtEntry
       return state.error !== undefined
         ? `Could not fetch ${source} for ${state.accession}: ${errorMessage(state.error)}`
-        : state.accession !== undefined
-          ? undefined
-          : isoformAccession
-            ? `${source} are numbered for the canonical entry, not isoform ${isoformAccession}`
-            : `No UniProt entry to place ${source} on`
+        : this.variantEffectSequenceDiffers
+          ? `${source} for ${state.accession} number a sequence that differs from this model's`
+          : state.accession !== undefined
+            ? undefined
+            : isoformAccession
+              ? `${source} are numbered for the canonical entry, not isoform ${isoformAccession}`
+              : `No UniProt entry to place ${source} on`
     },
     /**
      * #getter
@@ -1154,8 +1174,7 @@ const Structure = types
         this.alignmentPending ||
         (!!this.pdbId &&
           self.uniProtMappings === undefined &&
-          self.uniProtMappingsError === undefined) ||
-        this.variantEffectsPending
+          self.uniProtMappingsError === undefined)
       )
     },
     /**
@@ -1181,10 +1200,7 @@ const Structure = types
           ? `Aligning ${this.label} to ${name}`
           : `Aligning ${this.label}`
       }
-      const scheme = this.variantEffectScheme
-      return scheme && !this.uniProtEntry.isLoading
-        ? `Fetching ${VARIANT_EFFECT_SOURCE_NAMES[scheme]} for ${this.variantEffectAccession}`
-        : `Mapping ${this.label} to UniProt`
+      return `Mapping ${this.label} to UniProt`
     },
     /**
      * #getter

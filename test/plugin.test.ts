@@ -540,7 +540,9 @@ describe('Protein3d Plugin E2E', () => {
 
   // The figure the protein browser's BRAF demo leans on: AlphaMissense on
   // the AlphaFold model, every residue placed, V600 among the darkest red.
-  it('colours an AlphaFold model by AlphaMissense pathogenicity', async () => {
+  // ClinVar after it on the same model, whose zeros on every uncalled residue
+  // would hide a parse that stopped finding pathogenic calls.
+  it('colours an AlphaFold model by AlphaMissense, then by ClinVar', async () => {
     await openSessionSpec(page, {
       views: [
         {
@@ -554,20 +556,28 @@ describe('Protein3d Plugin E2E', () => {
       timeout: 180_000,
     })
     await waitForStructureRendered(page)
-    const placed = await page.evaluate(() => {
-      const s = window.JBrowseSession!.views!.find(
-        v => v.type === 'ProteinView',
-      )!.structures![0]!
-      const values = s.placedVariantEffects?.byLabelSeqId
-      return {
-        count: values?.size,
-        v600: values?.get(600),
-        status: s.statusMessage,
-      }
-    })
-    expect(placed.count).toBe(766)
-    expect(placed.v600).toBeGreaterThan(0.9)
-    expect(placed.status).toBeUndefined()
+    const placed = () =>
+      page.evaluate(() => {
+        const s = window.JBrowseSession!.views!.find(
+          v => v.type === 'ProteinView',
+        )!.structures![0]!
+        const values = s.placedVariantEffects?.byLabelSeqId
+        return {
+          pending: s.variantEffectsPending,
+          count: values?.size ?? 0,
+          nonZero: [...(values?.values() ?? [])].filter(v => v > 0).length,
+          v600: values?.get(600),
+          k601: values?.get(601),
+          status: s.statusMessage,
+        }
+      })
+    await expect
+      .poll(async () => (await placed()).pending, { timeout: 60_000 })
+      .toBe(false)
+    const alphaMissense = await placed()
+    expect(alphaMissense.count).toBeGreaterThanOrEqual(760)
+    expect(alphaMissense.v600).toBeGreaterThan(0.9)
+    expect(alphaMissense.status).toBeUndefined()
     const themes = () =>
       page.evaluate(
         () =>
@@ -590,6 +600,25 @@ describe('Protein3d Plugin E2E', () => {
       )
     await waitForMolstarIdle(page)
     await captureScreenshot(page, screenshot('13-alphamissense'))
+
+    await page.evaluate(() => {
+      window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+        .setColorScheme!('clinvar')
+    })
+    await expect
+      .poll(async () => (await placed()).pending, { timeout: 90_000 })
+      .toBe(false)
+    const clinVar = await placed()
+    expect(clinVar.status).toBeUndefined()
+    expect(clinVar.count).toBeGreaterThanOrEqual(760)
+    expect(clinVar.nonZero).toBeGreaterThanOrEqual(40)
+    expect(clinVar.k601).toBeGreaterThanOrEqual(1)
+    await expect
+      .poll(themes, { timeout: 30_000 })
+      .toSatisfy(
+        (names: (string | undefined)[]) =>
+          names.length > 0 && names.every(n => n === 'clinvar'),
+      )
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 

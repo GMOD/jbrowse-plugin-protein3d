@@ -64,7 +64,10 @@ function start(
   return autorun(makeVariantEffectLoader(host, () => host.alive, fetchValues))
 }
 
-const values: UniProtValues = new Map([[600, 0.95]])
+const values: UniProtValues = {
+  sequence: 'V',
+  byPosition: new Map([[600, 0.95]]),
+}
 
 test('asks for the entry once the scheme wants it, and keeps the answer', async () => {
   const host = makeHost({ uniprotId: 'P15056' })
@@ -127,7 +130,7 @@ test('drops an answer to a scheme the view has since left', async () => {
   await vi.waitFor(() => {
     expect(host.variantEffects?.values).toBe(values)
   })
-  slow.resolve(new Map([[1, 0.1]]))
+  slow.resolve({ sequence: 'M', byPosition: new Map([[1, 0.1]]) })
   await slow.promise
   expect(host.variantEffects).toEqual({
     scheme: 'clinvar',

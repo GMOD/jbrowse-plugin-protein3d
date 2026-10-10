@@ -22,7 +22,7 @@ export interface VariantEffectHost {
     readonly isLoading: boolean
   }
   readonly variantEffects: VariantEffectState | undefined
-  setVariantEffects(state: VariantEffectState): void
+  setVariantEffects(state: VariantEffectState | undefined): void
 }
 
 /**
@@ -31,6 +31,11 @@ export interface VariantEffectHost {
  * known. An isoform model is numbered for the isoform while the sources
  * number the entry, so it asks nothing. An answer that arrives after the
  * scheme or entry changed, or after the structure left the view, is dropped.
+ *
+ * Leaving the variant-effect schemes forgets the answer, so choosing one again
+ * asks again: a failure is retried then, and a success comes from the
+ * source's cache. A failure is not retried while the scheme stays, since
+ * recording it reruns this autorun.
  */
 export function makeVariantEffectLoader(
   host: VariantEffectHost,
@@ -42,8 +47,13 @@ export function makeVariantEffectLoader(
     const { uniprotId, isoformAccession, isLoading } = host.uniProtEntry
     const current = host.variantEffects
     const accession = isoformAccession ? undefined : uniprotId
+    if (!scheme) {
+      if (current) {
+        host.setVariantEffects(undefined)
+      }
+      return
+    }
     if (
-      !scheme ||
       isLoading ||
       (current?.scheme === scheme && current.accession === accession)
     ) {

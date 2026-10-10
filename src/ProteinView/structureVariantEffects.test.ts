@@ -22,8 +22,15 @@ const responses: Record<string, string> = {
     'protein_variant,am_pathogenicity,am_class',
     'M1A,0.2,LBen',
     'M1C,0.4,Amb',
+    'K2E,0.1,LBen',
     'V3E,0.9,LPath',
+    'A4G,0.5,Amb',
   ].join('\n'),
+  // numbered on a revision of the entry one residue longer than the model
+  'https://www.ebi.ac.uk/proteins/api/variation/P0OLD1.json': JSON.stringify({
+    sequence: 'MKVAL',
+    features: [],
+  }),
   'https://www.ebi.ac.uk/proteins/api/variation/P0PDB1.json': JSON.stringify({
     sequence: 'ACDEFGHIKLMN',
     features: [
@@ -100,18 +107,17 @@ test("an AlphaFold model takes the entry's values one to one", async () => {
     entityId: '1',
     seq: 'MKVA',
   })
-  expect(structure.loading).toBe(true)
-  expect(structure.loadingMessage).toBe(
-    'Fetching AlphaMissense scores for P0AF01',
-  )
+  // colour arriving later only recolours, so nothing else waits on it
+  expect(structure.loading).toBe(false)
+  expect(structure.variantEffectsPending).toBe(true)
   await vi.waitFor(() => {
-    expect(structure.loading).toBe(false)
+    expect(structure.variantEffectsPending).toBe(false)
   })
   expect(structure.placedVariantEffects?.entityId).toBe('1')
   const placed = [...(structure.placedVariantEffects?.byLabelSeqId ?? [])]
-  expect(placed.map(([id]) => id)).toEqual([1, 3])
+  expect(placed.map(([id]) => id)).toEqual([1, 2, 3, 4])
   expect(placed[0]?.[1]).toBeCloseTo(0.3)
-  expect(placed[1]?.[1]).toBeCloseTo(0.9)
+  expect(placed[2]?.[1]).toBeCloseTo(0.9)
   expect(structure.statusMessage).toBeUndefined()
 })
 
@@ -136,7 +142,7 @@ test('a PDB entry takes them through SIFTS, on the mapped entity only', async ()
     },
   ])
   await vi.waitFor(() => {
-    expect(structure.loading).toBe(false)
+    expect(structure.variantEffectsPending).toBe(false)
   })
   // the construct's first residue, a tag, has no UniProt position
   expect(structure.placedVariantEffects).toEqual({
@@ -149,19 +155,49 @@ test('a PDB entry takes them through SIFTS, on the mapped entity only', async ()
   })
 })
 
-test('a source that fails says so beside the structure, which still shows', async () => {
-  const { structure } = loaded({ uniprotId: 'P0GONE' }, 'alphamissense', {
+test('a source that fails says so beside the structure, and is asked again once the scheme is chosen again', async () => {
+  const url =
+    'https://alphafold.ebi.ac.uk/files/AF-P0LATE-F1-aa-substitutions.csv'
+  const { parent, structure } = loaded(
+    { uniprotId: 'P0LATE' },
+    'alphamissense',
+    { entityId: '1', seq: 'M' },
+  )
+  await vi.waitFor(() => {
+    expect(structure.variantEffectsPending).toBe(false)
+  })
+  expect(structure.statusMessage).toBe(
+    'Could not fetch AlphaMissense scores for P0LATE: HTTP 404',
+  )
+  expect(structure.error).toBeUndefined()
+  expect(structure.placedVariantEffects).toBeUndefined()
+  const asked = () => vi.mocked(fetch).mock.calls.filter(([u]) => u === url)
+  // recording the failure does not set off a retry loop
+  await new Promise(resolve => setTimeout(resolve, 10))
+  expect(asked()).toHaveLength(1)
+
+  responses[url] = 'protein_variant,am_pathogenicity,am_class\nM1A,0.7,LPath'
+  parent.setColorScheme('default')
+  parent.setColorScheme('alphamissense')
+  await vi.waitFor(() => {
+    expect(structure.placedVariantEffects?.byLabelSeqId.get(1)).toBe(0.7)
+  })
+  expect(asked()).toHaveLength(2)
+  expect(structure.statusMessage).toBeUndefined()
+})
+
+test('a model folded from another revision of the entry stays grey', async () => {
+  const { structure } = loaded({ uniprotId: 'P0OLD1' }, 'clinvar', {
     entityId: '1',
     seq: 'MKVA',
   })
   await vi.waitFor(() => {
-    expect(structure.loading).toBe(false)
+    expect(structure.variantEffectsPending).toBe(false)
   })
-  expect(structure.statusMessage).toBe(
-    'Could not fetch AlphaMissense scores for P0GONE: HTTP 404',
-  )
-  expect(structure.error).toBeUndefined()
   expect(structure.placedVariantEffects).toBeUndefined()
+  expect(structure.statusMessage).toBe(
+    "ClinVar variants for P0OLD1 number a sequence that differs from this model's",
+  )
 })
 
 test('a structure with no UniProt entry asks nothing and says why', () => {

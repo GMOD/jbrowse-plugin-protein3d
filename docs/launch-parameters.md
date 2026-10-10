@@ -86,9 +86,14 @@ the structure's UniProt entry:
 The values land on residues the way the UniProt feature tracks do: one to one on
 an AlphaFold model of the entry, through SIFTS on a PDB entry. A residue nothing
 places stays grey, as does every residue of an AlphaFold isoform model, which
-the sources do not number, and of a structure with no UniProt entry. The
+the sources do not number, and of a structure with no UniProt entry. A model
+mapped one to one also stays grey when the source spells the entry differently
+from the model's chain, as for a model folded from an older revision. The
 structure's header row says why it is grey, and a failed download says so there
-too.
+too; switching to another scheme and back retries it.
+
+The values arrive after the structure is shown and only recolour it: a
+selection, the camera and the ready marker do not wait for them.
 
 ## `structures`
 

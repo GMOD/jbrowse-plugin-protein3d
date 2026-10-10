@@ -21,6 +21,8 @@
 //                   per model
 //   minColored      residues the view's variant-effect colour scheme placed a
 //                   value on, at least
+//   minNonZero      of those, residues whose value is above zero, at least;
+//                   ClinVar places a zero on every residue it has no call for
 // A view of several structures takes `structures`, one such object per
 // structure in order, and `superposed`, how many TM-align must cover. A demo
 // with an MsaView takes `msa: { minRows }`: the alignment loads with at least
@@ -190,6 +192,7 @@ function readView() {
       s =>
         !s.mappedEntity ||
         s.loading ||
+        s.variantEffectsPending ||
         (s.pdbId &&
           s.uniProtMappings === undefined &&
           s.uniProtMappingsError === undefined),
@@ -211,6 +214,9 @@ function readView() {
       models: s.molstarStructures?.length,
       selected: s.clickedStructureRanges,
       colored: s.placedVariantEffects?.byLabelSeqId.size ?? 0,
+      nonZero: [
+        ...(s.placedVariantEffects?.byLabelSeqId.values() ?? []),
+      ].filter(v => v > 0).length,
     })),
   }
 }
@@ -327,6 +333,14 @@ function problems(state, expect) {
     !(state.colored >= expect.minColored)
   ) {
     found.push(`${state.colored} residues coloured, under ${expect.minColored}`)
+  }
+  if (
+    expect.minNonZero !== undefined &&
+    !(state.nonZero >= expect.minNonZero)
+  ) {
+    found.push(
+      `${state.nonZero} residues above zero, under ${expect.minNonZero}`,
+    )
   }
   if (expect.models !== undefined && state.models !== expect.models) {
     found.push(`${state.models} Mol* structures, expected ${expect.models}`)

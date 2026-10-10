@@ -25,8 +25,14 @@ function isVariationEntry(value: unknown): value is VariationEntry {
   )
 }
 
+// TP53's variation record is 14 MB; a stalled EBI should not leave a
+// structure waiting on it for good
+const DOWNLOAD_TIMEOUT_MS = 60_000
+
 async function download(scheme: VariantEffectScheme, accession: string) {
-  const response = await fetch(variantEffectUrl(scheme, accession))
+  const response = await fetch(variantEffectUrl(scheme, accession), {
+    signal: AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS),
+  })
   if (!response.ok) {
     throw new Error(`HTTP ${response.status}`)
   }

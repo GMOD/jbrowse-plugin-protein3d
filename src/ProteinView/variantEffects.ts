@@ -16,8 +16,14 @@ export const VARIANT_EFFECT_SOURCE_NAMES: Record<VariantEffectScheme, string> =
     clinvar: 'ClinVar variants',
   }
 
-/** A value per 1-based position of a UniProt entry's canonical sequence */
-export type UniProtValues = ReadonlyMap<number, number>
+/**
+ * A value per 1-based position of a UniProt entry, beside the sequence the
+ * source numbers those positions on
+ */
+export interface UniProtValues {
+  sequence: string
+  byPosition: ReadonlyMap<number, number>
+}
 
 /** Values of one entity's residues, keyed by label_seq_id */
 export interface PlacedValues {
@@ -27,13 +33,16 @@ export interface PlacedValues {
 
 /**
  * The mean AlphaMissense pathogenicity of every substitution at each residue,
- * the per-residue figure AlphaFold DB colours its models by.
+ * the per-residue figure AlphaFold DB colours its models by. The sequence is
+ * spelled from each row's reference residue, `X` where no row names one.
  */
 export function meanScoreByPosition(
-  rows: readonly { start: number; score: number }[],
+  rows: readonly { start: number; score: number; ref: string }[],
 ): UniProtValues {
   const sums = new Map<number, { total: number; count: number }>()
-  for (const { start, score } of rows) {
+  const residues: (string | undefined)[] = []
+  for (const { start, score, ref } of rows) {
+    residues[start] = ref
     const sum = sums.get(start + 1)
     if (sum) {
       sum.total += score
@@ -42,9 +51,15 @@ export function meanScoreByPosition(
       sums.set(start + 1, { total: score, count: 1 })
     }
   }
-  return new Map(
-    [...sums].map(([position, { total, count }]) => [position, total / count]),
-  )
+  return {
+    sequence: Array.from(residues, r => r ?? 'X').join(''),
+    byPosition: new Map(
+      [...sums].map(([position, { total, count }]) => [
+        position,
+        total / count,
+      ]),
+    ),
+  }
 }
 
 export interface VariationEntry {
@@ -89,12 +104,15 @@ export function pathogenicCountByPosition({
       }
     }
   }
-  return new Map(
-    Array.from(sequence, (_, i) => [
-      i + 1,
-      substitutions.get(i + 1)?.size ?? 0,
-    ]),
-  )
+  return {
+    sequence,
+    byPosition: new Map(
+      Array.from(sequence, (_, i) => [
+        i + 1,
+        substitutions.get(i + 1)?.size ?? 0,
+      ]),
+    ),
+  }
 }
 
 /**
@@ -108,7 +126,7 @@ export function placeValues(
   entity: { entityId: string; seqIds: readonly number[] },
 ): PlacedValues {
   const byLabelSeqId = new Map<number, number>()
-  for (const [position, value] of values) {
+  for (const [position, value] of values.byPosition) {
     const structurePos = mapUniProtPosition(position)
     const labelSeqId =
       structurePos === undefined ? undefined : entity.seqIds[structurePos]

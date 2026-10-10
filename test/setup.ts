@@ -41,6 +41,7 @@ interface ProteinViewStructure {
   entities?: { entityId: string }[]
   mappedEntity?: { entityId: string; chains: string[] }
   placedVariantEffects?: { byLabelSeqId: Map<number, number> }
+  variantEffectsPending?: boolean
   statusMessage?: string
 }
 interface MolstarCell {
@@ -57,6 +58,7 @@ interface SessionView {
   }
   structures?: ProteinViewStructure[]
   superposedCount?: number
+  setColorScheme?: (scheme: string) => void
   menuItems?: () => { label?: string; onClick?: () => void }[]
   tracks?: {
     configuration?: { trackId?: string }

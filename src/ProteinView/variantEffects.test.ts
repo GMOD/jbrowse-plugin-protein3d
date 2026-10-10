@@ -21,10 +21,12 @@ test('averages every substitution at a residue, keyed by 1-based position', () =
       'V600A,1,LPath',
     ].join('\n'),
   )
-  const means = meanScoreByPosition(rows)
+  const { byPosition: means, sequence } = meanScoreByPosition(rows)
   expect([...means.keys()]).toEqual([1, 600])
   expect(means.get(1)).toBeCloseTo(0.3)
   expect(means.get(600)).toBeCloseTo(0.95)
+  // spelled from the reference residues, X where no row names one
+  expect(sequence).toBe(`M${'X'.repeat(598)}V`)
 })
 
 const clinVarPathogenic = {
@@ -85,7 +87,8 @@ test('counts distinct ClinVar pathogenic missense substitutions per residue', ()
       },
     ],
   })
-  expect([...counts]).toEqual([
+  expect(counts.sequence).toBe('MKVAL')
+  expect([...counts.byPosition]).toEqual([
     [1, 0],
     [2, 0],
     [3, 2],
@@ -107,14 +110,18 @@ test('a substitution spanning two residues counts at each', () => {
       },
     ],
   })
-  expect([...counts.values()]).toEqual([0, 1, 1, 0])
+  expect([...counts.byPosition.values()]).toEqual([0, 1, 1, 0])
 })
 
 const entity = { entityId: '1', seqIds: [1, 2, 3, 4, 5] }
 
+function entryValues(byPosition: [number, number][]) {
+  return { sequence: '', byPosition: new Map(byPosition) }
+}
+
 test('an AlphaFold model of the entry places position p on label_seq_id p', () => {
   const placed = placeValues(
-    new Map([
+    entryValues([
       [1, 0.1],
       [5, 0.9],
       [6, 0.5],
@@ -138,7 +145,7 @@ test('a PDB entry places values through its SIFTS segments only', () => {
     seqIds: Array.from({ length: 219 }, (_, i) => i + 1),
   }
   const placed = placeValues(
-    new Map([
+    entryValues([
       [93, 0.2],
       [94, 0.3],
       [248, 0.99],
@@ -165,7 +172,7 @@ test('a PDB entry places values through its SIFTS segments only', () => {
 // SEQRES-less numbering: label_seq_ids from an observed window, with a hole
 test("places by the entity's own label_seq_ids, not position + 1", () => {
   const placed = placeValues(
-    new Map([
+    entryValues([
       [1, 0.1],
       [2, 0.2],
       [3, 0.3],
