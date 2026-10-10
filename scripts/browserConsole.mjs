@@ -71,7 +71,9 @@ export function isBrowserConsoleNoise(text) {
 export function withResourceUrl(message) {
   const text = message.text()
   const { url } = message.location()
-  return url && text.startsWith('Failed to load resource') ? `${text} ${url}` : text
+  return url && text.startsWith('Failed to load resource')
+    ? `${text} ${url}`
+    : text
 }
 
 export function collectPageComplaints(page, onHeard) {
