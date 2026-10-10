@@ -538,6 +538,61 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
+  // The figure the protein browser's BRAF demo leans on: AlphaMissense on
+  // the AlphaFold model, every residue placed, V600 among the darkest red.
+  it('colours an AlphaFold model by AlphaMissense pathogenicity', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [{ uniprotId: 'P15056' }],
+          colorScheme: 'alphamissense',
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const placed = await page.evaluate(() => {
+      const s = window.JBrowseSession!.views!.find(
+        v => v.type === 'ProteinView',
+      )!.structures![0]!
+      const values = s.placedVariantEffects?.byLabelSeqId
+      return {
+        count: values?.size,
+        v600: values?.get(600),
+        status: s.statusMessage,
+      }
+    })
+    expect(placed.count).toBe(766)
+    expect(placed.v600).toBeGreaterThan(0.9)
+    expect(placed.status).toBeUndefined()
+    const themes = () =>
+      page.evaluate(
+        () =>
+          window.JBrowseSession?.views
+            ?.find(v => v.type === 'ProteinView')
+            ?.molstarPluginContext?.managers.structure.hierarchy.current.structures.flatMap(
+              s =>
+                s.components.flatMap(c =>
+                  c.representations.map(
+                    r => r.cell.transform.params?.colorTheme?.name,
+                  ),
+                ),
+            ) ?? [],
+      )
+    await expect
+      .poll(themes, { timeout: 30_000 })
+      .toSatisfy(
+        (names: (string | undefined)[]) =>
+          names.length > 0 && names.every(n => n === 'alphamissense'),
+      )
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('13-alphamissense'))
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
   // With no transcript there is nothing to align, so the structure reads
   // hovers from its first protein chain and lets the user pick another. On
   // 1TUP the first two entities are DNA strands.

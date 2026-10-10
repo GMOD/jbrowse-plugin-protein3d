@@ -19,6 +19,8 @@
 //   noInteriorStop  the translation has no `*` before its end
 //   models          Mol* structures the load made; an NMR ensemble makes one
 //                   per model
+//   minColored      residues the view's variant-effect colour scheme placed a
+//                   value on, at least
 // A view of several structures takes `structures`, one such object per
 // structure in order, and `superposed`, how many TM-align must cover. A demo
 // with an MsaView takes `msa: { minRows }`: the alignment loads with at least
@@ -208,6 +210,7 @@ function readView() {
       aligned: s.alignmentQuality?.aligned,
       models: s.molstarStructures?.length,
       selected: s.clickedStructureRanges,
+      colored: s.placedVariantEffects?.byLabelSeqId.size ?? 0,
     })),
   }
 }
@@ -319,6 +322,12 @@ function problems(state, expect) {
       )
     }
   }
+  if (
+    expect.minColored !== undefined &&
+    !(state.colored >= expect.minColored)
+  ) {
+    found.push(`${state.colored} residues coloured, under ${expect.minColored}`)
+  }
   if (expect.models !== undefined && state.models !== expect.models) {
     found.push(`${state.models} Mol* structures, expected ${expect.models}`)
   }
@@ -367,9 +376,17 @@ const demos = parseDemos(fs.readFileSync(values.file, 'utf8'))
 if (demos.length === 0) {
   throw new Error(`no demo links in ${values.file}`)
 }
+// EBI's proteins API answers a `HeadlessChrome` user agent with no response,
+// which a ClinVar-coloured demo reads as a failed fetch; see test/setup.ts
+const USER_AGENT =
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
 const browser = await puppeteer.launch({
   headless: true,
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
+  args: [
+    '--no-sandbox',
+    '--disable-setuid-sandbox',
+    `--user-agent=${USER_AGENT}`,
+  ],
   defaultViewport: { width: 1400, height: 900 },
 })
 let failed = 0

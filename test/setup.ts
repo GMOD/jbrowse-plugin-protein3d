@@ -40,6 +40,8 @@ interface ProteinViewStructure {
   molstarStructures?: unknown[]
   entities?: { entityId: string }[]
   mappedEntity?: { entityId: string; chains: string[] }
+  placedVariantEffects?: { byLabelSeqId: Map<number, number> }
+  statusMessage?: string
 }
 interface MolstarCell {
   transform: { ref: string; parent: string }

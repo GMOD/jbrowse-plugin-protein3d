@@ -20,7 +20,7 @@ working links.
 | `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                           |
 | `connectedView`                  | No       | LinearGenomeView settings (`loc`/`assembly`/`tracks`) to create and connect one        |
 | `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back             |
-| `colorScheme`                    | No       | A scheme from the view's **Color scheme** menu, e.g. 'plddt-confidence'                |
+| `colorScheme`                    | No       | A scheme from the view's **Color scheme** menu; see [below](#colorscheme)              |
 | `displayName`                    | No       | View name; defaults to the transcript and structure labels                             |
 | `height`                         | No       | View height in pixels (default: 650)                                                   |
 | `showControls`                   | No       | Show Mol\* controls panel                                                              |
@@ -64,6 +64,31 @@ unless the `url` is in the PDB archive (RCSB or PDBe). For a PDB entry, by
 `pdbId` or by such a `url`, SIFTS names the UniProt entry and sets the residue
 numbering, and a `uniprotId` beside it changes neither. See
 [residue numbering](residue-numbering.md).
+
+## `colorScheme`
+
+One of the view's **Color scheme** menu entries, applied to every structure:
+`default`, `plddt-confidence`, `chain-id`, `secondary-structure`,
+`hydrophobicity` (Kyte-Doolittle), `residue-name`, `uncertainty`,
+`molecule-type`, `mapped-chain`, `alphamissense` or `clinvar`. An unknown value
+falls back to `default`.
+
+`alphamissense` and `clinvar` colour by variant effect, one value per residue of
+the structure's UniProt entry:
+
+- `alphamissense`: the mean AlphaMissense pathogenicity of every substitution at
+  the residue, from AlphaFold DB's `AF-<accession>-F1-aa-substitutions.csv`,
+  blue (likely benign, 0) through white (0.5) to red (likely pathogenic, 1).
+- `clinvar`: how many distinct missense substitutions ClinVar calls pathogenic
+  or likely pathogenic at the residue, from the EBI proteins API's variation
+  record, pale for none to dark red for four or more.
+
+The values land on residues the way the UniProt feature tracks do: one to one on
+an AlphaFold model of the entry, through SIFTS on a PDB entry. A residue nothing
+places stays grey, as does every residue of an AlphaFold isoform model, which
+the sources do not number, and of a structure with no UniProt entry. The
+structure's header row says why it is grey, and a failed download says so there
+too.
 
 ## `structures`
 

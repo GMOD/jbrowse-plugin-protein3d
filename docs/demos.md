@@ -113,6 +113,26 @@ its alignment; `initialResidues: 600` would select K601.
 
 <!-- expect {"chain":"B","minIdentity":0.95,"selected":{"auth":599,"transcriptPos":599},"msa":{"minRows":50}} -->
 
+## A structure coloured by variant effect
+
+Colouring by a variant-effect source shows where the damaging substitutions
+cluster without hovering. The first link opens BRAF's AlphaFold model coloured
+by mean AlphaMissense pathogenicity per residue, on the blue-to-red scale of
+AlphaFold DB and the 1D protein view's track: the kinase domain (residues
+457–717) averages 0.89 and V600 scores 0.95, while the disordered linkers run
+blue. The second colours 1TUP's p53 chains by how many missense substitutions
+ClinVar calls pathogenic at each residue, placed on the crystal through SIFTS;
+the DNA stays grey. Both links need a plugin release newer than 1.5.0, which
+added the `alphamissense` and `clinvar` schemes.
+
+[BRAF by AlphaMissense](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%2C%22colorScheme%22%3A%22alphamissense%22%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.99,"minAligned":700,"minColored":766} -->
+
+[TP53 on 1TUP by ClinVar](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22colorScheme%22%3A%22clinvar%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%2C%22hg38-clinvarMain%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"chain":"A","minIdentity":0.95,"minColored":219} -->
+
 ## A short peptide bound to a larger partner
 
 1H26 holds an 11-residue p53 peptide bound to CDK2 and cyclin A. The kinase

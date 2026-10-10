@@ -20,7 +20,9 @@ The alignment strip, its legend, and the linear confidence track's colour config
 (`wiggleBandColors.ts`) all read it, and the bands match Mol\*'s
 `plddt-confidence` theme. The Kyte-Doolittle palette works the same way: the 3D
 theme (`kyteDoolittleColorTheme.ts`) and the strip call one `hydrophobicityRgb`,
-so a residue is the same colour in both.
+so a residue is the same colour in both. So does AlphaMissense:
+`ALPHAMISSENSE_RANGE` in `variantEffects.ts` colours the 1D protein view's track
+and the 3D `alphamissense` theme.
 
 **The legend comes from the scale, not beside it.** The header's key is the
 active Mol\* theme's own `legend`, and the strip legends are built from the same
@@ -62,6 +64,11 @@ params, and per-residue arrays for every structure and every NMR model do not
 belong there. The theme should instead read from a registry the view owns, keyed
 by model id, as `interactionPosition` already keys hovers by model id. The strip
 row can ship first, since it needs none of that.
+
+That registry exists now. The `alphamissense` and `clinvar` schemes
+(`variantEffectColorTheme.ts`) register each structure's per-residue values
+against its Mol\* models before a recolour, so a genome-track source needs its
+sampling and a theme provider, not a new mechanism.
 
 ### 2. Colour the structure by the MSA's conservation
 
