@@ -73,24 +73,35 @@ One of the view's **Color scheme** menu entries, applied to every structure:
 `molecule-type`, `mapped-chain`, `alphamissense` or `clinvar`. An unknown value
 falls back to `default`.
 
-`alphamissense` and `clinvar` colour by variant effect, one value per residue of
-the structure's UniProt entry:
+`alphamissense` and `clinvar` colour by variant effect, one value per residue:
 
 - `alphamissense`: the mean AlphaMissense pathogenicity of every substitution at
   the residue, from AlphaFold DB's `AF-<accession>-F1-aa-substitutions.csv`,
   blue (likely benign, 0) through white (0.5) to red (likely pathogenic, 1).
 - `clinvar`: how many distinct missense substitutions ClinVar calls pathogenic
-  or likely pathogenic at the residue, from the EBI proteins API's variation
-  record, pale for none to dark red for four or more.
+  or likely pathogenic at the residue, pale for none to dark red for four or
+  more. The plugin reads NCBI's ClinVar VCF by range over the transcript's
+  coding span (`vcf_GRCh38` or `vcf_GRCh37`, after the connected genome view's
+  assembly) and keeps single-base substitutions whose aggregate `CLNSIG` says
+  `Pathogenic` or `Likely_pathogenic`; a conflicting classification does not
+  count. Each one is translated on the transcript's own codon, so a variant that
+  is synonymous, nonsense or non-coding on this transcript drops out.
 
-The values land on residues the way the UniProt feature tracks do: one to one on
-an AlphaFold model of the entry, through SIFTS on a PDB entry. A residue nothing
-places stays grey, as does every residue of an AlphaFold isoform model, which
-the sources do not number, and of a structure with no UniProt entry. A model
-mapped one to one also stays grey when the source spells the entry differently
-from the model's chain, as for a model folded from an older revision. The
-structure's header row says why it is grey, and a failed download says so there
-too; switching to another scheme and back retries it.
+AlphaMissense numbers a UniProt entry, so its values land the way the UniProt
+feature tracks do: one to one on an AlphaFold model of the entry, through SIFTS
+on a PDB entry. Every residue of an AlphaFold isoform model stays grey, since
+the scores do not number it, as does a structure with no UniProt entry, and a
+model mapped one to one whose chain spells the entry differently (a model folded
+from an older revision).
+
+ClinVar is read off the genome, so its values land through the structure's
+alignment to the transcript, as a genome hover does. A structure with no
+transcript stays grey, as does one whose genome view shows an assembly other
+than GRCh38 or GRCh37 (`hg38` and `hg19` count).
+
+A residue nothing places stays grey. The structure's header row says why a
+structure is grey, and a failed download says so there too; switching to another
+scheme and back retries it.
 
 The values arrive after the structure is shown and only recolour it: a
 selection, the camera and the ready marker do not wait for them.
