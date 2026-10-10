@@ -43,6 +43,23 @@ const rebuildLogPlugin = {
   },
 }
 
+// Mol*'s `produce` hands mutative recipes that return a fresh object, which
+// mutative's development build warns about on every call (since Mol* 5.13).
+// The shipped build is minified, so esbuild defines NODE_ENV as production and
+// mutative is silent; the watch build takes the same mutative so the harness
+// console says what a host's would.
+const shippedMutativePlugin = {
+  name: 'shipped-mutative',
+  setup(build) {
+    build.onResolve({ filter: /^mutative\/dist\/index\.js$/ }, args =>
+      build.resolve('mutative/dist/mutative.cjs.production.min.js', {
+        kind: args.kind,
+        resolveDir: args.resolveDir,
+      }),
+    )
+  },
+}
+
 const config = {
   entryPoints: ['src/index.ts'],
   bundle: true,
@@ -57,6 +74,7 @@ const config = {
   plugins: [
     globalExternals(createGlobalMap(JBrowseReExports)),
     rebuildLogPlugin,
+    ...(isWatch ? [shippedMutativePlugin] : []),
   ],
   ...(isWatch
     ? { entryNames: 'out' }
