@@ -5,7 +5,10 @@ import path from 'node:path'
 import { PNG } from 'pngjs'
 import { launch } from 'puppeteer'
 
-import { isBrowserConsoleNoise } from '../scripts/browserConsole.mjs'
+import {
+  isBrowserConsoleNoise,
+  withResourceUrl,
+} from '../scripts/browserConsole.mjs'
 import { trackPageRequests } from '../scripts/pageRequests.mjs'
 import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
 
@@ -370,7 +373,7 @@ export async function createJBrowsePage(browser: Browser): Promise<Page> {
 
   page.on('console', msg => {
     if (msg.type() === 'error' || msg.type() === 'warn') {
-      complain(`[browser ${msg.type()}] ${msg.text()}`)
+      complain(`[browser ${msg.type()}] ${withResourceUrl(msg)}`)
     }
   })
 

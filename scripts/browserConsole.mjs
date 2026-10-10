@@ -61,6 +61,19 @@ export function isBrowserConsoleNoise(text) {
  * @param {(line: string) => void} [onHeard]
  * @returns {() => string[]}
  */
+/**
+ * A console message's text, plus the url when it is Chrome's "Failed to load
+ * resource", whose text names only the status: a 500 from a third-party
+ * service otherwise reads the same whichever service sent it.
+ *
+ * @param {import('puppeteer').ConsoleMessage} message
+ */
+export function withResourceUrl(message) {
+  const text = message.text()
+  const { url } = message.location()
+  return url && text.startsWith('Failed to load resource') ? `${text} ${url}` : text
+}
+
 export function collectPageComplaints(page, onHeard) {
   let complaints = []
   const hear = (type, text) => {
@@ -72,7 +85,7 @@ export function collectPageComplaints(page, onHeard) {
   }
   page.on('console', m => {
     if (m.type() === 'error' || m.type() === 'warn') {
-      hear(m.type(), m.text())
+      hear(m.type(), withResourceUrl(m))
     }
   })
   page.on('pageerror', e => {
