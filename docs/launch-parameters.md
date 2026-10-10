@@ -196,8 +196,9 @@ working link.
 
 \* Provide `uniprotId`, `gene`, or both. `gene` and `transcriptId` resolve the
 transcript exactly as they do for a ProteinView, and `gene` alone also finds the
-entry; a `uniprotId` beside `gene` chooses the entry the isoform is picked
-against. Without either the view opens unlinked, and the launch warns about a
+entry. A `uniprotId` beside `gene` picks the transcript that matches its
+AlphaFold model, so `P04637-7` links isoform 7's transcript to P04637's view.
+Without either the view opens unlinked, and the launch warns about a
 `connectedView` or `connectedViewId` it then has no use for. It also warns about
 an unknown key (`ignored unknown key(s): pdbId`) or a value of the wrong type,
 and drops it.

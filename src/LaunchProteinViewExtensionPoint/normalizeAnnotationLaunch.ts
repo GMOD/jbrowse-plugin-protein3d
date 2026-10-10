@@ -1,10 +1,9 @@
 import { isRecord, isString } from './normalizeLaunch'
-import { uniProtEntry } from '../LaunchProteinView/utils/launchViewUtils'
 
 import type { ConnectedViewSpec } from './resolveShortLaunch'
 
 export interface AnnotationLaunch {
-  /** the UniProt entry, with any isoform suffix stripped */
+  /** an isoform accession picks the transcript; the view opens its entry */
   uniprotId?: string
   gene?: string
   transcriptId?: string
@@ -91,7 +90,7 @@ export function normalizeAnnotationLaunch(
   }
   return {
     launch: {
-      uniprotId: uniprotId ? uniProtEntry(uniprotId) : undefined,
+      uniprotId: uniprotId || undefined,
       gene,
       transcriptId,
       connectedView: links ? connectedView : undefined,

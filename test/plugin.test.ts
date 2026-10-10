@@ -24,6 +24,7 @@ import {
   startJBrowseServer,
   stopServer,
   structureCellsHidden,
+  trackTestPageRequests,
   waitForJBrowseLoad,
   waitForLaunchEnabled,
   waitForMolstarIdle,
@@ -222,6 +223,7 @@ describe('Protein3d Plugin E2E', () => {
     await page.click(
       '[role="tabpanel"]:not([hidden]) [data-testid="protein-launch-options-button"]',
     )
+    const requests = trackTestPageRequests(page)
     await page.click('[data-testid="protein-launch-option-1d"]')
 
     const linked = await page.waitForFunction(
@@ -275,7 +277,7 @@ describe('Protein3d Plugin E2E', () => {
 
     // Seventeen tracks are still fetching and drawing when the last one
     // opens, and whatever they say belongs to this leg.
-    await page.waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
+    await requests.idle(2000, 120_000)
     expect(pageComplaintsSince()).toEqual([])
     // The view stays open. Closing it, even idle, makes the host warn once per
     // display that it "is no longer part of a state tree" (jbrowse nightly
@@ -665,6 +667,7 @@ describe('Protein3d Plugin E2E', () => {
   // R248: an index into the entry would light serine 116. Last, because the
   // view stays open (see the dialog's 1D leg).
   it('opens a 1D protein view of an isoform from a session spec', async () => {
+    const requests = trackTestPageRequests(page)
     await openSessionSpec(page, {
       views: [
         {
@@ -732,7 +735,7 @@ describe('Protein3d Plugin E2E', () => {
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
 
-    await page.waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
+    await requests.idle(2000, 120_000)
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })

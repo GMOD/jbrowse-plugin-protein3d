@@ -96,10 +96,9 @@ export default function LaunchProteinAnnotationViewF(
           confidenceUrl,
           connectedViewId,
           connectedAssemblyName:
-            connectedView?.assembly ??
-            (connectedViewId
-              ? viewAssemblyName(session, connectedViewId)
-              : undefined),
+            (launch.connectedViewId
+              ? viewAssemblyName(session, launch.connectedViewId)
+              : undefined) ?? connectedView?.assembly,
           featureTypes,
         })
       } catch (e) {

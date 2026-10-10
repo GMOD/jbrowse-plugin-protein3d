@@ -47,6 +47,7 @@ import { parseArgs } from 'node:util'
 import puppeteer from 'puppeteer'
 
 import { collectPageComplaints } from './browserConsole.mjs'
+import { trackPageRequests } from './pageRequests.mjs'
 
 const { values } = parseArgs({
   options: {
@@ -259,14 +260,15 @@ function msaProblems(msa, expect) {
   ]
 }
 
-// The linkage aligns when the 1D view attaches, after its tracks have opened
+// The linkage aligns as the 1D view attaches, which can be before the launch
+// opens its first track, so the view settles once both are in
 function readAnnotationView() {
   const w = /** @type {Record<string, any>} */ (window)
   const views = w.JBrowseSession?.views ?? []
   const view = views.find(v => v.proteinLinkage)
   const map =
     view?.proteinLinkageCoordinates?.maps.transcriptSeqToStructureSeqPosition
-  if (!view || !map) {
+  if (!view || !map || view.tracks.length === 0) {
     return undefined
   }
   const { uniprotId, connectedViewId } = view.proteinLinkage
@@ -274,7 +276,6 @@ function readAnnotationView() {
     uniprotId,
     connected: views.some(v => v.id === connectedViewId),
     transcriptToEntry: map,
-    tracks: view.tracks.length,
   }
 }
 
@@ -285,9 +286,6 @@ function annotationProblems(view, expect) {
   }
   if (!view.connected) {
     found.push('the 1D view links to no genome view in the session')
-  }
-  if (view.tracks === 0) {
-    found.push('the 1D view opened no tracks')
   }
   if (expect.residue) {
     const { transcriptPos, entryPos } = expect.residue
@@ -464,6 +462,7 @@ for (const demo of demos) {
   let found
   let view
   try {
+    const requests = trackPageRequests(page, new URL('static/', demo.url).href)
     await page.goto(demo.url, {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
@@ -478,9 +477,7 @@ for (const demo of demos) {
         demo.expect.annotation,
       )
       // the tracks are still drawing, and what they log belongs to the demo
-      await page
-        .waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
-        .catch(() => {})
+      await requests.idle(2000, 120_000)
     } else {
       const handle = await page.waitForFunction(readView, {
         timeout,

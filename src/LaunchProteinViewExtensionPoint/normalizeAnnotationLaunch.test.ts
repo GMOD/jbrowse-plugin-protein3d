@@ -8,7 +8,7 @@ const connectedView = {
   tracks: ['hg38-gencodeComp', { trackId: 'hg38-clinvarMain' }],
 }
 
-test('a transcript linkage passes through, the entry stripped of its isoform', () => {
+test('a transcript linkage passes through, the isoform accession intact', () => {
   expect(
     normalizeAnnotationLaunch({
       uniprotId: 'P04637-7',
@@ -17,7 +17,7 @@ test('a transcript linkage passes through, the entry stripped of its isoform', (
     }),
   ).toEqual({
     launch: {
-      uniprotId: 'P04637',
+      uniprotId: 'P04637-7',
       transcriptId: 'ENST00000504937',
       connectedView,
     },

@@ -6,6 +6,7 @@ import { PNG } from 'pngjs'
 import { launch } from 'puppeteer'
 
 import { isBrowserConsoleNoise } from '../scripts/browserConsole.mjs'
+import { trackPageRequests } from '../scripts/pageRequests.mjs'
 import { saveStableScreenshot } from '../scripts/pngSnapshot.mjs'
 
 import type { Browser, Page } from 'puppeteer'
@@ -339,6 +340,11 @@ export async function launchBrowser(headless = true): Promise<Browser> {
       `--user-agent=${USER_AGENT}`,
     ],
   })
+}
+
+/** {@link trackPageRequests} over this server's host, minus its static chunks */
+export function trackTestPageRequests(page: Page) {
+  return trackPageRequests(page, `http://localhost:${JBROWSE_PORT}/static/`)
 }
 
 // Everything the page said that the list above does not excuse: uncaught
