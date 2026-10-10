@@ -122,9 +122,8 @@ AlphaFold DB and the 1D protein view's track: the kinase domain (residues
 457–717) averages 0.89 and V600 scores 0.95, while the disordered linkers run
 blue. The second colours 1TUP's p53 chains by how many missense substitutions
 ClinVar calls pathogenic at each residue, placed on the crystal through SIFTS:
-141 of its 219 residues have at least one, and the DNA stays grey. Both links
-need a plugin release newer than 1.5.0, which added the `alphamissense` and
-`clinvar` schemes.
+141 of its 219 residues have at least one, and the DNA stays grey. Both schemes
+arrived in 1.6.0.
 
 [BRAF by AlphaMissense](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%2C%22colorScheme%22%3A%22alphamissense%22%7D%5D%7D)
 
@@ -223,7 +222,7 @@ view of P04637, with UniProt's domains, variants, AlphaMissense and AlphaFold
 confidence as tracks, linked to the isoform on the genome. The plugin aligns the
 isoform to the entry before a hover maps anything: the R248 codon lights residue
 248, where a residue index would light serine 116. The spec type,
-`ProteinAnnotationView`, needs a plugin release after 1.5.0.
+`ProteinAnnotationView`, arrived in 1.6.0.
 
 [TP53 Δ133 on its UniProt entry](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinAnnotationView%22%2C%22uniprotId%22%3A%22P04637%22%2C%22transcriptId%22%3A%22ENST00000504937.5%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-gencodeComp%22%2C%22hg38-clinvarMain%22%5D%7D%7D%5D%7D)
 

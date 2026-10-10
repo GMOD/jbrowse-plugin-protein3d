@@ -181,8 +181,8 @@ The launch dialog's **Launch 1D protein annotation view** opens a UniProt entry
 as a linear view, with its domains, variants, AlphaMissense scores and AlphaFold
 confidence as tracks. A `ProteinAnnotationView` spec entry opens the same view,
 registered as the `LaunchView-ProteinAnnotationView` extension point (the view
-itself is a LinearGenomeView on a temporary assembly of the entry). It needs a
-plugin release after 1.5.0.
+itself is a LinearGenomeView on a temporary assembly of the entry). It arrived
+in 1.6.0.
 
 `uniprotId` names the entry, and an isoform accession such as `P04637-7` opens
 its entry, since UniProt publishes features for the entry only. The transcript
