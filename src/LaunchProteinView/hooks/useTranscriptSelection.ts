@@ -1,5 +1,7 @@
 import { useState } from 'react'
 
+import { rankedTranscriptId } from '../../AlignTranscriptRpc'
+import { flaggedTranscriptId } from '../codingFeature'
 import { rankableIsoforms } from '../utils/util'
 
 import type { IsoformSequences } from '../utils/util'
@@ -26,7 +28,7 @@ export function defaultTranscriptId({
     i => i.id === preferredTranscriptId && i.seq,
   )
     ? preferredTranscriptId
-    : ranking && (ranking.matches[0] ?? ranking.nonMatches[0])?.id
+    : ranking && rankedTranscriptId(ranking, flaggedTranscriptId(options))
 }
 
 export default function useTranscriptSelection({

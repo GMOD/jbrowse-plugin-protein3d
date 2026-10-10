@@ -39,8 +39,10 @@ The plugin looks the name up as the genome view's search box does, opens a
 genome view on the gene with the track the index found it in, and works out the
 rest as the **Open AlphaFold structure** menu item does: the UniProt entry from
 the gene's identifiers, the AlphaFold model of that entry, and the isoform that
-model was folded from. Anything else the spec names wins over what the lookup
-would pick:
+model was folded from. Where the model matches several isoforms, or there is no
+model, a GENCODE track's `MANE_Select` (else `Ensembl_canonical`) transcript
+leads; NCBI's RefSeq GFF carries no such tag. Anything else the spec names wins
+over what the lookup would pick:
 
 - `pdbId`, `uniprotId`, `url` or `structures` choose the structure,
 - `transcriptId` chooses the isoform, among the gene's own,

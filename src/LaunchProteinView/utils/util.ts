@@ -2,7 +2,7 @@ import { isGeneLikeType } from '@jbrowse/core/util'
 import { isRecognizedDatabaseId, matchDbIdPattern } from 'p2s_mapper'
 
 import { isRecord } from './isRecord'
-import { codingTranscripts } from '../codingFeature'
+import { codingTranscripts, flaggedTranscriptId } from '../codingFeature'
 
 import type { Feature } from '@jbrowse/core/util'
 import type { Isoform } from 'p2s_mapper'
@@ -151,7 +151,7 @@ export interface FeatureIdentifiers {
 /**
  * Extract all useful identifiers from a feature for UniProt lookup.
  * If the feature is a gene, prioritizes identifiers from the preferred
- * transcript, else its first. Otherwise, extracts identifiers from the feature
+ * transcript, else its MANE Select, else its first. Otherwise, extracts identifiers from the feature
  * itself. geneId and geneName are always extracted from the parent feature 'f'.
  */
 export function extractFeatureIdentifiers(
@@ -166,10 +166,10 @@ export function extractFeatureIdentifiers(
 
   if (isGeneLikeType(f.get('type'))) {
     const transcripts = codingTranscripts(f)
+    const representative =
+      preferredTranscriptId ?? flaggedTranscriptId(transcripts)
     featureToProcess =
-      transcripts.find(t => t.id() === preferredTranscriptId) ??
-      transcripts[0] ??
-      f
+      transcripts.find(t => t.id() === representative) ?? transcripts[0] ?? f
   }
 
   // NCBI's GFF3 puts the protein on the CDS record, not the transcript: its

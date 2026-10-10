@@ -156,6 +156,49 @@ test('an ambiguous search resolves the longest isoform and no structure', async 
   )
 })
 
+// GENCODE spells tags as a comma list or, parsed, an array
+const maneGene = (tag: string | string[]) =>
+  gene({
+    subfeatures: [
+      transcript('short', { tag, uniprot: 'P11111' }),
+      transcript('long', { tag: ['basic'], uniprot: 'P22222' }),
+    ],
+  })
+
+test('with no structure to rank against, MANE Select leads rather than the longest', async () => {
+  const { host: h } = host({ entries: [], models: [] })
+  const launch = await resolveGeneLaunch({
+    host: h,
+    feature: maneGene('basic,Ensembl_canonical,MANE_Select'),
+  })
+  expect(launch.transcript.id()).toBe('short')
+  expect(launch.uniprotId).toBe('P11111')
+})
+
+test('MANE Select breaks a tie between isoforms the model matches exactly', async () => {
+  const { host: h } = host({ seqs: { short: SHORT, long: SHORT } })
+  const flagged = await resolveGeneLaunch({
+    host: h,
+    feature: gene({
+      subfeatures: [
+        transcript('short'),
+        transcript('long', { tag: ['MANE_Select'] }),
+      ],
+    }),
+  })
+  expect(flagged.transcript.id()).toBe('long')
+})
+
+test('MANE Select does not override the isoform the model was folded from', async () => {
+  const { host: h } = host({ models: [model('P22222', LONG)] })
+  const launch = await resolveGeneLaunch({
+    host: h,
+    feature: maneGene(['MANE_Select']),
+    uniprotId: 'P22222',
+  })
+  expect(launch.transcript.id()).toBe('long')
+})
+
 // a gene symbol names a different protein in every species
 test('a gene name is not searched on an assembly with no taxon', async () => {
   const { host: h, searched } = host({ taxonId: null })

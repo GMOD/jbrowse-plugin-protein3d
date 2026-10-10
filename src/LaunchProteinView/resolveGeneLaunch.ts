@@ -6,8 +6,8 @@ import {
   searchUniProtEntries,
 } from 'p2s_mapper'
 
-import { codingTranscripts } from './codingFeature'
-import { rankIsoforms } from '../AlignTranscriptRpc'
+import { codingTranscripts, flaggedTranscriptId } from './codingFeature'
+import { rankIsoforms, rankedTranscriptId } from '../AlignTranscriptRpc'
 import { fetchTranscriptProteinSeqs } from './utils/translateTranscripts'
 import { extractFeatureIdentifiers, extractTaxonId } from './utils/util'
 import { alignOffThread } from '../ProteinView/alignOffThread'
@@ -137,7 +137,8 @@ async function searchForEntry(
  * Everything the launch dialog works out from a gene, without the dialog: the
  * UniProt entry from the feature's identifiers, the AlphaFold model of that
  * entry, and the isoform to map — the preferred one when it translates, else
- * the one the model was folded from, else the longest.
+ * the one the model was folded from, else the annotation's MANE Select, else
+ * the longest.
  */
 export async function resolveGeneLaunch({
   host,
@@ -201,7 +202,9 @@ export async function resolveGeneLaunch({
     : structureSequences.length > 0
       ? (await host.rankIsoforms(isoforms, structureSequences)).ranking
       : rankIsoforms(isoforms).ranking
-  const bestId = ranking && (ranking.matches[0] ?? ranking.nonMatches[0])?.id
+  const bestId =
+    ranking &&
+    rankedTranscriptId(ranking, flaggedTranscriptId(codingTranscripts(feature)))
   const chosen =
     preferred ??
     translated.find(t => t.transcript.id() === bestId) ??

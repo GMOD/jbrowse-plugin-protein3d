@@ -25,3 +25,27 @@ export function codingTranscripts(feature: Feature) {
 export function isCodingFeature(feature: Feature) {
   return codingTranscripts(feature).length > 0
 }
+
+// GENCODE tags the transcript row; NCBI's RefSeq GFF carries no such tag and
+// keeps Select status in separate tracks.
+const REPRESENTATIVE_TAGS = ['MANE_Select', 'Ensembl_canonical']
+
+function tagsOf(feature: Feature): unknown[] {
+  const tag: unknown = feature.get('tag')
+  return Array.isArray(tag)
+    ? tag
+    : typeof tag === 'string'
+      ? tag.split(',')
+      : []
+}
+
+/** The transcript its annotation flags as the gene's representative. */
+export function flaggedTranscriptId(transcripts: Feature[]) {
+  for (const tag of REPRESENTATIVE_TAGS) {
+    const flagged = transcripts.find(t => tagsOf(t).includes(tag))
+    if (flagged) {
+      return flagged.id()
+    }
+  }
+  return undefined
+}

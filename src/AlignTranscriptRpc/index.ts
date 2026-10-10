@@ -13,6 +13,7 @@ import type {
   EntityCandidate,
   EntitySelection,
   Isoform,
+  RankedIsoform,
   ScoredAlignment,
 } from 'p2s_mapper'
 
@@ -50,6 +51,26 @@ export function rankIsoforms(
     structureSequence,
     ranking: classifyIsoforms({ isoforms, structureSequence }),
   }
+}
+
+/**
+ * The isoform to open from a ranking. An exact match to the structure wins;
+ * the annotation's flagged transcript (MANE Select) breaks a tie between exact
+ * matches, and leads when there is no structure to rank against, where length
+ * alone would decide.
+ */
+export function rankedTranscriptId(
+  { matches, nonMatches }: ClassifiedIsoforms,
+  flaggedId?: string,
+) {
+  const flagged = (list: RankedIsoform[]) => list.find(i => i.id === flaggedId)
+  const unranked = nonMatches.every(i => i.score === undefined)
+  return (
+    flagged(matches) ??
+    matches[0] ??
+    (unranked ? flagged(nonMatches) : undefined) ??
+    nonMatches[0]
+  )?.id
 }
 
 declare module '@jbrowse/core/rpc/RpcRegistry' {
