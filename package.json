@@ -47,7 +47,7 @@
     "clustal-js": "^2.0.19",
     "g2p_mapper": "^2.1.7",
     "molstar": "^5.13.1",
-    "p2s_mapper": "^1.3.0",
+    "p2s_mapper": "^1.4.0",
     "swr": "^2.5.1"
   },
   "devDependencies": {

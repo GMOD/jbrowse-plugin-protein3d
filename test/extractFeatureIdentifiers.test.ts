@@ -367,6 +367,21 @@ describe('extractFeatureIdentifiers', () => {
     expect(identifiers.geneName).toBe('recA')
   })
 
+  // UniProt cross-references the GeneID for any organism NCBI annotates
+  it('searches by the GeneID an NCBI GFF carries', () => {
+    const gene = new SimpleFeature({
+      uniqueId: 'gene-foxp2',
+      refName: 'chr1',
+      start: 0,
+      end: 100,
+      type: 'gene',
+      dbxref: ['GeneID:100008590'],
+    })
+    expect(actualExtractFeatureIdentifiers(gene).recognizedIds).toContain(
+      'GeneID:100008590',
+    )
+  })
+
   it('trims a comma-joined entry of a dbxref array', () => {
     const gene = new SimpleFeature({
       uniqueId: 'gene-joined',
