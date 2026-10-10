@@ -48,7 +48,7 @@ function linkFor({ modelUrl, transcriptId, loc }) {
       },
     ],
   }
-  return `https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
+  return `https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-${encodeURIComponent(JSON.stringify(spec))}`
 }
 
 linkFor({

@@ -6,19 +6,20 @@ codon. Every case below was mapped or shown wrongly by some earlier version of
 the plugin; [genome to structure alignment](genome-to-structure-alignment.md)
 records how the mapping cases were measured.
 
-The links load the plugin published at `jbrowse.org/plugins/…/latest`, so a fix
-shows here once it is released. After `pnpm build`, `pnpm check-demos` opens
-every link in this file with the local build and checks the expectation under
-it; run it after changing a link or the mapping. Run without `--bundle`
-(`node scripts/check-demos.mjs`), it checks the published plugin instead.
+Every link uses JBrowse `main` and loads the plugin published at
+`jbrowse.org/plugins/…/latest`, so a fix shows here once it is released. A 4.x
+host would load the frozen 0.15.3 build instead, which none of these exercise.
+After `pnpm build`, `pnpm check-demos` opens every link in this file with the
+local build and checks the expectation under it; run it after changing a link or
+the mapping. Run without `--bundle` (`node scripts/check-demos.mjs`), it checks
+the published plugin instead.
 
 ## A gene by name
 
 The whole spec of this link is `{"type":"ProteinView","gene":"BRAF"}`. The
 plugin finds BRAF through the hub's text search index, opens the genome on it,
 looks up its UniProt entry and that entry's AlphaFold model, and maps the
-isoform the model was folded from. The link uses JBrowse `main`, and `gene`
-needs plugin 1.2.0 or later.
+isoform the model was folded from.
 
 [BRAF by name](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%7D%5D%7D)
 
@@ -39,8 +40,7 @@ sacCer3, each with its own species' AlphaFold model.
 ## Bacteria, fungi and viruses by name
 
 The same one-field spec works on the GenArk hubs, which cover every RefSeq
-assembly UCSC hosts. Each link below names a gene and nothing else about it, and
-needs plugin 1.2.1 or later.
+assembly UCSC hosts. Each link below names a gene and nothing else about it.
 
 Bacteria. A prokaryotic gene has no transcript record, so the plugin reads the
 protein's accession off the CDS: NCBI writes E. coli K-12's UniProt entry there,
@@ -76,11 +76,11 @@ widens to the taxon's descendants when the taxon itself has no entry.
 
 Viruses. AlphaFold DB serves predicted models for the reference proteins of
 SARS-CoV-2 and HIV-1, so a viral gene opens by name like any other; the ORF3a
-link does, and needs plugin 1.2.2, the first to look up the `YP_` RefSeq
-proteins viral genomes carry. A PDB entry beside the gene opens the assembly a
-monomer cannot show: the spike link opens the trimer 6VXX beside the SARS-CoV-2
-genome, the gag link the HIV-1 capsid hexamer 3H47 on the gag polyprotein, and
-the cI link the lambda repressor bound to its operator.
+link does, through the `YP_` RefSeq protein viral genomes carry. A PDB entry
+beside the gene opens the assembly a monomer cannot show: the spike link opens
+the trimer 6VXX beside the SARS-CoV-2 genome, the gag link the HIV-1 capsid
+hexamer 3H47 on the gag polyprotein, and the cI link the lambda repressor bound
+to its operator.
 
 [SARS-CoV-2 ORF3a by name](https://jbrowse.org/code/jb2/main/?config=%2Fhubs%2Fgenark%2FGCF%2F009%2F858%2F895%2FGCF_009858895.2%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22ORF3a%22%7D%5D%7D)
 
@@ -104,7 +104,7 @@ the cI link the lambda repressor bound to its operator.
 aligns to p53 with more identical residues than the peptide has in total, so a
 match count picks it. The plugin maps TP53 to the peptide, chain E.
 
-[TP53 on 1H26](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221H26%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[TP53 on 1H26](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221H26%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"E","minIdentity":0.9,"minAligned":11} -->
 
@@ -114,7 +114,7 @@ match count picks it. The plugin maps TP53 to the peptide, chain E.
 letters too. The plugin skips nucleic-acid chains and maps TP53 to the
 DNA-binding domain.
 
-[TP53 on 1TUP](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[TP53 on 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","minIdentity":0.95} -->
 
@@ -127,7 +127,7 @@ plugin leaves them unmapped: the alignment shows the loop against gaps and then
 the lysozyme against gaps, hovering the loop's codons lights nothing, and all
 332 receptor residues SIFTS names stay mapped.
 
-[ADRB2 on 2RH1](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222RH1%22%2C%22transcriptId%22%3A%22NM_000024.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr5%3A148%2C825%2C000-148%2C829%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[ADRB2 on 2RH1](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222RH1%22%2C%22transcriptId%22%3A%22NM_000024.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr5%3A148%2C825%2C000-148%2C829%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","unmapped":[237,398],"minIdentity":0.9,"minAligned":332} -->
 
@@ -138,7 +138,7 @@ than giving it a letter, and the plugin used to read the name as three letters,
 which pushed every later residue two places along: residue 200 mapped to
 codon 198. Hover codon 200 now, and residue 200 lights.
 
-[CDK2 on 1H26](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221H26%22%2C%22transcriptId%22%3A%22NM_001798.5%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr12%3A55%2C966%2C000-55%2C973%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[CDK2 on 1H26](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221H26%22%2C%22transcriptId%22%3A%22NM_001798.5%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr12%3A55%2C966%2C000-55%2C973%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","residue":{"auth":200,"transcriptPos":199},"minIdentity":0.95} -->
 
@@ -147,8 +147,7 @@ codon 198. Hover codon 200 now, and residue 200 lights.
 COX1 (MT-CO1) is encoded on chrM, whose genetic code reads TGA as tryptophan.
 The hub's RefSeq track names no genetic code on the CDS, so the plugin takes the
 hub assembly's `{ chrM: 2 }`, and cytochrome c oxidase subunit 1 in 5Z62 aligns
-without interior stops. This link uses JBrowse `main`, the first host that
-exposes an assembly's genetic codes.
+without interior stops.
 
 [COX1 on 5Z62](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%225Z62%22%2C%22transcriptId%22%3A%22YP_003024028.1%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chrM%3A5%2C800-7%2C500%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
@@ -163,7 +162,7 @@ model is entity 1 of its file, so hovering mouse residue 100 used to light human
 residue 100 and its codon as well. The plugin now tells the two apart by Mol\*
 model id, and a hover on either lights only that model's own residue and codon.
 
-[TP53 on human and mouse AlphaFold](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22uniprotId%22%3A%22P02340%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[TP53 on human and mouse AlphaFold](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22uniprotId%22%3A%22P02340%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99,"minAligned":390},{"chain":"A","minIdentity":0.75,"minAligned":380}]} -->
 
@@ -176,7 +175,7 @@ view opens with R248 selected in Mol\* and its codon marked on the genome.
 [Residue numbering](residue-numbering.md) follows that number from the paper to
 the codon.
 
-[TP53 R248 on 1TUP](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22initialResidues%22%3A%7B%22start%22%3A248%2C%22end%22%3A248%7D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[TP53 R248 on 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22initialResidues%22%3A%7B%22start%22%3A248%2C%22end%22%3A248%7D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","selected":{"auth":248,"transcriptPos":247}} -->
 
@@ -189,7 +188,7 @@ hover and selection reach all twenty; until 2026-09-18 a colour scheme reached
 only the first. CBP is entity 1, and the plugin maps TP53 to the p53 chain, B.
 Twenty models take noticeably longer to load than one crystal structure.
 
-[TP53 on 2L14](https://jbrowse.org/code/jb2/latest/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222L14%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+[TP53 on 2L14](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222L14%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"B","models":20,"minIdentity":0.95,"minAligned":49} -->
 
@@ -200,8 +199,7 @@ to DNA. TM-align superposes the crystal on the model, and both map to the same
 transcript. Each structure's row in the view header has an eye button: hide 1TUP
 to see the model's full chain underneath it, then use **Re-align structures
 (TM-align)** in the view menu; the superposition runs again and 1TUP stays
-hidden until you show it. The link uses JBrowse `main`, and the eye button
-arrives with the first plugin release after 1.0.0.
+hidden until you show it.
 
 [TP53 on AlphaFold and 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22pdbId%22%3A%221TUP%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
@@ -214,9 +212,7 @@ plugin reads hovers from the first protein chain, p53's A/B/C, rather than from
 the DNA strands E and F that come first in the file, and the chain picker on the
 structure's row switches to any of the three entities. Hovers read only the
 chosen chain: a residue on another chain used to read out as the chosen chain's
-residue at the same index, so a DNA base named a p53 residue. The link uses
-JBrowse `main`, and the picker and the hover gating arrive with the first plugin
-release after 1.0.0.
+residue at the same index, so a DNA base named a p53 residue.
 
 [1TUP without a transcript](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%7D%5D%7D)
 

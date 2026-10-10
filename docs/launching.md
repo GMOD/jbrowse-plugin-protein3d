@@ -14,7 +14,7 @@ between `data`, `url`, `uniprotId` and `pdbId`, and the `feature` shape.
 ## A structure on its own
 
 ```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","url":"https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif"}]}
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","url":"https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif"}]}
 ```
 
 ## A structure connected to the genome
@@ -83,14 +83,14 @@ const url = `https://your-jbrowse/?config=/config.json&session=${encodeURICompon
 A ready-to-open URL against the public hg38 instance:
 
 ```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","uniprotId":"P04637","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","uniprotId":"P04637","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
 To open an **experimental** structure instead of an AlphaFold model, swap
 `uniprotId` for `pdbId`:
 
 ```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","pdbId":"1TUP","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","pdbId":"1TUP","transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
 1TUP is p53's core domain bound to DNA: entities [0] and [1] are the DNA strands
@@ -143,7 +143,7 @@ const session = `spec-${JSON.stringify({
       connectedView: {
         assembly: 'hg38',
         loc: 'chr17:7,668,421-7,687,550',
-        tracks: ['ncbiRefSeqCurated', 'clinvar'],
+        tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
       },
     },
   ],
@@ -170,7 +170,7 @@ reports, and [residue numbering](residue-numbering.md) covers how a residue
 number in a spec becomes a position in the file.
 
 ```
-https://jbrowse.org/code/jb2/latest/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
 ## From code
@@ -185,7 +185,7 @@ pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
   connectedView: {
     assembly: 'hg38',
     loc: 'chr17:7,668,421-7,687,550',
-    tracks: ['ncbiRefSeqCurated', 'clinvar'],
+    tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
   },
 })
 ```
