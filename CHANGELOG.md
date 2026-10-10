@@ -1,3 +1,15 @@
+## [1.6.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.6.0...v1.6.1) (2026-10-10)
+
+### Other Changes
+
+- The 1D view spec and the variant colour schemes shipped in 1.6.0 ([c72bbf6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c72bbf6e0b16233dab236e5d1100b0b594ebb7b2))
+- Give the watch build mutative's production build, so the README figure's console is the host's ([a269818](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a26981884355920deb21f3d34d6518f3cdf389c2))
+- Name the url in a "Failed to load resource" complaint ([0667b02](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0667b02b694fe2550a97a78edbba68614f298d95))
+- Format browserConsole.mjs ([0c746ca](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0c746ca448987633ac10312d47f3d4cdf79c2119))
+- Read the clinvar scheme from NCBI's ClinVar VCF, placed through the transcript ([ad54635](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ad5463513d608f04eba241dcd46ee48706b03cff))
+- ClinVar colour comes from NCBI's VCF through the transcript ([fa0f0f0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/fa0f0f0cf7b52c825d7290f3aa19a743f6c2a3e4))
+- Say so when the build is wrong, accept NCBI accessions, keep hg19's chrM out ([3e54d63](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3e54d638ac3612b3268ded466776bf275e7e37c9))
+
 ## [1.6.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.5.0...v1.6.0) (2026-10-10)
 
 ### Other Changes
