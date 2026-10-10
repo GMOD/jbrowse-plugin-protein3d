@@ -1,6 +1,6 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 
-import { clinVarBuild } from './clinVar'
+import { clinVarBuild, isUnnumberedMitochondrion } from './clinVar'
 import {
   VARIANT_EFFECT_SOURCE_NAMES,
   meanScoreByPosition,
@@ -107,6 +107,12 @@ export function clinVarAsk({
     }
   }
   const { refName, start, end, uniqueId } = feature
+  if (isUnnumberedMitochondrion(refName, build)) {
+    return {
+      status: 'unavailable',
+      reason: `${assemblyName}'s ${refName} is NC_001807, not the rCRS mitochondrion ClinVar's GRCh37 VCF numbers`,
+    }
+  }
   const name = [feature.name, feature.id].find(n => typeof n === 'string')
   return {
     status: 'ready',
@@ -125,11 +131,30 @@ export function clinVarAsk({
 // structure waiting on it for good
 const DOWNLOAD_TIMEOUT_MS = 60_000
 
-async function download(
+/**
+ * Runs `task` against a timeout. The signal reaches the fetches, but not an
+ * assembly load or the genome sequence RPC, so the whole task races it too.
+ */
+export function withTimeout<T>(
+  task: (signal: AbortSignal) => Promise<T>,
+  timeoutMs: number,
+): Promise<T> {
+  const signal = AbortSignal.timeout(timeoutMs)
+  return Promise.race([
+    task(signal),
+    new Promise<never>((_, reject) => {
+      signal.addEventListener('abort', () => {
+        reject(new Error(`no answer in ${timeoutMs / 1000} s`))
+      })
+    }),
+  ])
+}
+
+async function load(
   request: VariantEffectRequest,
   session: AbstractSessionModel,
+  signal: AbortSignal,
 ): Promise<VariantEffectValues> {
-  const signal = AbortSignal.timeout(DOWNLOAD_TIMEOUT_MS)
   if (request.scheme === 'alphamissense') {
     const response = await fetch(
       `https://alphafold.ebi.ac.uk/files/AF-${request.accession}-F1-aa-substitutions.csv`,
@@ -165,7 +190,10 @@ export function fetchVariantEffects(
 ): Promise<VariantEffectValues> {
   let values = cache.get(request.key)
   if (!values) {
-    values = download(request, session)
+    values = withTimeout(
+      signal => load(request, session, signal),
+      DOWNLOAD_TIMEOUT_MS,
+    )
     values.catch(() => {
       cache.delete(request.key)
     })

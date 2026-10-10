@@ -5,9 +5,11 @@ import { transcriptGeneticCodeId } from '@jbrowse/core/util/translateTranscript'
 import {
   clinVarRefName,
   clinVarVcfUrl,
+  isWrongBuild,
   parseClinVarSnv,
   pathogenicCountByTranscriptPosition,
 } from './clinVar'
+import { VariantEffectRefusal } from './variantEffects'
 import { fetchRegionSequence } from '../LaunchProteinView/utils/translateTranscripts'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
@@ -35,7 +37,9 @@ async function readPathogenicSnvs(
 ) {
   const file = clinVarVcf(build)
   const names = await file.getReferenceSequenceNames({ signal })
-  const refName = refNames.map(clinVarRefName).find(n => names.includes(n))
+  const refName = refNames
+    .map(n => clinVarRefName(n, build))
+    .find(n => n !== undefined && names.includes(n))
   if (!refName) {
     throw new Error(`ClinVar's ${build} VCF has no sequence ${refNames[0]}`)
   }
@@ -92,7 +96,7 @@ export async function fetchClinVarCounts({
   if (!seq) {
     throw new Error('no genome sequence under the transcript')
   }
-  return pathogenicCountByTranscriptPosition({
+  const counts = pathogenicCountByTranscriptPosition({
     variants,
     p2gCodon,
     strand,
@@ -101,4 +105,10 @@ export async function fetchClinVarCounts({
       transcriptGeneticCodeId(feature, assemblyGeneticCodeId),
     ).codonTable,
   })
+  if (isWrongBuild(counts)) {
+    throw new VariantEffectRefusal(
+      `ClinVar's REF disagrees with this assembly's sequence at ${counts.disagreeing} of ${counts.checked} variants; is the assembly ${build}?`,
+    )
+  }
+  return counts.byPosition
 }

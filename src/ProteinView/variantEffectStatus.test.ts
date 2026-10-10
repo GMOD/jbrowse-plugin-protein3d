@@ -3,6 +3,7 @@ import { expect, test } from 'vitest'
 
 import { alphaMissenseAsk, clinVarAsk } from './variantEffectSource'
 import { variantEffectStatus } from './variantEffectStatus'
+import { VariantEffectRefusal } from './variantEffects'
 
 import type { VariantEffectAsk } from './variantEffectLoader'
 import type { VariantEffectValues } from './variantEffects'
@@ -177,4 +178,47 @@ test('an AlphaFold model whose chain spells another sequence stays grey', () => 
     message:
       "AlphaMissense scores for P0OLD1 number a sequence that differs from this model's",
   })
+})
+
+test('a refusal reads as its own message, not as a failed fetch', () => {
+  const message =
+    "ClinVar's REF disagrees with this assembly's sequence at 40 of 50 variants; is the assembly GRCh38?"
+  expect(
+    variantEffectStatus({
+      ...structure,
+      ask: clinVar,
+      state: {
+        key: requestKey(clinVar),
+        error: new VariantEffectRefusal(message),
+      },
+    }),
+  ).toEqual({ pending: false, message })
+})
+
+test('a transcript with no genome view, or on hg19 chrM, asks nothing', () => {
+  expect(
+    clinVarAsk({ feature, assemblyName: undefined, assemblyNames: [] }),
+  ).toEqual({
+    status: 'unavailable',
+    reason: 'No genome view to read ClinVar variants on',
+  })
+  const mitochondrial = { ...feature, refName: 'chrM' }
+  expect(
+    clinVarAsk({
+      feature: mitochondrial,
+      assemblyName: 'hg19',
+      assemblyNames: ['hg19'],
+    }),
+  ).toEqual({
+    status: 'unavailable',
+    reason:
+      "hg19's chrM is NC_001807, not the rCRS mitochondrion ClinVar's GRCh37 VCF numbers",
+  })
+  expect(
+    clinVarAsk({
+      feature: mitochondrial,
+      assemblyName: 'hg38',
+      assemblyNames: ['hg38'],
+    }).status,
+  ).toBe('ready')
 })

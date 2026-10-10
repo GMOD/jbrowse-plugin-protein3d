@@ -31,6 +31,12 @@ export type VariantEffectValues =
       byPosition: ReadonlyMap<number, number>
     }
 
+/**
+ * A source that answered, but with values that would mislead, such as a VCF
+ * read against the wrong build. Its message is the whole explanation.
+ */
+export class VariantEffectRefusal extends Error {}
+
 /** Values of one entity's residues, keyed by label_seq_id */
 export interface PlacedValues {
   entityId: string

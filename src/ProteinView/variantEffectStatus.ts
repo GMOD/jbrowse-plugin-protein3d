@@ -1,5 +1,9 @@
 import { errorMessage } from './util'
-import { VARIANT_EFFECT_SOURCE_NAMES, placeValues } from './variantEffects'
+import {
+  VARIANT_EFFECT_SOURCE_NAMES,
+  VariantEffectRefusal,
+  placeValues,
+} from './variantEffects'
 
 import type {
   VariantEffectAsk,
@@ -60,10 +64,14 @@ export function variantEffectStatus({
   const { request } = ask
   const answer = state?.key === request.key ? state : undefined
   const source = VARIANT_EFFECT_SOURCE_NAMES[request.scheme]
-  if (answer?.error !== undefined) {
+  const { error } = answer ?? {}
+  if (error !== undefined) {
     return {
       pending: false,
-      message: `Could not fetch ${source} for ${request.label}: ${errorMessage(answer.error)}`,
+      message:
+        error instanceof VariantEffectRefusal
+          ? error.message
+          : `Could not fetch ${source} for ${request.label}: ${errorMessage(error)}`,
     }
   }
   const values = answer?.values

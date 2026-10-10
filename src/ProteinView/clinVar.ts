@@ -7,19 +7,43 @@ const BUILD_NAMES: Record<ClinVarBuild, readonly string[]> = {
   GRCh37: ['grch37', 'hg19'],
 }
 
+// Every version of NCBI's human reference series, by its revision history
+// (measured 2026-10-10): GRCh37 through GRCh37.p13, then GRCh38 through
+// GRCh38.p14. The series is GRC's lineage, so a later version may be a new
+// major; it stays unrecognised until it is checked.
+const ACCESSION_VERSIONS: Record<
+  ClinVarBuild,
+  Record<'GCF' | 'GCA', readonly [number, number]>
+> = {
+  GRCh37: { GCF: [13, 25], GCA: [1, 14] },
+  GRCh38: { GCF: [26, 40], GCA: [15, 29] },
+}
+
+function isBuildAccession(build: ClinVarBuild, name: string) {
+  const match = /^(GCF|GCA)_000001405\.(\d+)$/i.exec(name)
+  const prefix = match?.[1]?.toUpperCase()
+  if (prefix !== 'GCF' && prefix !== 'GCA') {
+    return false
+  }
+  const [first, last] = ACCESSION_VERSIONS[build][prefix]
+  const version = Number(match?.[2])
+  return version >= first && version <= last
+}
+
 /**
- * The ClinVar build an assembly is, by its name or any alias: `hg38` and
- * `GRCh38.p14` are GRCh38. Undefined for any other assembly, which NCBI
- * publishes no ClinVar VCF for.
+ * The ClinVar build an assembly is, by its name or any alias: `hg38`,
+ * `GRCh38.p14` and `GCF_000001405.40` are GRCh38. Undefined for any other
+ * assembly, which NCBI publishes no ClinVar VCF for.
  */
 export function clinVarBuild(
   assemblyNames: readonly string[],
 ): ClinVarBuild | undefined {
   const names = assemblyNames.map(n => n.toLowerCase())
-  return CLINVAR_BUILDS.find(build =>
-    BUILD_NAMES[build].some(prefix =>
-      names.some(n => n === prefix || n.startsWith(`${prefix}.`)),
-    ),
+  return CLINVAR_BUILDS.find(
+    build =>
+      BUILD_NAMES[build].some(prefix =>
+        names.some(n => n === prefix || n.startsWith(`${prefix}.`)),
+      ) || assemblyNames.some(n => isBuildAccession(build, n)),
   )
 }
 
@@ -27,8 +51,27 @@ export function clinVarVcfUrl(build: ClinVarBuild) {
   return `https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_${build}/clinvar.vcf.gz`
 }
 
-/** NCBI's VCF names chromosomes `1`..`22`, `X`, `Y` and `MT` */
-export function clinVarRefName(refName: string) {
+/**
+ * Whether a refName is a mitochondrion ClinVar's VCF for the build does not
+ * number. Both VCFs number the rCRS as `MT`, which is GRCh38's chrM and
+ * GRCh37's own `MT`, but hg19's chrM is NC_001807, a different 16571-base
+ * sequence.
+ */
+export function isUnnumberedMitochondrion(
+  refName: string,
+  build: ClinVarBuild,
+) {
+  return build === 'GRCh37' && /^(chrM|M|NC_001807(\.\d+)?)$/i.test(refName)
+}
+
+/**
+ * The name NCBI's VCF gives a chromosome: `1`..`22`, `X`, `Y` and `MT`.
+ * Undefined for a mitochondrion the build's VCF does not number.
+ */
+export function clinVarRefName(refName: string, build: ClinVarBuild) {
+  if (isUnnumberedMitochondrion(refName, build)) {
+    return undefined
+  }
   const bare = refName.replace(/^chr/i, '')
   return bare === 'M' ? 'MT' : bare
 }
@@ -82,6 +125,8 @@ const COMPLEMENT: Record<string, string> = { A: 'T', C: 'G', G: 'C', T: 'A' }
  * disagrees with the genome. Two codon changes to one amino acid count once.
  * Every residue with a whole codon gets a count, zero included, so a residue
  * ClinVar has no call for is told apart from one the structure cannot place.
+ * `checked` counts the variants that landed on a codon, and `disagreeing`
+ * those whose `REF` the genome does not spell.
  */
 export function pathogenicCountByTranscriptPosition({
   variants,
@@ -96,7 +141,7 @@ export function pathogenicCountByTranscriptPosition({
   /** the forward-strand base at a 0-based genome position */
   genomeBase: (position: number) => string | undefined
   codonTable: Record<string, string>
-}): ReadonlyMap<number, number> {
+}) {
   const oriented = (base: string | undefined) =>
     base && strand === -1 ? COMPLEMENT[base] : base
   const codons = new Map<number, string[]>()
@@ -111,10 +156,17 @@ export function pathogenicCountByTranscriptPosition({
     }
   }
   const substitutions = new Map<number, Set<string>>()
+  let checked = 0
+  let disagreeing = 0
   for (const { start, ref, alt } of variants) {
     const at = residueAt.get(start)
     const codon = at ? codons.get(at.residue) : undefined
-    if (!at || !codon || codon[at.index] !== oriented(ref)) {
+    if (!at || !codon) {
+      continue
+    }
+    checked++
+    if (codon[at.index] !== oriented(ref)) {
+      disagreeing++
       continue
     }
     const mutated = codon.with(at.index, oriented(alt) ?? '')
@@ -126,9 +178,26 @@ export function pathogenicCountByTranscriptPosition({
       substitutions.set(at.residue, seen)
     }
   }
-  return new Map(
+  const byPosition: ReadonlyMap<number, number> = new Map(
     [...codons.keys()]
       .toSorted((a, b) => a - b)
       .map(residue => [residue, substitutions.get(residue)?.size ?? 0]),
   )
+  return { byPosition, checked, disagreeing }
+}
+
+/**
+ * Whether the genome under a transcript is some other build than the VCF's:
+ * most of at least ten variants disagree with it on their `REF`. A few
+ * disagreements are a reference correction or a stray record; most mean
+ * every count would be zero for the wrong reason.
+ */
+export function isWrongBuild({
+  checked,
+  disagreeing,
+}: {
+  checked: number
+  disagreeing: number
+}) {
+  return checked >= 10 && disagreeing / checked > 0.5
 }

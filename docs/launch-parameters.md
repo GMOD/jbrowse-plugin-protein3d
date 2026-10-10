@@ -95,9 +95,16 @@ model mapped one to one whose chain spells the entry differently (a model folded
 from an older revision).
 
 ClinVar is read off the genome, so its values land through the structure's
-alignment to the transcript, as a genome hover does. A structure with no
-transcript stays grey, as does one whose genome view shows an assembly other
-than GRCh38 or GRCh37 (`hg38` and `hg19` count).
+alignment to the transcript, as a genome hover does. A structure stays grey when
+it has no transcript, when its transcript has no connected genome view to read
+the assembly from, or when that view shows an assembly other than GRCh38 or
+GRCh37. `hg38`, `hg19`, `GRCh38.p14` and NCBI's accessions for them
+(`GCF_000001405.26`–`.40`, `GCA_000001405.15`–`.29` for GRCh38;
+`GCF_000001405.13`–`.25`, `GCA_000001405.1`–`.14` for GRCh37) count, T2T's `hs1`
+does not. A mitochondrial gene on hg19 stays grey too: hg19's chrM is NC_001807,
+not the rCRS that GRCh37's VCF numbers as `MT`. When most of the variants read
+under a transcript disagree with the genome on `REF`, the assembly is taken for
+another build and the structure stays grey with a message saying so.
 
 A residue nothing places stays grey. The structure's header row says why a
 structure is grey, and a failed download says so there too; switching to another
