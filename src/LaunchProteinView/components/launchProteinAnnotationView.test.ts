@@ -144,6 +144,25 @@ test('a second view of an entry reuses its assembly and opens its own tracks', a
   expect(new Set(s.launched.map(l => l.trackId)).size).toBe(10)
 })
 
+// `get` on an unknown name sends the Hubs plugin to probe jbrowse.org/ucsc/
+// for it, which logs two 404s on every jbrowse.org/ucsc launch
+test('the assembly is looked for with `has`, which reports nothing', async () => {
+  stubGff()
+  const s = stubSession()
+  const get = vi.fn(s.assemblyManager.get)
+  const session = {
+    ...s,
+    assemblyManager: {
+      get,
+      has: (name: string) => !!s.assemblyManager.get(name),
+    },
+  }
+  await launchProteinAnnotationView({ session, feature, uniprotId: 'P04637' })
+  await launchProteinAnnotationView({ session, feature, uniprotId: 'P04637' })
+  expect(get).not.toHaveBeenCalled()
+  expect(s.addTemporaryAssembly).toHaveBeenCalledOnce()
+})
+
 // a view that lost its confidence track used to hand that gap to every later
 // view of the entry, because the first launch's tracks were the only ones
 test('a later view gets the confidence track an earlier one had no url for', async () => {

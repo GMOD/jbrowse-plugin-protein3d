@@ -24,7 +24,7 @@ interface Launch3DExtraParams {
 
 export function formatViewName(
   prefix: string,
-  feature: Feature,
+  feature?: Feature,
   selectedTranscript?: Feature,
   uniprotId?: string,
 ) {
@@ -79,6 +79,16 @@ export function launch3DProteinView({
   return proteinView
 }
 
+/**
+ * The entry a 1D view opens for an accession. UniProt publishes features for
+ * the entry, not for `P04637-7`, whose GFF is a header alone. The view aligns
+ * the transcript to the entry's sequence, so an isoform's residues still land
+ * on their own codons.
+ */
+export function uniProtEntry(uniprotId: string) {
+  return uniprotId.replace(/-\d+$/, '')
+}
+
 // The 1D annotation view adds a temporary assembly, so it requires a session
 // that takes one and a known uniprotId. Demanding both in the signature forces
 // callers to narrow up front — there's no silent no-op when a wide session or
@@ -95,11 +105,9 @@ async function launch1DProteinView({
   uniprotId: string
   confidenceUrl?: string
 }) {
-  // UniProt publishes features for the entry, not for `P04637-7`, whose GFF is
-  // a header alone. The view aligns the transcript to the entry's sequence, so
-  // an isoform's residues still land on their own codons; its pLDDT is in the
-  // isoform's numbering and has no place on the entry.
-  const entry = uniprotId.replace(/-\d+$/, '')
+  // An isoform's pLDDT is in the isoform's numbering and has no place on the
+  // entry
+  const entry = uniProtEntry(uniprotId)
   await launchProteinAnnotationView({
     session,
     selectedTranscript,

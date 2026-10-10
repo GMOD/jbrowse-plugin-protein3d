@@ -52,7 +52,8 @@ Linking and embedding:
 
 - [Launching from a URL or code](docs/launching.md): worked session-spec links,
   the short `uniprotId`/`pdbId` + `transcriptId` form, several structures in one
-  view, and the `LaunchView-ProteinView` extension point.
+  view, the 1D protein view, and the `LaunchView-ProteinView` and
+  `LaunchView-ProteinAnnotationView` extension points.
 - [Launch parameters](docs/launch-parameters.md): every argument, the
   `connectedView` settings, and the transcript `feature` shape.
 - [Session snapshots](docs/session-snapshots.md): the saved view's shape, the

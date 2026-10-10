@@ -659,4 +659,80 @@ describe('Protein3d Plugin E2E', () => {
       .toBe('1')
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
+
+  // The spec resolves the transcript the way a ProteinView spec does, and
+  // TP53's Δ133 isoform starts at the entry's M133, so its residue 116 is
+  // R248: an index into the entry would light serine 116. Last, because the
+  // view stays open (see the dialog's 1D leg).
+  it('opens a 1D protein view of an isoform from a session spec', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinAnnotationView',
+          uniprotId: 'P04637',
+          transcriptId: 'ENST00000504937',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,668,421-7,687,550',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    const linked = await page.waitForFunction(
+      () => {
+        const views = window.JBrowseSession?.views ?? []
+        const view = views.find(v => v.proteinLinkage)
+        const linkage = view?.proteinLinkage
+        const map =
+          view?.proteinLinkageCoordinates?.maps
+            .transcriptSeqToStructureSeqPosition
+        return linkage && map
+          ? {
+              uniprotId: linkage.uniprotId,
+              connected: views.some(
+                v =>
+                  v.id === linkage.connectedViewId &&
+                  v.type === 'LinearGenomeView',
+              ),
+              first: map[0],
+              r248: map[115],
+            }
+          : false
+      },
+      { timeout: 120_000 },
+    )
+    expect(await linked.jsonValue()).toEqual({
+      uniprotId: 'P04637',
+      connected: true,
+      first: 132,
+      r248: 247,
+    })
+
+    const opened = await page.waitForFunction(
+      () => {
+        const view = window.JBrowseSession?.views?.find(v => v.proteinLinkage)
+        const trackIds =
+          view?.tracks?.map(t => t.configuration?.trackId ?? '') ?? []
+        return view && trackIds.some(id => id.endsWith('-AlphaMissense-scores'))
+          ? { viewId: view.id, trackIds }
+          : false
+      },
+      { timeout: 90_000 },
+    )
+    const launched = await opened.jsonValue()
+    if (!launched) {
+      throw new Error('the 1D view opened no tracks')
+    }
+    const { viewId, trackIds } = launched
+    const prefix = `${viewId}-P04637-`
+    expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
+    expect(trackIds.map(id => id.slice(prefix.length))).toEqual(
+      expect.arrayContaining(['Chain', 'Variation', 'AlphaFold-confidence']),
+    )
+    expect(new Set(trackIds).size).toBe(trackIds.length)
+
+    await page.waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
 })

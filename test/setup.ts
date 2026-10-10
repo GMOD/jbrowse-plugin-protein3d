@@ -52,7 +52,7 @@ interface MolstarCell {
 interface SessionView {
   id?: string
   type: string
-  proteinLinkage?: { uniprotId: string }
+  proteinLinkage?: { uniprotId: string; connectedViewId: string }
   proteinLinkageCoordinates?: {
     maps: { transcriptSeqToStructureSeqPosition: Record<string, number> }
   }

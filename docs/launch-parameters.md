@@ -178,3 +178,26 @@ minimal `feature` looks like:
 
 Each codon maps to one residue, and the mapping skips intronic and UTR positions
 and ignores exon subfeatures.
+
+## `ProteinAnnotationView`
+
+The `LaunchView-ProteinAnnotationView` extension point opens the 1D protein view
+of a UniProt entry;
+[launching](launching.md#the-1d-protein-view-proteinannotationview) has a
+working link.
+
+| Parameter         | Required | Description                                                                 |
+| ----------------- | -------- | --------------------------------------------------------------------------- |
+| `uniprotId`       | Yes\*    | UniProt accession; an isoform suffix (`P04637-7`) opens its entry           |
+| `gene`            | Yes\*    | Gene name, found through the assembly's text search index                   |
+| `transcriptId`    | No       | Transcript id/name to resolve from `connectedView`                          |
+| `connectedView`   | No       | LinearGenomeView settings (`loc`/`assembly`/`tracks`) to create and connect |
+| `connectedViewId` | No       | ID of an existing connected LinearGenomeView                                |
+
+\* Provide `uniprotId`, `gene`, or both. `gene` and `transcriptId` resolve the
+transcript exactly as they do for a ProteinView, and `gene` alone also finds the
+entry; a `uniprotId` beside `gene` chooses the entry the isoform is picked
+against. Without either the view opens unlinked, and the launch warns about a
+`connectedView` or `connectedViewId` it then has no use for. It also warns about
+an unknown key (`ignored unknown key(s): pdbId`) or a value of the wrong type,
+and drops it.

@@ -32,7 +32,10 @@ export interface ProteinAnnotationSession extends TemporaryAssemblySession {
     },
   ) => object
   notifyError: (message: string, error?: unknown) => void
-  assemblyManager: { get: (name: string) => unknown }
+  assemblyManager: {
+    get: (name: string) => unknown
+    has?: (name: string) => boolean
+  }
 }
 
 function isTrackLaunchingView(view: object): view is TrackLaunchingView {
@@ -46,7 +49,25 @@ function isTrackLaunchingView(view: object): view is TrackLaunchingView {
   )
 }
 
-export async function launchProteinAnnotationView({
+interface AnnotationViewArgs {
+  session: ProteinAnnotationSession
+  feature?: Feature
+  selectedTranscript?: Feature
+  uniprotId: string
+  confidenceUrl?: string
+  connectedViewId?: string
+  connectedAssemblyName?: string
+}
+
+export async function launchProteinAnnotationView(args: AnnotationViewArgs) {
+  // Fetched before anything is added: a failed download would otherwise
+  // leave a temporary assembly behind with no view on it
+  const featureTypes = await fetchUniProtFeatureTypes(args.uniprotId)
+  await openProteinAnnotationView({ ...args, featureTypes })
+}
+
+/** The view, once the entry's feature types are in hand. */
+export async function openProteinAnnotationView({
   session,
   feature,
   selectedTranscript,
@@ -54,22 +75,18 @@ export async function launchProteinAnnotationView({
   confidenceUrl,
   connectedViewId,
   connectedAssemblyName,
-}: {
-  session: ProteinAnnotationSession
-  feature: Feature
-  selectedTranscript?: Feature
-  uniprotId: string
-  confidenceUrl?: string
-  connectedViewId?: string
-  connectedAssemblyName?: string
-}) {
-  // Fetched before anything is added: a failed download would otherwise
-  // leave a temporary assembly behind with no view on it
-  const featureTypes = await fetchUniProtFeatureTypes(uniprotId)
-
+  featureTypes,
+}: AnnotationViewArgs & { featureTypes: string[] }) {
   // A second view of an entry, another isoform's say, shares the first's
-  // assembly; adding it again makes the host warn
-  if (!session.assemblyManager.get(uniprotId)) {
+  // assembly; adding it again makes the host warn. `has`, where the host has
+  // it, because `get` reports an unknown name to every plugin that resolves
+  // assemblies, and on a jbrowse.org/ucsc config the Hubs plugin then probes
+  // jbrowse.org/ucsc/P04637/ and logs two 404s.
+  const { assemblyManager } = session
+  const known = assemblyManager.has
+    ? assemblyManager.has(uniprotId)
+    : !!assemblyManager.get(uniprotId)
+  if (!known) {
     setupProteinAssembly(session, uniprotId)
   }
 

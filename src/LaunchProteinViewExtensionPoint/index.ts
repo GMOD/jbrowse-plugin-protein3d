@@ -1,18 +1,17 @@
 import { coerceAlignmentAlgorithm } from 'p2s_mapper'
 
-import { resolveGeneNameLaunch } from './findGeneByName'
 import { normalizeLaunch } from './normalizeLaunch'
 import {
-  type ConnectedViewSpec,
-  type ResolvedShortLaunch,
-  resolveShortLaunch,
-} from './resolveShortLaunch'
+  connectGenomeView,
+  resolveTranscriptLinkage,
+} from './transcriptLinkage'
 import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
 import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { coerceColorScheme } from '../ProteinView/applyColorTheme'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
 
 import type { LaunchStructure } from './normalizeLaunch'
+import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type {
   ProteinStructureSpec,
   ProteinViewSpec,
@@ -120,26 +119,27 @@ export default function LaunchProteinViewExtensionPointF(
 
       // A gene name alone: the host's text search finds the gene, and the
       // launch dialog's defaults pick its isoform and AlphaFold model. A
-      // structure, transcript or locus the spec names wins over those.
-      let named: Awaited<ReturnType<typeof resolveGeneNameLaunch>> | undefined
-      if (gene && !userProvidedTranscriptSequence) {
-        try {
-          named = await resolveGeneNameLaunch({
-            session,
+      // structure, transcript or locus the spec names wins over those. The
+      // short form instead derives the feature and sequence from the
+      // connected track, and the same mapping applies to every structure.
+      let linkage: Awaited<ReturnType<typeof resolveTranscriptLinkage>>
+      try {
+        linkage = await resolveTranscriptLinkage(
+          session,
+          {
             gene,
             transcriptId,
             uniprotId,
-            findStructure: geneModel === 'required',
+            userProvidedTranscriptSequence,
             connectedView: givenConnectedView,
             connectedViewId,
-          })
-        } catch (e) {
-          return fail(e)
-        }
+          },
+          { findStructure: geneModel === 'required' },
+        )
+      } catch (e) {
+        return fail(e)
       }
-      const connectedView = connectedViewId
-        ? givenConnectedView
-        : (named?.connectedView ?? givenConnectedView)
+      const { named, resolved, connectedView } = linkage
       if (gene && named && geneModel === 'required' && !named.url) {
         return fail(
           new Error(
@@ -152,40 +152,14 @@ export default function LaunchProteinViewExtensionPointF(
           ? normalized.requested.map(s => ({ ...s, url: named.url }))
           : normalized.requested
 
-      // Short form: a `transcriptId` plus a `connectedView` in place of an
-      // explicit `feature` + sequence. resolveShortLaunch derives both from the
-      // connected track, and the same mapping then applies to every structure
-      // of the launch. Failures surface via notify and abort — we never leave a
-      // half-wired view.
-      let resolved: ResolvedShortLaunch | undefined = named
-      if (!resolved && !userProvidedTranscriptSequence && transcriptId) {
-        try {
-          resolved = await resolveShortLaunch({
-            session,
-            transcriptId,
-            connectedView,
-          })
-        } catch (e) {
-          return fail(e)
-        }
-      }
-
-      // A session spec launches each view independently with an auto-generated
-      // id, so it cannot pre-compute a connectedViewId to cross-reference. When
-      // `connectedView` is supplied we create the LinearGenomeView here and wire
-      // its id, letting a single spec entry produce a connected genome+protein
-      // pair (e.g. hover a variant to highlight the residue).
       // a connected view this launch created itself can be split beside the
       // protein view; a pre-existing connectedViewId is left in place
       const ownsConnectedView = !connectedViewId && !!connectedView
-      const resolvedConnectedViewId =
-        connectedViewId ??
-        (connectedView
-          ? session.addView('LinearGenomeView', {
-              ...connectedView,
-              type: 'LinearGenomeView',
-            }).id
-          : undefined)
+      const resolvedConnectedViewId = connectGenomeView(
+        session,
+        connectedViewId,
+        connectedView,
+      )
 
       const structures = requested.map(s => ({
         ...s,

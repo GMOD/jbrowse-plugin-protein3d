@@ -26,7 +26,11 @@
 // A view of several structures takes `structures`, one such object per
 // structure in order, and `superposed`, how many TM-align must cover. A demo
 // with an MsaView takes `msa: { minRows }`: the alignment loads with at least
-// that many rows, without error, mapped through the transcript to the genome. Every
+// that many rows, without error, mapped through the transcript to the genome. A
+// demo of a 1D protein view takes `annotation: { uniprotId, residue }` in place
+// of the structure fields: the view of that entry links to a genome view, its
+// transcript aligns to the entry, and `residue: { transcriptPos, entryPos }`
+// pairs a 0-based transcript residue with a 0-based entry residue. Every
 // demo is also checked for one sequence letter per structure position, and
 // fails on anything the page logs at warn or error that browserConsole.mjs
 // does not excuse for the link's host.
@@ -255,6 +259,48 @@ function msaProblems(msa, expect) {
   ]
 }
 
+// The linkage aligns when the 1D view attaches, after its tracks have opened
+function readAnnotationView() {
+  const w = /** @type {Record<string, any>} */ (window)
+  const views = w.JBrowseSession?.views ?? []
+  const view = views.find(v => v.proteinLinkage)
+  const map =
+    view?.proteinLinkageCoordinates?.maps.transcriptSeqToStructureSeqPosition
+  if (!view || !map) {
+    return undefined
+  }
+  const { uniprotId, connectedViewId } = view.proteinLinkage
+  return {
+    uniprotId,
+    connected: views.some(v => v.id === connectedViewId),
+    transcriptToEntry: map,
+    tracks: view.tracks.length,
+  }
+}
+
+function annotationProblems(view, expect) {
+  const found = []
+  if (view.uniprotId !== expect.uniprotId) {
+    found.push(`1D view of ${view.uniprotId}, expected ${expect.uniprotId}`)
+  }
+  if (!view.connected) {
+    found.push('the 1D view links to no genome view in the session')
+  }
+  if (view.tracks === 0) {
+    found.push('the 1D view opened no tracks')
+  }
+  if (expect.residue) {
+    const { transcriptPos, entryPos } = expect.residue
+    const got = view.transcriptToEntry[transcriptPos]
+    if (got !== entryPos) {
+      found.push(
+        `transcript residue ${transcriptPos} maps to entry ${got}, expected ${entryPos}`,
+      )
+    }
+  }
+  return found
+}
+
 function superposedAtLeast(n) {
   const w = /** @type {Record<string, any>} */ (window)
   const session = w.JBrowseSession
@@ -422,32 +468,47 @@ for (const demo of demos) {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
     })
-    const handle = await page.waitForFunction(readView, {
-      timeout,
-      polling: 500,
-    })
-    view = await handle.jsonValue()
-    if (demo.expect?.superposed !== undefined) {
-      view.superposed = await page
-        .waitForFunction(
-          superposedAtLeast,
-          { timeout, polling: 500 },
-          demo.expect.superposed,
-        )
-        .then(
-          () => demo.expect.superposed,
-          () => page.evaluate(readView).then(v => v?.superposed),
-        )
-    }
-    found = viewProblems(view, demo.expect)
-    if (demo.expect?.msa) {
-      const msa = await page
-        .waitForFunction(readMsa, { timeout, polling: 500 })
-        .then(
-          h => h.jsonValue(),
-          () => undefined,
-        )
-      found.push(...msaProblems(msa, demo.expect.msa))
+    if (demo.expect?.annotation) {
+      const handle = await page.waitForFunction(readAnnotationView, {
+        timeout,
+        polling: 500,
+      })
+      found = annotationProblems(
+        await handle.jsonValue(),
+        demo.expect.annotation,
+      )
+      // the tracks are still drawing, and what they log belongs to the demo
+      await page
+        .waitForNetworkIdle({ idleTime: 2000, timeout: 120_000 })
+        .catch(() => {})
+    } else {
+      const handle = await page.waitForFunction(readView, {
+        timeout,
+        polling: 500,
+      })
+      view = await handle.jsonValue()
+      if (demo.expect?.superposed !== undefined) {
+        view.superposed = await page
+          .waitForFunction(
+            superposedAtLeast,
+            { timeout, polling: 500 },
+            demo.expect.superposed,
+          )
+          .then(
+            () => demo.expect.superposed,
+            () => page.evaluate(readView).then(v => v?.superposed),
+          )
+      }
+      found = viewProblems(view, demo.expect)
+      if (demo.expect?.msa) {
+        const msa = await page
+          .waitForFunction(readMsa, { timeout, polling: 500 })
+          .then(
+            h => h.jsonValue(),
+            () => undefined,
+          )
+        found.push(...msaProblems(msa, demo.expect.msa))
+      }
     }
   } catch (e) {
     const text = await page

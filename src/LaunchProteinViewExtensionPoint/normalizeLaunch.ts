@@ -47,11 +47,11 @@ const BESIDE_STRUCTURES = {
   setting: 'applies to no structure; put it on the one it describes',
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
-function isString(value: unknown): value is string {
+export function isString(value: unknown): value is string {
   return typeof value === 'string'
 }
 

@@ -175,6 +175,36 @@ number in a spec becomes a position in the file.
 https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
+## The 1D protein view: `ProteinAnnotationView`
+
+The launch dialog's **Launch 1D protein annotation view** opens a UniProt entry
+as a linear view, with its domains, variants, AlphaMissense scores and AlphaFold
+confidence as tracks. A `ProteinAnnotationView` spec entry opens the same view,
+registered as the `LaunchView-ProteinAnnotationView` extension point (the view
+itself is a LinearGenomeView on a temporary assembly of the entry). It needs a
+plugin release after 1.5.0.
+
+`uniprotId` names the entry, and an isoform accession such as `P04637-7` opens
+its entry, since UniProt publishes features for the entry only. The transcript
+linkage is spelled the way a ProteinView spec spells it: `gene`, or
+`transcriptId` with a `connectedView`, each optionally pinned to an existing
+genome view with `connectedViewId`. A `gene` alone also finds the entry. Without
+`gene` or `transcriptId` the view opens unlinked.
+
+```
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinAnnotationView","uniprotId":"P04637","transcriptId":"ENST00000504937.5","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-gencodeComp","hg38-clinvarMain"]}}]}
+```
+
+That link opens TP53's Δ133 isoform against P04637. The view aligns the
+transcript to the entry when it opens, so a hover on the isoform's codon for
+R248 lights the entry's residue 248, not residue 116, and a codon the two do not
+share lights nothing. The launch opens every track, since the track selector
+cannot reopen one on a temporary assembly.
+
+A spec's `displayName` goes to the first view the launch creates, which is the
+genome view when the launch opens one. Leave it out to keep the 1D view's own
+name, which joins the entry, gene and transcript.
+
 ## From code
 
 The same arguments go to the extension point directly:

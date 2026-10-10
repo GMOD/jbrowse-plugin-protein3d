@@ -6,6 +6,7 @@ import AlphaFoldConfidenceAdapterF from './AlphaFoldConfidenceAdapter'
 import AlphaMissensePathogenicityAdapterF from './AlphaMissensePathogenicityAdapter'
 import LaunchProteinViewF from './LaunchProteinView'
 import LaunchProteinViewExtensionPointF from './LaunchProteinViewExtensionPoint'
+import LaunchProteinAnnotationViewF from './LaunchProteinViewExtensionPoint/annotationView'
 import Protein1DLinkageF from './Protein1DLinkage'
 import ProteinViewF from './ProteinView'
 import UniProtVariationAdapterF from './UniProtVariationAdapter'
@@ -21,6 +22,7 @@ export default class ProteinViewer extends Plugin {
     ProteinViewF(pluginManager)
     LaunchProteinViewF(pluginManager)
     LaunchProteinViewExtensionPointF(pluginManager)
+    LaunchProteinAnnotationViewF(pluginManager)
     Protein1DLinkageF(pluginManager)
     AddHighlightModelF(pluginManager)
     AlphaFoldConfidenceAdapterF(pluginManager)
