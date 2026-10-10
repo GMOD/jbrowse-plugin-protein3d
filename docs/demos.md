@@ -98,6 +98,21 @@ to its operator.
 
 <!-- expect {"minIdentity":0.99,"minAligned":90} -->
 
+## One residue in three views, on a crystal numbered the old way
+
+BRAF V600E, the case study of the paper this plugin accompanies. The link opens
+the genome with ClinVar and AlphaMissense, BRAF's row of the UCSC 100-way
+alignment beside it, and 1UWH, the kinase domain bound to sorafenib, each
+opening on V600. Hover a column of the alignment, a codon or a residue, and the
+other two light. 1UWH was deposited before BRAF's sequence was corrected and
+numbers that residue 599, so the link names it as transcript residue 600
+(`initialTranscriptResidues`) and the plugin carries it onto the crystal through
+its alignment; `initialResidues: 600` would select K601.
+
+[BRAF V600E in three views](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22LinearGenomeView%22%2C%22id%22%3A%22lgv1%22%2C%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr7%3A140%2C719%2C327-140%2C924%2C929%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqSelect%22%2C%22hg38-clinvarMain%22%2C%22hg38-alphaMissense%22%5D%7D%2C%7B%22type%22%3A%22MsaView%22%2C%22displayName%22%3A%22BRAF%20across%20100%20vertebrates%22%2C%22msaIndexedLocation%22%3A%7B%22uri%22%3A%22https%3A%2F%2Fjbrowse.org%2Fdemos%2Fmsaview%2F100way%2Fhg38.knownCanonical.multiz100way.aa.fa.gz%22%7D%2C%22msaName%22%3A%22BRAF%22%2C%22tree%22%3A%22https%3A%2F%2Fjbrowse.org%2Fdemos%2Fmsaview%2F100way%2Fhg38.multiz100way.nh%22%2C%22query%22%3A%22hg38%22%2C%22connectedViewId%22%3A%22lgv1%22%2C%22connectedTranscript%22%3A%22NM_004333.6%22%2C%22colorSchemeName%22%3A%22percent_identity_dynamic%22%2C%22highlights%22%3A%5B600%5D%2C%22region%22%3A%22570-630%22%2C%22placement%22%3A%22splitRight%22%7D%2C%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221UWH%22%2C%22transcriptId%22%3A%22NM_004333.6%22%2C%22initialTranscriptResidues%22%3A%7B%22start%22%3A600%2C%22end%22%3A600%7D%2C%22connectedViewId%22%3A%22lgv1%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr7%3A140%2C719%2C327-140%2C924%2C929%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqSelect%22%2C%22hg38-clinvarMain%22%2C%22hg38-alphaMissense%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"chain":"B","minIdentity":0.95,"selected":{"auth":599,"transcriptPos":599},"msa":{"minRows":50}} -->
+
 ## A short peptide bound to a larger partner
 
 1H26 holds an 11-residue p53 peptide bound to CDK2 and cyclin A. The kinase

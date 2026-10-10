@@ -20,7 +20,9 @@
 //   models          Mol* structures the load made; an NMR ensemble makes one
 //                   per model
 // A view of several structures takes `structures`, one such object per
-// structure in order, and `superposed`, how many TM-align must cover. Every
+// structure in order, and `superposed`, how many TM-align must cover. A demo
+// with an MsaView takes `msa: { minRows }`: the alignment loads with at least
+// that many rows, without error, mapped through the transcript to the genome. Every
 // demo is also checked for one sequence letter per structure position, and
 // fails on anything the page logs at warn or error that browserConsole.mjs
 // does not excuse for the link's host.
@@ -210,6 +212,40 @@ function readView() {
   }
 }
 
+// The MsaView settles on its own clock: a built or indexed alignment loads
+// after the structure has aligned.
+function readMsa() {
+  const w = /** @type {Record<string, any>} */ (window)
+  const msa = w.JBrowseSession?.views?.find(v => v.type === 'MsaView')
+  if (!msa) {
+    return { missing: true }
+  }
+  if (!msa.error && !(msa.dataInitialized && msa.transcriptToMsaMap)) {
+    return undefined
+  }
+  return {
+    error: msa.error ? `${msa.error}` : undefined,
+    rows: msa.numRows ?? 0,
+    linked: !!msa.transcriptToMsaMap && !!msa.connectedViewId,
+  }
+}
+
+function msaProblems(msa, expect) {
+  if (!msa) {
+    return ['the MsaView never loaded']
+  }
+  if (msa.missing) {
+    return ['no MsaView in the session']
+  }
+  return [
+    ...(msa.error ? [`MsaView error: ${msa.error}`] : []),
+    ...(msa.rows < expect.minRows
+      ? [`${msa.rows} alignment rows, under ${expect.minRows}`]
+      : []),
+    ...(msa.linked ? [] : ['the alignment is not mapped to the genome view']),
+  ]
+}
+
 function superposedAtLeast(n) {
   const w = /** @type {Record<string, any>} */ (window)
   const session = w.JBrowseSession
@@ -373,6 +409,15 @@ for (const demo of demos) {
         )
     }
     found = viewProblems(view, demo.expect)
+    if (demo.expect?.msa) {
+      const msa = await page
+        .waitForFunction(readMsa, { timeout, polling: 500 })
+        .then(
+          h => h.jsonValue(),
+          () => undefined,
+        )
+      found.push(...msaProblems(msa, demo.expect.msa))
+    }
   } catch (e) {
     const text = await page
       .evaluate(() => {
