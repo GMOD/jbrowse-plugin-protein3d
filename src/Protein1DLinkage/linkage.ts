@@ -4,6 +4,7 @@ import {
   alignTranscriptToEntity,
   alignmentQuality,
   isLowSimilarity,
+  keepSharedStretches,
   structurePos,
   transcriptPos,
 } from 'p2s_mapper'
@@ -182,7 +183,9 @@ export type LinkageAlignment =
 
 /**
  * Align the linked transcript's translation to the sequence the 1D view
- * shows. Run when the view attaches rather than stored at launch: the
+ * shows, keeping only the stretches the two isoforms share letter for letter:
+ * a mutually exclusive exon aligns column for column against its partner, and
+ * no codon of one encodes a residue of the other. Run when the view attaches rather than stored at launch: the
  * temporary assembly fetches the UniProt entry afresh on every load, so a
  * saved alignment could describe a sequence the view no longer shows, and a
  * snapshot written by hand or before this existed has none.
@@ -208,5 +211,5 @@ export async function resolveLinkageAlignment(
   }
   return isLowSimilarity(alignmentQuality(scored.alignment))
     ? { problem: 'the transcript and the UniProt entry are too dissimilar' }
-    : { alignment: scored.alignment }
+    : { alignment: keepSharedStretches(scored.alignment) }
 }

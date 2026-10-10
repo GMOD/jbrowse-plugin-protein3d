@@ -332,3 +332,19 @@ test('an unrelated entry, a missing translation or an oversized pair links nothi
     }),
   ).toEqual({ problem: 'the sequences are too long to align' })
 })
+
+// PKM1 against PKM2's entry: the same length, differing only in the mutually
+// exclusive exon. Column for column every residue aligns, the swapped exon's
+// mismatches and chance identities included, and none of them is shared.
+test('a mutually exclusive exon maps nothing, though it aligns column for column', async () => {
+  const exon = P53.slice(200, 230)
+  const paralogue = 'WYHKCWMFHW' + exon.slice(10, 18) + 'YWHCKWFMHWCY'
+  const maps = await mapsFor(
+    `${P53.slice(0, 200)}${paralogue}${P53.slice(230)}*`,
+  )
+  expect(maps.transcriptSeqToStructureSeqPosition[199]).toBe(199)
+  for (let pos = 200; pos < 230; pos++) {
+    expect(maps.transcriptSeqToStructureSeqPosition[pos]).toBeUndefined()
+  }
+  expect(maps.transcriptSeqToStructureSeqPosition[230]).toBe(230)
+})

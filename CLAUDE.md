@@ -172,6 +172,14 @@ Unaligned, pending or failed, both directions light nothing. Keep
 Smith-Waterman: a global alignment stretches p53β's ten private C-terminal
 residues across to the entry's end.
 
+The alignment keeps only stretches the two isoforms spell letter for letter
+(p2s_mapper's `keepSharedStretches`, the rule the protein browser measured for
+`translationRanges`). A mutually exclusive exon aligns column for column against
+its partner, so until 2026-10-10 a PKM1 transcript on PKM2's entry lit each exon
+9 codon's exon 10 counterpart: 45 of 531 residues are now unmapped, the same set
+a global alignment keeps. Not for a structure, where a mismatch is usually a
+construct's point mutation at the right place in the fold.
+
 The 1D launch strips an isoform suffix (`P04637-7`), whose UniProt GFF is a
 header alone, and opens the entry. A hover names no view, so every 1D view of an
 entry launched from the genome view answers, with shared codons merged.
