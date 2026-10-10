@@ -1,3 +1,14 @@
+## [1.6.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.5.0...v1.6.0) (2026-10-10)
+
+### Other Changes
+
+- Search UniProt by an NCBI GFF's GeneID (p2s_mapper 1.4.0) ([4b2ccae](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4b2ccaeb19de480a92548a5fa0cb3d9c4e5b2c10))
+- Colour a structure by AlphaMissense or ClinVar per residue ([06e994a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/06e994ad82dd25885a13f528e3d70c43110de5c3))
+- Document and demo the variant-effect colour schemes ([e5331f8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e5331f876bcb5e27bf0f4971b24f0178c40e612e))
+- Keep variant-effect colour out of readiness; retry, time out and guard it ([d277313](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d2773133b0060dfaa0cf1087bc124f50490cc162))
+- Open the 1D protein view from a session spec ([7f29f89](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7f29f89b517859068a4fbe237d82c79d629c5628))
+- Wait out a 1D view's tracks without the host's preloads; pick the isoform's transcript ([d785df7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d785df736fd95935f89c0f503fd10198db0a6976))
+
 ## [1.5.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.4.0...v1.5.0) (2026-10-10)
 
 ### Other Changes
