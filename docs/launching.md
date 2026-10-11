@@ -178,11 +178,11 @@ https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"
 ## The 1D protein view: `ProteinAnnotationView`
 
 The launch dialog's **Launch 1D protein annotation view** opens a UniProt entry
-as a linear view, with its domains, variants, AlphaMissense scores and AlphaFold
-confidence as tracks. A `ProteinAnnotationView` spec entry opens the same view,
-registered as the `LaunchView-ProteinAnnotationView` extension point (the view
-itself is a LinearGenomeView on a temporary assembly of the entry). It arrived
-in 1.6.0.
+as a linear view, with its domains, ClinVar's missense calls on the transcript,
+AlphaMissense scores and AlphaFold confidence as tracks. A
+`ProteinAnnotationView` spec entry opens the same view, registered as the
+`LaunchView-ProteinAnnotationView` extension point (the view itself is a
+LinearGenomeView on a temporary assembly of the entry). It arrived in 1.6.0.
 
 `uniprotId` names the entry, and an isoform accession such as `P04637-7` opens
 its entry, since UniProt publishes features for the entry only. The transcript

@@ -12,6 +12,7 @@ import {
   clickLaunch,
   clickMenuItem,
   clickTab,
+  clinVarTrackFeatures,
   createJBrowsePage,
   flushScreenshots,
   getProteinViewState,
@@ -256,7 +257,8 @@ describe('Protein3d Plugin E2E', () => {
         const view = window.JBrowseSession?.views?.find(v => v.proteinLinkage)
         const trackIds =
           view?.tracks?.map(t => t.configuration?.trackId ?? '') ?? []
-        return view && trackIds.some(id => id.endsWith('-AlphaMissense-scores'))
+        // ClinVar opens last, after the transcript's alignment and the VCF
+        return view && trackIds.some(id => id.endsWith('-ClinVar'))
           ? { viewId: view.id, trackIds }
           : false
       },
@@ -271,9 +273,18 @@ describe('Protein3d Plugin E2E', () => {
     expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
     const names = trackIds.map(id => id.slice(prefix.length))
     expect(names).toEqual(
-      expect.arrayContaining(['Chain', 'Antigen', 'Variation']),
+      expect.arrayContaining(['Chain', 'Antigen', 'ClinVar']),
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
+
+    // NRAS's transcript is its entry, so the G12 codon's calls sit at 12
+    expect(await clinVarTrackFeatures(page, viewId ?? '', 'G12D')).toEqual([
+      expect.objectContaining({
+        start: 11,
+        end: 12,
+        clinvarId: expect.any(String),
+      }),
+    ])
 
     // Seventeen tracks are still fetching and drawing when the last one
     // opens, and whatever they say belongs to this leg.
@@ -724,7 +735,8 @@ describe('Protein3d Plugin E2E', () => {
         const view = window.JBrowseSession?.views?.find(v => v.proteinLinkage)
         const trackIds =
           view?.tracks?.map(t => t.configuration?.trackId ?? '') ?? []
-        return view && trackIds.some(id => id.endsWith('-AlphaMissense-scores'))
+        // ClinVar opens last, after the transcript's alignment and the VCF
+        return view && trackIds.some(id => id.endsWith('-ClinVar'))
           ? { viewId: view.id, trackIds }
           : false
       },
@@ -738,11 +750,31 @@ describe('Protein3d Plugin E2E', () => {
     const prefix = `${viewId}-P04637-`
     expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
     expect(trackIds.map(id => id.slice(prefix.length))).toEqual(
-      expect.arrayContaining(['Chain', 'Variation', 'AlphaFold-confidence']),
+      expect.arrayContaining(['Chain', 'ClinVar', 'AlphaFold-confidence']),
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
 
+    // R248Q is read off the Δ133 transcript's codon, where it is residue 116,
+    // and placed on the entry's 248 through the same alignment the hover uses
+    const r248q = await clinVarTrackFeatures(page, viewId ?? '', 'R248Q')
+    expect(r248q).toEqual([
+      expect.objectContaining({
+        start: 247,
+        end: 248,
+        category: 'pathogenic',
+        transcriptChange: 'R116Q',
+      }),
+    ])
+
     await requests.idle(2000, 120_000)
     expect(pageComplaintsSince()).toEqual([])
+    // the last track opened sits below the fold
+    await page.evaluate(() => {
+      const label = [...document.querySelectorAll('span, div')].find(
+        e => e.childElementCount === 0 && e.textContent === 'ClinVar',
+      )
+      label?.scrollIntoView({ block: 'center' })
+    })
+    await captureScreenshot(page, screenshot('14-1d-clinvar'))
   }, 300_000)
 })

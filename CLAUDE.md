@@ -29,10 +29,14 @@ RCSB's alignment agreed with SIFTS on every residue of 23 entries, 2RH1 and the
 7K00 ribosome included, and answered in 3 s where PDBe took 24 s and 500'd on
 6OIJ; 3D-Beacons listed no structure for BRCA1 that both had 33 for, and PDBe's
 best_structures timed out on HBB. The e2e's only red leg that day was EBI's
-proteins API stalling 30 s on the 1D view's Variation and Antigen tracks, which
-still read it. Don't reintroduce a PDBe call for data RCSB serves; the remaining
-EBI reads are AlphaFold DB (models, AlphaMissense csv), UniProt, and those two
-tracks.
+proteins API stalling 30 s on the 1D view's Variation and Antigen tracks. The
+Variation track has since become the ClinVar track, read from NCBI's VCF through
+the linked transcript (`clinVarTrackSource.ts`): it needs the transcript, a
+genome on hg38 or hg19, and the transcript's alignment to the entry, so it is
+built after the view opens and rides inline in the track's config. Don't
+reintroduce a PDBe call for data RCSB serves; the remaining EBI reads are
+AlphaFold DB (models, AlphaMissense csv), UniProt, and the Antigen track, which
+has no other source.
 
 ## Molstar: the wrong parser fails silently in one direction
 

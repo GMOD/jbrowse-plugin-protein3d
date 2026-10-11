@@ -65,7 +65,11 @@ interface SessionView {
   setColorScheme?: (scheme: string) => void
   menuItems?: () => { label?: string; onClick?: () => void }[]
   tracks?: {
-    configuration?: { trackId?: string }
+    configuration?: {
+      trackId?: string
+      // an inline (FromConfigAdapter) track's features, a frozen config slot
+      adapter?: { features?: unknown }
+    }
     displays?: { featureIdUnderMouse?: string }[]
   }[]
   molstarPluginContext?: {
@@ -754,6 +758,55 @@ async function molstarInk(page: Page): Promise<number> {
 // The molstar canvas mounts within a second of the launch click, ~5s before the
 // structure is drawn, so waiting on the element alone would screenshot an empty
 // viewer — hence the ink check below.
+/**
+ * The features of a 1D view's ClinVar track with a given name, read off the
+ * inline config the launch wrote them into.
+ */
+export async function clinVarTrackFeatures(
+  page: Page,
+  viewId: string,
+  name: string,
+): Promise<Record<string, unknown>[]> {
+  return page.evaluate(
+    (id, wanted) => {
+      const view = window.JBrowseSession?.views?.find(v => v.id === id)
+      const track = view?.tracks?.find(t =>
+        t.configuration?.trackId?.endsWith('-ClinVar'),
+      )
+      const adapter = track?.configuration?.adapter
+      // the slot's value, however the host's config model exposes it
+      const slot: unknown = adapter?.features
+      const features: unknown =
+        typeof slot === 'object' && slot !== null && 'value' in slot
+          ? slot.value
+          : slot
+      const matched = (Array.isArray(features) ? features : []).filter(
+        (f): f is Record<string, unknown> =>
+          typeof f === 'object' &&
+          f !== null &&
+          'name' in f &&
+          f.name === wanted,
+      )
+      if (matched.length === 0) {
+        // what was there instead, for the assertion's diff
+        return [
+          {
+            diagnostic: true,
+            trackFound: !!track,
+            adapterKeys: adapter ? Object.keys(adapter) : [],
+            featuresType: typeof features,
+            featureCount: Array.isArray(features) ? features.length : -1,
+            first: Array.isArray(features) ? features[0] : undefined,
+          },
+        ]
+      }
+      return matched
+    },
+    viewId,
+    name,
+  )
+}
+
 export async function waitForStructureRendered(page: Page): Promise<number> {
   await page.waitForSelector(MOLSTAR_CANVAS, { timeout: 30_000 })
   const deadline = Date.now() + 90_000
