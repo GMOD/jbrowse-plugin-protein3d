@@ -24,7 +24,7 @@ re-export, so `esbuild.mjs` leaves it alone and no host can drop it.
 The UniProt alignment of an entry (what SIFTS curates), its protein sequences
 and the list of entries for an accession all come from RCSB's GraphQL APIs
 (`data.rcsb.org`, `sequence-coordinates.rcsb.org`) since p2s_mapper 2.0.0. PDBe
-served the same data until 2026-10-11, and the switch was measured, not taste:
+served the same data until 2026-10-11, and the numbers decided the switch:
 RCSB's alignment agreed with SIFTS on every residue of 23 entries, 2RH1 and the
 7K00 ribosome included, and answered in 3 s where PDBe took 24 s and 500'd on
 6OIJ; 3D-Beacons listed no structure for BRCA1 that both had 33 for, and PDBe's

@@ -768,13 +768,11 @@ describe('Protein3d Plugin E2E', () => {
 
     await requests.idle(2000, 120_000)
     expect(pageComplaintsSince()).toEqual([])
-    // the last track opened sits below the fold
-    await page.evaluate(() => {
-      const label = [...document.querySelectorAll('span, div')].find(
-        e => e.childElementCount === 0 && e.textContent === 'ClinVar',
-      )
-      label?.scrollIntoView({ block: 'center' })
-    })
+    // the last track opened sits below the fold; the host names each track's
+    // container by view and track id
+    await page.evaluate(selector => {
+      document.querySelector(selector)?.scrollIntoView({ block: 'center' })
+    }, `[data-testid="trackRenderingContainer-${viewId}-${viewId}-P04637-ClinVar"]`)
     await captureScreenshot(page, screenshot('14-1d-clinvar'))
   }, 300_000)
 })
