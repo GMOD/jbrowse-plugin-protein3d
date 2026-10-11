@@ -232,7 +232,7 @@ picker and the manual-alignment import exist:
   transcript's own part mapped, although the AChBP part sits at equivalent
   positions. An imported alignment, from the manual import or a spec, is used as
   given, which is the way to map such a part. Without SIFTS (AlphaFold,
-  Foldseek, a user's file, PDBe unreachable after two retries) the alignment is
+  Foldseek, a user's file, RCSB unreachable after two retries) the alignment is
   used as is.
 - **Products split across chains.** Insulin's A and B chains, or a viral
   polyprotein's cleavage products, each align to a separate stretch of one
