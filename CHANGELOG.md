@@ -1,3 +1,12 @@
+## [1.8.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.7.0...v1.8.0) (2026-10-11)
+
+### Other Changes
+
+- 1D view: a ClinVar track from NCBI's VCF replaces the EBI Variation track ([ac7b6ed](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ac7b6ed1d289ad47bd36d09fdeef5d91f079d876))
+- Find the ClinVar track by the host's test id; picture it ([ff5f8dc](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ff5f8dc5dd4b93d615d21dd892806d6b9503fc43))
+- Update dependencies ([1c18548](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1c185483db061ea00e44e7f4fbdca97294ae4cad))
+- E2e screenshots after the dependency bump ([4b3e38e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4b3e38e40262f0c347feab70c4235dc968a91aa7))
+
 ## [1.7.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.6.1...v1.7.0) (2026-10-11)
 
 ### Other Changes
