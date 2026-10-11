@@ -1,3 +1,11 @@
+## [1.7.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.6.1...v1.7.0) (2026-10-11)
+
+### Other Changes
+
+- Read PDB entries and entry lists from RCSB instead of PDBe ([a3e1238](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a3e1238129b0af7c71c052aae5e4983365886775))
+- Take p2s_mapper 2.0.0; record why PDB metadata comes from RCSB ([dbbdecf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/dbbdecf1ae6339028e68a57c52becc1f42426012))
+- Wrap CLAUDE.md ([be02d46](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/be02d46b609c0c3743867e6e73549ed7ff7031fb))
+
 ## [1.6.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.6.0...v1.6.1) (2026-10-10)
 
 ### Other Changes
