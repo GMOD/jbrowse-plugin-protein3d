@@ -9,14 +9,29 @@ and between JBrowse host versions.
 Everything between a transcript's translation and a structure's residues is the
 `p2s_mapper` package (`~/src/gmod/p2s_mapper`): the pairwise aligner and its
 quality statistics, the coordinate maps, `chooseMappedEntity`,
-`extractStructureSequences`, SIFTS, the AlphaFold/PDBe/UniProt lookups, the url
-builders and `structureFormat`. It has no React, no `@jbrowse/*` and no molstar
+`extractStructureSequences`, the entry's UniProt alignment, the
+AlphaFold/RCSB/UniProt lookups, the url builders and `structureFormat`. It has no React, no `@jbrowse/*` and no molstar
 import — a loaded Mol\* model reaches it through narrow structural interfaces —
 so a change to any of those rules is made and tested there, and this repo keeps
 what needs a JBrowse `Feature`, a session or a Mol\* plugin.
 
 `p2s_mapper` is **bundled, never externalized**: it is not a `@jbrowse/core`
 re-export, so `esbuild.mjs` leaves it alone and no host can drop it.
+
+## PDB metadata comes from RCSB, not PDBe
+
+The UniProt alignment of an entry (what SIFTS curates), its protein sequences
+and the list of entries for an accession all come from RCSB's GraphQL APIs
+(`data.rcsb.org`, `sequence-coordinates.rcsb.org`) since p2s_mapper 2.0.0.
+PDBe served the same data until 2026-10-11, and the switch was measured, not
+taste: RCSB's alignment agreed with SIFTS on every residue of 23 entries, 2RH1
+and the 7K00 ribosome included, and answered in 3 s where PDBe took 24 s and
+500'd on 6OIJ; 3D-Beacons listed no structure for BRCA1 that both had 33 for,
+and PDBe's best_structures timed out on HBB. The e2e's only red leg that day
+was EBI's proteins API stalling 30 s on the 1D view's Variation and Antigen
+tracks, which still read it. Don't reintroduce a PDBe call for data RCSB
+serves; the remaining EBI reads are AlphaFold DB (models, AlphaMissense csv),
+UniProt, and those two tracks.
 
 ## Molstar: the wrong parser fails silently in one direction
 
