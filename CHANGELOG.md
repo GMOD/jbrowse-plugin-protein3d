@@ -1,3 +1,9 @@
+## [1.9.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.8.0...v1.9.0) (2026-10-15)
+
+### Other Changes
+
+- Load the protein view's model, dialogs, launches and aligner on first use ([79816c7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/79816c7869a6d111602c766314ab3545fdd5e06c))
+
 ## [1.8.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.7.0...v1.8.0) (2026-10-11)
 
 ### Other Changes
