@@ -1,3 +1,10 @@
+## [1.9.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.9.0...v1.9.1) (2026-10-15)
+
+### Other Changes
+
+- Take the Foldseek client from p2s_mapper ([bee2e4a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bee2e4a954eafc7f56758171a592257a628dd18d))
+- Park the ggprotein3d idea: p2s_mapper tables and static 3D figures in R ([b1ccfa0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b1ccfa04755602c7039c2fdab93512c01037e6bc))
+
 ## [1.9.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.8.0...v1.9.0) (2026-10-15)
 
 ### Other Changes
