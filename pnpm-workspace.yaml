@@ -4,4 +4,4 @@ allowBuilds:
   puppeteer: true
   unrs-resolver: true
 minimumReleaseAgeExclude:
-  - p2s_mapper@2.0.0
+  - p2s_mapper@2.0.0 || 2.3.0
