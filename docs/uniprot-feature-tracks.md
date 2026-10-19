@@ -64,3 +64,21 @@ structure residues it covers. None of this affects the genome mapping, which
 comes from aligning the transcript's translation either way;
 [residue numbering](residue-numbering.md) follows one residue through every
 numbering involved.
+
+## Rows from the alignment
+
+When an MSA view connected to the structure's genome view shows domains, a
+section titled **From the alignment** sits above the UniProt tracks, whatever
+the color scheme:
+
+- One row per accession of msaview's `connectedDomains`, in the order of its
+  color object's `domain`, named by its `labels` and filled from its `range`, as
+  the alignment draws it
+- A row draws one bar per run of residues in consecutive columns, which gives a
+  site many short bars and a domain one bar per gap-free stretch of the
+  alignment
+- Clicking a row selects every residue of its accession on the structure, and
+  hovering a bar lights its alignment columns, as a UniProt bar does
+- The rows never overlap, so each overlap of domains and sites reads as two rows
+
+The UniProt tracks keep their type colors, since they come from another source.
