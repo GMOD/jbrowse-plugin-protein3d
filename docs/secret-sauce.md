@@ -65,8 +65,8 @@ belong there. The theme should instead read from a registry the view owns, keyed
 by model id, as `interactionPosition` already keys hovers by model id. The strip
 row can ship first, since it needs none of that.
 
-That registry exists now. The `alphamissense` and `clinvar` schemes
-(`variantEffectColorTheme.ts`) register each structure's per-residue values
+That registry exists now. The `alphamissense`, `clinvar` and `alignment-domains`
+schemes (`placedValueRegistry.ts`) register each structure's per-residue values
 against its Mol\* models before a recolour, so a genome-track source needs its
 sampling and a theme provider, not a new mechanism. `clinvar` already walks the
 genome half of the path: it reads NCBI's VCF over the transcript's codons

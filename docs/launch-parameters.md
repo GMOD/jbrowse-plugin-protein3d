@@ -70,8 +70,8 @@ numbering, and a `uniprotId` beside it changes neither. See
 One of the view's **Color scheme** menu entries, applied to every structure:
 `default`, `plddt-confidence`, `chain-id`, `secondary-structure`,
 `hydrophobicity` (Kyte-Doolittle), `residue-name`, `uncertainty`,
-`molecule-type`, `mapped-chain`, `alphamissense` or `clinvar`. An unknown value
-falls back to `default`.
+`molecule-type`, `mapped-chain`, `alphamissense`, `clinvar` or
+`alignment-domains`. An unknown value falls back to `default`.
 
 `alphamissense` and `clinvar` colour by variant effect, one value per residue:
 
@@ -112,6 +112,24 @@ scheme and back retries it.
 
 The values arrive after the structure is shown and only recolour it: a
 selection, the camera and the ready marker do not wait for them.
+
+`alignment-domains` colours by the domains an MSA view
+([jbrowse-plugin-msaview](https://github.com/GMOD/jbrowse-plugin-msaview)) draws
+on its query row, such as NCBI CDD hits, each in the color the alignment fills
+it with:
+
+- The MSA view pairs with the structure by sharing its `connectedViewId`, and
+  the plugin reads each domain's genome regions, not its alignment columns.
+- The plugin maps each region to the transcript's residues, then to the
+  structure through its alignment to the transcript, the path a genome hover
+  takes.
+- A residue inside nested domains takes the innermost, such as a binding site
+  inside its domain. Residues outside every domain, and chains other than the
+  mapped one, stay grey.
+- Toggling a domain or hiding the overlay in the MSA view recolours the
+  structure.
+- With no MSA view on the genome view, or none showing domains, the structure
+  stays grey and its header row says which.
 
 ## `structures`
 
