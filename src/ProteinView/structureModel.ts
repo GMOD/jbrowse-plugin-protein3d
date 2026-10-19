@@ -48,6 +48,7 @@ import {
 } from './constants'
 import { entityAlignedTo } from './entityAlignedTo'
 import { frameResidues } from './frameSelection'
+import { codonLocus, hoverReadout } from './hoverReadout'
 import { resolvedColor } from './proteinColor'
 import {
   clickProteinToGenome,
@@ -72,7 +73,7 @@ import {
   fetchVariantEffects,
 } from './variantEffectSource'
 import { variantEffectStatus } from './variantEffectStatus'
-import { codingSpans, genomeToTranscriptSeqMapping } from '../mappings'
+import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { AlignmentMethod } from './alignOffThread'
 import type {
@@ -740,57 +741,20 @@ const Structure = types
       return this.coordinateMapper?.maps.alignmentToStructurePosition
     },
     /**
-     * #method
-     * What the mapped entity's residue at a 0-based position is called: its
-     * author number where the file has one (R248 of p53 in 1TUP, where the
-     * position is 154), so the ruler and hover read like the literature.
-     */
-    residueNumber(pos: number) {
-      return residueNumber(this.mappedEntity, pos)
-    },
-    /**
      * #getter
-     * The hovered residue, read out for the header: its author number first,
-     * then the transcript residue it aligns to when that differs (a crystal
-     * whose construct was renumbered from one), letters, chain and codon locus.
+     * The hovered residue, read out for the header; see hoverReadout
      */
     get hoverString() {
-      const r = self.hoverPosition
-      if (r === undefined) {
-        return ''
-      }
-      const structureLetter = this.hoverStructureLetter
-      const genomeLetter = this.hoverGenomeLetter
-      const parts = []
-
-      if (r.structureSeqPos !== undefined) {
-        const residue = this.residueNumber(r.structureSeqPos)
-        parts.push(`${residue}`)
-        const transcriptPos =
-          this.structureSeqToTranscriptSeqPosition?.[r.structureSeqPos]
-        if (transcriptPos !== undefined && transcriptPos + 1 !== residue) {
-          parts.push(`Transcript residue: ${transcriptPos + 1}`)
-        }
-      }
-
-      if (structureLetter) {
-        parts.push(`Structure: ${structureLetter}`)
-      }
-
-      if (genomeLetter && structureLetter && genomeLetter !== structureLetter) {
-        parts.push(`Genome: ${genomeLetter}`)
-      }
-
-      if (r.chain) {
-        parts.push(`Chain: ${r.chain}`)
-      }
-
-      const locus = this.hoverGenomeLocus
-      if (locus) {
-        parts.push(locus)
-      }
-
-      return parts.join(', ')
+      const hover = self.hoverPosition
+      return hover
+        ? hoverReadout({
+            hover,
+            entity: this.mappedEntity,
+            structureToTranscript: this.structureSeqToTranscriptSeqPosition,
+            transcript: self.userProvidedTranscriptSequence,
+            locus: this.hoverGenomeLocus,
+          })
+        : ''
     },
     /**
      * #getter
@@ -799,20 +763,12 @@ const Structure = types
      */
     get hoverGenomeLocus() {
       const pos = this.structureSeqHoverPos
-      const mapping = this.genomeToTranscriptSeqMapping
-      const transcriptPos =
+      return codonLocus(
+        this.genomeToTranscriptSeqMapping,
         pos === undefined
           ? undefined
-          : this.structureSeqToTranscriptSeqPosition?.[pos]
-      if (!mapping || transcriptPos === undefined) {
-        return undefined
-      }
-      const spans = codingSpans(mapping.p2gCodon, [transcriptPos])
-      const start = spans[0]?.[0]
-      const end = spans.at(-1)?.[1]
-      return start === undefined || end === undefined
-        ? undefined
-        : `${mapping.refName}:${start + 1}-${end}`
+          : this.structureSeqToTranscriptSeqPosition?.[pos],
+      )
     },
     /**
      * #getter
@@ -883,21 +839,6 @@ const Structure = types
     },
 
     /**
-     * #method
-     * The 0-based position a Mol* hover or click names on this structure, or
-     * undefined when it landed on another structure of the view, on a chain
-     * other than the mapped one, or on a residue the entity lacks. The
-     * position comes from the entity's own label_seq_ids rather than `- 1`, so
-     * a PDB numbered from its author residues maps to the right residue.
-     */
-    interactionPosition(info: MolstarLocationInfo) {
-      return self.molstarModelIds.includes(info.modelId) &&
-        info.entityId === this.mappedEntity?.entityId
-        ? this.labelSeqIdIndex.get(info.labelSeqId)
-        : undefined
-    },
-
-    /**
      * #getter
      * The residues the molstar 'select' channel should light, as label_seq_ids:
      * a clicked/declarative domain range takes priority, else the whole
@@ -961,78 +902,6 @@ const Structure = types
               : [{ start, end }]
           })
         : []
-    },
-
-    /**
-     * #method
-     * The genome regions structure-residue ranges cover, one per stretch of
-     * contiguous coding bases.
-     */
-    structureRangesToGenomeHighlight(
-      ranges: readonly ResidueRange[],
-    ): IRegion[] {
-      return structureRangesToGenomeRegions({
-        ranges,
-        assemblyName: self.connectedView?.assemblyNames[0],
-        model: {
-          genomeToTranscriptSeqMapping: this.genomeToTranscriptSeqMapping,
-          structureSeqToTranscriptSeqPosition:
-            this.structureSeqToTranscriptSeqPosition,
-        },
-      })
-    },
-
-    /**
-     * #getter
-     * Genome regions to highlight in the LGV from the current hover, for a
-     * hover in this view only: the genome view and a connected MSA already
-     * mark their own pointer there, and echoing it doubles the band.
-     */
-    get hoverGenomeHighlights(): IRegion[] {
-      const source = self.hoverPosition?.source
-      return source === 'genome' || source === 'msa'
-        ? NO_REGIONS
-        : this.structureRangesToGenomeHighlight(
-            rangeList(this.hoverHighlightRange),
-          )
-    },
-
-    /**
-     * #getter
-     * Genome regions to highlight in the LGV from the persistent click
-     * selection, one per run of coding bases across every selected range.
-     */
-    get clickGenomeHighlights(): IRegion[] {
-      return this.structureRangesToGenomeHighlight(self.clickedStructureRanges)
-    },
-
-    /**
-     * #getter
-     * The hovered residue's one-letter code, read from the entity's sequence
-     * so a modified residue (MSE, TPO) shows its parent's letter.
-     */
-    get hoverStructureLetter() {
-      const structurePos = this.structureSeqHoverPos
-      return structurePos === undefined
-        ? undefined
-        : this.mappedStructureSeq?.[structurePos]
-    },
-
-    /**
-     * #getter
-     * Returns the single-letter amino acid code from the genome/transcript at hover position
-     */
-    get hoverGenomeLetter() {
-      const structurePos = this.structureSeqHoverPos
-      if (structurePos === undefined) {
-        return undefined
-      }
-      const transcriptPos =
-        this.structureSeqToTranscriptSeqPosition?.[structurePos]
-      if (transcriptPos === undefined) {
-        return undefined
-      }
-      return self.userProvidedTranscriptSequence[transcriptPos]
     },
 
     /**
@@ -1195,6 +1064,73 @@ const Structure = types
     },
     get molstarPluginContext(): PluginContext | undefined {
       return this.parentView.molstarPluginContext
+    },
+  }))
+  .views(self => ({
+    /**
+     * #method
+     * What the mapped entity's residue at a 0-based position is called: its
+     * author number where the file has one (R248 of p53 in 1TUP, where the
+     * position is 154), so the ruler and hover read like the literature.
+     */
+    residueNumber(pos: number) {
+      return residueNumber(self.mappedEntity, pos)
+    },
+    /**
+     * #method
+     * The 0-based position a Mol* hover or click names on this structure, or
+     * undefined when it landed on another structure of the view, on a chain
+     * other than the mapped one, or on a residue the entity lacks. The
+     * position comes from the entity's own label_seq_ids rather than `- 1`, so
+     * a PDB numbered from its author residues maps to the right residue.
+     */
+    interactionPosition(info: MolstarLocationInfo) {
+      return self.molstarModelIds.includes(info.modelId) &&
+        info.entityId === self.mappedEntity?.entityId
+        ? self.labelSeqIdIndex.get(info.labelSeqId)
+        : undefined
+    },
+    /**
+     * #method
+     * The genome regions structure-residue ranges cover, one per stretch of
+     * contiguous coding bases.
+     */
+    structureRangesToGenomeHighlight(
+      ranges: readonly ResidueRange[],
+    ): IRegion[] {
+      return structureRangesToGenomeRegions({
+        ranges,
+        assemblyName: self.connectedView?.assemblyNames[0],
+        model: {
+          genomeToTranscriptSeqMapping: self.genomeToTranscriptSeqMapping,
+          structureSeqToTranscriptSeqPosition:
+            self.structureSeqToTranscriptSeqPosition,
+        },
+      })
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
+     * Genome regions to highlight in the LGV from the current hover, for a
+     * hover in this view only: the genome view and a connected MSA already
+     * mark their own pointer there, and echoing it doubles the band.
+     */
+    get hoverGenomeHighlights(): IRegion[] {
+      const source = self.hoverPosition?.source
+      return source === 'genome' || source === 'msa'
+        ? NO_REGIONS
+        : self.structureRangesToGenomeHighlight(
+            rangeList(self.hoverHighlightRange),
+          )
+    },
+    /**
+     * #getter
+     * Genome regions to highlight in the LGV from the persistent click
+     * selection, one per run of coding bases across every selected range.
+     */
+    get clickGenomeHighlights(): IRegion[] {
+      return self.structureRangesToGenomeHighlight(self.clickedStructureRanges)
     },
   }))
   .views(self => ({
