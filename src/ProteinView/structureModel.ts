@@ -590,14 +590,6 @@ const Structure = types
   .views(self => ({
     /**
      * #getter
-     * Sequence strings of every polymer entity (back-compat for the alignment
-     * autorun and presence checks).
-     */
-    get structureSequences() {
-      return self.entities?.map(e => e.seq)
-    },
-    /**
-     * #getter
      * The entity that maps to the transcript: the chosen one when
      * `mappedEntityId` is set, else the first protein chain, so a standalone
      * structure with no transcript still has a chain to read hovers from.
@@ -1073,7 +1065,7 @@ const Structure = types
         (!self.pairwiseAlignment &&
           !self.alignmentSkipped &&
           !!self.userProvidedTranscriptSequence &&
-          !!this.structureSequences?.length)
+          !!self.entities?.length)
       )
     },
     /**

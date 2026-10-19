@@ -371,7 +371,7 @@ function stateModelFactory() {
     .actions(self => ({
       afterAttach() {
         // Apply the chosen color theme whenever it changes, a structure
-        // finishes loading (structureSequences is set after its molstar
+        // finishes loading (entities is set after its molstar
         // representation is built, so the theme has something to recolor),
         // the mapped chain changes, or a placed-value source answers.
         addDisposer(
@@ -379,7 +379,7 @@ function stateModelFactory() {
           autorun(() => {
             const { molstarPluginContext, color } = self
             const structures = self.structures.flatMap(s =>
-              s.structureSequences
+              s.entities
                 ? s.molstarStructures.map(molstarStructure => ({
                     molstarStructure,
                     entityId: s.mappedEntity?.entityId,
@@ -406,7 +406,7 @@ function stateModelFactory() {
           autorun(() => {
             const plugin = self.molstarPluginContext
             const structures = self.structures.flatMap(s =>
-              s.structureSequences
+              s.entities
                 ? s.molstarStructures.map(molstarStructure => ({
                     molstarStructure,
                     sites: s.alignmentDomainStatus?.placedSites,
@@ -511,7 +511,7 @@ function stateModelFactory() {
        */
       get colorLegend() {
         const plugin = self.molstarPluginContext
-        const loaded = self.structures.find(s => s.structureSequences)
+        const loaded = self.structures.find(s => s.entities)
         const structure = loaded?.molstarStructures[0]
         return plugin && structure
           ? colorLegendOf({

@@ -27,7 +27,6 @@ const TEST_JBROWSE_DIR = path.join(process.cwd(), '.test-jbrowse-nightly')
 interface ProteinViewStructure {
   hoverPosition?: { structureSeqPos: number; source: string }
   hoverGenomeLocus?: string
-  structureSequences?: string[]
   pairwiseAlignment?: unknown
   userProvidedTranscriptSequence?: string
   feature?: { name?: string; id?: string }
@@ -42,7 +41,7 @@ interface ProteinViewStructure {
   label?: string
   hidden?: boolean
   molstarStructures?: unknown[]
-  entities?: { entityId: string }[]
+  entities?: { entityId: string; seq: string }[]
   mappedEntity?: { entityId: string; chains: string[] }
   placedVariantEffects?: { byLabelSeqId: Map<number, number> }
   variantEffectsPending?: boolean
@@ -667,14 +666,14 @@ export async function getProteinViewState(page: Page) {
     const mapping = structure?.genomeToTranscriptSeqMapping
     return {
       structureCount: view?.structures?.length ?? 0,
-      structureSeqLength: structure?.structureSequences?.[0]?.length ?? 0,
+      structureSeqLength: structure?.entities?.[0]?.seq.length ?? 0,
       transcriptLength: structure?.userProvidedTranscriptSequence?.length ?? 0,
       transcriptName: structure?.feature?.name ?? structure?.feature?.id ?? '',
       hasAlignment: Boolean(structure?.pairwiseAlignment),
       mappedGenomePositions: mapping ? Object.keys(mapping.g2p).length : 0,
       structures: (view?.structures ?? []).map(s => ({
         url: s.url ?? '',
-        entityCount: s.structureSequences?.length ?? 0,
+        entityCount: s.entities?.length ?? 0,
         hasAlignment: Boolean(s.pairwiseAlignment),
         mappedEntityId: s.mappedEntityId,
       })),
