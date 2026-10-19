@@ -141,6 +141,7 @@ test('the track carries its features inline, colored by category', () => {
             'Benign',
             'Other',
           ],
+          title: 'ClinVar classification',
         },
       },
     ],

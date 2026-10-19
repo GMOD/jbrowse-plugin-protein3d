@@ -69,7 +69,8 @@ Each type paints the color `UNIPROT_FEATURE_COLOR` (`uniprotFeatureTypes.ts`)
 gives it, a categorical color object over `type`. The 1D protein view's UniProt
 features track reads the same object for its `color`, and its `facet.domain` is
 the object's `domain`, so both views order and color a type alike. A type the
-object does not list paints its `unknown` grey.
+object does not list paints its `unknown` grey. A host built before 2026-10-03
+refuses `unknown`, and with it the whole track.
 
 ## Rows from the alignment
 

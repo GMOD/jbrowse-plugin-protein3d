@@ -86,4 +86,5 @@ export const UNIPROT_FEATURE_COLOR = {
     '#d6616b',
   ],
   unknown: '#999999',
+  title: 'UniProt feature type',
 } as const satisfies CategoricalColor

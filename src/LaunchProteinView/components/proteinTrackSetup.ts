@@ -13,13 +13,15 @@ export interface ProteinTrackConf {
 }
 
 // A quantitative display's color reads only `score`, and a linear one ramps
-// across the plot's y domain, so it takes the ramp's stops and middle alone
+// across the plot's y domain, so it takes the ramp's stops and middle alone.
+// Hosts before 2026-09-26 refuse a wiggle color's `title` and `labels`; the
+// threshold needs its labels, and the ramp leaves both off to load there too.
 function wiggleColor(color: LinearColor | ThresholdColor) {
   if (color.scale === 'threshold') {
     return { ...color, field: 'score' }
   }
-  const { scale, range, domainMid, title } = color
-  return { field: 'score', scale, range, domainMid, title }
+  const { scale, range, domainMid } = color
+  return { field: 'score', scale, range, domainMid }
 }
 
 export async function fetchUniProtFeatureTypes(

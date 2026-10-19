@@ -33,6 +33,7 @@ export const CLINVAR_CATEGORY_COLOR = {
     'Benign',
     'Other',
   ],
+  title: 'ClinVar classification',
 } as const satisfies CategoricalColor
 
 export interface ClinVarTrackFeature {

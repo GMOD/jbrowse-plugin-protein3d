@@ -27,7 +27,6 @@ const alphaMissense = {
         scale: 'linear',
         range: ['#2c7bb6', '#ffffff', '#d7191c'],
         domainMid: 0.5,
-        title: 'AlphaMissense pathogenicity',
       },
     },
   ],
