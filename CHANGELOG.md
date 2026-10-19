@@ -1,3 +1,11 @@
+## [1.11.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.10.0...v1.11.0) (2026-10-19)
+
+### Other Changes
+
+- Colour a structure by the connected alignment's domains ([950219c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/950219c6582ea574afddb3ae6d09557d6bbb4920))
+- Document the alignment-domains colour scheme ([e888947](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e888947274f7cb5d15f6fc922ba01c0a859a67f6))
+- Pin domain placement for a CDD site of scattered and split codons ([1dc6c5f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1dc6c5ff5bd8b50e64c9e8e72fc47d5c008b0642))
+
 ## [1.10.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.9.1...v1.10.0) (2026-10-19)
 
 ### Other Changes
