@@ -111,7 +111,7 @@ export async function syncSiteSticks({
         molstarStructure,
         'ball-and-stick',
         'alignment-domains',
-        { revision, color, layer: 'site' },
+        { revision, color, mark: 'atoms' },
       ),
     }
     const [cell] = existing

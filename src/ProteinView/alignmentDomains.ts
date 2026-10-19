@@ -7,6 +7,10 @@
  * - filter and layer: `kind` splits the data into two layers. Layer 1 draws
  *   `kind == 'domain'` with the cartoon mark, layer 2 `kind == 'site'` with
  *   the sticks mark, on side chains only, over the cartoon
+ * - mark: a backbone mark (cartoon, trace) takes the domain color, and an
+ *   atom mark (sticks, spheres, lines) the site color where a site covers the
+ *   residue, so a site's residue has one color wherever its atoms draw, the
+ *   Mol* preset's ligand environment included
  * - color channel: msaview's one categorical color object over `accession`,
  *   whose scale maps each `domain` entry to the `range` color at its index
  * - guide: the header legend, one group per layer, and the overview's rows,
@@ -22,6 +26,15 @@ import type { GenomeNaming } from './util'
 import type { PlacedValues } from './variantEffects'
 
 export type DomainKind = 'domain' | 'site'
+
+export type DomainMark = 'backbone' | 'atoms'
+
+const ATOM_MARKS = new Set(['ball-and-stick', 'spacefill', 'line', 'point'])
+
+/** The mark a Mol* representation type draws, for the color it takes */
+export function domainMarkOf(representationType: string): DomainMark {
+  return ATOM_MARKS.has(representationType) ? 'atoms' : 'backbone'
+}
 
 interface GenomeRegion {
   refName: string

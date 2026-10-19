@@ -7,22 +7,24 @@ import { ParamDefinition as PD } from 'molstar/lib/mol-util/param-definition'
 import { EMPTY_DOMAIN_COLOR } from './alignmentDomains'
 import { NO_VALUE_COLOR, placedValueReader } from './placedValueRegistry'
 
-import type { DomainColor } from './alignmentDomains'
+import type { DomainColor, DomainMark } from './alignmentDomains'
+import type { Location } from 'molstar/lib/mol-model/location'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
 import type { ThemeDataContext } from 'molstar/lib/mol-theme/theme'
 
 // The color object is a few names and colors, so it rides in the params; each
-// residue's index into its domain comes from the registry, under the layer's
-// key. `revision` changes on every recolor, since regions can move while the
-// color object stays the same.
+// residue's index into its domain comes from the registry, the domains' for a
+// backbone mark, the sites' and then the domains' for an atom mark. `revision`
+// changes on every recolor, since regions can move while the color object
+// stays the same.
 const AlignmentDomainColorThemeParams = {
   revision: PD.Numeric(0, {}, { isHidden: true }),
   color: PD.Value<DomainColor>(EMPTY_DOMAIN_COLOR, { isHidden: true }),
-  layer: PD.Select<'domain' | 'site'>(
-    'domain',
+  mark: PD.Select<DomainMark>(
+    'backbone',
     [
-      ['domain', 'Domains'],
-      ['site', 'Sites'],
+      ['backbone', 'Backbone'],
+      ['atoms', 'Atoms'],
     ],
     { isHidden: true },
   ),
@@ -49,10 +51,12 @@ function AlignmentDomainColorTheme(
   ctx: ThemeDataContext,
   props: PD.Values<Params>,
 ): ColorTheme<Params> {
-  const placedValue = placedValueReader(
-    props.layer === 'site' ? 'alignment-sites' : 'alignment-domains',
-    ctx.structure,
-  )
+  const domainAt = placedValueReader('alignment-domains', ctx.structure)
+  const siteAt = placedValueReader('alignment-sites', ctx.structure)
+  const placedValue =
+    props.mark === 'atoms'
+      ? (location: Location) => siteAt(location) ?? domainAt(location)
+      : domainAt
   const range = props.color.range.map(molstarColor)
   return {
     factory: AlignmentDomainColorTheme,

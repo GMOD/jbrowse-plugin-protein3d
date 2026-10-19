@@ -127,6 +127,11 @@ on its query row, such as NCBI CDD hits. In grammar-of-graphics terms:
 - **Color channel**: both layers read msaview's one color object, a categorical
   scale from each accession (`domain`) to the color the alignment fills it with
   (`range`).
+- **Marks**: a backbone mark (cartoon, trace) takes the domain color. An atom
+  mark (ball-and-stick, spacefill, lines) takes the site color where a site
+  covers the residue, so a site residue keeps one color wherever its atoms draw.
+  Mol\*'s own ball-and-stick of a ligand's bonded residues follows the rule too,
+  and HBB's heme-bonded His92 draws in the heme site's color.
 - **Draw order**: within a layer the smaller entry draws on top, so a residue
   two sites share shows the smaller site.
 - **Guide**: the header legend shows the color object's `labels` in two groups,

@@ -390,6 +390,7 @@ function stateModelFactory() {
                     molstarStructure,
                     entityId: s.mappedEntity?.entityId,
                     placedValues: s.placedValues,
+                    placedSites: s.alignmentDomainStatus?.placedSites,
                     domainColor: s.alignmentDomainStatus?.domains?.color,
                   }))
                 : [],

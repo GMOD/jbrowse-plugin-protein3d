@@ -1,4 +1,4 @@
-import { EMPTY_DOMAIN_COLOR } from './alignmentDomains'
+import { EMPTY_DOMAIN_COLOR, domainMarkOf } from './alignmentDomains'
 import { SITES_TAG } from './alignmentSites'
 import loadMolstar from './loadMolstar'
 import { structureRootCell } from './structureCells'
@@ -74,10 +74,12 @@ function themeParams(
     entityId,
     domainColor,
     revision,
+    representationType = '',
   }: {
     entityId?: string
     domainColor?: DomainColor
     revision?: number
+    representationType?: string
   },
 ) {
   return colorScheme === 'mapped-chain'
@@ -86,7 +88,7 @@ function themeParams(
       ? {
           revision,
           color: domainColor ?? EMPTY_DOMAIN_COLOR,
-          layer: 'domain',
+          mark: domainMarkOf(representationType),
         }
       : isPlacedValueScheme(colorScheme)
         ? { revision }
@@ -118,6 +120,8 @@ export async function applyColorTheme({
     molstarStructure: Structure
     entityId?: string
     placedValues?: PlacedValues
+    /** the alignment sites, which an atom mark draws over the domains */
+    placedSites?: PlacedValues
     domainColor?: DomainColor
   }[]
 }) {
@@ -140,10 +144,14 @@ export async function applyColorTheme({
     molstarStructure,
     entityId,
     placedValues,
+    placedSites,
     domainColor,
   } of structures) {
     if (placed) {
       registerPlacedValues(colorScheme, molstarStructure, placedValues)
+    }
+    if (colorScheme === 'alignment-domains') {
+      registerPlacedValues('alignment-sites', molstarStructure, placedSites)
     }
     const cell = structureRootCell(plugin, molstar, molstarStructure)
     const representations = cell
@@ -154,11 +162,6 @@ export async function applyColorTheme({
           ),
         )
       : []
-    const params = themeParams(colorScheme, {
-      entityId,
-      domainColor,
-      revision,
-    })
     for (const representation of representations) {
       if (
         !representation.state.isGhost &&
@@ -170,7 +173,12 @@ export async function applyColorTheme({
             molstarStructure,
             prev.type.name,
             theme,
-            params,
+            themeParams(colorScheme, {
+              entityId,
+              domainColor,
+              revision,
+              representationType: prev.type.name,
+            }),
           )
         })
         recolored++
