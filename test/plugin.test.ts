@@ -273,7 +273,7 @@ describe('Protein3d Plugin E2E', () => {
     expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
     const names = trackIds.map(id => id.slice(prefix.length))
     expect(names).toEqual(
-      expect.arrayContaining(['Chain', 'Antigen', 'ClinVar']),
+      expect.arrayContaining(['UniProt-features', 'Antigen', 'ClinVar']),
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
 
@@ -286,7 +286,7 @@ describe('Protein3d Plugin E2E', () => {
       }),
     ])
 
-    // Seventeen tracks are still fetching and drawing when the last one
+    // The other tracks are still fetching and drawing when the last one
     // opens, and whatever they say belongs to this leg.
     await requests.idle(2000, 120_000)
     expect(pageComplaintsSince()).toEqual([])
@@ -750,7 +750,11 @@ describe('Protein3d Plugin E2E', () => {
     const prefix = `${viewId}-P04637-`
     expect(trackIds.filter(id => !id.startsWith(prefix))).toEqual([])
     expect(trackIds.map(id => id.slice(prefix.length))).toEqual(
-      expect.arrayContaining(['Chain', 'ClinVar', 'AlphaFold-confidence']),
+      expect.arrayContaining([
+        'UniProt-features',
+        'ClinVar',
+        'AlphaFold-confidence',
+      ]),
     )
     expect(new Set(trackIds).size).toBe(trackIds.length)
 

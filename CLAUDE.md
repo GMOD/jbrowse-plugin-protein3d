@@ -226,6 +226,9 @@ keep:
 
 - The track selector lists `session.tracks` only, so a closed 1D track cannot be
   reopened. The launch therefore opens every track.
+- The UniProt feature types are sections of one track, not a track each. A page
+  gets 16 WebGL2 contexts, one per GPU track, and TP53's nineteen tracks wedged
+  the page blank on WebGL2.
 - Every launch fetches the feature types and opens its own tracks, under ids
   prefixed with the view's id: a session tree cannot hold one trackId twice.
   Only the temporary assembly is shared, because adding it twice makes the host

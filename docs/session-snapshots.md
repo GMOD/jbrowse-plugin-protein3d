@@ -112,12 +112,13 @@ at all.
 
 ## The 1D annotation view's tracks
 
-A 1D protein-annotation view opens with every track it has: one per UniProt
-feature type, antigen, AlphaMissense scores, AlphaFold confidence when the entry
-has a model, and ClinVar when the view is linked to a transcript on hg38 or
-hg19. Each track's whole configuration is stored on the track inside the view's
-snapshot, under a trackId prefixed with the view's id, so a saved or shared
-session restores the tracks with the view and closing the view removes them.
+A 1D protein-annotation view opens with every track it has: UniProt features,
+with a section per feature type, antigen, AlphaMissense scores, AlphaFold
+confidence when the entry has a model, and ClinVar when the view is linked to a
+transcript on hg38 or hg19. Each track's whole configuration is stored on the
+track inside the view's snapshot, under a trackId prefixed with the view's id,
+so a saved or shared session restores the tracks with the view and closing the
+view removes them.
 
 The ClinVar track is every missense substitution NCBI's ClinVar VCF classifies
 on the linked transcript, read by range over its coding span and translated on
