@@ -185,6 +185,20 @@ test('a selection made in one alignment panel puts the other structures down', (
   expect(second!.clickedStructureRanges).toEqual([])
 })
 
+test('a click on an alignment gap puts every structure down', () => {
+  const view = makeView()
+  const [first, second] = view.structures
+  first!.setClickedStructureRanges([{ start: 1, end: 2 }])
+  second!.setClickedStructureRanges([{ start: 1, end: 2 }])
+  second!.setSelectedFeatureId('feature-1')
+
+  first!.clickAlignmentPosition(0)
+  for (const structure of view.structures) {
+    expect(structure.clickedStructureRanges).toEqual([])
+    expect(structure.selectedFeatureId).toBeUndefined()
+  }
+})
+
 test('one alignment panel is open: the seeded structure, else the first', () => {
   const plain = ProteinView.create({
     type: 'ProteinView',

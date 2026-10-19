@@ -1665,16 +1665,16 @@ const Structure = types
   .actions(self => ({
     /**
      * #action
+     * A gap puts the whole view's selection down, as Mol*'s background does.
      */
     clickAlignmentPosition(alignmentPos: number) {
       const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
         alignmentCol(alignmentPos),
       )
-      self.setSelectedFeatureId(undefined)
-      if (structureSeqPos !== undefined) {
-        self.selectResidues(structureSeqPos)
+      if (structureSeqPos === undefined) {
+        self.parentView.clearSelection()
       } else {
-        self.setClickedStructureRanges([])
+        self.selectResidues(structureSeqPos)
       }
     },
     /**
