@@ -6,8 +6,8 @@ import useAlphaFoldData from './useAlphaFoldData'
 import useTranscriptIsoformSelection from './useTranscriptIsoformSelection'
 
 import type { UniProtIdLookup } from './useUniProtIdLookup'
+import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { Feature } from '@jbrowse/core/util'
-import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 export default function useAlphaFoldDBSearch({
   feature,
@@ -16,7 +16,7 @@ export default function useAlphaFoldDBSearch({
   preferredTranscriptId,
 }: {
   feature: Feature
-  view: LinearGenomeViewModel
+  view: LaunchingGenomeView
   lookup: UniProtIdLookup
   preferredTranscriptId?: string
 }) {

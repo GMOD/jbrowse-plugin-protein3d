@@ -25,8 +25,8 @@ import TranscriptSelector from './TranscriptSelector'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 
+import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
-import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 
 const useStyles = makeStyles()({
   dialogContent: {
@@ -56,7 +56,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
   feature: Feature
   preferredTranscriptId?: string
   session: AbstractSessionModel
-  view: LinearGenomeViewModel
+  view: LaunchingGenomeView
   handleClose: () => void
 }) {
   const { classes } = useStyles()

@@ -9,6 +9,7 @@ import {
 import AddIcon from '@mui/icons-material/Add'
 
 import { isCodingFeature } from './codingFeature'
+import { isLaunchingGenomeView } from './utils/genomeView'
 import { getGeneDisplayName } from './utils/util'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
@@ -100,11 +101,20 @@ function withCodingFeature(
 }
 
 function openDialog(self: DisplayModel, target: MenuTarget, feature: Feature) {
-  const track = getContainingTrack(self)
-  getSession(self).queueDialog(handleClose => [
+  const session = getSession(self)
+  const view = getContainingView(self)
+  if (!isLaunchingGenomeView(view)) {
+    session.notify(
+      `A protein view launches from a genome view, not a ${view.type}`,
+      'warning',
+    )
+    return
+  }
+  session.queueDialog(handleClose => [
     LaunchProteinViewDialog,
     {
-      model: track,
+      model: getContainingTrack(self),
+      view,
       handleClose,
       feature,
       preferredTranscriptId: target.preferredTranscriptId,
@@ -118,12 +128,6 @@ function launchProteinView(self: DisplayModel, target: MenuTarget) {
   })
 }
 
-function firstAssemblyName(view: object) {
-  const names = 'assemblyNames' in view ? view.assemblyNames : undefined
-  const first: unknown = Array.isArray(names) ? names[0] : undefined
-  return typeof first === 'string' ? first : undefined
-}
-
 const lookingUp = new Set<string>()
 
 // The dialog's defaults without the dialog. Where they name no single
@@ -132,10 +136,12 @@ const lookingUp = new Set<string>()
 function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
   const session = getSession(self)
   const view = getContainingView(self)
-  const assemblyName = firstAssemblyName(view)
   withCodingFeature(self, target, async feature => {
     const name = getGeneDisplayName(feature)
-    if (!assemblyName) {
+    const assemblyName = isLaunchingGenomeView(view)
+      ? view.assemblyNames[0]
+      : undefined
+    if (!assemblyName || !isLaunchingGenomeView(view)) {
       openDialog(self, target, feature)
       return
     }

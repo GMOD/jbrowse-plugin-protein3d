@@ -14,7 +14,7 @@ const { session, launch3DProteinView, answer } = vi.hoisted(() => ({
 vi.mock('@jbrowse/core/util', async importActual => ({
   ...(await importActual<typeof CoreUtil>()),
   getSession: () => session,
-  getContainingView: () => ({ assemblyNames: ['hg38'] }),
+  getContainingView: () => ({ id: 'genome', assemblyNames: ['hg38'] }),
   getContainingTrack: () => ({}),
 }))
 

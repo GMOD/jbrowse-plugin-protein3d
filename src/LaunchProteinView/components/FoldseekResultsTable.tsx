@@ -17,8 +17,8 @@ import { makeStyles } from 'tss-react/mui'
 import FoldseekActionMenu from './FoldseekActionMenu'
 
 import type { FlattenedHit } from './FoldseekActionMenu'
+import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
-import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 import type { FoldseekResult } from 'p2s_mapper'
 
 const useStyles = makeStyles()(theme => ({
@@ -68,7 +68,7 @@ export default function FoldseekResultsTable({
 }: {
   results: FoldseekResult
   session: AbstractSessionModel
-  view: LinearGenomeViewModel
+  view: LaunchingGenomeView
   feature: Feature
   selectedTranscript?: Feature
   userProvidedTranscriptSequence?: string
