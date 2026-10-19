@@ -26,7 +26,7 @@ jobs:
       - name: Typecheck the e2e harness
         run: pnpm typecheck:test
       - name: Format check
-        run: pnpm prettier --check .
+        run: pnpm format:check
       - name: Unit tests
         run: pnpm vitest run --exclude '**/plugin.test.ts'
 
