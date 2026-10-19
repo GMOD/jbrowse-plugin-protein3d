@@ -8,7 +8,7 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { Color } from 'molstar/lib/mol-util/color'
 import { expect, test } from 'vitest'
 
-import { applyColorTheme, colorSchemeLegend } from './applyColorTheme'
+import { applyColorTheme, colorLegendOf } from './applyColorTheme'
 import { rgbScaleOf } from './colorScale'
 import { registerColorThemes } from './colorThemes'
 import { NO_VALUE_COLOR, registerPlacedValues } from './placedValueRegistry'
@@ -135,7 +135,7 @@ test('reaches every model of an ensemble, and recolors when values change', asyn
     const apply = (score: number) =>
       applyColorTheme({
         plugin,
-        colorScheme: 'alphamissense',
+        color: { field: 'alphaMissense' },
         structures: structures.map(molstarStructure => ({
           molstarStructure,
           entityId: '1',
@@ -175,15 +175,15 @@ test('the legends are the scales the themes paint with', async () => {
       throw new Error('no structure loaded')
     }
     expect(
-      colorSchemeLegend({ plugin, colorScheme: 'alphamissense', structure }),
+      colorLegendOf({ plugin, color: { field: 'alphaMissense' }, structure }),
     ).toMatchObject({
       kind: 'scale-legend',
       minLabel: 'Likely benign 0',
       maxLabel: 'Likely pathogenic 1',
     })
-    const clinvar = colorSchemeLegend({
+    const clinvar = colorLegendOf({
       plugin,
-      colorScheme: 'clinvar',
+      color: { field: 'clinvarPathogenicCount' },
       structure,
     })
     expect(clinvar).toMatchObject({ kind: 'table-legend' })

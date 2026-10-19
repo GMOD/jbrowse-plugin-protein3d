@@ -273,7 +273,7 @@ The `all-models` preset turns an NMR ensemble into one Mol\* structure per
 model, so a structure of the view holds `molstarStructures`, all of them. Color,
 highlight and selection address every one; superposition TM-aligns the first and
 moves the rest with it; removal goes by the trajectory. Until 2026-09-18 only
-the first was kept: a color scheme reached 1 of 1D3Z's ten models, and
+the first was kept: a coloring reached 1 of 1D3Z's ten models, and
 superposition, reading `hierarchy.current.structures` instead, aligned each
 model separately. The e2e leg `colors every model of an NMR ensemble` guards it.
 It failed once in about 35 runs, with 1 of 10 recolored, and never under CPU

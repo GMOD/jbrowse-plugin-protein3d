@@ -62,7 +62,7 @@ interface SessionView {
   }
   structures?: ProteinViewStructure[]
   superposedCount?: number
-  setColorScheme?: (scheme: string) => void
+  setColor?: (color: { field?: string }) => void
   menuItems?: () => { label?: string; onClick?: () => void }[]
   tracks?: {
     configuration?: {

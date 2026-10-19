@@ -20,7 +20,7 @@ working links.
 | `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                           |
 | `connectedView`                  | No       | LinearGenomeView settings (`loc`/`assembly`/`tracks`) to create and connect one        |
 | `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back             |
-| `colorScheme`                    | No       | A scheme from the view's **Color scheme** menu; see [below](#colorscheme)              |
+| `color`                          | No       | A color object such as `{ "field": "alphaMissense" }`; see [below](#color)             |
 | `displayName`                    | No       | View name; defaults to the transcript and structure labels                             |
 | `height`                         | No       | View height in pixels (default: 650)                                                   |
 | `showControls`                   | No       | Show Mol\* controls panel                                                              |
@@ -65,27 +65,64 @@ unless the `url` is in the PDB archive (RCSB or PDBe). For a PDB entry, by
 numbering, and a `uniprotId` beside it changes neither. See
 [residue numbering](residue-numbering.md).
 
-## `colorScheme`
+## `color`
 
-One of the view's **Color scheme** menu entries, applied to every structure:
-`default`, `plddt-confidence`, `chain-id`, `secondary-structure`,
-`hydrophobicity` (Kyte-Doolittle), `residue-name`, `uncertainty`,
-`molecule-type`, `mapped-chain`, `alphamissense`, `clinvar` or
-`alignment-domains`. An unknown value falls back to `default`.
+A color object in the grammar jbrowse-components' tracks use, applied to every
+structure. `field` names what colors a residue, the entries of the view's
+**Color by** menu:
 
-`alphamissense` and `clinvar` color by variant effect, one value per residue:
+| `field`                  | Colors by                                        |
+| ------------------------ | ------------------------------------------------ |
+| unset (`{}`)             | Mol\*'s default, by element and chain            |
+| `plddt`                  | AlphaFold's pLDDT confidence                     |
+| `chain`                  | Chain                                            |
+| `secondaryStructure`     | Secondary structure                              |
+| `hydrophobicity`         | Kyte-Doolittle hydropathy                        |
+| `residueName`            | Residue type                                     |
+| `bFactor`                | B-factor, or a model's uncertainty               |
+| `moleculeType`           | Molecule type                                    |
+| `mappedChain`            | The chain the transcript maps to, the rest grey  |
+| `alphaMissense`          | Mean AlphaMissense pathogenicity                 |
+| `clinvarPathogenicCount` | How many substitutions ClinVar calls pathogenic  |
+| `domain`                 | The domains and sites a connected MSA view draws |
 
-- `alphamissense`: the mean AlphaMissense pathogenicity of every substitution at
+`hydrophobicity` and `alphaMissense` are linear scales and
+`clinvarPathogenicCount` a threshold scale, so their color object also takes
+that scale's members, each overriding the plugin's preset: `range`, `domainMin`,
+`domainMax`, `domainMid`, `labels` and `title` for a linear one, and `domain`
+(the cuts), `range`, `labels` and `title` for a threshold one. The 3D view, the
+legend and the alignment's hydrophobicity row all follow them:
+
+```json
+{ "field": "alphaMissense", "range": ["#1a9850", "#ffffbf", "#d73027"] }
+```
+
+Every other field takes Mol\*'s colors, the MSA view's (`domain`) or two fixed
+ones (`mappedChain`), so its color object names the field alone. The launch
+refuses any other member on such a field, and any member a scale does not take,
+with a message naming it.
+
+The `colorScheme` names older sessions and urls wrote still load:
+`plddt-confidence`, `chain-id`, `secondary-structure`, `hydrophobicity`,
+`residue-name`, `uncertainty`, `molecule-type`, `mapped-chain`, `alphamissense`,
+`clinvar` and `alignment-domains` become the fields above in that order, and
+`default` or an unknown name becomes `{}`.
+
+`alphaMissense` and `clinvarPathogenicCount` color by variant effect, one value
+per residue:
+
+- `alphaMissense`: the mean AlphaMissense pathogenicity of every substitution at
   the residue, from AlphaFold DB's `AF-<accession>-F1-aa-substitutions.csv`,
   blue (likely benign, 0) through white (0.5) to red (likely pathogenic, 1).
-- `clinvar`: how many distinct missense substitutions ClinVar calls pathogenic
-  or likely pathogenic at the residue, pale for none to dark red for four or
-  more. The plugin reads NCBI's ClinVar VCF by range over the transcript's
-  coding span (`vcf_GRCh38` or `vcf_GRCh37`, after the connected genome view's
-  assembly) and keeps single-base substitutions whose aggregate `CLNSIG` says
-  `Pathogenic` or `Likely_pathogenic`; a conflicting classification does not
-  count. Each one is translated on the transcript's own codon, so a variant that
-  is synonymous, nonsense or non-coding on this transcript drops out.
+- `clinvarPathogenicCount`: how many distinct missense substitutions ClinVar
+  calls pathogenic or likely pathogenic at the residue, pale for none to dark
+  red for four or more. The plugin reads NCBI's ClinVar VCF by range over the
+  transcript's coding span (`vcf_GRCh38` or `vcf_GRCh37`, after the connected
+  genome view's assembly) and keeps single-base substitutions whose aggregate
+  `CLNSIG` says `Pathogenic` or `Likely_pathogenic`; a conflicting
+  classification does not count. Each one is translated on the transcript's own
+  codon, so a variant that is synonymous, nonsense or non-coding on this
+  transcript drops out.
 
 AlphaMissense numbers a UniProt entry, so its values land the way the UniProt
 feature tracks do: one to one on an AlphaFold model of the entry, through SIFTS
@@ -108,12 +145,12 @@ another build and the structure stays grey with a message saying so.
 
 A residue nothing places stays grey. The structure's header row says why a
 structure is grey, and a failed download says so there too; switching to another
-scheme and back retries it.
+field and back retries it.
 
 The values arrive after the structure is shown and only recolor it: a selection,
 the camera and the ready marker do not wait for them.
 
-`alignment-domains` colors by the domains an MSA view
+`domain` colors by the domains an MSA view
 ([jbrowse-plugin-msaview](https://github.com/GMOD/jbrowse-plugin-msaview)) draws
 on its query row, such as NCBI CDD hits. In grammar-of-graphics terms:
 
@@ -148,7 +185,7 @@ through its alignment to the transcript, the path a genome hover takes:
 - msaview 5.5.0 sends no `kind`, so with it every entry draws on the cartoon.
 
 The alignment panel also lists the alignment's domains as rows, whatever the
-scheme; see
+view colors by; see
 [UniProt feature tracks](uniprot-feature-tracks.md#rows-from-the-alignment).
 
 ## `structures`

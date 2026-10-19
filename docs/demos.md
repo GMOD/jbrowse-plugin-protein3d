@@ -124,13 +124,13 @@ blue. The second colors 1TUP's p53 chains by how many missense substitutions
 ClinVar calls pathogenic at each residue, read from NCBI's ClinVar VCF under
 NM_000546.6 and placed on the crystal through its alignment to the transcript:
 97 of its 219 residues have at least one, R248 five, and the DNA stays grey.
-Both schemes arrived in 1.6.0.
+Both colorings arrived in 1.6.0.
 
-[BRAF by AlphaMissense](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%2C%22colorScheme%22%3A%22alphamissense%22%7D%5D%7D)
+[BRAF by AlphaMissense](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22gene%22%3A%22BRAF%22%2C%22color%22%3A%7B%22field%22%3A%22alphaMissense%22%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","minIdentity":0.99,"minAligned":700,"minColored":766} -->
 
-[TP53 on 1TUP by ClinVar](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22colorScheme%22%3A%22clinvar%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%2C%22hg38-clinvarMain%22%5D%7D%7D%5D%7D)
+[TP53 on 1TUP by ClinVar](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22color%22%3A%7B%22field%22%3A%22clinvarPathogenicCount%22%7D%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%2C%22hg38-clinvarMain%22%5D%7D%7D%5D%7D)
 
 <!-- expect {"chain":"A","minIdentity":0.95,"minColored":219,"minNonZero":90} -->
 
@@ -234,7 +234,7 @@ isoform to the entry before a hover maps anything: the R248 codon lights residue
 2L14 is a solution NMR structure of p53's transactivation domain (residues
 13–61) bound to the coactivator-binding domain of mouse CBP, deposited as twenty
 models. The plugin loads each model as its own Mol\* structure, and color, hover
-and selection reach all twenty; until 2026-09-18 a color scheme reached only the
+and selection reach all twenty; until 2026-09-18 a coloring reached only the
 first. CBP is entity 1, and the plugin maps TP53 to the p53 chain, B. Twenty
 models take noticeably longer to load than one crystal structure.
 

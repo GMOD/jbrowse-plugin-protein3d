@@ -21,7 +21,7 @@ import ProteinFeatureTrack from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString from './SplitString'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
-import { cssScaleOf, keyEntriesOf, rampKeyOf } from '../colorScale'
+import { cssScaleOf, keyEntriesOf } from '../colorScale'
 import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import { RESIDUE_COLORS } from '../residueColors'
@@ -31,8 +31,6 @@ import type { JBrowsePluginProteinStructureModel } from '../model'
 
 const plddtColor = cssScaleOf(RESIDUE_COLORS.plddt)
 const plddtKey = keyEntriesOf(RESIDUE_COLORS.plddt)
-const hydrophobicityColor = cssScaleOf(RESIDUE_COLORS.hydrophobicity)
-const hydrophobicityKey = rampKeyOf(RESIDUE_COLORS.hydrophobicity)
 
 // The alignment is drawn on its own panel rather than the page background, so
 // it needs the theme's paper color explicitly — hardcoding white left the
@@ -339,16 +337,16 @@ const ProteinAlignment = observer(function ProteinAlignment({
           label="hydro"
           title={
             <GradientKey
-              title={RESIDUE_COLORS.hydrophobicity.title}
+              title={model.hydrophobicityScale.title}
               testId="hydrophobicity-legend"
-              {...hydrophobicityKey}
+              {...model.hydrophobicityScale.key}
               color="inherit"
             />
           }
         />,
         <ResidueValueTrack
           cells={hydrophobicityCells}
-          colorFor={hydrophobicityColor}
+          colorFor={model.hydrophobicityScale.paint}
           formatValue={v => `Kyte-Doolittle ${v.toFixed(1)}`}
           model={model}
         />,

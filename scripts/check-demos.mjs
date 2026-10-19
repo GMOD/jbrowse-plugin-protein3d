@@ -19,7 +19,7 @@
 //   noInteriorStop  the translation has no `*` before its end
 //   models          Mol* structures the load made; an NMR ensemble makes one
 //                   per model
-//   minColored      residues the view's variant-effect color scheme placed a
+//   minColored      residues the view's variant-effect color field placed a
 //                   value on, at least
 //   minNonZero      of those, residues whose value is above zero, at least;
 //                   ClinVar places a zero on every residue it has no call for

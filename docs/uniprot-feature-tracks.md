@@ -75,7 +75,7 @@ object does not list paints its `unknown` grey.
 
 When an MSA view connected to the structure's genome view shows domains, a
 section titled **From the alignment** sits above the UniProt tracks, whatever
-the color scheme:
+the view colors by:
 
 - One row per accession of msaview's `connectedDomains`, in the order of its
   color object's `domain`, named by its `labels` and filled from its `range`, as

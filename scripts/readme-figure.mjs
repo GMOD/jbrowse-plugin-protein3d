@@ -34,7 +34,7 @@ const spec = {
       height: 640,
       sideBySide: true,
       zoomToBaseLevel: false,
-      colorScheme: 'mapped-chain',
+      color: { field: 'mappedChain' },
       connectedView: {
         assembly: 'hg38',
         loc: 'chr17:7,673,700-7,674,700',

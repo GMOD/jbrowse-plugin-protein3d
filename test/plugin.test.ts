@@ -510,9 +510,10 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
-  // An NMR entry loads as one Mol* structure per model, and the color scheme
-  // used to reach only the first: on 1D3Z's ten models the other nine kept
-  // their per-model colors, as if the scheme had not applied.
+  // An NMR entry loads as one Mol* structure per model, and the coloring used
+  // to reach only the first: on 1D3Z's ten models the other nine kept their
+  // per-model colors, as if it had not applied. The spec names the coloring by
+  // its old `colorScheme` name, which the launch lifts to `color`.
   it('colors every model of an NMR ensemble', async () => {
     await openSessionSpec(page, {
       views: [
@@ -568,7 +569,7 @@ describe('Protein3d Plugin E2E', () => {
             loc: 'chr7:140,719,327-140,924,929',
             tracks: [TRACK_ID],
           },
-          colorScheme: 'alphamissense',
+          color: { field: 'alphaMissense' },
         },
       ],
     })
@@ -623,7 +624,7 @@ describe('Protein3d Plugin E2E', () => {
 
     await page.evaluate(() => {
       window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
-        .setColorScheme!('clinvar')
+        .setColor!({ field: 'clinvarPathogenicCount' })
     })
     await expect
       .poll(async () => (await placed()).pending, { timeout: 90_000 })

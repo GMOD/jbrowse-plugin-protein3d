@@ -72,12 +72,13 @@ belong there. The theme should instead read from a registry the view owns, keyed
 by model id, as `interactionPosition` already keys hovers by model id. The strip
 row can ship first, since it needs none of that.
 
-That registry exists now. The `alphamissense`, `clinvar` and `alignment-domains`
-schemes (`placedValueRegistry.ts`) register each structure's per-residue values
-against its Mol\* models before a recolor, so a genome-track source needs its
-sampling and a theme provider, not a new mechanism. `clinvar` already walks the
-genome half of the path: it reads NCBI's VCF over the transcript's codons
-(`clinVarSource.ts`) and places each residue's count through the alignment.
+That registry exists now. The `alphaMissense`, `clinvarPathogenicCount` and
+`domain` fields' themes (`placedValueRegistry.ts`) register each structure's
+per-residue values against its Mol\* models before a recolor, so a genome-track
+source needs its sampling and a theme provider, not a new mechanism. ClinVar
+already walks the genome half of the path: it reads NCBI's VCF over the
+transcript's codons (`clinVarSource.ts`) and places each residue's count through
+the alignment.
 
 ### 2. Color the structure by the MSA's conservation
 
@@ -104,8 +105,8 @@ different stat from the per-residue strip.
 Once ideas 1–3 exist, the hardcoded `confidenceCells` / `hydrophobicityCells`
 and the `showAllFeatureTracks` switch generalize into a `residueTracks` field in
 `ProteinViewSpec`: each entry names a source, a stat and a scale, and the view
-draws it in the strip and offers it as a 3D color scheme. Wait until at least
-two real sources exist, so the shape comes from use rather than guesswork. A new
+draws it in the strip and offers it as a 3D color field. Wait until at least two
+real sources exist, so the shape comes from use rather than guesswork. A new
 optional snapshot field is safe on released hosts, but it is a public spec to
 maintain.
 
@@ -132,9 +133,10 @@ time today, so the gain is small against a real design problem.
   main (`docs/live-checks.md`), counting pixels per band; the 2026-09-25 check
   found two configs that tsc, lint and unit tests passed but that showed the
   track as an error.
-- **Scheme values are persisted.** `colorScheme` is an MST enumeration in saved
-  sessions, so rename nothing; map a kept value to a new Mol\* theme, as
-  `'hydrophobicity'` maps to `kyte-doolittle`.
+- **Color field names are persisted.** A session saves the view's `color`
+  object, so rename no field; map it to a new Mol\* theme instead, as
+  `hydrophobicity` maps to `kyte-doolittle`. A session from before `color` saved
+  a `colorScheme` name, which `colorOfScheme` lifts.
 - **Mol\* themes register per plugin.** `registerColorThemes` runs for every
   view's plugin, and a name missing from the registry paints grey silently.
 - **Modified residues need the canonical sequence.** Mol\* codes MSE and TPO as

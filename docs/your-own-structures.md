@@ -93,13 +93,13 @@ In the running view, **Add structure...** does the same by hand.
 ## What carries over from AlphaFold DB, and what does not
 
 **Confidence.** The plugin reads each residue's B-factor as pLDDT, draws it as
-the confidence track, and offers the **pLDDT confidence** color scheme, for any
+the confidence track, and offers **Color by** pLDDT confidence, for any
 structure that does not declare itself experimental. mmCIF declares that in
 `_exptl.method`; PDB-format files carry no such field, so their B-factors always
 count as confidence. Predictors that write pLDDT into the B-factor column on
 AlphaFold's 0–100 scale get a correct track for free. If yours writes 0–1, or
 the file holds real B-factors from refinement, the track and the colors will
-mislead — rescale the column or leave that color scheme alone.
+mislead — rescale the column or leave that coloring alone.
 
 **UniProt feature tracks.** Domains, sites and variants need a UniProt
 accession, which the file name of your model does not carry. Add `uniprotId`
