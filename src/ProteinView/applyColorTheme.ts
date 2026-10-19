@@ -1,8 +1,10 @@
+import { EMPTY_DOMAIN_COLOR } from './alignmentDomains'
+import { SITES_TAG } from './alignmentSites'
 import loadMolstar from './loadMolstar'
 import { structureRootCell } from './structureCells'
 import { VARIANT_EFFECT_SCHEMES } from './variantEffects'
 
-import type { DomainStyle } from './alignmentDomains'
+import type { DomainColor } from './alignmentDomains'
 import type { PlacedValues } from './variantEffects'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -50,7 +52,7 @@ export function molstarThemeName(colorScheme: ProteinColorScheme) {
 }
 
 /**
- * The schemes that colour by values placed on each structure's residues, which
+ * The schemes that color by values placed on each structure's residues, which
  * their themes read from a registry (see placedValueRegistry)
  */
 export const PLACED_VALUE_SCHEMES = [
@@ -70,18 +72,22 @@ function themeParams(
   colorScheme: ProteinColorScheme,
   {
     entityId,
-    domains,
+    domainColor,
     revision,
   }: {
     entityId?: string
-    domains?: readonly DomainStyle[]
+    domainColor?: DomainColor
     revision?: number
   },
 ) {
   return colorScheme === 'mapped-chain'
     ? { entityId: entityId ?? '' }
     : colorScheme === 'alignment-domains'
-      ? { revision, domains: domains ?? [] }
+      ? {
+          revision,
+          color: domainColor ?? EMPTY_DOMAIN_COLOR,
+          layer: 'domain',
+        }
       : isPlacedValueScheme(colorScheme)
         ? { revision }
         : undefined
@@ -94,7 +100,8 @@ let revision = 0
  * The representations are found in the live state tree rather than through
  * `updateRepresentationsTheme`, whose components come from the hierarchy
  * snapshot (see structureRootCell). The non-ghost ones are what that call
- * reached: each component's, the focus representation's included.
+ * reached: each component's, the focus representation's included. The
+ * alignment sites' sticks keep their own theme (see alignmentSites).
  *
  * A placed-value scheme's values reach its theme through the registry its
  * theme reads (see placedValueRegistry), registered for each structure before
@@ -111,7 +118,7 @@ export async function applyColorTheme({
     molstarStructure: Structure
     entityId?: string
     placedValues?: PlacedValues
-    domains?: readonly DomainStyle[]
+    domainColor?: DomainColor
   }[]
 }) {
   const molstar = await loadMolstar()
@@ -133,7 +140,7 @@ export async function applyColorTheme({
     molstarStructure,
     entityId,
     placedValues,
-    domains,
+    domainColor,
   } of structures) {
     if (placed) {
       registerPlacedValues(colorScheme, molstarStructure, placedValues)
@@ -147,9 +154,16 @@ export async function applyColorTheme({
           ),
         )
       : []
-    const params = themeParams(colorScheme, { entityId, domains, revision })
+    const params = themeParams(colorScheme, {
+      entityId,
+      domainColor,
+      revision,
+    })
     for (const representation of representations) {
-      if (!representation.state.isGhost) {
+      if (
+        !representation.state.isGhost &&
+        !representation.transform.tags?.includes(SITES_TAG)
+      ) {
         update.to(representation).update(prev => {
           prev.colorTheme = createStructureColorThemeParams(
             plugin,
@@ -178,19 +192,19 @@ export function colorSchemeLegend({
   colorScheme,
   structure,
   entityId,
-  domains,
+  domainColor,
 }: {
   plugin: PluginContext
   colorScheme: ProteinColorScheme
   structure: Structure
   entityId?: string
-  domains?: readonly DomainStyle[]
+  domainColor?: DomainColor
 }): Legend | undefined {
   return colorScheme === 'default'
     ? undefined
     : plugin.representation.structure.themes.colorThemeRegistry.create(
         molstarThemeName(colorScheme),
         { structure },
-        themeParams(colorScheme, { entityId, domains }) ?? {},
+        themeParams(colorScheme, { entityId, domainColor }) ?? {},
       ).legend
 }

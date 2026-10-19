@@ -67,7 +67,7 @@ row can ship first, since it needs none of that.
 
 That registry exists now. The `alphamissense`, `clinvar` and `alignment-domains`
 schemes (`placedValueRegistry.ts`) register each structure's per-residue values
-against its Mol\* models before a recolour, so a genome-track source needs its
+against its Mol\* models before a recolor, so a genome-track source needs its
 sampling and a theme provider, not a new mechanism. `clinvar` already walks the
 genome half of the path: it reads NCBI's VCF over the transcript's codons
 (`clinVarSource.ts`) and places each residue's count through the alignment.

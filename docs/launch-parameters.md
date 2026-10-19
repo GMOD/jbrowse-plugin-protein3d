@@ -110,26 +110,41 @@ A residue nothing places stays grey. The structure's header row says why a
 structure is grey, and a failed download says so there too; switching to another
 scheme and back retries it.
 
-The values arrive after the structure is shown and only recolour it: a
-selection, the camera and the ready marker do not wait for them.
+The values arrive after the structure is shown and only recolor it: a selection,
+the camera and the ready marker do not wait for them.
 
-`alignment-domains` colours by the domains an MSA view
+`alignment-domains` colors by the domains an MSA view
 ([jbrowse-plugin-msaview](https://github.com/GMOD/jbrowse-plugin-msaview)) draws
-on its query row, such as NCBI CDD hits, each in the color the alignment fills
-it with:
+on its query row, such as NCBI CDD hits. In grammar-of-graphics terms:
 
-- The MSA view pairs with the structure by sharing its `connectedViewId`, and
-  the plugin reads each domain's genome regions, not its alignment columns.
-- The plugin maps each region to the transcript's residues, then to the
-  structure through its alignment to the transcript, the path a genome hover
-  takes.
-- A residue inside nested domains takes the innermost, such as a binding site
-  inside its domain. Residues outside every domain, and chains other than the
-  mapped one, stay grey.
-- Toggling a domain or hiding the overlay in the MSA view recolours the
-  structure.
+- **Data**: msaview's `connectedDomains`, one feature per accession with its
+  genome regions and a `kind`, `domain` or `site`. The MSA view pairs with the
+  structure by sharing its `connectedViewId`.
+- **Layers**, filtered on `kind`: domains draw with the cartoon mark, and sites
+  draw with the sticks mark on their residues' side chains, over the cartoon. A
+  site such as HBB's heme pocket then shows as side chains reaching into the
+  heme, and never hides the domain it sits in.
+- **Color channel**: both layers read msaview's one color object, a categorical
+  scale from each accession (`domain`) to the color the alignment fills it with
+  (`range`).
+- **Draw order**: within a layer the smaller entry draws on top, so a residue
+  two sites share shows the smaller site.
+- **Guide**: the header legend shows the color object's `labels` in two groups,
+  domains as cartoon and sites as side chains.
+
+The plugin maps each region to the transcript's residues, then to the structure
+through its alignment to the transcript, the path a genome hover takes:
+
+- Residues outside every domain, and chains other than the mapped one, stay
+  grey.
+- Toggling a domain or hiding the overlay in the MSA view redraws both layers.
 - With no MSA view on the genome view, or none showing domains, the structure
   stays grey and its header row says which.
+- msaview 5.5.0 sends no `kind`, so with it every entry draws on the cartoon.
+
+The alignment panel also lists the alignment's domains as rows, whatever the
+scheme; see
+[UniProt feature tracks](uniprot-feature-tracks.md#rows-from-the-alignment).
 
 ## `structures`
 
