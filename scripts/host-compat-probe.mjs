@@ -1,30 +1,20 @@
 #!/usr/bin/env node
 //
-// Probes one plugin bundle against many hosted JBrowse builds and reports, per
-// host version, whether the session boots, the plugin registered, a declarative ProteinView launch reaches its settled state,
-// and right-clicking a gene still opens a feature context menu carrying both
-// the plugin's row and the host's own, with nothing unexpected on its console.
-//
-// jbrowse.org/code/jb2/<vX.Y.Z>/ hosts every release, so the matrix needs no
-// `jbrowse create` per version.
-//
-// With --bundle it serves a LOCAL build in place of the published one by request
-// interception, which turns this from a report on production into a pre-publish
-// gate. That distinction is the whole point: the store uploads `latest/` with
-// no-cache, so a publish is a live change to configs shipped months ago, and
-// "does this build error-page the app" has to be answerable before the tag, not
-// after. The failure modes are a runtime throw while the bundle evaluates -- an
-// import the host does not re-export, or a barrel export that disappeared --
-// and a throw while the plugin contributes to the host's UI, which costs the
-// user the whole feature menu. No amount of type checking or linting in this
-// repo can rule either out.
+// Boots one plugin bundle on hosted JBrowse builds (jbrowse.org/code/jb2/<v>/)
+// and reports, per host, whether the session boots, the plugin registers, a
+// declarative ProteinView launch settles, right-clicking a gene keeps the
+// host's menu rows beside ours, and the console stays clean. With --bundle it
+// serves a local build in place of the published one, which makes it a
+// pre-publish gate: a throw while the bundle evaluates error-pages every config
+// naming the plugin, and neither tsc nor eslint can see one.
 //
 // Usage:
 //   node scripts/host-compat-probe.mjs                       # published bundle
 //   node scripts/host-compat-probe.mjs --bundle dist/x.js     # candidate build
 //   node scripts/host-compat-probe.mjs --versions main
 //
-// Exits non-zero when any probed host fails.
+// `latest` names the newest v5 release on npm. Exits non-zero when any probed
+// host fails.
 //
 import fs from 'node:fs'
 import path from 'node:path'
@@ -34,22 +24,19 @@ import puppeteer from 'puppeteer'
 
 import { collectPageComplaints } from './browserConsole.mjs'
 
-// The ESM build needs JBrowse 5, and `main` is the only hosted 5.x build until
-// 5.0.0 is released. v4 hosts load the frozen 0.15.3 UMD from pinned urls.
-const DEFAULT_VERSIONS = ['main']
+const OLDEST_SUPPORTED = 'v5.0.0-beta.12'
+const DEFAULT_VERSIONS = [OLDEST_SUPPORTED, 'latest', 'main']
 
-// A config hosted on the same origin as the app builds. Its plugin entry still
-// names the frozen UMD, so the probe answers this request with the same config
-// naming the ESM entry at its version-agnostic store path.
+// Every host loads the store's `latest/` build, which --bundle replaces, rather
+// than the release the store's range would pick for it
 const CONFIG =
   'https://jbrowse.org/code/jb2/main/test_data/protein3d_config.json'
 const PUBLISHED_ESM =
   'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/latest/dist/jbrowse-plugin-protein3d.esm.js'
 
-// The AlphaFold model matches the transcript exactly and aligns in place. 1YCR
-// does not, so its alignment runs in the host's RPC worker, which is the only
-// thing here that proves the worker loaded this bundle and dispatches its
-// method: p53 is the 13-residue peptide, entity 2, beside MDM2.
+// 1YCR does not match the transcript exactly, so its alignment runs in the
+// host's RPC worker, proving the worker loaded this bundle: p53 is the
+// 13-residue peptide, entity 2, beside MDM2
 const LAUNCH_SPEC = {
   views: [
     {
@@ -70,21 +57,58 @@ const { values } = parseArgs({
     versions: { type: 'string' },
     json: { type: 'string' },
     timeout: { type: 'string', default: '90000' },
-    // Path to a local ESM entry to serve, with its dist/, in place of the
-    // published one.
     bundle: { type: 'string' },
-    // Re-probes a host that did not settle. The launch fetches real structures
-    // from the network, so a single miss is more often a blip than a break, and
-    // a release gate that fails on blips gets bypassed. A genuine
-    // incompatibility fails every attempt.
+    // the launch fetches real structures, so one miss is more often a network
+    // blip than a break; a genuine incompatibility fails every attempt
     retries: { type: 'string', default: '1' },
   },
 })
-const versions = values.versions?.split(',') ?? DEFAULT_VERSIONS
 const timeout = Number(values.timeout)
 if (values.bundle && !fs.existsSync(values.bundle)) {
   throw new Error(`no bundle at ${values.bundle}`)
 }
+
+async function newestV5Release() {
+  const response = await fetch(
+    'https://registry.npmjs.org/-/package/@jbrowse/core/dist-tags',
+  )
+  if (!response.ok) {
+    throw new Error(`npm dist-tags: HTTP ${response.status}`)
+  }
+  const tags = await response.json()
+  const release = [tags.latest, tags.next].find(v => /^[5-9]\./.test(v ?? ''))
+  if (!release) {
+    throw new Error(`no v5 release among ${JSON.stringify(tags)}`)
+  }
+  return `v${release}`
+}
+
+async function isHosted(version) {
+  const response = await fetch(`https://jbrowse.org/code/jb2/${version}/`, {
+    method: 'HEAD',
+  })
+  return response.ok
+}
+
+async function resolveVersions(requested) {
+  const resolved = []
+  for (const name of requested) {
+    const version = name === 'latest' ? await newestV5Release() : name
+    if (resolved.includes(version)) {
+      continue
+    }
+    if (name === 'latest' && !(await isHosted(version))) {
+      console.log(`latest is ${version}, which jbrowse.org does not host yet`)
+      continue
+    }
+    resolved.push(version)
+  }
+  return resolved
+}
+
+const versions = await resolveVersions(
+  values.versions?.split(',') ?? DEFAULT_VERSIONS,
+)
 
 const configResponse = await fetch(CONFIG)
 if (!configResponse.ok) {
@@ -101,32 +125,11 @@ function url(version, withSpec) {
   return `https://jbrowse.org/code/jb2/${version}/?config=${encodeURIComponent(CONFIG)}${spec}`
 }
 
-// Serving a candidate build means answering requests under the store path from
-// the local dist instead.
-//
-// Resolving by PATH under dist/ rather than matching the package name is
-// load-bearing: the build code-splits Mol* into a content-hashed chunk under
-// dist/chunks/ that the entry fetches relative to its own url. A matcher that
-// answered every `jbrowse-plugin-protein3d/**.js` with the entry handed that
-// chunk request the wrong module, and the run failed with "DefaultPluginUISpec
-// is not a function" on every host -- a probe artifact indistinguishable from a
-// real incompatibility. A gate that cries wolf gets ignored, so it has to serve
-// the whole directory, not one file.
-//
-// SCOPED to the config and the plugin's own assets through CDP `Fetch.enable`
-// patterns, rather than puppeteer's `page.setRequestInterception(true)`, which
-// routes EVERY request through node. That routing is not free: with it on,
-// v4.3.0, latest and main booted the config and then sat on "Select a view to
-// launch" with `session.views` empty and not one console message, while the
-// same url in a plain browser opened both views. Passthrough interception --
-// serving nothing local, `continue()` on everything -- reproduced it, so the
-// bundle was never the variable. Measured 2026-08-17.
-//
-// The cost was not a red run, which is what makes it worth this comment: no
-// views meant `specApplied` was false, `viewReady` was excused, and the probe
-// printed `ok` for the three hosts anyone cares about while asserting nothing
-// beyond "the bundle evaluated". `failure()` now treats an unapplied spec as a
-// failure, so this can never quietly degrade to a smoke test again.
+// Serves the whole local dist/ by path, because the entry fetches its Mol*
+// chunk from dist/chunks/ and answering that with the entry fails every host.
+// Scoped through CDP `Fetch.enable` patterns: puppeteer's
+// `setRequestInterception(true)` routes every request through node, and with
+// it on the hosts booted but launched no view (measured 2026-08-17).
 async function interceptConfigAndBundle(page) {
   const dir = values.bundle ? path.dirname(values.bundle) : undefined
   const client = await page.createCDPSession()
@@ -167,8 +170,6 @@ async function interceptConfigAndBundle(page) {
     }
     const rel = pathname.split('/dist/').slice(1).join('/dist/')
     const local = path.join(dir ?? '', rel)
-    // the published entry name and the local one can differ (a watch build
-    // writes out.js), so the entry request maps to --bundle; the rest by path
     const file =
       !dir || !rel.endsWith('.js')
         ? undefined
@@ -178,7 +179,6 @@ async function interceptConfigAndBundle(page) {
     if (file === undefined) {
       client.send('Fetch.continueRequest', { requestId }).catch(() => {})
     } else if (!fs.existsSync(file)) {
-      // answering a missing chunk with the entry reads as an incompatibility
       client
         .send('Fetch.failRequest', { requestId, errorReason: 'Failed' })
         .catch(() => {})
@@ -196,21 +196,10 @@ async function interceptConfigAndBundle(page) {
   return served
 }
 
-// Right-click a gene in the connected view and read the menu back. This is the
-// half the probe was missing: booting the bundle only proves it evaluates, and the
-// declarative launch above enters through `LaunchView-ProteinView`, so neither
-// touches the context menu the plugin actually contributes to. Both outages
-// this file's header names -- the deep @mui import, the vanished core export --
-// happened at evaluation and so were catchable without it. The one on
-// 2026-08-17 was not: the bundle evaluated, the plugin registered, the launch
-// settled, and right-clicking a feature produced NO menu at all, because the
-// plugin called the display's super view detached and the host's own
-// `this.isGeneLike` threw inside the ErrorBoundary the menu builds in.
-//
-// The click point comes from the host: hover until the display reports
-// `featureIdUnderMouse`, which is the same hit test the right-click runs. Do not
-// reintroduce a fixed offset -- a 10px-tall glyph moving two pixels then reads
-// as a broken menu.
+// Neither the boot nor the declarative launch touches the context menu, and on
+// 2026-08-17 a plugin that evaluated and launched fine still emptied it. The
+// click point is where the display reports `featureIdUnderMouse`, the same hit
+// test the right-click runs; a fixed offset misses a 10px glyph.
 async function probeContextMenu(page) {
   const container = await page.$('[data-testid^="trackRenderingContainer-"]')
   if (!container) {
@@ -263,9 +252,6 @@ async function probeContextMenu(page) {
   return {
     reached: true,
     labels,
-    // Ours, and the host's own. A plugin that throws while contributing takes
-    // the whole menu down with it, so asserting only on our row would call that
-    // outage a missing feature.
     ours: labels.some(l => l.includes('Launch protein view')),
     hostRows: hasHostRow(labels),
   }
@@ -274,10 +260,7 @@ async function probeContextMenu(page) {
 async function probeOne(browser, version) {
   const page = await browser.newPage()
   const served = await interceptConfigAndBundle(page)
-  // Warnings too, and filtered through the same rules the e2e uses. The e2e
-  // covers one `jbrowse create` install; these are the hosted releases a
-  // publish actually reaches. `consoleErrors` keeps the noise as well, printed
-  // only beside a failure.
+  // `consoleErrors` keeps the excused noise too, printed only beside a failure
   const consoleErrors = []
   const complaints = collectPageComplaints(page, line => {
     consoleErrors.push(line)
@@ -290,8 +273,8 @@ async function probeOne(browser, version) {
       timeout: 60_000,
     })
 
-    // Readiness is the session global or the error page. Do NOT wait on markup: the loading spinner is an svg, so an element-presence wait returns
-    // before plugins have loaded and reads every host as broken.
+    // the loading spinner is markup too, so wait on the session global or the
+    // error page rather than an element
     result.settled = await page
       .waitForFunction(
         () =>
@@ -315,9 +298,6 @@ async function probeOne(browser, version) {
       ),
     )
 
-    // Settled state of the launched view. The plugin flips this test-id only
-    // once the structure has loaded and no pairwise alignment is pending, so it
-    // is a real completion signal rather than a duration guess.
     result.viewReady = await page
       .waitForSelector('[data-testid="protein-view-ready"]', { timeout })
       .then(() => true)
@@ -368,24 +348,13 @@ console.log(
 
 const retries = Number(values.retries)
 
-// A host that produced no view asserted nothing about the plugin, so this is a
-// failed probe rather than a passing one. It used to be excused -- the theory
-// was that newer hosts ignore the session spec -- and that excuse covered
-// v4.3.0, latest and main for as long as the probe intercepted every request
-// (see interceptConfigAndBundle). The three hosts that matter most reported `ok`
-// while testing nothing. An excuse a check applies to itself is indistinguishable
-// from a pass, so there isn't one any more.
+// A host that launched no view asserted nothing, so it fails: excusing it once
+// let every host print `ok` while testing only that the bundle evaluated
 function specApplied(r) {
   return (r.sessionViews?.length ?? 0) > 0
 }
 
-// What must hold for a build to be safe to publish, in blast-radius order. The
-// first is the one that has actually bitten twice: a throw while the bundle
-// evaluates leaves the plugin unregistered and error-pages every config naming it.
-// The rest are functional, and each covers a failure the one above it does not
-// see -- the context menu most of all, since a plugin that throws while
-// contributing to it takes the host's own rows down with it and never touches
-// the launch path at all.
+// in blast-radius order, the session error page first
 function failure(r) {
   return r.appError
     ? `SESSION FAILED: ${r.appError}`
@@ -413,7 +382,7 @@ function failure(r) {
 async function probeWithRetry(version) {
   let r = await probeOne(browser, version)
   for (let attempt = 0; attempt < retries && failure(r); attempt++) {
-    console.log(`${version.padEnd(10)} ${failure(r)}, retrying`)
+    console.log(`${version.padEnd(16)} ${failure(r)}, retrying`)
     r = await probeOne(browser, version)
   }
   return r
@@ -428,10 +397,10 @@ for (const version of versions) {
   const verdict = bad
     ? bad
     : 'ok (view settled, feature context menu intact, console clean)'
-  console.log(`${version.padEnd(10)} ${verdict}`)
+  console.log(`${version.padEnd(16)} ${verdict}`)
   if (bad && r.consoleErrors.length > 0) {
     for (const e of [...new Set(r.consoleErrors)].slice(0, 4)) {
-      console.log(`           · ${e}`)
+      console.log(`${' '.repeat(17)}· ${e}`)
     }
   }
   if (bad) {

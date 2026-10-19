@@ -10,7 +10,7 @@ store — and nothing here rebuilds them.
 - **Loading.** The bundle externalizes every path the installed `@jbrowse/core`
   ReExports list names. A key the host lacks throws at its first read, naming
   the key, and `PluginLoader` fails the **entire session** — not just this view.
-  Booting on hosted `main` is what catches it.
+  A boot on the hosts catches it.
 - **Working.** A host API the plugin calls but the host lacks throws at use
   time, and the bundle loads fine. Only a boot on the host catches it.
 
@@ -24,8 +24,11 @@ as the page, so the method is there whenever the view is.
 
 `pnpm host-compat` boots the bundle on hosted builds
 (`jbrowse.org/code/jb2/<version>/`, so no `jbrowse create` per version), with a
-declarative connected launch and a right-click on a gene. The hosted test config
-still names the UMD, so the probe serves it with an `esmUrl` entry instead. It
+declarative connected launch and a right-click on a gene. By default it probes
+the oldest supported host (`v5.0.0-beta.12`), the newest v5 release on npm
+(`latest`, skipped until jbrowse.org hosts it) and `main`; `--versions` takes
+any list of those names. The probe serves the hosted test config with an
+`esmUrl` entry naming the store's `latest/` build, which `--bundle` replaces. It
 waits on `[data-testid="protein-view-ready"]` and reports per version whether
 the session survived, the plugin registered, the view settled, the context menu
 kept the host's own rows, and the console stayed clean. The launch opens 1YCR
@@ -36,14 +39,14 @@ the RPC worker as well as the page (measured 2026-09-25 by marking the served
 bundle and reading the mark inside the worker).
 
 ```bash
-pnpm host-compat             # the published bundle on main
-pnpm host-compat:candidate   # dist/ on main
+pnpm host-compat             # the published bundle
+pnpm host-compat:candidate   # dist/
 ```
 
 Both fail when any probed host fails. `host-compat:candidate` runs in
-`preversion`, so a build that breaks the host fails before the tag rather than
-after. Add a release to the probe's `DEFAULT_VERSIONS` once JBrowse 5.0.0 is
-hosted.
+`preversion` and CI, so a build that breaks a host fails before the tag rather
+than after. A change to the oldest supported host changes the probe's
+`OLDEST_SUPPORTED` too.
 
 For what a session does on jbrowse.org, which neither probe sees,
 [live checks](live-checks.md) has the recipe for serving `dist/` to a hosted

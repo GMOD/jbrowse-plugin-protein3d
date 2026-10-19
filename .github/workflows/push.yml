@@ -60,24 +60,11 @@ jobs:
           name: screenshots
           path: test-screenshots/
 
-  # Boots the CANDIDATE build on hosted JBrowse releases. The e2e job above runs
-  # against a `jbrowse create` install, which is the host we develop on; this is
-  # the one that answers "would publishing this error-page a config already in
-  # the wild".
-  #
-  # It has to exist because the blast radius is the whole session, not one track:
-  # PluginLoader runs Promise.all over the plugin list, so a bundle that throws
-  # while evaluating takes the app to its error page for every config naming it.
-  # And the store uploads `latest/` with no-cache, so that reaches configs
-  # shipped months ago the moment a tag lands, with no staging step in between.
-  # Two outages arrived this way -- an @mui/material/SvgIcon deep import the
-  # released hosts re-export with a different shape, and a @jbrowse/core/util
-  # export that vanished from the host's barrel. Neither is visible to tsc,
-  # eslint, or a url reachability check; both are obvious the moment the bundle
-  # is actually booted on the host. The ESM build needs JBrowse 5, so until
-  # 5.0.0 is released the hosted `main` is the only host it gates on.
+  # Boots the candidate build on the oldest supported, newest and main hosted
+  # JBrowse builds: a bundle that throws while evaluating error-pages every
+  # config naming the plugin, and tsc and eslint cannot see it.
   host-compat:
-    name: Host compat (candidate build on hosted main)
+    name: Host compat (candidate build on hosted JBrowse)
     runs-on: ubuntu-latest
     needs: build-and-lint
     steps:
@@ -95,7 +82,7 @@ jobs:
         run: npx puppeteer browsers install chrome
       - name: Build
         run: pnpm build
-      - name: Boot the built bundle on hosted main
+      - name: Boot the built bundle on hosted JBrowse
         run: pnpm host-compat:candidate
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
