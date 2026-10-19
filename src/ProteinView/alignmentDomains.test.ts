@@ -9,7 +9,7 @@ import {
   placeOnTranscript,
   readConnectedDomains,
 } from './alignmentDomains'
-import { literalNaming } from './util'
+import { literalNaming } from '../test_data/naming'
 
 import type { ConnectedDomains } from './alignmentDomains'
 import type { GenomeNaming } from './util'
