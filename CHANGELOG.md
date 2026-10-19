@@ -1,3 +1,14 @@
+## [1.13.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.12.0...v1.13.0) (2026-10-19)
+
+### Other Changes
+
+- Spell color the American way, and a feature-track lane a row ([2142e20](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2142e20c7beb6cfb338b287612cb471dfd3d8530))
+- UniProt feature types and the 1D ClinVar track paint through color objects ([2c9d89f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2c9d89fabdf9046d99b66a3452e803a8cbdb9cb8))
+- One color object per residue field ([2a75b24](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2a75b24725fda1ca139247389fcf3d363b9b06fd))
+- The view's colorScheme enum becomes a color object ([46a7322](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/46a732226ee76c68c79b77692d20b1f03dd31681))
+- Title the 1D categorical keys; the AlphaMissense ramp leaves title off ([7694da3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7694da333da1be6ebf4fcc1e41ce2af2c0250d32))
+- Host compatibility: the oldest host is 5.0.0-beta.12 ([4937f63](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4937f634045fac0ced5458778c3335e58007945f))
+
 ## [1.12.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.11.0...v1.12.0) (2026-10-19)
 
 ### Other Changes
