@@ -5,7 +5,11 @@ import { placeValues } from './variantEffects'
 import type { GenomeNaming } from './util'
 import type { PlacedValues } from './variantEffects'
 
-/** One domain of jbrowse-plugin-msaview's `connectedDomains` */
+/**
+ * One accession of jbrowse-plugin-msaview's `connectedDomains`. A CDD site is
+ * scattered residues, so its regions are many short pieces, often one codon,
+ * and a codon split by an intron is two.
+ */
 export interface ConnectedDomain {
   /** the alignment's legend label */
   name: string
@@ -20,7 +24,7 @@ export interface ConnectedDomain {
 interface MsaViewLike {
   type: string
   connectedViewId?: string
-  /** longest first, so a site nested in its domain comes after it */
+  /** most residues first, so a site nested in its domain comes after it */
   connectedDomains?: readonly ConnectedDomain[]
 }
 

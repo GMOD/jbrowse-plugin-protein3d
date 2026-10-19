@@ -30,7 +30,7 @@ const naming: GenomeNaming = {
   isAssembly: () => true,
 }
 
-// longest first, as msaview lists them
+// most residues first, as msaview lists them
 const domains: ConnectedDomain[] = [
   {
     name: 'Hb beta-like',
@@ -77,6 +77,55 @@ test('a minus-strand transcript takes each residue from the last domain over its
 test('the two spellings of a chromosome meet only through the assembly', () => {
   expect(domainIndexByTranscriptPos(domains, mapping, literalNaming).size).toBe(
     0,
+  )
+})
+
+test('a site of scattered codons marks each one, a codon split by an intron included', () => {
+  // exons of 10 and 11 bases: residue 3 is bases 201, 200 and 109
+  const split = genomeToTranscriptSeqMapping({
+    refName: 'chr11',
+    start: 100,
+    end: 211,
+    strand: -1,
+    subfeatures: [
+      { refName: 'chr11', start: 100, end: 110, strand: -1, type: 'CDS' },
+      { refName: 'chr11', start: 200, end: 211, strand: -1, type: 'CDS' },
+    ],
+  })
+  expect(split.p2gCodon[3]).toEqual([201, 200, 109])
+  const site = (regions: [number, number][]) => ({
+    name: 'site',
+    accession: 'site',
+    color: '#619CFF',
+    regions: regions.map(([start, end]) => ({ refName: '11', start, end })),
+  })
+  expect(
+    domainIndexByTranscriptPos(
+      [
+        site([
+          [100, 110],
+          [200, 211],
+        ]),
+        site([
+          [205, 208],
+          [200, 202],
+          [109, 110],
+          [103, 106],
+        ]),
+      ],
+      split,
+      naming,
+    ),
+  ).toEqual(
+    new Map([
+      [0, 0],
+      [1, 1],
+      [2, 0],
+      [3, 1],
+      [4, 0],
+      [5, 1],
+      [6, 0],
+    ]),
   )
 })
 
