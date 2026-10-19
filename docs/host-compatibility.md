@@ -14,6 +14,10 @@ store — and nothing here rebuilds them.
 - **Working.** A host API the plugin calls but the host lacks throws at use
   time, and the bundle loads fine. Only a boot on the host catches it.
 
+The oldest host is 5.0.0-beta.12. The UniProt features track paints types it
+does not list through the color object's `unknown` member, which beta.12 added;
+beta.11's config schema refuses the whole track.
+
 The alignment runs as a plugin RPC method, `ProteinChooseMappedEntity` and
 `ProteinAlignTranscriptToEntity`. The worker loads this plugin from the same url
 as the page, so the method is there whenever the view is.
