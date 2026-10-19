@@ -185,6 +185,24 @@ describe('readConnectedDomains', () => {
     expect(feature!.kind).toBe('domain')
   })
 
+  test('an accession the range gives no color is left out of the domain', () => {
+    const short = {
+      ...domains,
+      color: { ...domains.color, range: domains.color.range.slice(0, 2) },
+    }
+    const read = readConnectedDomains(short)!
+    expect(read.color.domain).toEqual(['cd08925', 'cd08925:tetramer'])
+    expect(
+      domainRows({
+        domains: read,
+        mapping,
+        naming,
+        transcriptToStructure: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 },
+        structureToAlignment: { 1: 1, 2: 2, 3: 3, 4: 4, 5: 5 },
+      }).map(r => r.color),
+    ).toEqual(['#F8766D', '#7CAE00'])
+  })
+
   test('no features, or no color object, is nothing', () => {
     expect(readConnectedDomains([])).toBeUndefined()
     expect(readConnectedDomains({ ...domains, features: [] })).toBeUndefined()
