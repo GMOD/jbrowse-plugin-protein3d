@@ -7,7 +7,7 @@ import type {
 } from './resolveShortLaunch'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
-export interface TranscriptLinkageSpec {
+interface TranscriptLinkageSpec {
   gene?: string
   transcriptId?: string
   uniprotId?: string
