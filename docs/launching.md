@@ -210,19 +210,25 @@ name, which joins the entry, gene and transcript.
 The same arguments go to the extension point directly:
 
 ```typescript
-pluginManager.evaluateExtensionPoint('LaunchView-ProteinView', {
-  session,
-  uniprotId: 'P04637',
-  transcriptId: 'NM_000546.6',
-  connectedView: {
-    assembly: 'hg38',
-    loc: 'chr17:7,668,421-7,687,550',
-    tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
+await pluginManager.evaluateAsyncExtensionPointStrict(
+  'LaunchView-ProteinView',
+  {
+    session,
+    uniprotId: 'P04637',
+    transcriptId: 'NM_000546.6',
+    connectedView: {
+      assembly: 'hg38',
+      loc: 'chr17:7,668,421-7,687,550',
+      tracks: ['hg38-ncbiRefSeqCurated', 'hg38-clinvarMain'],
+    },
   },
-})
+)
 ```
 
-The launch is async and notifies the session on failure rather than throwing.
+The launch is async and throws on failure, after removing a `connectedView` it
+created. The strict variant passes that error to the caller, as a session spec
+and `jb.addView` do; `evaluateAsyncExtensionPoint` only logs it.
+
 `pnpm test:docs` opens the standalone and connected specs above in a headless
 browser, and the `Daily` workflow runs it, so a dead AlphaFold URL or a broken
 launch path shows up as a failed nightly.
