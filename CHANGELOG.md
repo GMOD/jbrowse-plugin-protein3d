@@ -1,3 +1,11 @@
+## [1.12.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.11.0...v1.12.0) (2026-10-19)
+
+### Other Changes
+
+- Draw alignment sites as side-chain sticks over the domain cartoon ([9481ec3](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9481ec345c46a10e31df24b343acae41ce5d3d01))
+- Overview rows from the alignment above the UniProt tracks ([620fff0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/620fff04408b4b326dfa8566a48895f5ef2fa00c))
+- Atom marks draw a site residue in the site's color ([c335caf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c335caf6461bd32fe1a18d992ca82efd038b08d3))
+
 ## [1.11.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.10.0...v1.11.0) (2026-10-19)
 
 ### Other Changes
