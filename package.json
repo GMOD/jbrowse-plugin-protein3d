@@ -28,7 +28,7 @@
     "format:check": "pnpm prettier --check .",
     "prebuild": "pnpm clean",
     "start": "pnpm fetch-molstar-css && node esbuild.mjs --watch",
-    "build": "tsc && NODE_ENV=production node esbuild.mjs && cp distconfig.json dist/config.json",
+    "build": "tsc && NODE_ENV=production node esbuild.mjs && cp harness/public/config.json dist/config.json",
     "build:bundle": "NODE_ENV=production node esbuild.mjs",
     "check-molstar-css": "node scripts/fetch-molstar-css.mjs --check",
     "lint": "eslint src test --report-unused-disable-directives --max-warnings 0 && pnpm check-molstar-css",
