@@ -3,8 +3,7 @@
 // Opens every demo link in docs/demos.md and checks the mapping it shows against
 // the `<!-- expect {...} -->` comment under the link. With --bundle, serves a
 // local build in place of the published plugin, so a mapping change can be
-// checked before release. Only demos hosted on `main` are checked: a 4.x host
-// loads the frozen 0.15.3 UMD, which nothing here can change.
+// checked before release. Only demos hosted on `main` are checked.
 //
 // Every link needs an expectation. Its fields, each optional, describe the
 // view's first structure:
@@ -84,22 +83,16 @@ if (values.bundle && !fs.existsSync(values.bundle)) {
 const CANDIDATE_ESM_URL =
   'https://jbrowse.org/plugins/jbrowse-plugin-protein3d/candidate/dist/jbrowse-plugin-protein3d.esm.js'
 
-// Every build the store publishes for this plugin becomes the candidate's
-// esmUrl, whatever format the store names today
 function pointStoreAtCandidate(node) {
   if (Array.isArray(node)) {
     node.forEach(pointStoreAtCandidate)
   } else if (node && typeof node === 'object') {
-    for (const key of ['url', 'umdUrl', 'esmUrl']) {
-      if (
-        typeof node[key] === 'string' &&
-        node[key].includes('jbrowse-plugin-protein3d')
-      ) {
-        delete node.url
-        delete node.umdUrl
-        delete node.integrity
-        node.esmUrl = CANDIDATE_ESM_URL
-      }
+    if (
+      typeof node.esmUrl === 'string' &&
+      node.esmUrl.includes('jbrowse-plugin-protein3d')
+    ) {
+      delete node.integrity
+      node.esmUrl = CANDIDATE_ESM_URL
     }
     Object.values(node).forEach(pointStoreAtCandidate)
   }
