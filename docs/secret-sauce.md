@@ -14,20 +14,27 @@ that build on it, ranked, with the reason each is or isn't worth doing yet.
 
 ## What already works this way
 
-**One scale per variable, defined once.** `PLDDT_BANDS` in
-`src/ProteinView/residueTracks.ts` defines AlphaFold's four confidence bands.
-The alignment strip, its legend, and the linear confidence track's color config
-(`wiggleBandColors.ts`) all read it, and the bands match Mol\*'s
-`plddt-confidence` theme. The Kyte-Doolittle palette works the same way: the 3D
-theme (`kyteDoolittleColorTheme.ts`) and the strip call one `hydrophobicityRgb`,
-so a residue is the same color in both. So does AlphaMissense:
-`ALPHAMISSENSE_RANGE` in `variantEffects.ts` colors the 1D protein view's track
-and the 3D `alphamissense` theme.
+**One color object per field, defined once.** `RESIDUE_COLORS` in
+`src/ProteinView/residueColors.ts` holds each per-residue field's color object,
+in jbrowse-components' grammar (a `field`, a `scale` and its members):
+
+- `plddt`, a threshold scale over AlphaFold's four confidence bands, painted by
+  the alignment strip, its legend and the 1D confidence track. Mol\*'s own
+  `plddt-confidence` theme paints the 3D view in the same colors.
+- `hydrophobicity`, a linear Kyte-Doolittle ramp with `domainMid: 0`, painted by
+  the 3D theme (`kyteDoolittleColorTheme.ts`), its legend and the strip.
+- `alphaMissense`, a linear ramp with `domainMid: 0.5`, painted by the 3D theme,
+  its legend and the 1D protein view's track.
+- `clinvarPathogenicCount`, a threshold scale, painted by the 3D theme and its
+  legend.
+
+`colorScale.ts` evaluates each of them. `UNIPROT_FEATURE_COLOR` is the
+categorical object over UniProt's feature types.
 
 **The legend comes from the scale, not beside it.** The header's key is the
-active Mol\* theme's own `legend`, and the strip legends are built from the same
-bands and stops that paint the cells. A new palette therefore can't ship with a
-key that disagrees with it.
+active Mol\* theme's own `legend`, which the theme builds from its color object,
+and the strip legends come from the same objects that paint the cells. A new
+palette therefore can't ship with a key that disagrees with it.
 
 **Every cross-view link goes through the genome.** A structure hover reaches
 msaview as genome highlights, and an MSA hover reaches a structure through

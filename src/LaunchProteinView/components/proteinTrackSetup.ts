@@ -1,18 +1,25 @@
 import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 
-import { thresholdBandColor } from './wiggleBandColors'
-import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
+import { RESIDUE_COLORS } from '../../ProteinView/residueColors'
 import { UNIPROT_FEATURE_COLOR } from '../../ProteinView/uniprotFeatureTypes'
-import {
-  ALPHAMISSENSE_MID,
-  ALPHAMISSENSE_RANGE,
-} from '../../ProteinView/variantEffects'
+
+import type { LinearColor, ThresholdColor } from '../../ProteinView/colorScale'
 
 export interface ProteinTrackConf {
   [key: string]: unknown
   type: string
   trackId: string
   name: string
+}
+
+// A quantitative display's color reads only `score`, and a linear one ramps
+// across the plot's y domain, so it takes the ramp's stops and middle alone
+function wiggleColor(color: LinearColor | ThresholdColor) {
+  if (color.scale === 'threshold') {
+    return { ...color, field: 'score' }
+  }
+  const { scale, range, domainMid, title } = color
+  return { field: 'score', scale, range, domainMid, title }
 }
 
 export async function fetchUniProtFeatureTypes(
@@ -110,7 +117,7 @@ function alphaFoldConfidenceTrackConf({
       {
         type: 'LinearWiggleDisplay',
         displayId: `${idPrefix}-AlphaFold-confidence-LinearWiggleDisplay`,
-        color: thresholdBandColor('score', PLDDT_BANDS),
+        color: wiggleColor(RESIDUE_COLORS.plddt),
       },
     ],
   }
@@ -136,12 +143,7 @@ function alphaMissenseTrackConf(
         type: 'LinearWiggleDisplay',
         displayId: `${idPrefix}-AlphaMissense-scores-LinearWiggleDisplay`,
         defaultRendering: 'density',
-        color: {
-          field: 'score',
-          scale: 'linear',
-          range: [...ALPHAMISSENSE_RANGE],
-          domainMid: ALPHAMISSENSE_MID,
-        },
+        color: wiggleColor(RESIDUE_COLORS.alphaMissense),
       },
     ],
   }

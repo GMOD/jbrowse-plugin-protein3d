@@ -27,6 +27,7 @@ const alphaMissense = {
         scale: 'linear',
         range: ['#2c7bb6', '#ffffff', '#d7191c'],
         domainMid: 0.5,
+        title: 'AlphaMissense pathogenicity',
       },
     },
   ],
@@ -91,7 +92,7 @@ test('prefixed by the accession, the configs are the ones the session used to ho
           color: {
             field: 'score',
             scale: 'threshold',
-            domain: [50.000001, 70.000001, 90.000001],
+            domain: [50, 70, 90],
             range: ['#ff7d45', '#ffdb13', '#65cbf3', '#0053d6'],
             labels: [
               'very low <50',
@@ -99,6 +100,7 @@ test('prefixed by the accession, the configs are the ones the session used to ho
               'confident 70-90',
               'very high >90',
             ],
+            title: 'AlphaFold per-residue confidence (pLDDT)',
           },
         },
       ],

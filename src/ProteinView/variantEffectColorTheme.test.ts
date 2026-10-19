@@ -9,13 +9,14 @@ import { Color } from 'molstar/lib/mol-util/color'
 import { expect, test } from 'vitest'
 
 import { applyColorTheme, colorSchemeLegend } from './applyColorTheme'
+import { rgbScaleOf } from './colorScale'
 import { registerColorThemes } from './colorThemes'
 import { NO_VALUE_COLOR, registerPlacedValues } from './placedValueRegistry'
+import { RESIDUE_COLORS } from './residueColors'
 import {
   AlphaMissenseColorThemeProvider,
   ClinVarColorThemeProvider,
 } from './variantEffectColorTheme'
-import { alphaMissenseRgb, clinVarRgb } from './variantEffects'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 import { parseStructure } from '../test_data/molstarStructure'
@@ -29,6 +30,19 @@ const chains = [
 
 function css([r, g, b]: readonly [number, number, number]) {
   return Color.toStyle(Color.fromRgb(r, g, b))
+}
+
+const alphaMissenseRgb = (score: number) =>
+  rgbScaleOf(RESIDUE_COLORS.alphaMissense)(score)!
+const clinVarRgb = (count: number) =>
+  rgbScaleOf(RESIDUE_COLORS.clinvarPathogenicCount)(count)!
+const alphaMissenseProps = {
+  revision: 0,
+  color: RESIDUE_COLORS.alphaMissense,
+}
+const clinVarProps = {
+  revision: 0,
+  color: RESIDUE_COLORS.clinvarPathogenicCount,
 }
 
 // `${asym}${label_seq_id}` → the color the theme gives that residue
@@ -65,7 +79,7 @@ test("colors the mapped entity's placed residues and greys the rest", async () =
   })
   const theme = AlphaMissenseColorThemeProvider.factory(
     { structure },
-    { revision: 0 },
+    alphaMissenseProps,
   )
   expect(colorByResidue(structure, theme)).toEqual({
     A1: css(alphaMissenseRgb(0)),
@@ -84,21 +98,18 @@ test('each scheme reads its own values, and a model nobody registered is grey', 
     entityId: '1',
     byLabelSeqId: new Map([[2, 3]]),
   })
-  const clinvar = ClinVarColorThemeProvider.factory(
-    { structure },
-    { revision: 0 },
-  )
+  const clinvar = ClinVarColorThemeProvider.factory({ structure }, clinVarProps)
   expect(colorByResidue(structure, clinvar).A2).toBe(css(clinVarRgb(3)))
   const alphamissense = AlphaMissenseColorThemeProvider.factory(
     { structure },
-    { revision: 0 },
+    alphaMissenseProps,
   )
   expect(
     new Set(Object.values(colorByResidue(structure, alphamissense))),
   ).toEqual(new Set([grey]))
   const unregistered = ClinVarColorThemeProvider.factory(
     { structure: other },
-    { revision: 0 },
+    clinVarProps,
   )
   expect(new Set(Object.values(colorByResidue(other, unregistered)))).toEqual(
     new Set([grey]),
@@ -141,7 +152,7 @@ test('reaches every model of an ensemble, and recolors when values change', asyn
     for (const structure of structures) {
       const theme = AlphaMissenseColorThemeProvider.factory(
         { structure },
-        { revision: 0 },
+        alphaMissenseProps,
       )
       expect(colorByResidue(structure, theme).A4).toBe(
         css(alphaMissenseRgb(0.1)),

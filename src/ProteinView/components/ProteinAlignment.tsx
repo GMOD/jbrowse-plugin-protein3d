@@ -21,17 +21,18 @@ import ProteinFeatureTrack from './ProteinFeatureTrack'
 import ResidueValueTrack from './ResidueValueTrack'
 import SplitString from './SplitString'
 import { followHover, offScreenCenterTarget } from '../autoScroll'
+import { cssScaleOf, keyEntriesOf, rampKeyOf } from '../colorScale'
 import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
-import {
-  HYDROPHOBICITY_KEY_SCORES,
-  PLDDT_BANDS,
-  hydrophobicityColor,
-  plddtColor,
-} from '../residueTracks'
+import { RESIDUE_COLORS } from '../residueColors'
 import { errorMessage } from '../util'
 
 import type { JBrowsePluginProteinStructureModel } from '../model'
+
+const plddtColor = cssScaleOf(RESIDUE_COLORS.plddt)
+const plddtKey = keyEntriesOf(RESIDUE_COLORS.plddt)
+const hydrophobicityColor = cssScaleOf(RESIDUE_COLORS.hydrophobicity)
+const hydrophobicityKey = rampKeyOf(RESIDUE_COLORS.hydrophobicity)
 
 // The alignment is drawn on its own panel rather than the page background, so
 // it needs the theme's paper color explicitly — hardcoding white left the
@@ -316,8 +317,8 @@ const ProteinAlignment = observer(function ProteinAlignment({
           label="pLDDT"
           title={
             <ColorKey
-              title="AlphaFold per-residue confidence (pLDDT)"
-              entries={PLDDT_BANDS}
+              title={RESIDUE_COLORS.plddt.title}
+              entries={plddtKey}
               color="inherit"
             />
           }
@@ -338,13 +339,9 @@ const ProteinAlignment = observer(function ProteinAlignment({
           label="hydro"
           title={
             <GradientKey
-              title="Kyte-Doolittle hydrophobicity"
+              title={RESIDUE_COLORS.hydrophobicity.title}
               testId="hydrophobicity-legend"
-              minLabel="hydrophilic"
-              maxLabel="hydrophobic"
-              colors={HYDROPHOBICITY_KEY_SCORES.map(score =>
-                hydrophobicityColor(score),
-              )}
+              {...hydrophobicityKey}
               color="inherit"
             />
           }

@@ -52,7 +52,8 @@ export type ScaledColor = CategoricalColor | ThresholdColor | LinearColor
 
 export type Rgb = readonly [number, number, number]
 
-function rgbOf(css: string): Rgb {
+/** A CSS color as RGB. */
+export function rgbOf(css: string): Rgb {
   const { r, g, b } = colord(css).toRgb()
   return [r, g, b]
 }
