@@ -73,6 +73,14 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
             Foldseek tabs may have a structure.
           </Typography>
         ) : null}
+        {state.modelsUnreachable ? (
+          <Typography>
+            AlphaFold DB&apos;s model list did not answer (
+            {`${state.modelsUnreachable}`}), so Launch opens the canonical model
+            file for {state.uniprotId}, without comparing its sequence to the
+            isoforms.
+          </Typography>
+        ) : null}
 
         <UniProtLookupControls lookup={lookup} />
 
@@ -86,7 +94,7 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
 
         {state.ranking &&
         state.selectedTranscript &&
-        state.structureSequence &&
+        (state.structureSequence || state.modelsUnreachable) &&
         state.uniprotId ? (
           <>
             <div className={classes.selectorsRow}>
