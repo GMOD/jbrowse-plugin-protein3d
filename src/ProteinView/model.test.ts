@@ -82,7 +82,7 @@ test('a removal that fails reports through the error action', async () => {
   logged.mockRestore()
 })
 
-// The view menu used to repeat the header's four toggles, the colour scheme and
+// The view menu used to repeat the header's four toggles, the color scheme and
 // a third copy of "restore hidden tracks", then bury the rest under "Advanced".
 test('the view menu carries actions and the Tune menu carries toggles', () => {
   const view = makeView()

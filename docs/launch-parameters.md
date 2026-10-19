@@ -28,7 +28,7 @@ working links.
 | `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                      |
 | `showProteinTracks`              | No       | Show the feature tracks (default: true) ‡                                              |
 | `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true) ‡                            |
-| `trackHeight`                    | No       | Height in px of one feature-track lane, 2 to 40, overriding `compactTracks` ‡          |
+| `trackHeight`                    | No       | Height in px of one feature-track row, 2 to 40, overriding `compactTracks` ‡           |
 | `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track ‡                       |
 | `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue ‡                                          |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                            |
@@ -73,7 +73,7 @@ One of the view's **Color scheme** menu entries, applied to every structure:
 `molecule-type`, `mapped-chain`, `alphamissense`, `clinvar` or
 `alignment-domains`. An unknown value falls back to `default`.
 
-`alphamissense` and `clinvar` colour by variant effect, one value per residue:
+`alphamissense` and `clinvar` color by variant effect, one value per residue:
 
 - `alphamissense`: the mean AlphaMissense pathogenicity of every substitution at
   the residue, from AlphaFold DB's `AF-<accession>-F1-aa-substitutions.csv`,

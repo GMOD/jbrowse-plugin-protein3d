@@ -140,7 +140,7 @@ test("an AlphaFold model takes the entry's values one to one", async () => {
     entityId: '1',
     seq: 'MKVA',
   })
-  // colour arriving later only recolours, so nothing else waits on it
+  // color arriving later only recolors, so nothing else waits on it
   expect(structure.loading).toBe(false)
   expect(structure.variantEffectsPending).toBe(true)
   await vi.waitFor(() => {

@@ -33,13 +33,13 @@ and Foldseek lookups.
     optional peers. It needs Node and headless-gl, so it suits the gallery's
     left column more than the package itself.
   - **ggplot projection**: Cα trace or backbone ribbon, projected
-    orthographically from a fixed view and depth-sorted, coloured by any mapped
+    orthographically from a fixed view and depth-sorted, colored by any mapped
     column. Vector output that facets and patchworks; the cost is cartoon
     fidelity.
 - **Contact map**: `geom_raster` over a chain's residue distances, with exon
   boundaries, domains or variants along both axes. Shows distant exons that
   touch in the fold.
-- **Gene model coloured by structure**: pLDDT, PDB coverage or mapped chain on
+- **Gene model colored by structure**: pLDDT, PDB coverage or mapped chain on
   the exons.
 - **Variant lollipop** on author-numbered residues of the mapped entry.
 

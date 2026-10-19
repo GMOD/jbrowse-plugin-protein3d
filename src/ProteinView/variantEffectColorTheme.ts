@@ -15,7 +15,7 @@ import type { VariantEffectScheme } from './variantEffects'
 import type { ColorTheme } from 'molstar/lib/mol-theme/color'
 import type { ThemeDataContext } from 'molstar/lib/mol-theme/theme'
 
-// `revision` only changes, so a recolour after the values arrive is not
+// `revision` only changes, so a recolor after the values arrive is not
 // deduplicated by Mol* as an update to identical params
 const VariantEffectColorThemeParams = {
   revision: PD.Numeric(0, {}, { isHidden: true }),

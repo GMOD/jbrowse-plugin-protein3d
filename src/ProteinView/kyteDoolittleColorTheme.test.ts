@@ -56,7 +56,7 @@ function colorByResidue(structure: Structure) {
   return byResidue
 }
 
-test('paints each residue the colour the alignment strip gives its score', () => {
+test('paints each residue the color the alignment strip gives its score', () => {
   expect(colorByResidue(structure)).toEqual({
     ILE: hydrophobicityColor(4.5),
     ARG: hydrophobicityColor(-4.5),

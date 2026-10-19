@@ -113,14 +113,14 @@ its alignment; `initialResidues: 600` would select K601.
 
 <!-- expect {"chain":"B","minIdentity":0.95,"selected":{"auth":599,"transcriptPos":599},"msa":{"minRows":50}} -->
 
-## A structure coloured by variant effect
+## A structure colored by variant effect
 
-Colouring by a variant-effect source shows where the damaging substitutions
-cluster without hovering. The first link opens BRAF's AlphaFold model coloured
-by mean AlphaMissense pathogenicity per residue, on the blue-to-red scale of
+Coloring by a variant-effect source shows where the damaging substitutions
+cluster without hovering. The first link opens BRAF's AlphaFold model colored by
+mean AlphaMissense pathogenicity per residue, on the blue-to-red scale of
 AlphaFold DB and the 1D protein view's track: the kinase domain (residues
 457–717) averages 0.89 and V600 scores 0.95, while the disordered linkers run
-blue. The second colours 1TUP's p53 chains by how many missense substitutions
+blue. The second colors 1TUP's p53 chains by how many missense substitutions
 ClinVar calls pathogenic at each residue, read from NCBI's ClinVar VCF under
 NM_000546.6 and placed on the crystal through its alignment to the transcript:
 97 of its 219 residues have at least one, R248 five, and the DNA stays grey.
@@ -233,10 +233,10 @@ isoform to the entry before a hover maps anything: the R248 codon lights residue
 
 2L14 is a solution NMR structure of p53's transactivation domain (residues
 13–61) bound to the coactivator-binding domain of mouse CBP, deposited as twenty
-models. The plugin loads each model as its own Mol\* structure, and colour,
-hover and selection reach all twenty; until 2026-09-18 a colour scheme reached
-only the first. CBP is entity 1, and the plugin maps TP53 to the p53 chain, B.
-Twenty models take noticeably longer to load than one crystal structure.
+models. The plugin loads each model as its own Mol\* structure, and color, hover
+and selection reach all twenty; until 2026-09-18 a color scheme reached only the
+first. CBP is entity 1, and the plugin maps TP53 to the p53 chain, B. Twenty
+models take noticeably longer to load than one crystal structure.
 
 [TP53 on 2L14](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%222L14%22%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 

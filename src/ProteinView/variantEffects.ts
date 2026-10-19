@@ -39,7 +39,7 @@ export interface PlacedValues {
 
 /**
  * The mean AlphaMissense pathogenicity of every substitution at each residue,
- * the per-residue figure AlphaFold DB colours its models by. The sequence is
+ * the per-residue figure AlphaFold DB colors its models by. The sequence is
  * spelled from each row's reference residue, `X` where no row names one.
  */
 export function meanScoreByPosition(
@@ -100,7 +100,7 @@ function hexRgb(hex: string): Rgb {
 
 /**
  * AlphaMissense's scale as the 1D protein view's track draws it and AlphaFold
- * DB colours it: likely benign blue, ambiguous white at 0.5, likely
+ * DB colors it: likely benign blue, ambiguous white at 0.5, likely
  * pathogenic red.
  */
 export const ALPHAMISSENSE_RANGE = ['#2c7bb6', '#ffffff', '#d7191c'] as const

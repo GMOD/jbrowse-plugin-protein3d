@@ -73,7 +73,7 @@ function scoreColor(score: number) {
   return Color.fromRgb(r, g, b)
 }
 
-// Mol*'s own `hydrophobicity` theme is Wimley-White with the opposite colour
+// Mol*'s own `hydrophobicity` theme is Wimley-White with the opposite color
 // direction, so the 3D view and the alignment strip disagreed under one label.
 function KyteDoolittleColorTheme(
   ctx: ThemeDataContext,

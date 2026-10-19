@@ -18,7 +18,7 @@ import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 const chain = { asym: 'A', entity: '1', residues: ['MET', 'LYS', 'ALA'] }
 
-// every representation in the plugin, as the colour theme it carries
+// every representation in the plugin, as the color theme it carries
 function themes(plugin: PluginContext) {
   return plugin.state.data
     .select(
@@ -108,7 +108,7 @@ test("'default' puts each representation's own default theme back", async () => 
 })
 
 // An NMR ensemble loads as one Mol* structure per model. Recoloring only the
-// first left the other models on the preset's per-model colours, so on a
+// first left the other models on the preset's per-model colors, so on a
 // 20-model entry a chosen scheme looked as if it had not applied.
 test('recolors every model of an ensemble', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
@@ -126,7 +126,7 @@ test('recolors every model of an ensemble', async () => {
 
 // Mol* publishes its structure hierarchy only on some state events and on none
 // while a data transaction is open anywhere in the plugin. Found through it, a
-// structure loaded meanwhile was skipped and kept its old colours.
+// structure loaded meanwhile was skipped and kept its old colors.
 test('recolors a structure the published hierarchy has not caught up with', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     await plugin.dataTransaction(async () => {

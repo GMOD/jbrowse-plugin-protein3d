@@ -510,10 +510,10 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
-  // An NMR entry loads as one Mol* structure per model, and the colour scheme
+  // An NMR entry loads as one Mol* structure per model, and the color scheme
   // used to reach only the first: on 1D3Z's ten models the other nine kept
-  // their per-model colours, as if the scheme had not applied.
-  it('colours every model of an NMR ensemble', async () => {
+  // their per-model colors, as if the scheme had not applied.
+  it('colors every model of an NMR ensemble', async () => {
     await openSessionSpec(page, {
       views: [
         {
@@ -556,7 +556,7 @@ describe('Protein3d Plugin E2E', () => {
   // ClinVar after it on the same model, read from NCBI's VCF under BRAF's
   // minus-strand transcript; its zeros on every uncalled residue would hide a
   // parse that stopped finding pathogenic calls.
-  it('colours an AlphaFold model by AlphaMissense, then by ClinVar', async () => {
+  it('colors an AlphaFold model by AlphaMissense, then by ClinVar', async () => {
     await openSessionSpec(page, {
       views: [
         {

@@ -128,7 +128,7 @@ export const EXAMPLES: Example[] = [
     launch: TP53,
     expect: 'RESOLVED_CHAIN',
     expectSeverity: 'ok',
-    note: "NMR ensemble: p53's transactivation domain (13–61) bound to mouse CBP, entity[0]. The plugin loads all twenty models as separate Mol* structures, and colour, hover and selection reach every one. This harness introspects the first model only.",
+    note: "NMR ensemble: p53's transactivation domain (13–61) bound to mouse CBP, entity[0]. The plugin loads all twenty models as separate Mol* structures, and color, hover and selection reach every one. This harness introspects the first model only.",
   },
   {
     label: '6M0J → ACE2 (contrast)',

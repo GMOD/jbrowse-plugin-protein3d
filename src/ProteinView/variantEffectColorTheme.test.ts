@@ -31,7 +31,7 @@ function css([r, g, b]: readonly [number, number, number]) {
   return Color.toStyle(Color.fromRgb(r, g, b))
 }
 
-// `${asym}${label_seq_id}` → the colour the theme gives that residue
+// `${asym}${label_seq_id}` → the color the theme gives that residue
 function colorByResidue(
   structure: Structure,
   theme: ReturnType<(typeof AlphaMissenseColorThemeProvider)['factory']>,
@@ -54,7 +54,7 @@ function colorByResidue(
 
 const grey = Color.toStyle(NO_VALUE_COLOR)
 
-test("colours the mapped entity's placed residues and greys the rest", async () => {
+test("colors the mapped entity's placed residues and greys the rest", async () => {
   const structure = await parseStructure(chains)
   registerPlacedValues('alphamissense', structure, {
     entityId: '1',
@@ -105,7 +105,7 @@ test('each scheme reads its own values, and a model nobody registered is grey', 
   )
 })
 
-// every representation in the plugin, as the colour theme it carries
+// every representation in the plugin, as the color theme it carries
 function themes(plugin: Parameters<typeof registerColorThemes>[0]) {
   return plugin.state.data
     .select(
@@ -116,7 +116,7 @@ function themes(plugin: Parameters<typeof registerColorThemes>[0]) {
     .map(cell => cell.transform.params?.colorTheme)
 }
 
-test('reaches every model of an ensemble, and recolours when values change', async () => {
+test('reaches every model of an ensemble, and recolors when values change', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     registerColorThemes(plugin)
     const { structures } = await loadCaOnly(plugin, chains, { models: 3 })

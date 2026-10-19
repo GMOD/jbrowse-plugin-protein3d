@@ -172,7 +172,7 @@ function stateModelFactory() {
         compactTracks: true,
         /**
          * #property
-         * px height of one feature-track lane once the tracks' resize handle
+         * px height of one feature-track row once the tracks' resize handle
          * has been dragged; unset, `compactTracks` decides
          */
         trackHeight: types.maybe(types.number),

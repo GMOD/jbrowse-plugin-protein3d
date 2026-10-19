@@ -1,6 +1,6 @@
 # The secret sauce: one encoding, every view
 
-A structure viewer colours residues, a genome browser draws tracks, and a
+A structure viewer colors residues, a genome browser draws tracks, and a
 sequence panel shades letters. This plugin puts all three on one screen, joined
 by the genome coordinate, so it can do what none of them does alone: show one
 variable the same way in every view. Grammar-of-graphics terms fit the idea: a
@@ -16,12 +16,12 @@ that build on it, ranked, with the reason each is or isn't worth doing yet.
 
 **One scale per variable, defined once.** `PLDDT_BANDS` in
 `src/ProteinView/residueTracks.ts` defines AlphaFold's four confidence bands.
-The alignment strip, its legend, and the linear confidence track's colour config
+The alignment strip, its legend, and the linear confidence track's color config
 (`wiggleBandColors.ts`) all read it, and the bands match Mol\*'s
 `plddt-confidence` theme. The Kyte-Doolittle palette works the same way: the 3D
 theme (`kyteDoolittleColorTheme.ts`) and the strip call one `hydrophobicityRgb`,
-so a residue is the same colour in both. So does AlphaMissense:
-`ALPHAMISSENSE_RANGE` in `variantEffects.ts` colours the 1D protein view's track
+so a residue is the same color in both. So does AlphaMissense:
+`ALPHAMISSENSE_RANGE` in `variantEffects.ts` colors the 1D protein view's track
 and the 3D `alphamissense` theme.
 
 **The legend comes from the scale, not beside it.** The header's key is the
@@ -32,13 +32,13 @@ key that disagrees with it.
 **Every cross-view link goes through the genome.** A structure hover reaches
 msaview as genome highlights, and an MSA hover reaches a structure through
 genome → transcript → structure (`connectedHover.ts`). No view addresses another
-by column or residue index, which is why the colour ideas below can reuse the
+by column or residue index, which is why the color ideas below can reuse the
 same path.
 
 Two failures show the principle at work. Before 2026-09-25, the menu's
 "Hydrophobicity (Kyte-Doolittle)" drew Mol\*'s Wimley-White theme, which runs
 green for hydrophobic where the strip runs orange, and the linear pLDDT track
-drew two colours split at 50 where the other views drew four bands. Neither
+drew two colors split at 50 where the other views drew four bands. Neither
 failure threw an error, and a reader had no way to tell which view was right.
 
 ## Ideas, in the order worth doing
@@ -72,7 +72,7 @@ sampling and a theme provider, not a new mechanism. `clinvar` already walks the
 genome half of the path: it reads NCBI's VCF over the transcript's codons
 (`clinVarSource.ts`) and places each residue's count through the alignment.
 
-### 2. Colour the structure by the MSA's conservation
+### 2. Color the structure by the MSA's conservation
 
 msaview's react-msaview already computes per-column conservation
 (`columnCounts`, `propertyConservation`). Mapping a column to its codon is the
@@ -97,7 +97,7 @@ different stat from the per-residue strip.
 Once ideas 1–3 exist, the hardcoded `confidenceCells` / `hydrophobicityCells`
 and the `showAllFeatureTracks` switch generalize into a `residueTracks` field in
 `ProteinViewSpec`: each entry names a source, a stat and a scale, and the view
-draws it in the strip and offers it as a 3D colour scheme. Wait until at least
+draws it in the strip and offers it as a 3D color scheme. Wait until at least
 two real sources exist, so the shape comes from use rather than guesswork. A new
 optional snapshot field is safe on released hosts, but it is a public spec to
 maintain.
@@ -121,10 +121,10 @@ time today, so the gain is small against a real design problem.
 
 ## Constraints every idea inherits
 
-- **Track colour is a display-level `color` scale.** Check a track colour live
-  on main (`docs/live-checks.md`), counting pixels per band; the 2026-09-25
-  check found two configs that tsc, lint and unit tests passed but that showed
-  the track as an error.
+- **Track color is a display-level `color` scale.** Check a track color live on
+  main (`docs/live-checks.md`), counting pixels per band; the 2026-09-25 check
+  found two configs that tsc, lint and unit tests passed but that showed the
+  track as an error.
 - **Scheme values are persisted.** `colorScheme` is an MST enumeration in saved
   sessions, so rename nothing; map a kept value to a new Mol\* theme, as
   `'hydrophobicity'` maps to `kyte-doolittle`.

@@ -90,7 +90,7 @@ test('an isoform transcript places its residues where the entry numbers them, or
   })
 })
 
-test('the track carries its features inline, coloured by category', () => {
+test('the track carries its features inline, colored by category', () => {
   const features = clinVarTrackFeatures({
     placed: [r248q],
     uniprotId: 'P04637',

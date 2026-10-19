@@ -93,13 +93,13 @@ In the running view, **Add structure...** does the same by hand.
 ## What carries over from AlphaFold DB, and what does not
 
 **Confidence.** The plugin reads each residue's B-factor as pLDDT, draws it as
-the confidence track, and offers the **pLDDT confidence** colour scheme, for any
+the confidence track, and offers the **pLDDT confidence** color scheme, for any
 structure that does not declare itself experimental. mmCIF declares that in
 `_exptl.method`; PDB-format files carry no such field, so their B-factors always
 count as confidence. Predictors that write pLDDT into the B-factor column on
 AlphaFold's 0–100 scale get a correct track for free. If yours writes 0–1, or
-the file holds real B-factors from refinement, the track and the colours will
-mislead — rescale the column or leave that colour scheme alone.
+the file holds real B-factors from refinement, the track and the colors will
+mislead — rescale the column or leave that color scheme alone.
 
 **UniProt feature tracks.** Domains, sites and variants need a UniProt
 accession, which the file name of your model does not carry. Add `uniprotId`
@@ -117,7 +117,7 @@ header row overrides it, and a spec can do the same with `mappedEntityId`.
 
 **Several models.** A prediction run usually writes each ranked model to its own
 file; list the ones you want in `structures`. A single file with several `MODEL`
-records opens as an ensemble, every model coloured and highlighted together.
+records opens as an ensemble, every model colored and highlighted together.
 
 **Residue numbers.** The ruler and hover label show the file's own residue
 numbers (`auth_seq_id`). A predictor numbering from 1 over the whole sequence

@@ -37,7 +37,7 @@ export function kyteDoolittleScores(seq: string): (number | undefined)[] {
 
 /**
  * A threshold scale: a value up to and including `upTo` takes that band's
- * colour. The last band's `upTo` is Infinity.
+ * color. The last band's `upTo` is Infinity.
  */
 export interface Band {
   upTo: number

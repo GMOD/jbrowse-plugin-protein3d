@@ -65,11 +65,11 @@ throws, naming the parser, rather than loading an empty view.
 `plugin.managers.structure.hierarchy` — `findStructure`, `current` and the
 component refs `updateRepresentationsTheme` takes — is a snapshot Mol\*
 republishes only on some state events, and on none while a data transaction is
-open anywhere in the plugin. Colour, removal and superposition run the moment a
+open anywhere in the plugin. Color, removal and superposition run the moment a
 load lands, which is exactly when it can lag, so they find a structure's cell
 through `structureRootCell` (the substructure-parent map, updated on every
 object event) and walk the state tree from there. The tests that pin this load a
-structure inside an open `dataTransaction`; through the snapshot, colour and
+structure inside an open `dataTransaction`; through the snapshot, color and
 superposition skipped it and removal left it in place.
 
 ## Molstar: `structurePosition + 1 === label_seq_id` only sometimes
@@ -270,18 +270,17 @@ column-number path.
 ## One load is one Mol\* structure per model
 
 The `all-models` preset turns an NMR ensemble into one Mol\* structure per
-model, so a structure of the view holds `molstarStructures`, all of them.
-Colour, highlight and selection address every one; superposition TM-aligns the
-first and moves the rest with it; removal goes by the trajectory. Until
-2026-09-18 only the first was kept: a colour scheme reached 1 of 1D3Z's ten
-models, and superposition, reading `hierarchy.current.structures` instead,
-aligned each model separately. The e2e leg
-`colours every model of an NMR ensemble` guards it. It failed once in about 35
-runs, with 1 of 10 recoloured, and never under CPU throttling or delayed
-replies. A hierarchy snapshot taken after the first model was built would give
-exactly that, and colour no longer reads the snapshot (see the live-tree
-section), but the failure was never reproduced to prove it. A repeat means the
-cause was something else: treat it as a real race, not noise.
+model, so a structure of the view holds `molstarStructures`, all of them. Color,
+highlight and selection address every one; superposition TM-aligns the first and
+moves the rest with it; removal goes by the trajectory. Until 2026-09-18 only
+the first was kept: a color scheme reached 1 of 1D3Z's ten models, and
+superposition, reading `hierarchy.current.structures` instead, aligned each
+model separately. The e2e leg `colors every model of an NMR ensemble` guards it.
+It failed once in about 35 runs, with 1 of 10 recolored, and never under CPU
+throttling or delayed replies. A hierarchy snapshot taken after the first model
+was built would give exactly that, and color no longer reads the snapshot (see
+the live-tree section), but the failure was never reproduced to prove it. A
+repeat means the cause was something else: treat it as a real race, not noise.
 
 ## Everything on one Mol\* plugin hears everything
 

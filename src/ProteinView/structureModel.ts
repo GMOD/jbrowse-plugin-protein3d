@@ -359,7 +359,7 @@ const Structure = types
     uniProtMappingsError: undefined as unknown,
     /**
      * #volatile
-     * The key of what the view's variant-effect colour scheme asked for this
+     * The key of what the view's variant-effect color scheme asked for this
      * structure, and the values once they arrive
      */
     variantEffects: undefined as VariantEffectState | undefined,
@@ -1204,7 +1204,7 @@ const Structure = types
     /**
      * #getter
      * What this structure can ask the view's variant-effect source for,
-     * undefined while the view colours by none. ClinVar reads the genome on
+     * undefined while the view colors by none. ClinVar reads the genome on
      * the connected view's assembly.
      */
     get variantEffectAsk(): VariantEffectAsk | undefined {
