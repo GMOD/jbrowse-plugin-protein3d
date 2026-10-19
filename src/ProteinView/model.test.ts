@@ -82,6 +82,19 @@ test('a removal that fails reports through the error action', async () => {
   logged.mockRestore()
 })
 
+test('a removal failing after the view unmounts leaves no error banner', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  const view = makeView()
+  mockRemove.mockRejectedValueOnce(new Error('plugin disposed'))
+  view.setMolstarPluginContext(plugin)
+  view.removeStructure(view.structures[0]!)
+  view.setMolstarPluginContext(undefined)
+  await new Promise(resolve => setTimeout(resolve, 0))
+  expect(view.error).toBeUndefined()
+  expect(logged).toHaveBeenCalledWith(new Error('plugin disposed'))
+  logged.mockRestore()
+})
+
 // The view menu used to repeat the header's four toggles, the color menu and
 // a third copy of "restore hidden tracks", then bury the rest under "Advanced".
 test('the view menu carries actions and the Tune menu carries toggles', () => {
