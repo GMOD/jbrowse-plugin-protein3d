@@ -124,6 +124,8 @@ function firstAssemblyName(view: object) {
   return typeof first === 'string' ? first : undefined
 }
 
+const lookingUp = new Set<string>()
+
 // The dialog's defaults without the dialog. Where they name no single
 // structure, a gene two UniProt entries answer to or one AlphaFold has not
 // folded, the dialog opens for the choice only a person can make.
@@ -137,37 +139,50 @@ function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
       openDialog(self, target, feature)
       return
     }
-    session.notify(`Looking up the AlphaFold structure of ${name}`, 'info')
-    const [
-      { describeMissingStructure, resolveGeneLaunch, sessionGeneLaunchHost },
-      { launch3DProteinView },
-    ] = await Promise.all([
-      import('./resolveGeneLaunch'),
-      import('./utils/launchViewUtils'),
-    ])
-    const launch = await resolveGeneLaunch({
-      host: sessionGeneLaunchHost(session, assemblyName),
-      feature,
-      preferredTranscriptId: target.preferredTranscriptId,
-    })
-    const { transcript, userProvidedTranscriptSequence, uniprotId, url } =
-      launch
-    if (url) {
-      await launch3DProteinView({
-        session,
-        view,
-        feature,
-        selectedTranscript: transcript,
-        uniprotId,
-        url,
-        userProvidedTranscriptSequence,
-      })
-    } else {
+    const key = `${feature.id()}:${target.preferredTranscriptId}`
+    if (lookingUp.has(key)) {
       session.notify(
-        describeMissingStructure(name, launch),
-        launch.lookupError === undefined ? 'info' : 'warning',
+        `Still looking up the AlphaFold structure of ${name}`,
+        'info',
       )
-      openDialog(self, target, feature)
+      return
+    }
+    lookingUp.add(key)
+    try {
+      session.notify(`Looking up the AlphaFold structure of ${name}`, 'info')
+      const [
+        { describeMissingStructure, resolveGeneLaunch, sessionGeneLaunchHost },
+        { launch3DProteinView },
+      ] = await Promise.all([
+        import('./resolveGeneLaunch'),
+        import('./utils/launchViewUtils'),
+      ])
+      const launch = await resolveGeneLaunch({
+        host: sessionGeneLaunchHost(session, assemblyName),
+        feature,
+        preferredTranscriptId: target.preferredTranscriptId,
+      })
+      const { transcript, userProvidedTranscriptSequence, uniprotId, url } =
+        launch
+      if (url) {
+        await launch3DProteinView({
+          session,
+          view,
+          feature,
+          selectedTranscript: transcript,
+          uniprotId,
+          url,
+          userProvidedTranscriptSequence,
+        })
+      } else {
+        session.notify(
+          describeMissingStructure(name, launch),
+          launch.lookupError === undefined ? 'info' : 'warning',
+        )
+        openDialog(self, target, feature)
+      }
+    } finally {
+      lookingUp.delete(key)
     }
   })
 }
