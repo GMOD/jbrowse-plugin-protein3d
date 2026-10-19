@@ -1,3 +1,9 @@
+## [1.10.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.9.1...v1.10.0) (2026-10-19)
+
+### Other Changes
+
+- One UniProt features track sectioned by type in the 1D view ([cc9950e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cc9950e2b19aaf2921671477aa5924682cf57456))
+
 ## [1.9.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.9.0...v1.9.1) (2026-10-15)
 
 ### Other Changes
