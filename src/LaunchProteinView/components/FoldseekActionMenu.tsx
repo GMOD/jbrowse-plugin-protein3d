@@ -16,9 +16,9 @@ import {
   launch3DProteinView,
 } from '../utils/launchViewUtils'
 
-import type { FoldseekAlignment } from '../services/foldseekApi'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
+import type { FoldseekAlignment } from 'p2s_mapper'
 
 export interface FlattenedHit extends FoldseekAlignment {
   db: string
