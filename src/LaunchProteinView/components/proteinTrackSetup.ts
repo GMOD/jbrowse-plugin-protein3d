@@ -2,7 +2,7 @@ import { myfetch, uniprotGffUrl } from 'p2s_mapper'
 
 import { thresholdBandColor } from './wiggleBandColors'
 import { PLDDT_BANDS } from '../../ProteinView/residueTracks'
-import { inUniProtOrder } from '../../ProteinView/uniprotFeatureTypes'
+import { UNIPROT_FEATURE_COLOR } from '../../ProteinView/uniprotFeatureTypes'
 import {
   ALPHAMISSENSE_MID,
   ALPHAMISSENSE_RANGE,
@@ -45,7 +45,6 @@ function uniProtFeatureTrackConf({
   idPrefix: string
 }): ProteinTrackConf {
   const trackId = `${idPrefix}-UniProt-features`
-  const domain = inUniProtOrder(featureTypes)
   return {
     type: 'FeatureTrack',
     trackId,
@@ -61,8 +60,9 @@ function uniProtFeatureTrackConf({
       {
         displayId: `${trackId}-LinearBasicDisplay`,
         type: 'LinearBasicDisplay',
-        facet: { field: 'type', domain },
-        height: Math.min(450, 60 + 26 * domain.length),
+        color: UNIPROT_FEATURE_COLOR,
+        facet: { field: 'type', domain: UNIPROT_FEATURE_COLOR.domain },
+        height: Math.min(450, 60 + 26 * featureTypes.length),
       },
     ],
   }

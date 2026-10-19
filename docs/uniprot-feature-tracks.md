@@ -65,6 +65,12 @@ comes from aligning the transcript's translation either way;
 [residue numbering](residue-numbering.md) follows one residue through every
 numbering involved.
 
+Each type paints the color `UNIPROT_FEATURE_COLOR` (`uniprotFeatureTypes.ts`)
+gives it, a categorical color object over `type`. The 1D protein view's UniProt
+features track reads the same object for its `color`, and its `facet.domain` is
+the object's `domain`, so both views order and color a type alike. A type the
+object does not list paints its `unknown` grey.
+
 ## Rows from the alignment
 
 When an MSA view connected to the structure's genome view shows domains, a
