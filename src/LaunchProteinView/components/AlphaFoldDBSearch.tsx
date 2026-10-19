@@ -75,10 +75,9 @@ const AlphaFoldDBSearch = observer(function AlphaFoldDBSearch({
         ) : null}
         {state.modelsUnreachable ? (
           <Typography>
-            AlphaFold DB&apos;s model list did not answer (
-            {`${state.modelsUnreachable}`}), so Launch opens the canonical model
-            file for {state.uniprotId}, without comparing its sequence to the
-            isoforms.
+            AlphaFold DB&apos;s model list did not answer, so Launch opens the
+            canonical model file for {state.uniprotId}, without comparing its
+            sequence to the isoforms.
           </Typography>
         ) : null}
 

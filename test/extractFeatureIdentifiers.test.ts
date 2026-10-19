@@ -60,7 +60,7 @@ describe('useAlphaFoldDBSearch', () => {
     mockUseAlphaFoldData.mockReturnValue({
       isLoading: false,
       isValidating: false,
-      error: undefined,
+      modelsUnreachable: undefined,
       model: undefined,
       noModel: false,
     })
@@ -210,7 +210,7 @@ describe('useAlphaFoldDBSearch', () => {
     mockUseAlphaFoldData.mockReturnValue({
       isLoading: false,
       isValidating: false,
-      error: undefined,
+      modelsUnreachable: undefined,
       // transcript2's translation, stop codon stripped
       model: { accession: 'P1', url: 'u', sequence: 'MKTAYIAKQRQISF' },
       noModel: false,

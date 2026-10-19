@@ -41,10 +41,11 @@ export default function useAlphaFoldData({
         : undefined,
     [uniprotId, data, error, isoformSequences],
   )
+  const modelsUnreachable: unknown = uniprotId ? error : undefined
   return {
     isLoading,
     isValidating,
-    modelsUnreachable: uniprotId ? error : undefined,
+    modelsUnreachable,
     model,
     noModel: !!uniprotId && !isLoading && !error && data?.length === 0,
   }
