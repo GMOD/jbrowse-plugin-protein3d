@@ -1,5 +1,5 @@
 import { getSession } from '@jbrowse/core/util'
-import { getSnapshot, types } from '@jbrowse/mobx-state-tree'
+import { destroy, getSnapshot, types } from '@jbrowse/mobx-state-tree'
 import { observable, reaction } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
 
@@ -999,6 +999,17 @@ test('focusResidues rejects when the structure never settles', async () => {
       { timeout: 10 },
     ),
   ).rejects.toThrow(/did not finish loading/)
+})
+
+test('focusResidues stops waiting as soon as its structure is destroyed', async () => {
+  const parent = twoNumberedStructures()
+  const [a] = parent.structures
+  const pending = a!.focusResidues(
+    { residues: { start: 95, end: 95 } },
+    { timeout: 60_000 },
+  )
+  destroy(parent)
+  expect(await pending).toEqual([])
 })
 
 // a standalone structure never gets a coordinate mapper, and focusResidues
