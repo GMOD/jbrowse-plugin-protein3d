@@ -1,3 +1,10 @@
+## [1.15.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.14.0...v1.15.0) (2026-10-20)
+
+### Other Changes
+
+- The session's highlights label their residues on the structure ([1ad894d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1ad894d0ccb815562ca2f1d59804ad383731a163))
+- A session highlight labels one chain of a homo-oligomer, beside its residue ([f6e044a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f6e044ac4f9f3fcc5058894b7ce70c8f9778d544))
+
 ## [1.14.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.13.1...v1.14.0) (2026-10-20)
 
 ### Other Changes
