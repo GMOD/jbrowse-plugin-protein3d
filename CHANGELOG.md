@@ -1,3 +1,11 @@
+## [1.20.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.19.0...v1.20.0) (2026-10-20)
+
+### Other Changes
+
+- Bump p2s_mapper to 2.4.0 ([c766aea](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c766aeacb7286bb907aada1048a8cbd84b0aa248))
+- A labelled session highlight draws its residue as spheres, with its label over the canvas ([9d1d7e5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9d1d7e5a38e6747b75465c542eefe20443b077fd))
+- Refresh the nightly e2e references, which still drew the removed waters ([9e9a6d0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9e9a6d03fa029ff459b33eec5c479e2f6c03e048))
+
 ## [1.19.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.18.0...v1.19.0) (2026-10-20)
 
 ### Other Changes
