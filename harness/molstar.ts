@@ -33,6 +33,7 @@ export interface EntityInfo {
   seqIds: number[]
   /** distinct label_seq_id values that actually have coordinates */
   observedCount: number
+  nucleicAcid?: boolean
 }
 
 export interface LoadedStructure {
@@ -131,6 +132,7 @@ export async function loadAndIntrospect({
       seqLength: e.seq.length,
       seqIds: e.seqIds,
       observedCount: b ? b.observed.size : 0,
+      nucleicAcid: e.nucleicAcid,
     }
   })
 

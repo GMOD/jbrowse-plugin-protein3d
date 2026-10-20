@@ -44,6 +44,30 @@ test('the transcript resolves to entity [1], not [0]', () => {
   expect(codes).not.toContain('WRONG_CHAIN')
 })
 
+// A partner chain with more scattered identities than the transcript's own
+// short peptide, as CDK2 has against p53's in 1H26: raw match counts would
+// call that a wrong chain the plugin never picks.
+test('ranks entities as the plugin does, not by raw match count', () => {
+  const partner = Array.from(ACE2, (c, i) => (i % 3 === 0 ? 'W' : c)).join('')
+  const loaded: LoadedStructure = {
+    entities: [
+      entity({ index: 0, seq: partner }),
+      entity({ index: 1, seq: ACE2.slice(0, 12) }),
+      entity({ index: 2, seq: 'ACGTACGTACGT', nucleicAcid: true }),
+    ],
+    ligands: [],
+  }
+  const d = diagnose({
+    loaded,
+    transcript: `${ACE2}*`,
+    algorithm: 'smith_waterman',
+    isAlphaFold: false,
+  })
+  expect(d.usedIndex).toBe(1)
+  expect(d.bestIndex).toBe(1)
+  expect(d.verdicts.map(v => v.code)).not.toContain('WRONG_CHAIN')
+})
+
 test('AUTHOR_NUMBERING fires when label_seq_ids do not start at 1', () => {
   const loaded: LoadedStructure = {
     entities: [

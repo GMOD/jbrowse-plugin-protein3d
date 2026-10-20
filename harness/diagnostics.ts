@@ -4,8 +4,10 @@
 
 import type { EntityInfo, LoadedStructure } from './molstar'
 import {
+  alignTranscriptToEntity,
+  alignmentQuality,
+  alignmentTooLarge,
   chooseMappedEntity,
-  runLocalAlignment,
   structureSeqVsTranscriptSeqMap,
 } from 'p2s_mapper'
 import type { AlignmentAlgorithm } from 'p2s_mapper'
@@ -21,6 +23,9 @@ export interface EntityAlignment {
   entityCoverage: number
   /** identity over aligned (non-gap) columns */
   identity: number
+  /** identical residues over the shorter sequence, the score
+   * chooseMappedEntity picks the entity by */
+  explained: number
 }
 
 export type Severity = 'error' | 'warn' | 'ok'
@@ -38,47 +43,40 @@ export interface Diagnosis {
   verdicts: Verdict[]
 }
 
-// Smith-Waterman/Needleman-Wunsch are O(transcript × structure); cap the
-// product so a huge pasted sequence can't freeze the tab.
-const MAX_ALIGN_CELLS = 25_000_000
-
+// The plugin's own alignment: stop codons stripped, the package's size cap.
 function analyzeEntity(
   transcript: string,
   entity: EntityInfo,
   algorithm: AlignmentAlgorithm,
 ): EntityAlignment {
-  if (transcript.length * entity.seqLength > MAX_ALIGN_CELLS) {
-    throw new Error(
-      `alignment too large (${transcript.length}×${entity.seqLength}); paste a shorter sequence`,
-    )
-  }
-  const pa = runLocalAlignment(transcript, entity.seq, algorithm)
-  const a = pa.alns[0].seq
-  const b = pa.alns[1].seq
-  let matches = 0
-  let mismatches = 0
-  for (let i = 0; i < a.length; i++) {
-    const ca = a[i]!
-    const cb = b[i]!
-    if (ca !== '-' && cb !== '-') {
-      if (ca.toUpperCase() === cb.toUpperCase()) {
-        matches++
-      } else {
-        mismatches++
-      }
+  const scored = alignTranscriptToEntity(transcript, entity.seq, algorithm)
+  if (!scored) {
+    if (alignmentTooLarge(transcript.length, entity.seqLength)) {
+      throw new Error(
+        `alignment too large (${transcript.length}×${entity.seqLength}); paste a shorter sequence`,
+      )
+    }
+    return {
+      entity,
+      matches: 0,
+      mismatches: 0,
+      alignedPairs: 0,
+      transcriptCoverage: 0,
+      entityCoverage: 0,
+      identity: 0,
+      explained: 0,
     }
   }
-  const alignedPairs = matches + mismatches
+  const q = alignmentQuality(scored.alignment)
   return {
     entity,
-    matches,
-    mismatches,
-    alignedPairs,
-    transcriptCoverage: transcript.length
-      ? alignedPairs / transcript.length
-      : 0,
-    entityCoverage: entity.seqLength ? alignedPairs / entity.seqLength : 0,
-    identity: alignedPairs ? matches / alignedPairs : 0,
+    matches: q.identical,
+    mismatches: q.aligned - q.identical,
+    alignedPairs: q.aligned,
+    transcriptCoverage: q.transcriptLength ? q.aligned / q.transcriptLength : 0,
+    entityCoverage: q.structureLength ? q.aligned / q.structureLength : 0,
+    identity: q.identity,
+    explained: scored.explained,
   }
 }
 
@@ -119,14 +117,13 @@ export function diagnose({
   // [0] — since chooseMappedEntity landed, hardcoding it here made the harness
   // report WRONG_CHAIN for every heteromer the plugin now handles correctly.
   const usedIndex =
-    chooseMappedEntity(
-      transcript,
-      loaded.entities.map(e => e.seq),
-      algorithm,
-    )?.index ?? 0
-  let bestIndex = 0
-  for (let i = 1; i < alignments.length; i++) {
-    if (alignments[i]!.matches > alignments[bestIndex]!.matches) {
+    chooseMappedEntity(transcript, loaded.entities, algorithm)?.index ?? 0
+  let bestIndex = usedIndex
+  for (const [i, a] of alignments.entries()) {
+    if (
+      !a.entity.nucleicAcid &&
+      a.explained > alignments[bestIndex]!.explained
+    ) {
       bestIndex = i
     }
   }
@@ -135,9 +132,8 @@ export function diagnose({
   const used = alignments[usedIndex]
   const best = alignments[bestIndex]
 
-  // Now a regression alarm rather than a known bug: chooseMappedEntity scores
-  // by identical aligned residues, so its pick should always be the best-
-  // matching entity. If these ever disagree, entity resolution has broken.
+  // A regression alarm: bestIndex ranks by the same explained fraction as
+  // chooseMappedEntity, so the two disagree only if entity resolution broke.
   if (best && used && bestIndex !== usedIndex) {
     verdicts.push({
       severity: 'error',
@@ -215,8 +211,12 @@ export function diagnose({
 /** Sample of the actual coordinate map the plugin builds for entity [0], to make
  * the structure->transcript correspondence concrete. */
 export function sampleCoordinateMap(transcript: string, entitySeq: string) {
-  const pa = runLocalAlignment(transcript, entitySeq, 'smith_waterman')
-  const { structureSeqToTranscriptSeqPosition } =
-    structureSeqVsTranscriptSeqMap(pa)
-  return structureSeqToTranscriptSeqPosition
+  const pa = alignTranscriptToEntity(
+    transcript,
+    entitySeq,
+    'smith_waterman',
+  )?.alignment
+  return pa
+    ? structureSeqVsTranscriptSeqMap(pa).structureSeqToTranscriptSeqPosition
+    : {}
 }
