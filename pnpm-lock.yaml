@@ -24,8 +24,8 @@ importers:
         specifier: ^5.13.1
         version: 5.13.1(@types/react@19.3.0)(fp-ts@2.16.11)(pngjs@7.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
       p2s_mapper:
-        specifier: ^2.3.0
-        version: 2.3.0
+        specifier: ^2.4.0
+        version: 2.4.0
       swr:
         specifier: ^2.5.1
         version: 2.5.1(react@19.3.0)
@@ -2887,8 +2887,8 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
-  p2s_mapper@2.3.0:
-    resolution: {integrity: sha512-cmX+Va5usiPS3SaEtoUsMV1jm7CX/RtUBZcMcbKiCTGJbcU3/CvepUlhjoPunxKbuzk23M54wCJytPEg3qLvVA==}
+  p2s_mapper@2.4.0:
+    resolution: {integrity: sha512-0kzJjtETtW35kQkvcSOQvmL8xYN+9ZUCZu/82DVQUFDwfoKWKrC6XWcKHCdWWWThH2XoJ6hmC5Y0LPI1B8GF8g==}
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -6878,7 +6878,7 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
-  p2s_mapper@2.3.0:
+  p2s_mapper@2.4.0:
     dependencies:
       g2p_mapper: 2.2.0
 
