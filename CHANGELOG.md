@@ -1,3 +1,10 @@
+## [1.22.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.21.0...v1.22.0) (2026-10-20)
+
+### Other Changes
+
+- A highlight's label goes on a copy Mol* sees, not one hidden behind another chain ([492a1ec](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/492a1ec837afdde6ede4bad0ba1a99c9436c6d27))
+- Sort the session-highlight test's imports ([26a00f0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/26a00f0edad17a8cb016cca072cf03d692d86044))
+
 ## [1.21.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.20.0...v1.21.0) (2026-10-20)
 
 ### Other Changes
