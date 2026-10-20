@@ -187,8 +187,12 @@ function scaleProblems(field: string, color: LinearColor | ThresholdColor) {
     ]
   }
   const { domainMin, domainMax, domainMid, range } = color
+  const reversed =
+    domainMin > domainMax &&
+    (domainMid === undefined ||
+      (domainMid >= domainMax && domainMid <= domainMin))
   return [
-    ...(domainMin < domainMax
+    ...(domainMin < domainMax || reversed
       ? []
       : [
           `color.domainMin of ${field} is below domainMax; ${domainMin} is not below ${domainMax}`,

@@ -96,6 +96,9 @@ test('a scale that cannot paint a value is refused before it reaches a painter',
   ).toEqual([
     'color.domainMin of hydrophobicity is below domainMax; 5 is not below 4.5',
   ])
+  expect(
+    colorProblems({ field: 'alphaMissense', domainMin: 1, domainMax: 0 }),
+  ).toEqual([])
   expect(colorProblems({ field: 'alphaMissense', domainMid: 2 })).toEqual([
     'color.domainMid of alphaMissense lies from domainMin to domainMax; 2 is outside 0–1',
   ])
