@@ -20,6 +20,8 @@ Superposer = "Superposer"
 mis = "mis"
 unparseable = "unparseable"
 Unparseable = "Unparseable"
-# a deliberately misspelled spec key in normalizeLaunch.test.ts
+# deliberately misspelled spec keys in normalizeLaunch.test.ts and
+# docs/launch-parameters.md
 hiden = "hiden"
+hieght = "hieght"
 Viewe="Viewe"
