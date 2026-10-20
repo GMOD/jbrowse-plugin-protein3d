@@ -1382,7 +1382,12 @@ const Structure = types
         }) {
           if (identical) {
             supersedeAlignment()
-            apply(inPlace())
+            try {
+              apply(inPlace())
+            } catch (e) {
+              console.error(e)
+              self.setError(e)
+            }
             return
           }
           const request = ++latestRequest
@@ -1752,6 +1757,7 @@ const Structure = types
         )
       }
 
+      let realigning: string | undefined
       addDisposer(
         self,
         autorun(() => {
@@ -1785,11 +1791,16 @@ const Structure = types
                 self.applyRealignment(undefined)
                 break
               case 'realign': {
-                reportStale(decision.problem)
                 const {
                   transcript,
                   entity: { seq },
                 } = decision
+                const key = `${algorithm}:${transcript}:${seq}`
+                if (key === realigning && self.aligning) {
+                  break
+                }
+                realigning = key
+                reportStale(decision.problem)
                 self.runAlignment({
                   identical: decision.identical,
                   name: 'ProteinAlignTranscriptToEntity',
