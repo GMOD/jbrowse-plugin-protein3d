@@ -154,17 +154,19 @@ export function readConnectedDomains(
   const color = isRecord(value.color) ? value.color : {}
   const domain = strings(color.domain)
   const range = strings(color.range)
-  return features.length > 0 && domain && range
-    ? {
-        features,
-        color: {
-          field: 'accession',
-          domain: domain.slice(0, range.length),
-          range,
-          labels: strings(color.labels) ?? domain,
-        },
-      }
-    : undefined
+  if (features.length === 0 || !domain || !range) {
+    return undefined
+  }
+  const drawn = domain.slice(0, range.length)
+  return {
+    features,
+    color: {
+      field: 'accession',
+      domain: drawn,
+      range,
+      labels: strings(color.labels) ?? drawn,
+    },
+  }
 }
 
 /** The part of msaview's MsaView model read here */

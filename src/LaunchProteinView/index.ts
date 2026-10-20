@@ -138,14 +138,13 @@ function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
   const view = getContainingView(self)
   withCodingFeature(self, target, async feature => {
     const name = getGeneDisplayName(feature)
-    const assemblyName = isLaunchingGenomeView(view)
-      ? view.assemblyNames[0]
-      : undefined
-    if (!assemblyName || !isLaunchingGenomeView(view)) {
+    const genomeView = isLaunchingGenomeView(view) ? view : undefined
+    const assemblyName = genomeView?.assemblyNames[0]
+    if (!genomeView || !assemblyName) {
       openDialog(self, target, feature)
       return
     }
-    const key = `${feature.id()}:${target.preferredTranscriptId}`
+    const key = `${genomeView.id}:${feature.id()}:${target.preferredTranscriptId}`
     if (lookingUp.has(key)) {
       session.notify(
         `Still looking up the AlphaFold structure of ${name}`,
@@ -173,7 +172,7 @@ function openAlphaFoldStructure(self: DisplayModel, target: MenuTarget) {
       if (url) {
         await launch3DProteinView({
           session,
-          view,
+          view: genomeView,
           feature,
           selectedTranscript: transcript,
           uniprotId,

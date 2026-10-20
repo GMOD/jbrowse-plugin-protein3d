@@ -18,11 +18,9 @@ export function codonLocus(
 }
 
 /**
- * The hovered residue, read out for the header: its author number first,
- * then the transcript residue it aligns to when that differs (a crystal
- * whose construct was renumbered from one), letters, chain and codon locus.
- * The structure letter comes from the entity's sequence, so a modified
- * residue (MSE, TPO) shows its parent's letter.
+ * The header's readout of the hovered residue: author number, the transcript
+ * residue when it differs, letters, chain and codon locus. A modified residue
+ * (MSE, TPO) shows its parent's letter.
  */
 export function hoverReadout({
   hover,

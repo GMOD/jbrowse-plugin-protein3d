@@ -76,7 +76,7 @@ async function newestV5Release() {
     throw new Error(`npm dist-tags: HTTP ${response.status}`)
   }
   const tags = await response.json()
-  const release = [tags.latest, tags.next].find(v => /^[5-9]\./.test(v ?? ''))
+  const release = [tags.latest, tags.next].find(v => parseInt(v, 10) >= 5)
   if (!release) {
     throw new Error(`no v5 release among ${JSON.stringify(tags)}`)
   }

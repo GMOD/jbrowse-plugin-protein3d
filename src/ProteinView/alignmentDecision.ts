@@ -4,10 +4,9 @@ import { entityAlignedTo } from './entityAlignedTo'
 import type { Entity, PairwiseAlignment } from 'p2s_mapper'
 
 /**
- * What a structure does with its alignment once its transcript and entities
- * are known. `keep` and `adopt` leave a chain pick still aligning alone, so a
- * reload of the same entities does not drop it; the others supersede it.
- * `identical` says the DP is free, so the answer need not wait on the worker.
+ * `keep` and `adopt` leave a chain pick still aligning alone; the others
+ * supersede it. `identical` marks a free alignment, applied without the
+ * worker.
  */
 export type AlignmentDecision =
   | { kind: 'nothingToAlign' }
@@ -37,12 +36,10 @@ export interface AlignmentState {
 }
 
 /**
- * An alignment computed here is kept. An imported one maps onto the chain it
- * spells; one that spells none is realigned against the stored chain when
- * that is a protein, else discarded so a chain is chosen afresh.
- *
- * Reads `state` only as far as the decision needs, so an autorun calling it
- * tracks no field a branch never looked at.
+ * Keeps an alignment computed here. Maps an imported one onto the chain it
+ * spells, realigns one that spells none against the stored protein chain, and
+ * otherwise discards it. Reads only the fields each branch needs, so an
+ * autorun calling it tracks no more.
  */
 export function decideAlignment(state: AlignmentState): AlignmentDecision {
   const {

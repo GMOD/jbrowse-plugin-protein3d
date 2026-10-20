@@ -177,6 +177,16 @@ describe('readConnectedDomains', () => {
     })
   })
 
+  test('a domain with no color is left out of the fallback labels', () => {
+    const { labels: _labels, ...color } = domains.color
+    const read = readConnectedDomains({
+      ...domains,
+      color: { ...color, range: color.range.slice(0, 2) },
+    })
+    expect(read!.color.domain).toEqual(['cd08925', 'cd08925:tetramer'])
+    expect(read!.color.labels).toEqual(['cd08925', 'cd08925:tetramer'])
+  })
+
   test('a kind it does not know reads as a domain', () => {
     const [feature] = readConnectedDomains({
       ...domains,
