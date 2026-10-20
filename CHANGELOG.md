@@ -1,3 +1,9 @@
+## [1.17.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.16.0...v1.17.0) (2026-10-20)
+
+### Other Changes
+
+- A session highlight's label draws in front of the structure ([445fdaf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/445fdaf48b98fb4121af00fb68cf7e84cdec7602))
+
 ## [1.16.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.15.0...v1.16.0) (2026-10-20)
 
 ### Other Changes
