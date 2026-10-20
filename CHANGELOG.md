@@ -1,3 +1,9 @@
+## [1.18.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.17.0...v1.18.0) (2026-10-20)
+
+### Other Changes
+
+- A session highlight's label follows the camera to stay in front and unclipped ([39ef666](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/39ef66660b64c61a77963bb5d97ce7b098f7862e))
+
 ## [1.17.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.16.0...v1.17.0) (2026-10-20)
 
 ### Other Changes
