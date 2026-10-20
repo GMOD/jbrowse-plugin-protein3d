@@ -2,8 +2,9 @@
  * The session's highlights on a structure. `session.highlights` is one list of
  * labelled genome regions that every view draws on its own terms: a band on
  * the genome, a column on the alignment, and here the residues the region
- * codes for, drawn as sticks with the highlight's label written beside them
- * in 3D, so a figure or a shared session names the same position in each view.
+ * codes for, drawn as sticks on every chain that has them with the
+ * highlight's label written once in 3D, so a figure or a shared session names
+ * the same position in each view.
  *
  * Each structure gets one component, one ball-and-stick and one label per
  * highlight, all tagged `SESSION_HIGHLIGHTS_TAG`. A change rebuilds every one
@@ -114,8 +115,24 @@ export async function syncSessionHighlightMarks({
     MolScriptBuilder: MS,
     StateSelection,
     StateTransforms,
+    StructureElement,
+    StructureProperties: SP,
     createStructureRepresentationParams,
   } = molstar
+  // the first chain of an entity: a homo-oligomer such as haemoglobin's four
+  // β chains carries a highlighted residue once per chain, and one label per
+  // copy would stack four of them, so the label goes on the first
+  const firstChain = (structure: Structure, entityId: string) => {
+    const l = StructureElement.Location.create(structure)
+    for (const unit of structure.units) {
+      l.unit = unit
+      l.element = unit.elements[0]!
+      if (SP.entity.id(l) === entityId) {
+        return SP.chain.label_asym_id(l)
+      }
+    }
+    return undefined
+  }
   const update = plugin.state.data.build()
   const existing = plugin.state.data.select(
     StateSelection.Generators.root.subtree().withTag(SESSION_HIGHLIGHTS_TAG),
@@ -157,13 +174,23 @@ export async function syncSessionHighlightMarks({
           }),
           { tags: [SESSION_HIGHLIGHTS_TAG] },
         )
-      if (label) {
+      const chain = label ? firstChain(molstarStructure, entityId) : undefined
+      if (label && chain) {
+        const labelled = MS.struct.generator.atomGroups({
+          'chain-test': MS.core.rel.eq([MS.ammp('label_asym_id'), chain]),
+          'residue-test': MS.core.set.has([
+            MS.set(...labelSeqIds),
+            MS.ammp('label_seq_id'),
+          ]),
+        })
         update
           .toRoot()
           .apply(
             StateTransforms.Model.MultiStructureSelectionFromExpression,
             {
-              selections: [{ key: 'a', ref: root.transform.ref, expression }],
+              selections: [
+                { key: 'a', ref: root.transform.ref, expression: labelled },
+              ],
               isTransitive: true,
               label,
             },
@@ -176,13 +203,15 @@ export async function syncSessionHighlightMarks({
             StateTransforms.Representation.StructureSelectionsLabel3D,
             {
               customText: label,
-              textSize: 1.6,
+              textSize: 4,
+              attachment: 'bottom-left',
+              scaleByRadius: false,
               textColor: Color(0x000000),
               borderWidth: 0,
               background: true,
               backgroundColor: Color(0xffffff),
               backgroundOpacity: 0.85,
-              offsetZ: 8,
+              offsetZ: 10,
             },
             { tags: [SESSION_HIGHLIGHTS_TAG] },
           )

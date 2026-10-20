@@ -134,3 +134,42 @@ test('a labelled mark draws sticks and its label, and a re-sync replaces them', 
     expect(tagged(plugin).labels).toHaveLength(0)
   })
 })
+
+// haemoglobin's four β chains each carry Val6; four labels would stack
+test('a homo-oligomer gets the sticks on every chain and the label once', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const [molstarStructure] = (
+      await loadCaOnly(plugin, [
+        { asym: 'A', entity: '1', residues: Array(12).fill('ALA') },
+        { asym: 'B', entity: '1', residues: Array(12).fill('ALA') },
+      ])
+    ).structures
+    if (!molstarStructure) {
+      throw new Error('no structure loaded')
+    }
+    await syncSessionHighlightMarks({
+      plugin,
+      structures: [{ molstarStructure, marks: residues([codon(104, 'G12')]) }],
+    })
+    const { sticks, labels } = tagged(plugin)
+    expect(labels).toHaveLength(1)
+    const stickChains = new Set(
+      (
+        sticks[0]?.obj?.data as
+          { sourceData: { units: { chainGroupId: number }[] } } | undefined
+      )?.sourceData.units.map(u => u.chainGroupId),
+    )
+    expect(stickChains.size).toBe(2)
+    const labelled = plugin.state.data.select(
+      StateSelection.Generators.root
+        .subtree()
+        .withTag(SESSION_HIGHLIGHTS_TAG)
+        .filter(
+          c =>
+            c.transform.transformer ===
+            StateTransforms.Model.MultiStructureSelectionFromExpression,
+        ),
+    )[0]?.obj?.data as { loci: { elements: unknown[] } }[] | undefined
+    expect(labelled?.[0]?.loci.elements).toHaveLength(1)
+  })
+})
