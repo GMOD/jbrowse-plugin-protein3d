@@ -1,3 +1,9 @@
+## [1.14.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.13.1...v1.14.0) (2026-10-20)
+
+### Other Changes
+
+- Drop the crystal's waters, and draw site side chains thick enough to find ([62395fd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/62395fda9d77a9873b6adf16792fae2a8582cf05))
+
 ## [1.13.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.13.0...v1.13.1) (2026-10-20)
 
 ### Other Changes
