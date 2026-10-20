@@ -1,3 +1,11 @@
+## [1.19.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.18.0...v1.19.0) (2026-10-20)
+
+### Other Changes
+
+- Put the mapping test's alignment rows in p2s_mapper's order ([e72456b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e72456be0bf11470654f1ab8a72554e699fcc159))
+- Make the harness align and rank chains as the plugin does ([1cdbae0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1cdbae06e296692276f514e77c07e71c016b88bf))
+- A structure's assembly is a choice: another biological assembly or the deposited model ([8ebac32](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8ebac32f4b67e70d9eb038d77ec010e6cdfb9fb6))
+
 ## [1.18.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.17.0...v1.18.0) (2026-10-20)
 
 ### Other Changes
