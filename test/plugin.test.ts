@@ -464,6 +464,56 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 400_000)
 
+  // A labelled session highlight is drawn over the canvas, not by Mol*, so no
+  // unit test sees it reach the page: this leg is the one that does
+  it('labels a session highlight on its residue in 3D', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [{ pdbId: '1TUP' }],
+          transcriptId: 'ENST00000269305.9',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,673,700-7,674,700',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    await page.evaluate(() => {
+      window.JBrowseSession!.addHighlight!({
+        assemblyName: 'hg38',
+        refName: 'chr17',
+        start: 7674218,
+        end: 7674221,
+        label: 'R248',
+      })
+    })
+    const label = await page.waitForSelector('[data-highlight-label="R248"]', {
+      timeout: 60_000,
+    })
+    // the dot sits on the residue, inside the viewer
+    const inside = await label!.evaluate(g => {
+      const dot = g.querySelector('circle')!.getBoundingClientRect()
+      const viewer = document
+        .querySelector('[data-testid="protein-view-molstar"]')!
+        .getBoundingClientRect()
+      return (
+        dot.left >= viewer.left &&
+        dot.right <= viewer.right &&
+        dot.top >= viewer.top &&
+        dot.bottom <= viewer.bottom
+      )
+    })
+    expect(inside).toBe(true)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
   // A declared selection is the user's to put down like a clicked one. This
   // leg is what shows Mol* reports a click on empty canvas at all; the unit
   // tests take that as given.

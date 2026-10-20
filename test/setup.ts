@@ -114,6 +114,13 @@ declare global {
       views?: SessionView[]
       removeView?: (view: SessionView) => void
       hovered?: { hoverPosition?: { coord: number; refName: string } }
+      addHighlight?: (highlight: {
+        assemblyName: string
+        refName: string
+        start: number
+        end: number
+        label?: string
+      }) => void
     }
     JBrowseRootModel?: { pluginManager?: { plugins?: { name: string }[] } }
   }
