@@ -1,3 +1,9 @@
+## [1.16.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.15.0...v1.16.0) (2026-10-20)
+
+### Other Changes
+
+- A session highlight's 3D label leans off its residue on a tether, sized to the structure ([9320608](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9320608179fca311072dfa37492ac72c2cfb542f))
+
 ## [1.15.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.14.0...v1.15.0) (2026-10-20)
 
 ### Other Changes
