@@ -1,3 +1,9 @@
+## [1.21.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.20.0...v1.21.0) (2026-10-20)
+
+### Other Changes
+
+- A labelled residue draws on every chain, its label on the copy nearest the viewer ([ce83da8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ce83da8a489b68c6367c930e47a95f60ea566e16))
+
 ## [1.20.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.19.0...v1.20.0) (2026-10-20)
 
 ### Other Changes
