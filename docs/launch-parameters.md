@@ -40,6 +40,7 @@ working links.
 | `pairwiseAlignment`              | No       | `{ consensus, alns: [{ id, seq }, { id, seq }] }`, transcript row first, used as given |
 | `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present         |
 | `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed               |
+| `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file  |
 
 \* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`, `pdbId` or
 `structures`), or both. `gene` finds the transcript, the AlphaFold model and the
@@ -197,9 +198,9 @@ view colors by; see
 Each entry of `structures` is one structure: a source (`url`, `data`,
 `uniprotId` or `pdbId`) and, optionally, `initialTranscriptResidues`,
 `initialResidues`, `initialSelection`, `mappedEntityId`, `pairwiseAlignment`,
-`alignmentImported` and `hidden`. `feature`, `userProvidedTranscriptSequence`
-and `connectedViewId` written on the launch are the defaults every entry shares,
-and an entry may carry its own.
+`alignmentImported`, `hidden` and `assembly`. `feature`,
+`userProvidedTranscriptSequence` and `connectedViewId` written on the launch are
+the defaults every entry shares, and an entry may carry its own.
 
 Written on the launch itself, the per-structure keys describe its one structure.
 Beside `structures` they apply to no structure, so the launch reports each by
