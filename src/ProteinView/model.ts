@@ -30,6 +30,7 @@ import { applySavedCamera } from './savedCamera'
 import { syncSurfaces } from './surface'
 import { syncMeasurements } from './measurements'
 import { syncResidueMarks } from './residueMarks'
+import { applyFigureStyle } from './figureStyle'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -223,6 +224,11 @@ function stateModelFactory() {
          * ResidueMark): a partner's residue, a ligand, a pocket
          */
         marks: types.frozen<ResidueMark[] | undefined>(),
+        /**
+         * #property
+         * silhouettes around every object, for a figure (see applyFigureStyle)
+         */
+        silhouettes: false,
         /**
          * #property
          */
@@ -693,6 +699,20 @@ function stateModelFactory() {
               syncResidueMarks({ plugin, structures, marks }).catch(
                 reportPluginFailure(self, plugin),
               )
+            }
+          }),
+        )
+
+        addDisposer(
+          self,
+          autorun(() => {
+            const { molstarPluginContext: plugin, silhouettes } = self
+            if (plugin) {
+              loadMolstar()
+                .then(({ Color }) => {
+                  applyFigureStyle(plugin, Color, silhouettes)
+                })
+                .catch(reportPluginFailure(self, plugin))
             }
           }),
         )

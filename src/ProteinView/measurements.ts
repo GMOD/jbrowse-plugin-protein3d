@@ -217,8 +217,13 @@ export function syncMeasurements({
             // sized to read in a figure, not only on screen
             visualParams: {
               linesColor: Color.fromHexStyle(color),
-              linesSize: 0.25,
+              linesSize: 0.12,
               textSize: 4,
+              // beside the line rather than on the atoms it measures
+              attachment: 'bottom-left',
+              offsetX: 1.2,
+              offsetY: 1.2,
+              offsetZ: 2,
               background: true,
               backgroundColor: Color.fromHexStyle('#ffffff'),
               backgroundOpacity: 0.85,
