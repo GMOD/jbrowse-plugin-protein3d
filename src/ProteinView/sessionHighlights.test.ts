@@ -60,7 +60,13 @@ test("a codon marks the structure residue it codes, in core's highlight color by
       color: DEFAULT_HIGHLIGHT_COLOR,
     },
   ])
-  expect(residues([codon(101, undefined, '#00f')])[0]?.color).toBe('#00f')
+  expect(residues([codon(101, undefined, '#00f')])[0]?.color).toBe('#0000ff')
+})
+
+test("a translucent highlight's residues take its color at full opacity", () => {
+  expect(
+    residues([codon(101, 'G11', 'rgba(40, 40, 40, 0.2)')])[0]?.color,
+  ).toBe('#282828')
 })
 
 test('a region over the structure and off it marks only the residues it has', () => {

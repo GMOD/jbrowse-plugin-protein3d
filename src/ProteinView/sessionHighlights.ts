@@ -12,6 +12,8 @@
  * rebuilds all of them, since highlights change by hand and a structure holds
  * a few.
  */
+import { colord } from '@jbrowse/core/util/colord'
+
 import { SITES_TAG } from './alignmentSites'
 import loadMolstar from './loadMolstar'
 import { structureRootCell } from './structureCells'
@@ -27,7 +29,7 @@ type Molstar = Awaited<ReturnType<typeof loadMolstar>>
 export const SESSION_HIGHLIGHTS_TAG = 'jbrowse-session-highlights'
 
 // core's default highlight color, which the genome view's band draws in
-export const DEFAULT_HIGHLIGHT_COLOR = '#FFB11D'
+export const DEFAULT_HIGHLIGHT_COLOR = '#ffb11d'
 
 /** A session highlight: a genome region, 0-based half-open */
 export interface GenomeHighlight {
@@ -37,6 +39,12 @@ export interface GenomeHighlight {
   end: number
   label?: string
   color?: string
+}
+
+// The genome band draws a translucent highlight over the tracks; Mol* would
+// read the alpha into the sphere's color
+function opaque(css: string) {
+  return colord(css).alpha(1).toHex()
 }
 
 /** One highlight's residues on the mapped entity */
@@ -94,7 +102,7 @@ export function sessionHighlightResidues({
             entityId: entity.entityId,
             labelSeqIds: [...labelSeqIds].sort((a, b) => a - b),
             label: labels && h.label ? h.label : undefined,
-            color: h.color ?? DEFAULT_HIGHLIGHT_COLOR,
+            color: opaque(h.color ?? DEFAULT_HIGHLIGHT_COLOR),
           },
         ]
       : []

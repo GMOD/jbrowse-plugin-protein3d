@@ -26,6 +26,7 @@ import { checkedColor, colorOfScheme, resolvedColor } from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
+import { applySavedCamera } from './savedCamera'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -47,6 +48,7 @@ import { attachViewInteractions } from './viewInteractions'
 
 import type { ProteinColor } from './proteinColor'
 import type { ProteinStructureSpec } from './proteinViewSpec'
+import type { SavedCamera } from './savedCamera'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -189,6 +191,13 @@ function stateModelFactory() {
          * scale's members; `{}` is Mol*'s default
          */
         color: types.optional(types.frozen<ProteinColor>(), {}),
+        /**
+         * #property
+         * a fixed camera (see SavedCamera) that load and Reset Zoom both
+         * restore, in place of framing the whole scene or the labelled
+         * highlights
+         */
+        camera: types.frozen<SavedCamera | undefined>(),
         /**
          * #property
          */
@@ -513,7 +522,7 @@ function stateModelFactory() {
             if (plugin && structures.length > 0) {
               syncSessionHighlightMarks({ plugin, structures })
                 .then(async () => {
-                  if (orientedPlugin !== plugin && !seeded) {
+                  if (orientedPlugin !== plugin && !seeded && !self.camera) {
                     const snapshot = highlightCameraSnapshot(
                       plugin,
                       await loadMolstar(),
@@ -558,6 +567,10 @@ function stateModelFactory() {
                   molstar.PluginCommands.Camera.Reset.subscribe(
                     plugin,
                     ({ snapshot: requested }) => {
+                      if (!requested && self.camera) {
+                        applySavedCamera(plugin, molstar, self.camera)
+                        return
+                      }
                       const snapshot = requested
                         ? undefined
                         : highlightCameraSnapshot(plugin, molstar)
@@ -604,6 +617,21 @@ function stateModelFactory() {
         // Frame a declared selection once everything is loaded and superposed;
         // see makeSelectionFramer.
         addDisposer(self, autorun(makeSelectionFramer(self)))
+
+        // A saved camera, once every structure has loaded
+        addDisposer(
+          self,
+          autorun(() => {
+            const { molstarPluginContext: plugin, camera } = self
+            if (plugin && camera && structuresSettled(self)) {
+              loadMolstar()
+                .then(molstar => {
+                  applySavedCamera(plugin, molstar, camera)
+                })
+                .catch(reportPluginFailure(self, plugin))
+            }
+          }),
+        )
 
         addDisposer(self, autorun(makeLociChannel(self, 'select')))
         addDisposer(self, autorun(makeLociChannel(self, 'highlight')))
