@@ -1,5 +1,6 @@
 import { EMPTY_DOMAIN_COLOR, domainMarkOf } from './alignmentDomains'
 import { SITES_TAG } from './alignmentSites'
+import { RESIDUE_MARKS_TAG } from './residueMarks'
 import loadMolstar from './loadMolstar'
 import { molstarThemeOf, resolvedColor } from './proteinColor'
 import { SESSION_HIGHLIGHTS_TAG } from './sessionHighlights'
@@ -129,7 +130,8 @@ export async function applyColorTheme({
       if (
         !representation.state.isGhost &&
         !representation.transform.tags?.includes(SITES_TAG) &&
-        !representation.transform.tags?.includes(SESSION_HIGHLIGHTS_TAG)
+        !representation.transform.tags?.includes(SESSION_HIGHLIGHTS_TAG) &&
+        !representation.transform.tags?.includes(RESIDUE_MARKS_TAG)
       ) {
         update.to(representation).update(prev => {
           prev.colorTheme = createStructureColorThemeParams(
