@@ -1,3 +1,21 @@
+## [1.23.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.22.0...v1.23.0) (2026-10-21)
+
+### Other Changes
+
+- Color a structure by a genome track or per-residue values ([82049f7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/82049f716d6480a42ed9d85ed2d217108b0b431e))
+- Saved camera on the protein view; highlight spheres take the color at full opacity ([4c4e171](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4c4e171acfee320fff95b66bab899e584515aeec))
+- Draw only chosen chains, and a translucent molecular surface ([7d809b5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7d809b5721c2c9e68d9a406d0c0d7e78bcda8529))
+- Ligands draw orange under mapped-chain coloring; surface and color runs no longer race ([e110c6d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e110c6d3d22f328a505fec4ef16835ef7f726328))
+- Declared distances: dashed, labelled in angstroms, between two sites of a structure ([cf3eccd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cf3eccd780f0fcd206fa2ca0f601c874b49a900d))
+- Residue marks: draw any site of any chain as spheres or sticks ([51e6ce2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/51e6ce264b83a8f52cbf5d414308df8bd4372eeb))
+- Distance labels sit on a white backing and the dashes are thinner ([1bd13d4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1bd13d4e84d9af2de1a5119c42958b10feb1a3e2))
+- Silhouette figure style; distance labels sit beside the line, dashes thinner ([7822765](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/78227655ddc6a93750e9af39c877dcd50ed31b6d))
+- A highlight label's {aa} names each structure's own amino acid there ([24e1b7d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/24e1b7d3527ab9e0955dbd9e151a90e04ca6e01a))
+- A color run leaves residue marks their own color ([dc094e6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/dc094e6b419d55e09a9154f424a982292d7eb9c5))
+- A protein-change highlight label reads in 3D as each structure's own residue ([a0ed3d8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a0ed3d8198e6551d8b4d3b67fd40903653a875ba))
+- Distance tests run without a canvas; the same-atom check compares atoms, not objects ([181375f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/181375fa92a0c213c2e1c561cb59095b94581179))
+- Type the distance test's atom index as a unit element index ([85bc746](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/85bc74630b4cd9bd1a0a593b171508618a21de76))
+
 ## [1.22.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.21.0...v1.22.0) (2026-10-20)
 
 ### Other Changes
