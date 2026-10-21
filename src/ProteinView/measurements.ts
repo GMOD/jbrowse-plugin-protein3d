@@ -217,8 +217,12 @@ export function syncMeasurements({
             // sized to read in a figure, not only on screen
             visualParams: {
               linesColor: Color.fromHexStyle(color),
-              linesSize: 0.45,
-              textSize: 3.5,
+              linesSize: 0.25,
+              textSize: 4,
+              background: true,
+              backgroundColor: Color.fromHexStyle('#ffffff'),
+              backgroundOpacity: 0.85,
+              backgroundMargin: 0.3,
             },
           },
         )
