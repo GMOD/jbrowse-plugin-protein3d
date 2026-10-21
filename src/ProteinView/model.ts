@@ -463,6 +463,10 @@ function stateModelFactory() {
         // representation is built, so the theme has something to recolor),
         // the mapped chain changes, or a placed-value source answers; the
         // surface is built first so it takes the same theme.
+        // runs queue so two surface builds never overlap, and only the
+        // latest run paints, since an earlier one can finish last
+        let colorRun = 0
+        let colorQueue: Promise<unknown> = Promise.resolve()
         addDisposer(
           self,
           autorun(() => {
@@ -479,18 +483,22 @@ function stateModelFactory() {
                 : [],
             )
             if (molstarPluginContext && structures.length > 0) {
-              syncSurfaces({
-                plugin: molstarPluginContext,
-                structures: structures.map(s => s.molstarStructure),
-                surface,
-              })
-                .then(() =>
-                  applyColorTheme({
+              const run = ++colorRun
+              colorQueue = colorQueue
+                .then(async () => {
+                  await syncSurfaces({
                     plugin: molstarPluginContext,
-                    color,
-                    structures,
-                  }),
-                )
+                    structures: structures.map(s => s.molstarStructure),
+                    surface,
+                  })
+                  if (run === colorRun) {
+                    await applyColorTheme({
+                      plugin: molstarPluginContext,
+                      color,
+                      structures,
+                    })
+                  }
+                })
                 .catch(reportPluginFailure(self, molstarPluginContext))
             }
           }),

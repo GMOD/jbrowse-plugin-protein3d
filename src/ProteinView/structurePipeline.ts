@@ -4,6 +4,7 @@ import {
   structureFormatFromName,
 } from 'p2s_mapper'
 
+import { CRYSTALLIZATION_ADDITIVES } from './crystallizationAdditives'
 import loadMolstar from './loadMolstar'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
@@ -197,6 +198,12 @@ async function drawOnlyChains(
       : MS.core.logic.and([
           MS.core.rel.neq([MS.ammp('entityType'), 'polymer']),
           MS.core.rel.neq([MS.ammp('entityType'), 'water']),
+          MS.core.logic.not([
+            MS.core.set.has([
+              MS.set(...CRYSTALLIZATION_ADDITIVES),
+              MS.ammp('label_comp_id'),
+            ]),
+          ]),
         ])
   const update = plugin.state.data.build()
   for (const { ref } of structures) {
