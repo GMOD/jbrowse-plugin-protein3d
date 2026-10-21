@@ -28,6 +28,7 @@ import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
 import { applySavedCamera } from './savedCamera'
 import { syncSurfaces } from './surface'
+import { syncMeasurements } from './measurements'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -51,6 +52,7 @@ import type { ProteinColor } from './proteinColor'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { SavedCamera } from './savedCamera'
 import type { ProteinSurface } from './surface'
+import type { DistanceMeasurement } from './measurements'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -206,6 +208,13 @@ function stateModelFactory() {
          * ProteinSurface), colored as the cartoon is; absent draws none
          */
         surface: types.frozen<ProteinSurface | undefined>(),
+        /**
+         * #property
+         * dashed distances drawn between two sites of a structure, each
+         * labelled in angstroms (see DistanceMeasurement); `structure` is the
+         * index into `structures`, the first by default
+         */
+        distances: types.frozen<DistanceMeasurement[] | undefined>(),
         /**
          * #property
          */
@@ -643,6 +652,25 @@ function stateModelFactory() {
         // Frame a declared selection once everything is loaded and superposed;
         // see makeSelectionFramer.
         addDisposer(self, autorun(makeSelectionFramer(self)))
+
+        // The declared distances, once their structures have loaded
+        addDisposer(
+          self,
+          autorun(() => {
+            const plugin = self.molstarPluginContext
+            const distances = self.distances ?? []
+            const structures = self.structures.map(s =>
+              s.entities ? s.molstarStructures[0] : undefined,
+            )
+            if (plugin && structures.some(Boolean)) {
+              syncMeasurements({
+                plugin,
+                structures,
+                measurements: distances,
+              }).catch(reportPluginFailure(self, plugin))
+            }
+          }),
+        )
 
         // A saved camera, once every structure has loaded
         addDisposer(
