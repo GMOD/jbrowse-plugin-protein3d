@@ -70,13 +70,18 @@ const THREE_LETTER: Record<string, string> = {
   V: 'Val',
 }
 
+// a protein change as a paper writes it: E46K, Y220C, R273H
+const PROTEIN_CHANGE = /^[A-Z](\d+)[A-Z]$/
+
 /**
- * A label's `{aa}` names the amino acid this structure has at the first
- * residue the highlight marks, so `{aa}46` reads Glu46 on wild type and Lys46
- * on the E46K structure.
+ * A label naming a protein change, such as E46K, reads in 3D as the residue
+ * this structure has there: Glu46 on wild type, Lys46 on the E46K structure.
+ * The genome band keeps the change's name. Any other label is drawn as given.
  */
 export function structureLabel(label: string, aa: string | undefined) {
-  return label.replaceAll('{aa}', (aa && THREE_LETTER[aa]) ?? '')
+  const match = PROTEIN_CHANGE.exec(label)
+  const name = aa ? THREE_LETTER[aa] : undefined
+  return match && name ? `${name}${match[1]}` : label
 }
 
 /** One highlight's residues on the mapped entity */

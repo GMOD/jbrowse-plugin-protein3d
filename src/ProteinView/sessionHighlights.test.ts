@@ -302,8 +302,9 @@ test("a pick counts only on the residue's own copy", async () => {
   })
 })
 
-test('a label names the amino acid each structure has at the residue', () => {
-  expect(structureLabel('{aa}46', 'E')).toBe('Glu46')
-  expect(structureLabel('{aa}46', 'K')).toBe('Lys46')
+test('a protein-change label reads as the residue each structure has', () => {
+  expect(structureLabel('E46K', 'E')).toBe('Glu46')
+  expect(structureLabel('E46K', 'K')).toBe('Lys46')
   expect(structureLabel('residue 46', 'K')).toBe('residue 46')
+  expect(structureLabel('E46K', undefined)).toBe('E46K')
 })
