@@ -199,6 +199,8 @@ export async function syncSessionHighlightMarks({
   structures: readonly {
     molstarStructure: Structure
     marks: readonly ResidueMark[]
+    /** the author chains drawn, when the structure draws only some */
+    chains?: readonly string[]
   }[]
 }) {
   const molstar = await loadMolstar()
@@ -220,7 +222,7 @@ export async function syncSessionHighlightMarks({
     anchors.delete(cell.transform.ref)
     update.delete(cell.transform.ref)
   }
-  for (const { molstarStructure, marks } of structures) {
+  for (const { molstarStructure, marks, chains } of structures) {
     const root = structureRootCell(plugin, molstar, molstarStructure)
     if (!root) {
       continue
@@ -233,6 +235,14 @@ export async function syncSessionHighlightMarks({
           MS.set(...labelSeqIds),
           MS.ammp('label_seq_id'),
         ]),
+        ...(chains?.length
+          ? {
+              'chain-test': MS.core.set.has([
+                MS.set(...chains),
+                MS.ammp('auth_asym_id'),
+              ]),
+            }
+          : {}),
       })
       update
         .to(root)

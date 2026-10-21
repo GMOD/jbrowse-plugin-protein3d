@@ -27,6 +27,7 @@ import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
 import { applySavedCamera } from './savedCamera'
+import { syncSurfaces } from './surface'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -49,6 +50,7 @@ import { attachViewInteractions } from './viewInteractions'
 import type { ProteinColor } from './proteinColor'
 import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { SavedCamera } from './savedCamera'
+import type { ProteinSurface } from './surface'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -198,6 +200,12 @@ function stateModelFactory() {
          * highlights
          */
         camera: types.frozen<SavedCamera | undefined>(),
+        /**
+         * #property
+         * a translucent molecular surface over each structure's polymer (see
+         * ProteinSurface), colored as the cartoon is; absent draws none
+         */
+        surface: types.frozen<ProteinSurface | undefined>(),
         /**
          * #property
          */
@@ -453,11 +461,12 @@ function stateModelFactory() {
         // Apply the chosen color theme whenever it changes, a structure
         // finishes loading (entities is set after its molstar
         // representation is built, so the theme has something to recolor),
-        // the mapped chain changes, or a placed-value source answers.
+        // the mapped chain changes, or a placed-value source answers; the
+        // surface is built first so it takes the same theme.
         addDisposer(
           self,
           autorun(() => {
-            const { molstarPluginContext, paintColor: color } = self
+            const { molstarPluginContext, paintColor: color, surface } = self
             const structures = self.structures.flatMap(s =>
               s.entities
                 ? s.molstarStructures.map(molstarStructure => ({
@@ -470,11 +479,19 @@ function stateModelFactory() {
                 : [],
             )
             if (molstarPluginContext && structures.length > 0) {
-              applyColorTheme({
+              syncSurfaces({
                 plugin: molstarPluginContext,
-                color,
-                structures,
-              }).catch(reportPluginFailure(self, molstarPluginContext))
+                structures: structures.map(s => s.molstarStructure),
+                surface,
+              })
+                .then(() =>
+                  applyColorTheme({
+                    plugin: molstarPluginContext,
+                    color,
+                    structures,
+                  }),
+                )
+                .catch(reportPluginFailure(self, molstarPluginContext))
             }
           }),
         )
@@ -515,6 +532,7 @@ function stateModelFactory() {
                 ? s.molstarStructures.map(molstarStructure => ({
                     molstarStructure,
                     marks: s.sessionHighlightMarks,
+                    chains: s.chains,
                   }))
                 : [],
             )

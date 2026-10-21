@@ -249,6 +249,13 @@ const Structure = types
      * NMR ensemble builds each model whole whatever this says.
      */
     assembly: types.maybe(types.string),
+    /**
+     * #property
+     * Author chain ids (`auth_asym_id`) to draw: one rung of a filament, one
+     * copy of a homo-oligomer. The other chains stay loaded, mapped and
+     * highlighted but are not drawn. Absent draws every chain.
+     */
+    chains: types.frozen<string[] | undefined>(),
   })
   .volatile(() => ({
     /**
