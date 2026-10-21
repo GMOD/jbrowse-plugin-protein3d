@@ -1,4 +1,4 @@
-# Figure sessions: camera, chains, surface, marks, distances
+# Figure session properties
 
 A session can fix everything a structure figure needs, so a capture or a shared
 link opens on the same picture every time.
@@ -45,8 +45,8 @@ link opens on the same picture every time.
 
 ## Structure properties
 
-- `chains`: author chain ids to draw. The rest stay loaded and mapped but are
-  not drawn: one rung of a fibril, one copy of a homo-oligomer.
+- `chains`: author chain ids to draw, such as one rung of a fibril or one copy
+  of a homo-oligomer. The rest stay loaded and mapped but are not drawn.
 
 ## Labels
 
