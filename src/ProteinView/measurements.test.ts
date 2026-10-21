@@ -9,6 +9,7 @@ import { superposeStructures } from './superposeStructures'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadPocket } from '../test_data/molstarPlugin'
 
+import type { StructureElement as StructureElementType } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 function drawn(plugin: PluginContext) {
@@ -121,7 +122,12 @@ test('a measurement made by hand in Mol* is not removed', async () => {
     const { StructureElement, OrderedSet } = molstar
     const loci = (atom: typeof pair.a) =>
       StructureElement.Loci(structure, [
-        { unit: atom.unit, indices: OrderedSet.ofSingleton(atom.index) },
+        {
+          unit: atom.unit,
+          indices: OrderedSet.ofSingleton(
+            atom.index as StructureElementType.UnitIndex,
+          ),
+        },
       ])
     await plugin.managers.structure.measurement.addDistance(
       loci(pair.a),
