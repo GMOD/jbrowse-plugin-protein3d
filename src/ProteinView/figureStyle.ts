@@ -23,5 +23,5 @@ export function applyFigureStyle(
           }
         : { name: 'off', params: {} },
     },
-  } as Parameters<NonNullable<PluginContext['canvas3d']>['setProps']>[0])
+  })
 }

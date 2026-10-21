@@ -12,9 +12,9 @@ import {
   labelAnchors,
   pickHitsCopy,
   sessionHighlightResidues,
+  structureLabel,
   syncSessionHighlightMarks,
   withoutLabelledResidues,
-  structureLabel,
 } from './sessionHighlights'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'

@@ -70,14 +70,27 @@ test('a site that is not written or not there is reported, not thrown', async ()
 test('measurements draw through the manager, and a re-sync keeps, adds and removes', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     const { structure } = await loadPocket(plugin)
-    const sync = (measurements: Parameters<typeof syncMeasurements>[0]['measurements']) =>
-      syncMeasurements({ plugin, structures: [structure], measurements })
+    const sync = (
+      measurements: Parameters<typeof syncMeasurements>[0]['measurements'],
+    ) =>
+      syncMeasurements({
+        plugin,
+        structures: [structure],
+        measurements,
+        labels: false,
+      })
 
     const first = await sync([{ a: 'A:12', b: 'MOV' }])
     expect(first[0]?.distance).toBeCloseTo(1.805, 2)
-    expect(first[0]?.atoms).toEqual(['A:12@SG', 'A:303@C21'].map((s, i) => (i === 0 ? s : first[0]!.atoms![1])))
+    expect(first[0]?.atoms).toEqual(
+      ['A:12@SG', 'A:303@C21'].map((s, i) =>
+        i === 0 ? s : first[0]!.atoms![1],
+      ),
+    )
     const [kept] = drawn(plugin)
-    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(1)
+    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(
+      1,
+    )
 
     await sync([
       { a: 'A:12', b: 'MOV' },
@@ -88,7 +101,9 @@ test('measurements draw through the manager, and a re-sync keeps, adds and remov
 
     await sync([{ a: 'A:16', b: 'A:96', color: '#ff0000' }])
     expect(drawn(plugin)).toHaveLength(1)
-    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(1)
+    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(
+      1,
+    )
 
     await sync([])
     expect(drawn(plugin)).toHaveLength(0)
@@ -108,14 +123,26 @@ test('a measurement made by hand in Mol* is not removed', async () => {
       StructureElement.Loci(structure, [
         { unit: atom.unit, indices: OrderedSet.ofSingleton(atom.index) },
       ])
-    await plugin.managers.structure.measurement.addDistance(loci(pair.a), loci(pair.b))
+    await plugin.managers.structure.measurement.addDistance(
+      loci(pair.a),
+      loci(pair.b),
+      { visualParams: { visuals: ['lines'] } },
+    )
     await syncMeasurements({
+      labels: false,
       plugin,
       structures: [structure],
       measurements: [{ a: 'A:12', b: 'MOV' }],
     })
-    await syncMeasurements({ plugin, structures: [structure], measurements: [] })
-    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(1)
+    await syncMeasurements({
+      labels: false,
+      plugin,
+      structures: [structure],
+      measurements: [],
+    })
+    expect(plugin.managers.structure.measurement.state.distances).toHaveLength(
+      1,
+    )
   })
 })
 
@@ -123,6 +150,7 @@ test('a measurement names its structure by index and waits for it to load', asyn
   await withTemporaryMolstarPlugin(async plugin => {
     const { structure } = await loadPocket(plugin)
     const results = await syncMeasurements({
+      labels: false,
       plugin,
       structures: [structure, undefined],
       measurements: [
@@ -145,13 +173,18 @@ test('on a superposed structure the dashes follow the moved atoms', async () => 
     const other = await loadPocket(plugin, 12)
     await superposeStructures(plugin, [pivot.structures, other.structures])
     await syncMeasurements({
+      labels: false,
       plugin,
       structures: [pivot.structure, other.structure],
       measurements: [{ a: 'A:12@SG', b: 'A:16@NZ', structure: 1 }],
     })
     const [cell] = drawn(plugin)
-    const [selection] = cell!.obj!.data as { loci: Parameters<typeof molstar.Loci.getBoundingSphere>[0] }[]
-    const [a] = cell!.obj!.data as { loci: Parameters<typeof molstar.Loci.getBoundingSphere>[0] }[]
+    const [selection] = cell!.obj!.data as {
+      loci: Parameters<typeof molstar.Loci.getBoundingSphere>[0]
+    }[]
+    const [a] = cell!.obj!.data as {
+      loci: Parameters<typeof molstar.Loci.getBoundingSphere>[0]
+    }[]
     const center = molstar.Loci.getBoundingSphere(selection!.loci)!.center
     const pivotSg = closestAtoms(molstar, pivot.structure, 'A:12@SG', 'A:16@NZ')
     if ('error' in pivotSg) {

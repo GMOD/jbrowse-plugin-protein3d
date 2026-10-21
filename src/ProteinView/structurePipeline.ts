@@ -239,7 +239,7 @@ async function drawOnlyChains(
           StateTransforms.Representation.StructureRepresentation3D,
         ),
     )) {
-      if (cell.transform.params?.type?.name === 'cartoon') {
+      if (cell.transform.params?.type.name === 'cartoon') {
         update.to(cell).update(prev => ({
           ...prev,
           type: {

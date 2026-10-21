@@ -1,5 +1,5 @@
-import { POCKET_MMCIF, shiftedPocket } from './pocketStructure'
 import { caOnlyMmcif } from './molstarStructure'
+import { POCKET_MMCIF, shiftedPocket } from './pocketStructure'
 import { loadStructure } from '../ProteinView/structurePipeline'
 
 import type { TestAssembly, TestChain } from './molstarStructure'

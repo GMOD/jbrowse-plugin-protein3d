@@ -102,7 +102,8 @@ export function closestAtoms(
   for (const atomA of atomsA) {
     for (const atomB of atomsB) {
       const distance = Vec3.distance(atomA.position, atomB.position)
-      if (atomA !== atomB && (!best || distance < best.distance)) {
+      const same = atomA.unit === atomB.unit && atomA.index === atomB.index
+      if (!same && (!best || distance < best.distance)) {
         best = { a: atomA, b: atomB, distance }
       }
     }
@@ -136,10 +137,13 @@ export function syncMeasurements({
   plugin,
   structures,
   measurements,
+  labels = true,
 }: {
   plugin: PluginContext
   structures: readonly (Structure | undefined)[]
   measurements: readonly DistanceMeasurement[]
+  /** the Å text beside each line; Node has no canvas to draw it in tests */
+  labels?: boolean
 }) {
   return serialPerPlugin(plugin, MEASUREMENT_TAG, async () => {
     const molstar = await loadMolstar()
@@ -217,6 +221,7 @@ export function syncMeasurements({
             // sized to read in a figure, not only on screen
             visualParams: {
               linesColor: Color.fromHexStyle(color),
+              visuals: labels ? ['lines', 'text'] : ['lines'],
               linesSize: 0.12,
               textSize: 4,
               // beside the line rather than on the atoms it measures
