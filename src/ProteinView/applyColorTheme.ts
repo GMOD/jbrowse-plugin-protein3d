@@ -20,6 +20,7 @@ import type { Legend } from 'molstar/lib/mol-util/legend'
 export const PLACED_VALUE_SCHEMES = [
   ...VARIANT_EFFECT_SCHEMES,
   'alignment-domains',
+  'residue-values',
 ] as const
 
 export type PlacedValueScheme = (typeof PLACED_VALUE_SCHEMES)[number]
