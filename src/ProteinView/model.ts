@@ -29,6 +29,7 @@ import { reportPluginFailure } from './reportPluginFailure'
 import { applySavedCamera } from './savedCamera'
 import { syncSurfaces } from './surface'
 import { syncMeasurements } from './measurements'
+import { syncResidueMarks } from './residueMarks'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -53,6 +54,7 @@ import type { ProteinStructureSpec } from './proteinViewSpec'
 import type { SavedCamera } from './savedCamera'
 import type { ProteinSurface } from './surface'
 import type { DistanceMeasurement } from './measurements'
+import type { ResidueMark } from './residueMarks'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -215,6 +217,12 @@ function stateModelFactory() {
          * index into `structures`, the first by default
          */
         distances: types.frozen<DistanceMeasurement[] | undefined>(),
+        /**
+         * #property
+         * sites drawn on their own as spheres or sticks, on any chain (see
+         * ResidueMark): a partner's residue, a ligand, a pocket
+         */
+        marks: types.frozen<ResidueMark[] | undefined>(),
         /**
          * #property
          */
@@ -668,6 +676,23 @@ function stateModelFactory() {
                 structures,
                 measurements: distances,
               }).catch(reportPluginFailure(self, plugin))
+            }
+          }),
+        )
+
+        // The declared residue marks, once their structures have loaded
+        addDisposer(
+          self,
+          autorun(() => {
+            const plugin = self.molstarPluginContext
+            const marks = self.marks ?? []
+            const structures = self.structures.map(s =>
+              s.entities ? s.molstarStructures[0] : undefined,
+            )
+            if (plugin && structures.some(Boolean)) {
+              syncResidueMarks({ plugin, structures, marks }).catch(
+                reportPluginFailure(self, plugin),
+              )
             }
           }),
         )
