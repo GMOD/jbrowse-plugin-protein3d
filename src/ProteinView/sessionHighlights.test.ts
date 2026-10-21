@@ -14,6 +14,7 @@ import {
   sessionHighlightResidues,
   syncSessionHighlightMarks,
   withoutLabelledResidues,
+  structureLabel,
 } from './sessionHighlights'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
@@ -64,9 +65,9 @@ test("a codon marks the structure residue it codes, in core's highlight color by
 })
 
 test("a translucent highlight's residues take its color at full opacity", () => {
-  expect(
-    residues([codon(101, 'G11', 'rgba(40, 40, 40, 0.2)')])[0]?.color,
-  ).toBe('#282828')
+  expect(residues([codon(101, 'G11', 'rgba(40, 40, 40, 0.2)')])[0]?.color).toBe(
+    '#282828',
+  )
 })
 
 test('a region over the structure and off it marks only the residues it has', () => {
@@ -299,4 +300,10 @@ test("a pick counts only on the residue's own copy", async () => {
     expect(pickHitsCopy(molstar, lociOf('B', 6), chain, [6])).toBe(false)
     expect(pickHitsCopy(molstar, undefined, chain, [6])).toBe(false)
   })
+})
+
+test('a label names the amino acid each structure has at the residue', () => {
+  expect(structureLabel('{aa}46', 'E')).toBe('Glu46')
+  expect(structureLabel('{aa}46', 'K')).toBe('Lys46')
+  expect(structureLabel('residue 46', 'K')).toBe('residue 46')
 })

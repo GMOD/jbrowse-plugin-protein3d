@@ -47,6 +47,38 @@ function opaque(css: string) {
   return colord(css).alpha(1).toHex()
 }
 
+const THREE_LETTER: Record<string, string> = {
+  A: 'Ala',
+  R: 'Arg',
+  N: 'Asn',
+  D: 'Asp',
+  C: 'Cys',
+  Q: 'Gln',
+  E: 'Glu',
+  G: 'Gly',
+  H: 'His',
+  I: 'Ile',
+  L: 'Leu',
+  K: 'Lys',
+  M: 'Met',
+  F: 'Phe',
+  P: 'Pro',
+  S: 'Ser',
+  T: 'Thr',
+  W: 'Trp',
+  Y: 'Tyr',
+  V: 'Val',
+}
+
+/**
+ * A label's `{aa}` names the amino acid this structure has at the first
+ * residue the highlight marks, so `{aa}46` reads Glu46 on wild type and Lys46
+ * on the E46K structure.
+ */
+export function structureLabel(label: string, aa: string | undefined) {
+  return label.replaceAll('{aa}', (aa && THREE_LETTER[aa]) ?? '')
+}
+
 /** One highlight's residues on the mapped entity */
 export interface ResidueMark {
   entityId: string
@@ -72,7 +104,7 @@ export function sessionHighlightResidues({
   highlights: readonly GenomeHighlight[]
   mapping: { g2p: Record<number, number>; refName: string }
   naming: GenomeNaming
-  entity: { entityId: string; seqIds: readonly number[] }
+  entity: { entityId: string; seqIds: readonly number[]; seq?: string }
   transcriptToStructure: Record<number, number>
   /** whether the session writes labels on its highlights */
   labels: boolean
@@ -86,6 +118,7 @@ export function sessionHighlightResidues({
       return []
     }
     const labelSeqIds = new Set<number>()
+    let firstPos: number | undefined
     for (let base = h.start; base < h.end; base++) {
       const residue = mapping.g2p[base]
       const structurePos =
@@ -94,6 +127,7 @@ export function sessionHighlightResidues({
         structurePos === undefined ? undefined : entity.seqIds[structurePos]
       if (labelSeqId !== undefined) {
         labelSeqIds.add(labelSeqId)
+        firstPos ??= structurePos
       }
     }
     return labelSeqIds.size > 0
@@ -101,7 +135,13 @@ export function sessionHighlightResidues({
           {
             entityId: entity.entityId,
             labelSeqIds: [...labelSeqIds].sort((a, b) => a - b),
-            label: labels && h.label ? h.label : undefined,
+            label:
+              labels && h.label
+                ? structureLabel(
+                    h.label,
+                    firstPos === undefined ? undefined : entity.seq?.[firstPos],
+                  )
+                : undefined,
             color: opaque(h.color ?? DEFAULT_HIGHLIGHT_COLOR),
           },
         ]
