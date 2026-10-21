@@ -21,7 +21,11 @@ Open
 `https://jbrowse.org/code/jb2/<host>/?config=/ucsc/hg38/config.json&session=spec-…`
 with a `LaunchView-ProteinView` spec, wait for
 `[data-testid="protein-view-ready"]`, then read the model back through
-`window.JBrowseSession.views`.
+`window.JBrowseSession.views`. The marker waits for a color field's values and
+the paint that follows (1.24.0), so a track- or AlphaMissense-colored view reads
+ready only once the cartoon shows it; before that it flipped as soon as the
+structures were mapped, and a capture 20–40 s later still showed Mol\*'s chain
+colors under the right legend.
 
 ## Session urls the protein browser would build
 

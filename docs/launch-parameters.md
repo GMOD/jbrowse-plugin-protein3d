@@ -152,8 +152,9 @@ A residue nothing places stays grey. The structure's header row says why a
 structure is grey, and a failed download says so there too; switching to another
 field and back retries it.
 
-The values arrive after the structure is shown and only recolor it: a selection,
-the camera and the ready marker do not wait for them.
+The values arrive after the structure is shown and only recolor it: a selection
+and the camera do not wait for them. The view's ready marker does, so a capture
+lands on the painted cartoon.
 
 `domain` colors by the domains an MSA view
 ([jbrowse-plugin-msaview](https://github.com/GMOD/jbrowse-plugin-msaview)) draws

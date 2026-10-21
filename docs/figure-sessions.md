@@ -21,6 +21,7 @@ link opens on the same picture every time.
   },
   "surface": { "opacity": 0.55 },
   "silhouettes": true,
+  "occlusion": true,
   "marks": [
     { "site": "A:220", "style": "sticks", "color": "#d1007a" },
     { "site": "A1JMR", "style": "sticks", "color": "#f28e2b" },
@@ -37,6 +38,8 @@ link opens on the same picture every time.
 - `surface`: a translucent molecular surface over each polymer, colored as the
   cartoon is.
 - `silhouettes`: outlines around every object.
+- `occlusion`: ambient occlusion, which darkens crevices and folds so a cartoon
+  reads as depth; with `silhouettes`, Mol\*'s illustrative look.
 - `marks`: sites drawn on their own, on any chain. A site is a residue (`B:11`),
   an atom of one (`A:248@NH2`) or a component id (`A1JMR`); `structure` indexes
   `structures`; `style` is `spheres` or `sticks`.
