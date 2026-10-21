@@ -1,3 +1,10 @@
+## [1.24.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.23.0...v1.24.0) (2026-10-21)
+
+### Other Changes
+
+- Figure session doc: plainer title and chains wording ([950b035](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/950b03547da4f3fb8b643d09103c61e1241e01ae))
+- Ready marker waits for the color field's values and their paint; occlusion figure style ([b9c31bc](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b9c31bc09186e44ad44d8ef5642d338247425586))
+
 ## [1.23.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.22.0...v1.23.0) (2026-10-21)
 
 ### Other Changes
