@@ -1,3 +1,10 @@
+## [1.26.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.25.0...v1.26.0) (2026-10-22)
+
+### Other Changes
+
+- A structure draws part of a chain, through a filter of field predicates ([8994ab8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8994ab86ca72cf21ee91402414bd0a25f7586b53))
+- Say how a filter and chains combine in words the spell check knows ([7f020f1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7f020f188d511075ff4481ecb9a20b9c8124ba80))
+
 ## [1.25.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.24.0...v1.25.0) (2026-10-22)
 
 ### Other Changes
