@@ -23,6 +23,7 @@ import { applyFigureStyle } from './figureStyle'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import loadMolstar from './loadMolstar'
 import { makeLociChannel } from './lociChannel'
+import { checkedLayers } from './markProblems'
 import { syncMeasurements } from './measurements'
 import { checkedColor, colorOfScheme, resolvedColor } from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
@@ -291,7 +292,7 @@ function stateModelFactory() {
       } & Record<string, unknown>) =>
         withStoredSettings(
           {
-            ...snapshot,
+            ...checkedLayers(snapshot, snapshot.structures),
             displayName:
               snapshot.displayName ??
               defaultDisplayName(snapshot.structures ?? []),

@@ -53,7 +53,12 @@ link opens on the same picture every time.
   (`G:*`); `structure` indexes `structures`; `mark` is `spheres`, `sticks` or
   `cartoon`, and `encoding.color.value` its color, the mark display's spelling.
   A `cartoon` mark of a chain left out of `chains` draws a partner protein, such
-  as a virus's envelope protein, in its own color.
+  as a virus's envelope protein, in its own color: its polymer only, where a
+  chain site drawn as `spheres` or `sticks` takes the chain's glycans and waters
+  too. A bare `G` is the component, every guanine. A `site` is an address in the
+  structure's own numbering, the one `distances` and figure anchors use, not a
+  field predicate. A session whose marks or distances do not read this way is
+  refused with the reason, the older `style` and string `color` included.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
   Å, with an optional `encoding.color.value`.
 

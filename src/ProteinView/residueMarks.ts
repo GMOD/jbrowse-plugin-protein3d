@@ -18,7 +18,9 @@ export const RESIDUE_MARKS_TAG = 'jbrowse-residue-marks'
  * view's structures, the first by default. `mark` is the geometry and
  * `encoding.color.value` its color, as in a mark display's `marks`. A
  * `cartoon` mark of a chain left out of the structure's `chains` draws that
- * chain, a partner protein say, in its own color.
+ * chain's polymer, a partner protein say, in its own color; as spheres or
+ * sticks a chain site takes every residue of the chain, its glycans and
+ * waters included. markProblems checks a snapshot's marks.
  */
 export interface ResidueMark {
   site: string
@@ -33,8 +35,9 @@ function markRepresentation(mark: ResidueMark['mark']) {
         type: 'ball-and-stick' as const,
         typeParams: { sizeFactor: 0.35, sizeAspectRatio: 0.7 },
       }
-    : mark === 'cartoon'
-      ? { type: 'cartoon' as const }
+    : // as thick as the cartoon drawOnlyChains gives the chains beside it
+      mark === 'cartoon'
+      ? { type: 'cartoon' as const, typeParams: { sizeFactor: 0.45 } }
       : { type: 'spacefill' as const, typeParams: { sizeFactor: 1 } }
 }
 export const DEFAULT_MARK_COLOR = '#f28e2b'

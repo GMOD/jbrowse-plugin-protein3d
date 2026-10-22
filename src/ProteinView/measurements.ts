@@ -91,7 +91,7 @@ export function closestAtoms(
   const siteA = parseSite(a)
   const siteB = parseSite(b)
   if (!siteA || !siteB) {
-    return { error: `${siteA ? b : a} is not a residue such as A:248` }
+    return { error: `${siteA ? b : a} is not a site such as A:248 or G:*` }
   }
   const atomsA = atomsOf(molstar, structure, siteA)
   const atomsB = atomsOf(molstar, structure, siteB)

@@ -428,3 +428,14 @@ test('the hydrophobicity row follows a range the view color sets', () => {
     view.setColor({ field: 'chain', range: ['red'] })
   }).toThrow('color.range is refused')
 })
+
+test('a snapshot whose marks use the 1.24 spelling is refused with the reason', () => {
+  expect(() =>
+    ProteinView.create({
+      type: 'ProteinView',
+      structures: [{ url: 'a.cif' }],
+      // @ts-expect-error the spelling 1.24 read, which the type no longer has
+      marks: [{ site: 'A:220', style: 'sticks' }],
+    }),
+  ).toThrow('marks[0].style is now mark')
+})

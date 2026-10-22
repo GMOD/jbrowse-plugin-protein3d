@@ -54,7 +54,7 @@ test('a site that is not written or not there is reported, not thrown', async ()
   await withTemporaryMolstarPlugin(async plugin => {
     const { structure } = await loadPocket(plugin)
     expect(closestAtoms(molstar, structure, 'A:12', 'not a site!')).toEqual({
-      error: 'not a site! is not a residue such as A:248',
+      error: 'not a site! is not a site such as A:248 or G:*',
     })
     expect(closestAtoms(molstar, structure, 'A:12', 'B:12')).toEqual({
       error: 'B:12 is not in the structure',
