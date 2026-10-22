@@ -23,8 +23,16 @@ link opens on the same picture every time.
   "silhouettes": true,
   "occlusion": true,
   "marks": [
-    { "site": "A:220", "style": "sticks", "color": "#d1007a" },
-    { "site": "A1JMR", "style": "sticks", "color": "#f28e2b" },
+    {
+      "site": "A:220",
+      "mark": "sticks",
+      "encoding": { "color": { "value": "#d1007a" } },
+    },
+    {
+      "site": "A1JMR",
+      "mark": "sticks",
+      "encoding": { "color": { "value": "#f28e2b" } },
+    },
   ],
   "distances": [{ "a": "A:46@NZ", "b": "A:80@NZ" }],
 }
@@ -41,10 +49,13 @@ link opens on the same picture every time.
 - `occlusion`: ambient occlusion, which darkens crevices and folds so a cartoon
   reads as depth; with `silhouettes`, Mol\*'s illustrative look.
 - `marks`: sites drawn on their own, on any chain. A site is a residue (`B:11`),
-  an atom of one (`A:248@NH2`) or a component id (`A1JMR`); `structure` indexes
-  `structures`; `style` is `spheres` or `sticks`.
+  an atom of one (`A:248@NH2`), a component id (`A1JMR`) or a whole chain
+  (`G:*`); `structure` indexes `structures`; `mark` is `spheres`, `sticks` or
+  `cartoon`, and `encoding.color.value` its color, the mark display's spelling.
+  A `cartoon` mark of a chain left out of `chains` draws a partner protein, such
+  as a virus's envelope protein, in its own color.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
-  Å.
+  Å, with an optional `encoding.color.value`.
 
 ## Structure properties
 

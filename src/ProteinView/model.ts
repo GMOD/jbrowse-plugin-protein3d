@@ -220,8 +220,9 @@ function stateModelFactory() {
         distances: types.frozen<DistanceMeasurement[] | undefined>(),
         /**
          * #property
-         * sites drawn on their own as spheres or sticks, on any chain (see
-         * ResidueMark): a partner's residue, a ligand, a pocket
+         * sites drawn on their own as spheres, sticks or a cartoon, on any
+         * chain (see ResidueMark): a partner's residue, a ligand, a pocket, a
+         * partner protein
          */
         marks: types.frozen<ResidueMark[] | undefined>(),
         /**
