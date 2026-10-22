@@ -67,6 +67,28 @@ link opens on the same picture every time.
 
 - `chains`: author chain ids to draw, such as one rung of a fibril or one copy
   of a homo-oligomer. The rest stay loaded and mapped but are not drawn.
+- `filter`: which residues of those chains to draw, as a list of field
+  predicates, the spelling a JBrowse display's own `filter` takes. CCR5's Δ32
+  allele frameshifts after residue 184, so
+  `{ "pdbId": "6meo", "chains": ["B"], "filter": [{ "field": "residue", "lte": 184 }] }`
+  draws what the truncation leaves, beside a structure of the whole receptor.
+  - Fields: `residue`, the author residue number (`auth_seq_id`) a paper cites
+    and `marks` address, and `chain`, the author chain id (`auth_asym_id`)
+    `chains` lists.
+  - Operators: `equal`, `lt`, `lte`, `gt`, `gte`, `range` (`[low, high]`, both
+    ends included) and `oneOf`. `chain` is a string, so it takes `equal` and
+    `oneOf` alone.
+  - A structure draws the residues every predicate passes, and `chains` is one
+    more test beside them: `chains: ["B"]` with `{ field: "residue", lte: 184 }`
+    draws residues 1-184 of B and nothing else.
+  - The residues it leaves out are not drawn at all, as a chain left out of
+    `chains` is not: a session highlight on one draws nothing rather than
+    spheres in empty space. They stay loaded, mapped and selectable, so the
+    alignment panel, the genome mapping and `marks` read the whole structure.
+  - A bound ligand is numbered in the same author series as the polymer, well
+    above its last residue, so an `lte` bound leaves the ligand out too.
+  - A filter that does not read is refused with the reason, naming the structure
+    and the predicate.
 
 ## Labels
 
