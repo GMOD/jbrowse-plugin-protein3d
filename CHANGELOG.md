@@ -1,3 +1,11 @@
+## [1.25.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.24.0...v1.25.0) (2026-10-22)
+
+### Other Changes
+
+- Marks speak the mark display's encoding, and a mark can draw a whole chain ([6b77ef0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6b77ef0740c34d0d75fef72eefcdf8ba7f07d6df))
+- A session's marks and distances are checked, and a chain cartoon matches its neighbours ([9eeec05](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9eeec05bc70e1daeb41b818838116c167a68ffc9))
+- Sessions written with the 1.24 mark spelling load in the encoding spelling ([3c3f693](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/3c3f69330e9a698970c20f8e250b81719b40d5d3))
+
 ## [1.24.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.23.0...v1.24.0) (2026-10-21)
 
 ### Other Changes
