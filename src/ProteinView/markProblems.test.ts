@@ -18,17 +18,32 @@ test('a partner chain drawn as its own cartoon passes', () => {
   ).toEqual([])
 })
 
-test('the spelling 1.24 read is refused with the new one named', () => {
+test('the spelling 1.24 read is migrated to the encoding spelling', () => {
   expect(
-    markProblems([{ site: 'A:220', style: 'sticks', color: '#d1007a' }]),
-  ).toEqual([
-    'marks[0].style is now mark',
+    checkedLayers(
+      {
+        marks: [{ site: 'A:220', style: 'sticks', color: '#d1007a' }],
+        distances: [{ a: 'A:46', b: 'A:80', color: '#111111' }],
+      },
+      [{}],
+    ),
+  ).toEqual({
+    marks: [
+      {
+        site: 'A:220',
+        mark: 'sticks',
+        encoding: { color: { value: '#d1007a' } },
+      },
+    ],
+    distances: [
+      { a: 'A:46', b: 'A:80', encoding: { color: { value: '#111111' } } },
+    ],
+  })
+})
+
+test('a color that is not a string is left for the check to name', () => {
+  expect(markProblems([{ site: 'A:1', color: { value: '#d1007a' } }])).toEqual([
     "marks[0].color is now encoding: { color: { value: '#rrggbb' } }",
-  ])
-  expect(
-    distanceProblems([{ a: 'A:46', b: 'A:80', color: '#111111' }]),
-  ).toEqual([
-    "distances[0].color is now encoding: { color: { value: '#rrggbb' } }",
   ])
 })
 
@@ -57,10 +72,16 @@ test('a cartoon over a chain the structure already draws is refused', () => {
 test('checkedLayers throws every problem at once', () => {
   expect(() =>
     checkedLayers({
-      marks: [{ site: 'A:1', style: 'sticks' }],
+      marks: [{ site: 'A:1', style: 'balls' }],
       distances: [{ a: 'A:1', b: '??' }],
     }),
   ).toThrow(
-    'marks[0].style is now mark; distances[0].b is a site such as A:248, A:248@NH2, MOV or G:*, not ??',
+    'marks[0].mark is one of spheres, sticks, cartoon, not "balls"; distances[0].b is a site such as A:248, A:248@NH2, MOV or G:*, not ??',
   )
+})
+
+test('a distance needs both sites', () => {
+  expect(distanceProblems([{ a: 'A:46@NZ' }])).toEqual([
+    'distances[0].b is a site such as A:248, A:248@NH2, MOV or G:*, not undefined',
+  ])
 })

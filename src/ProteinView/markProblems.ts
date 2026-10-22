@@ -35,10 +35,10 @@ function siteProblems(where: string, key: string, site: unknown) {
 }
 
 /**
- * Why `marks` would draw something other than what it says: an entry in the
- * spelling 1.24 read (`style`, a string `color`), a site or mark type that
- * does not parse, or a cartoon over a chain the structure already draws.
- * `structures` are the view's, whose `chains` say which chains are drawn.
+ * Why `marks` would draw something other than what it says: a site or mark
+ * type that does not parse, a color that is not #rrggbb, or a cartoon over a
+ * chain the structure already draws. `structures` are the view's, whose
+ * `chains` say which chains are drawn.
  */
 export function markProblems(
   marks: unknown,
@@ -62,7 +62,6 @@ export function markProblems(
     const drawn = structure?.chains
     return [
       ...siteProblems(where, 'site', mark.site),
-      ...('style' in mark ? [`${where}.style is now mark`] : []),
       ...(mark.mark !== undefined && !MARK_TYPES.includes(mark.mark as string)
         ? [
             `${where}.mark is one of ${MARK_TYPES.join(', ')}, not ${JSON.stringify(mark.mark)}`,
@@ -100,17 +99,55 @@ export function distanceProblems(distances: unknown): string[] {
   })
 }
 
-/** `marks` and `distances`, refused with every problem found in either. */
+/**
+ * A mark or distance written the way 1.23 and 1.24 read it, `style` and a
+ * string `color`, in the encoding spelling; any other entry as it is.
+ */
+function migratedLayer(entry: unknown) {
+  if (!isRecord(entry)) {
+    return entry
+  }
+  const { style, color, ...rest } = entry
+  return {
+    ...rest,
+    ...(rest.mark === undefined && style !== undefined ? { mark: style } : {}),
+    ...(typeof color === 'string'
+      ? rest.encoding === undefined
+        ? { encoding: { color: { value: color } } }
+        : {}
+      : color === undefined
+        ? {}
+        : { color }),
+  }
+}
+
+function migratedList(list: unknown) {
+  return Array.isArray(list) ? list.map(migratedLayer) : list
+}
+
+/**
+ * `marks` and `distances` migrated from the 1.24 spelling, then refused with
+ * every problem found in either.
+ */
 export function checkedLayers<T extends Record<string, unknown>>(
   snapshot: T,
   structures: readonly { chains?: string[] }[] = [],
-) {
+): T {
+  const migrated = {
+    ...snapshot,
+    ...(snapshot.marks === undefined
+      ? {}
+      : { marks: migratedList(snapshot.marks) }),
+    ...(snapshot.distances === undefined
+      ? {}
+      : { distances: migratedList(snapshot.distances) }),
+  }
   const problems = [
-    ...markProblems(snapshot.marks, structures),
-    ...distanceProblems(snapshot.distances),
+    ...markProblems(migrated.marks, structures),
+    ...distanceProblems(migrated.distances),
   ]
   if (problems.length > 0) {
     throw new Error(problems.join('; '))
   }
-  return snapshot
+  return migrated
 }

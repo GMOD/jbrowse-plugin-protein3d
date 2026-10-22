@@ -57,8 +57,9 @@ link opens on the same picture every time.
   chain site drawn as `spheres` or `sticks` takes the chain's glycans and waters
   too. A bare `G` is the component, every guanine. A `site` is an address in the
   structure's own numbering, the one `distances` and figure anchors use, not a
-  field predicate. A session whose marks or distances do not read this way is
-  refused with the reason, the older `style` and string `color` included.
+  field predicate. A session written with the older `style` and string `color`
+  (1.23 and 1.24) loads in this spelling; one whose marks or distances still do
+  not read is refused with the reason.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
   Å, with an optional `encoding.color.value`.
 
