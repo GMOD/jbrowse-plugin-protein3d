@@ -49,8 +49,9 @@ export interface ProteinStructureSpec {
   // author chain ids to draw, the rest left out; absent draws every chain
   chains?: string[]
   // which residues of those chains to draw, as a list of field predicates on
-  // `residue` (auth_seq_id) and `chain` (auth_asym_id), ANDed with each other
-  // and with `chains`; absent draws every residue
+  // `residue` (auth_seq_id) and `chain` (auth_asym_id). A residue draws only
+  // where every predicate holds and `chains` keeps its chain; absent draws
+  // every residue
   filter?: StructureFilter
 }
 
