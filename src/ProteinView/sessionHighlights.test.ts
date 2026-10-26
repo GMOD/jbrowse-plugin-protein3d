@@ -345,7 +345,9 @@ test('two syncs started together leave one set of highlights', async () => {
     const sync = () =>
       syncSessionHighlightMarks({
         plugin,
-        structures: [{ molstarStructure, marks: residues([codon(104, 'G12')]) }],
+        structures: [
+          { molstarStructure, marks: residues([codon(104, 'G12')]) },
+        ],
       })
     await Promise.all([sync(), sync()])
     expect(tagged(plugin).residues).toHaveLength(1)
