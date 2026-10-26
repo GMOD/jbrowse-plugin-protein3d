@@ -1,3 +1,18 @@
+## [1.26.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.26.0...v1.26.1) (2026-10-26)
+
+### Other Changes
+
+- Mol* edits share one lane per plugin, and cells drawn on a hidden structure start hidden ([4fe8a54](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4fe8a546ddde5af8c2a7ba5f234bbcc3d741cd79))
+- Removing a structure renumbers the marks and distances that address the rest ([4a47d30](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4a47d305996fc3ff651863319ab441c7eeb22f82))
+- A ramp whose domain the data half fills can no longer reverse or throw ([406f7f8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/406f7f8861bb9bb7c9c01ef1ca196852fc111c1b))
+- The launch dialog refuses a PDB ID RCSB lacks and a file that failed to read ([446bba8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/446bba868bec902396504eb79c065293d425dee2))
+- A launch checks the keys that link it to a transcript before using them ([34c8dc1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/34c8dc14bdb1d4923fbbede6fb479dbf9d4a29db))
+- A right-clicked isoform opens its own AlphaFold model ([d6952ee](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d6952ee2b5d3b85b17b5494b3403ece4049efb09))
+- Order normalizeLaunch's type imports and format resolveGeneLaunch ([010da04](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/010da04ce0286b77d4b3122068536944cfb04814))
+- Smaller fixes from the review: pLDDT, the track color dialog, ClinVar, labels ([c15686d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c15686d8dc18bf78e02e1eab318afb2931cc9e51))
+- Reshoot the nightly e2e references; the e2e config turns host analytics off ([879d06b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/879d06b49312b7ac7bb69d7f31a7f0624d21f46c))
+- Type the review's new tests the way the test typecheck reads them ([d3eb8bf](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d3eb8bfa204c2e735fa6c6ece89eb552a4eef59e))
+
 ## [1.26.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.25.0...v1.26.0) (2026-10-22)
 
 ### Other Changes
