@@ -4,6 +4,7 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
 import loadMolstar from './loadMolstar'
+import { RESIDUE_MARKS_TAG, syncResidueMarks } from './residueMarks'
 import {
   DEFAULT_HIGHLIGHT_COLOR,
   SESSION_HIGHLIGHTS_TAG,
@@ -16,6 +17,7 @@ import {
   syncSessionHighlightMarks,
   withoutLabelledResidues,
 } from './sessionHighlights'
+import { setStructuresHidden } from './structureVisibility'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 import { residuesOf } from '../test_data/molstarStructure'
@@ -307,6 +309,76 @@ test('a labelled residue fades the cartoon around it, and an unlabelled one does
     expect(fades()).toHaveLength(0)
     await sync([codon(104, 'G12')])
     expect(fades().length).toBeGreaterThan(0)
+  })
+})
+
+test("the fade leaves a spec's residue mark opaque, whichever was drawn first", async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const molstarStructure = await helix(plugin)
+    await syncResidueMarks({
+      plugin,
+      structures: [molstarStructure],
+      marks: [{ site: 'A:7', mark: 'sticks' }],
+    })
+    await syncSessionHighlightMarks({
+      plugin,
+      structures: [{ molstarStructure, marks: residues([codon(104, 'G12')]) }],
+    })
+    const faded = plugin.state.data
+      .select(
+        StateSelection.Generators.ofTransformer(
+          StateTransforms.Representation
+            .TransparencyStructureRepresentation3DFromScript,
+        ),
+      )
+      .map(c => plugin.state.data.cells.get(c.transform.parent))
+    expect(faded.length).toBeGreaterThan(0)
+    expect(
+      faded.filter(c => c?.transform.tags?.includes(RESIDUE_MARKS_TAG)),
+    ).toEqual([])
+  })
+})
+
+test('two syncs started together leave one set of highlights', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const molstarStructure = await helix(plugin)
+    const sync = () =>
+      syncSessionHighlightMarks({
+        plugin,
+        structures: [{ molstarStructure, marks: residues([codon(104, 'G12')]) }],
+      })
+    await Promise.all([sync(), sync()])
+    expect(tagged(plugin).residues).toHaveLength(1)
+    expect(labelAnchors(plugin).size).toBe(1)
+  })
+})
+
+test('a highlight drawn on a hidden structure is hidden too', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const molstarStructure = await helix(plugin)
+    await setStructuresHidden({
+      plugin,
+      structures: [molstarStructure],
+      hidden: true,
+    })
+    await syncSessionHighlightMarks({
+      plugin,
+      structures: [{ molstarStructure, marks: residues([codon(104, 'G12')]) }],
+    })
+    const drawn = plugin.state.data.select(
+      StateSelection.Generators.root
+        .subtree()
+        .withTag(SESSION_HIGHLIGHTS_TAG)
+        .filter(
+          c =>
+            c.transform.transformer ===
+              StateTransforms.Model.StructureComponent ||
+            c.transform.transformer ===
+              StateTransforms.Representation.StructureRepresentation3D,
+        ),
+    )
+    expect(drawn).toHaveLength(2)
+    expect(drawn.map(c => c.state.isHidden)).toEqual([true, true])
   })
 })
 

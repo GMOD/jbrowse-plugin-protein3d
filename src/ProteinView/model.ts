@@ -572,6 +572,8 @@ function stateModelFactory() {
                     molstarStructure,
                     sites: s.alignmentDomainStatus?.placedSites,
                     color: s.alignmentDomainStatus?.domains?.color,
+                    chains: s.chains,
+                    filter: s.filter,
                   }))
                 : [],
             )
