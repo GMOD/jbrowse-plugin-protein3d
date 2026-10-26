@@ -63,8 +63,7 @@ export function launchAlphaFoldModel(
       ? undefined
       : isoformSequences?.[preferredTranscriptId]
   const own =
-    preferred &&
-    models.find(m => m.sequence === stripStopCodon(preferred.seq))
+    preferred && models.find(m => m.sequence === stripStopCodon(preferred.seq))
   return own ?? pickAlphaFoldModel(models, isoformSequences)
 }
 

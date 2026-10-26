@@ -1,11 +1,11 @@
 import { resolveStructureUrl } from 'p2s_mapper'
 
+import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type {
   ProteinStructureSpec,
   ProteinViewSpec,
 } from '../ProteinView/proteinViewSpec'
 import type { StructureFilter } from '../ProteinView/residueFilter'
-import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { ResidueRange, ResidueRanges } from '../ProteinView/residueRanges'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { PairwiseAlignment } from 'p2s_mapper'
