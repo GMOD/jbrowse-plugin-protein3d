@@ -130,6 +130,8 @@ export function sessionHighlightResidues({
       return []
     }
     const labelSeqIds = new Set<number>()
+    // the N-terminal residue names the change, whichever strand the bases
+    // run on
     let firstPos: number | undefined
     for (let base = h.start; base < h.end; base++) {
       const residue = mapping.g2p[base]
@@ -137,9 +139,9 @@ export function sessionHighlightResidues({
         residue === undefined ? undefined : transcriptToStructure[residue]
       const labelSeqId =
         structurePos === undefined ? undefined : entity.seqIds[structurePos]
-      if (labelSeqId !== undefined) {
+      if (structurePos !== undefined && labelSeqId !== undefined) {
         labelSeqIds.add(labelSeqId)
-        firstPos ??= structurePos
+        firstPos = Math.min(firstPos ?? structurePos, structurePos)
       }
     }
     return labelSeqIds.size > 0

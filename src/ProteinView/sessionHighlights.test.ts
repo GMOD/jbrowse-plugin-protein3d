@@ -423,3 +423,19 @@ test('a protein-change label reads as the residue each structure has', () => {
   expect(structureLabel('residue 46', 'K')).toBe('residue 46')
   expect(structureLabel('E46K', undefined)).toBe('E46K')
 })
+
+// on the minus strand the region's first base codes its last residue
+test('a protein change over two codons reads as its N-terminal residue', () => {
+  const [mark] = sessionHighlightResidues({
+    highlights: [{ ...codon(101, 'G12V'), end: 107 }],
+    mapping: { g2p, refName: 'chr12' },
+    naming: {
+      canonicalRefName: r => r.replace(/^chr/, ''),
+      isAssembly: name => name === 'hg38',
+    },
+    entity: { entityId: '1', seqIds: [5, 6], seq: 'GA' },
+    transcriptToStructure: { 1: 0, 2: 1 },
+    labels: true,
+  })
+  expect(mark?.label).toBe('Gly12')
+})
