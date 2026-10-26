@@ -177,6 +177,9 @@ export function setupJBrowse() {
 
 function createTestConfig() {
   return {
+    // the host reports a session's activity as its tab hides, and the
+    // headless browser's request fails with a console warning
+    configuration: { disableAnalytics: true },
     plugins: [
       {
         name: 'Protein3d',
