@@ -79,6 +79,9 @@ test('a zero-width ramp paints its low color', () => {
       { domain: valueDomain(values) },
     ),
   )
+  if (!painted) {
+    throw new Error('a values color resolves to a scale')
+  }
   const paint = cssScaleOf(painted)
   expect(paint(0)).toBe(paint(-5))
 })

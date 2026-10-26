@@ -1378,7 +1378,9 @@ test('a pLDDT color on an experimental structure says it shows no confidence', (
       return { field: 'plddt' as const }
     },
   }))
-  const entities = [{ entityId: '1', seq: 'MKA', seqIds: [1, 2, 3] }]
+  const entities = [
+    { entityId: '1', seq: 'MKA', seqIds: [1, 2, 3], chains: ['A'] },
+  ]
   const [crystal, model] = ColoredParent.create({
     structures: [{ url: '1tup.cif' }, { url: 'AF-P04637-F1.cif' }],
   }).structures
