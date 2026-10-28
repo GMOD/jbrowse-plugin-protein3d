@@ -151,14 +151,16 @@ test("the 1D track paints a type the 3D bar's color, and an unlisted one grey", 
   })
   const { scale } = (
     features?.displays as {
-      encoding: { color: ReturnType<typeof colorChannel> }
+      encoding: {
+        color: { scale: { type: string; domain: string[]; range: string[] } }
+      }
     }[]
   )[0]!.encoding.color
   expect(scale.type).toBe('ordinal')
   const paint = cssScaleOf({
     ...UNIPROT_FEATURE_COLOR,
-    domain: scale.domain as string[],
-    range: scale.range as string[],
+    domain: scale.domain,
+    range: scale.range,
   })
   expect(paint('Zinc finger')).toBe('#d62728')
   expect(paint('Region')).toBe('#2ca02c')
