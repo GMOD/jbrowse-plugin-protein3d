@@ -1,3 +1,11 @@
+## [1.27.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.26.1...v1.27.0) (2026-10-28)
+
+### Other Changes
+
+- Read msaview's domain color as a channel, scale.names as the labels ([256042d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/256042d6d2b1c2ef7149bf7bb2a7fb7c4ce15c66))
+- The 1D view's tracks paint through encoding.color, the facet orders by sort ([e46a9ee](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e46a9eee291aac06eaa113d5443fbfd83524058d))
+- Type the UniProt channel the 1D-track test reads ([bf11323](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bf11323cd76a1e4bf36f7be8861d298349802141))
+
 ## [1.26.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.26.0...v1.26.1) (2026-10-26)
 
 ### Other Changes
