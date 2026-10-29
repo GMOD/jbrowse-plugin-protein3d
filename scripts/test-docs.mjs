@@ -159,7 +159,7 @@ try {
         const s = window.JBrowseSession
         const st = s?.views?.find(v => v.type === 'ProteinView')
           ?.structures?.[0]
-        return { seqLen: st?.structureSequences?.[0]?.length ?? 0 }
+        return { seqLen: st?.entities?.[0]?.seq.length ?? 0 }
       })
       if (state.seqLen > 0) break
     }
@@ -200,7 +200,7 @@ try {
             ? Object.keys(st.genomeToTranscriptSeqMapping.g2p).length
             : 0,
           hasAlignment: !!st?.pairwiseAlignment,
-          seqLen: st?.structureSequences?.[0]?.length ?? 0,
+          seqLen: st?.entities?.[0]?.seq.length ?? 0,
           painted: document.querySelectorAll(PAINTED).length,
         }
       }, PAINTED_FEATURES)
@@ -262,7 +262,7 @@ try {
             ? Object.keys(st.genomeToTranscriptSeqMapping.g2p).length
             : 0,
           hasAlignment: !!st?.pairwiseAlignment,
-          seqLen: st?.structureSequences?.[0]?.length ?? 0,
+          seqLen: st?.entities?.[0]?.seq.length ?? 0,
           // protein translated from the track's CDS (stop codon stripped)
           resolvedProtein: (
             st?.userProvidedTranscriptSequence ?? ''
@@ -332,7 +332,7 @@ try {
         return {
           wired: !!lgv && st?.connectedViewId === lgv?.id,
           derivedUrl: st?.url,
-          entityCount: st?.structureSequences?.length ?? 0,
+          entityCount: st?.entities?.length ?? 0,
           mappedEntityIndex: st?.entities?.findIndex(
             e => e.entityId === st.mappedEntity?.entityId,
           ),
