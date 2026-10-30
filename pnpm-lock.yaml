@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@gmod/tabix':
-        specifier: ^3.10.1
-        version: 3.10.1
+        specifier: ^3.13.1
+        version: 3.13.1
       '@mui/icons-material':
         specifier: ^9.5.0
         version: 9.5.0(@mui/material@9.5.0(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@emotion/styled@11.14.1(@emotion/react@11.14.0(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@types/react@19.3.0)(react@19.3.0)(supports-color@7.2.0))(@types/react@19.3.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0))(@types/react@19.3.0)(react@19.3.0)
@@ -570,17 +570,20 @@ packages:
   '@gmod/bgzf-filehandle@6.7.0':
     resolution: {integrity: sha512-ThtHVneb+tASyGFACVL/rMu6d5AY0vWK6poeOJwIIAaJpXYpptrmwvhdk2xk5eoNzL+iN40B3bXytMvQ+e+80Q==}
 
+  '@gmod/bgzf-filehandle@6.8.2':
+    resolution: {integrity: sha512-idzdZgoGvgkCgshoibhmeH795wQAm7JXnEvETEMPPdrq4yBCDD6S+LkN1JC6V+wdaRc0LZSKP7A50LqNaJC6sg==}
+
   '@gmod/range-cache-filehandle@1.5.0':
     resolution: {integrity: sha512-73XvHyvAqORaJD5k+Jn009ttPM1vFm7cN78EjR+Q/IoW8Sih+8b5wq4CFsiJed4P7WEmaagni337X9s8Gk3zxw==}
 
   '@gmod/shared-read-cache@1.7.2':
     resolution: {integrity: sha512-N71dzJHYYSEAZYQCl38QGZ8cx468lFZE9VdS29N2DhRbKMf/X7Qb+cJsuIt1MeVDmpvKui5wDiNILgkQREpwlw==}
 
-  '@gmod/shared-read-cache@2.0.0':
-    resolution: {integrity: sha512-nU4HPB+DlvZqRVJZvtIbJ3zS+kSKfOhibCu3Y7Sia9D4GwA1MotdBNH19hM8/gP/tYuHGaSdvpGhZ0FfJbw/Hg==}
+  '@gmod/shared-read-cache@2.1.0':
+    resolution: {integrity: sha512-AyiUt0hiEGl7lWc1fuigbXR/RToIw3h72dalaRoSNau9WL9ux9rEfkcsXDYTgSDudehfAEQac1jTvn2zrfnELQ==}
 
-  '@gmod/tabix@3.10.1':
-    resolution: {integrity: sha512-bynf5MGr50O6Re2asEbt3kEfULUhXb2J87dqFK/78xXfJIWWrKfuQCA+ADSp3QJtdODvTf7ftWiTnc8yLQ0Yrw==}
+  '@gmod/tabix@3.13.1':
+    resolution: {integrity: sha512-usyBxD1EQ/wfIzeT/wQsqJBT6aGZwgaIFG94lBYFhWdK+csHjQU7t9i/iIjDSCIcZFTFiQ1TFp3McCMf4aH/4A==}
 
   '@gmod/vcf@7.2.0':
     resolution: {integrity: sha512-F5uZ3j1hzpEBtPppveZt+ngJ/6CbGy9wfqNdExBQ6h853ABr/2mOWnuuq5Uv5ekslhQEgxWr0+r9z0JSZU596w==}
@@ -2020,6 +2023,9 @@ packages:
 
   generic-filehandle2@2.5.0:
     resolution: {integrity: sha512-qrzjvxfFTswagFQRW7Gc8m5Fy+ra538mrXg4Ggtn+05PpeGYQ9QPkvQQ2O4poa2eGdUN/jAR49M5Y31Wvrr/xA==}
+
+  generic-filehandle2@2.5.1:
+    resolution: {integrity: sha512-+0F0k0xH4erZEB3xOVBdrlJi0hyURYb/CygF8QyqAjLsitmoZYl86pMfTZ91/w2Z1CPK610mBy93bxyiby1CHA==}
 
   gensync@1.0.0-beta.2:
     resolution: {integrity: sha512-3hN7NaskYvMDLQY55gnW3NQ+mesEAepTqlg+VEbj7zzqEMBVNhzcGYYeqFo/TlYz6eQiFcp1HcsCZO+nGgS8zg==}
@@ -4160,20 +4166,25 @@ snapshots:
       generic-filehandle2: 2.5.0
       pako-esm2: 2.0.2
 
+  '@gmod/bgzf-filehandle@6.8.2':
+    dependencies:
+      generic-filehandle2: 2.5.1
+      pako-esm2: 2.0.2
+
   '@gmod/range-cache-filehandle@1.5.0':
     dependencies:
       generic-filehandle2: 2.5.0
 
   '@gmod/shared-read-cache@1.7.2': {}
 
-  '@gmod/shared-read-cache@2.0.0': {}
+  '@gmod/shared-read-cache@2.1.0': {}
 
-  '@gmod/tabix@3.10.1':
+  '@gmod/tabix@3.13.1':
     dependencies:
-      '@gmod/bgzf-filehandle': 6.7.0
-      '@gmod/shared-read-cache': 2.0.0
+      '@gmod/bgzf-filehandle': 6.8.2
+      '@gmod/shared-read-cache': 2.1.0
       '@jbrowse/quick-lru': 8.0.0
-      generic-filehandle2: 2.5.0
+      generic-filehandle2: 2.5.1
 
   '@gmod/vcf@7.2.0': {}
 
@@ -5830,6 +5841,8 @@ snapshots:
   generator-function@2.0.1: {}
 
   generic-filehandle2@2.5.0: {}
+
+  generic-filehandle2@2.5.1: {}
 
   gensync@1.0.0-beta.2: {}
 

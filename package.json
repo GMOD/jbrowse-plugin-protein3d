@@ -41,7 +41,7 @@
     "postversion": "git push --follow-tags"
   },
   "dependencies": {
-    "@gmod/tabix": "^3.10.1",
+    "@gmod/tabix": "^3.13.1",
     "@mui/icons-material": "^9.5.0",
     "clustal-js": "^2.0.19",
     "g2p_mapper": "^2.2.0",

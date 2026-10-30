@@ -5,3 +5,4 @@ allowBuilds:
   unrs-resolver: true
 minimumReleaseAgeExclude:
   - p2s_mapper@2.0.0 || 2.3.0 || 2.4.0
+  - '@gmod/tabix@3.13.1'
