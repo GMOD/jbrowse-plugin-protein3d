@@ -1,3 +1,18 @@
+## [1.28.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.27.0...v1.28.0) (2026-10-31)
+
+### Other Changes
+
+- The docs check reads entities where structureSequences stood ([c832f07](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c832f0786d79442f56af79f71fa7d77d3adbb50f))
+- Test that every view type publishes showLoading ([015381b](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/015381b2f3c36893ff0d7b72a3e8c9e12912aeda))
+- Bump @gmod/tabix to 3.13.1 ([b14baf1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b14baf1765a2678b8ee918bcacbcf3aa8b6395a0))
+- Build against @jbrowse 5.0.0-beta.19 ([d06497d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d06497d0a60cb4a2fc18d6e4ed1c5fb9e3b43e4b))
+- The bundle binds host imports through core's hostShim, floored at beta.18 ([4d2d163](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4d2d163218f5a11e2d48077b0d18eeed018ac886))
+- Unit tests fail on a reported contract violation ([b11ef7d](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b11ef7def30d5916ca18f3819bf9c3b1addb06c0))
+- Read the session's highlightLabelsVisible as the boolean beta.19 types it ([8c7ddb8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8c7ddb8c6e346b6392a5eab81d20abb62be6fbef))
+- Every React component is a mobx-react observer ([f33e230](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f33e2307b748ea502178a14f1184abf3bf0a6117))
+- Lint src with display-kit's conformance rules ([7065eca](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/7065ecac16a3ca9d937396f333f18ac290a8c781))
+- The floor check builds against beta.12, the documented oldest host ([ac4a55e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ac4a55ed9594e3dc27a585acf34c0f6ceac365ae))
+
 ## [1.27.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.26.1...v1.27.0) (2026-10-28)
 
 ### Other Changes
