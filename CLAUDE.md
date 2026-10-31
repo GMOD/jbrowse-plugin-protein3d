@@ -406,6 +406,14 @@ it — there is no `silent` setting and adding one would be a mistake — but
 because every line the suite used to emit is now either gone or expected by
 name. A stray `console.log` still shows up, which is the point.
 
+**A unit test fails on a contract report or a throwing reaction.**
+`test/contractGate.setup.ts` installs display-kit's contract gate, which fails
+the test that collected a `[jbrowse <family> contract]` console line or an
+exception MobX swallowed out of an `autorun`. Arming it found the structure
+tests' stub parent had no `color`, so the variant-effect autorun threw on every
+pass in 65 tests and the suite stayed green. A test that provokes a report on
+purpose takes it with `takeContractReports()`.
+
 **The e2e fails on anything the page says at warn or error.**
 `pageComplaintsSince()` drains what the browser logged, and every leg asserts it
 empty. A console line is the only place several host incompatibilities have ever

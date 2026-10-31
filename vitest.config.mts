@@ -5,6 +5,7 @@ export default defineConfig({
     testTimeout: 120_000,
     hookTimeout: 60_000,
     globals: true,
+    setupFiles: ['test/contractGate.setup.ts'],
     include: [
       'src/**/*.test.ts',
       'test/**/*.test.ts',
