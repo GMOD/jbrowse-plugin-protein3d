@@ -19,12 +19,14 @@ export async function fetchRegionSequence({
   refName,
   start,
   end,
+  signal,
 }: {
   session: AbstractSessionModel
   assemblyName: string | undefined
   refName: string
   start: number
   end: number
+  signal?: AbortSignal
 }) {
   const { assemblyManager, rpcManager } = session
   const assembly = assemblyName
@@ -34,8 +36,10 @@ export async function fetchRegionSequence({
   if (!assembly || !conf) {
     throw new Error('assembly not found')
   }
+  // eslint-disable-next-line no-restricted-syntax -- one span of sequence, whose callers show their own pending state
   const [feat] = await rpcManager.call('getSequence', 'CoreGetFeatures', {
     adapterConfig: readConfObject(conf, ['sequence', 'adapter']),
+    signal,
     regions: [
       {
         start,

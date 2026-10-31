@@ -75,6 +75,7 @@ async function findTranscript({
     const feats = await session.rpcManager.call(
       'getFeatures',
       'CoreGetFeatures',
+      // eslint-disable-next-line no-restricted-syntax -- a declarative launch's lookup has no dialog to cancel it or report into
       {
         adapterConfig: readConfObject(trackConf, 'adapter'),
         regions: [region],

@@ -61,6 +61,7 @@ export async function fetchTrackScores({
   const features = await session.rpcManager.call(
     'residueValues',
     'CoreGetFeatures',
+    // eslint-disable-next-line no-restricted-syntax -- the structure shows the load as variantEffectsPending, which has no place for the worker's phases
     {
       adapterConfig: readConfObject(conf, 'adapter'),
       regions: spans.map(([start, end]) => ({

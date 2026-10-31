@@ -175,6 +175,7 @@ export async function findGeneByName({
           const conf = featureTrackConfig(session, trackId)
           if (conf) {
             const feature = geneNamed(
+              // eslint-disable-next-line no-restricted-syntax -- a declarative launch's lookup has no dialog to cancel it or report into
               await rpcManager.call('getFeatures', 'CoreGetFeatures', {
                 adapterConfig: readConfObject(conf, 'adapter'),
                 regions: [region],
