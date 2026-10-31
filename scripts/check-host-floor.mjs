@@ -8,7 +8,7 @@ import * as esbuild from 'esbuild'
 
 import { esmBuildOptions } from './esmBuildOptions.mjs'
 
-const FLOOR = 'v5.0.0-beta.18'
+const FLOOR = 'v5.0.0-beta.12'
 
 const names = await fetchHostNames(FLOOR)
 try {

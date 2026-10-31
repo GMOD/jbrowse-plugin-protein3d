@@ -10,10 +10,10 @@ store — and nothing here rebuilds them.
 - **Loading.** The bundle binds every path the installed `@jbrowse/core`
   re-exports through core's `hostShim`, which fails the build on a name that
   core does not serve. `pnpm check-host-floor` builds against what
-  v5.0.0-beta.18 serves. A name the running host lacks throws when called,
-  naming the export; a throw while the bundle evaluates makes `PluginLoader`
-  fail the **entire session**, not just this view. A boot on the hosts catches
-  it.
+  v5.0.0-beta.12, the oldest supported host, serves. A name the running host
+  lacks throws when called, naming the export; a throw while the bundle
+  evaluates makes `PluginLoader` fail the **entire session**, not just this
+  view. A boot on the hosts catches it.
 - **Working.** A host API the plugin calls but the host lacks throws at use
   time, and the bundle loads fine. Only a boot on the host catches it.
 
