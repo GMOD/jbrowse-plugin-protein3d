@@ -2,8 +2,8 @@ import { readConfObject } from '@jbrowse/core/configuration'
 import { parseLocString } from '@jbrowse/core/util'
 
 import {
+  featureTrackConfig,
   getTrackId,
-  isFeatureTrack,
   transcriptMatches,
 } from './resolveShortLaunch'
 import {
@@ -172,8 +172,8 @@ export async function findGeneByName({
           ...(hitTrackId ? [hitTrackId] : []),
           ...trackIds,
         ])) {
-          const conf = session.getTrackById(trackId)
-          if (conf && isFeatureTrack(conf)) {
+          const conf = featureTrackConfig(session, trackId)
+          if (conf) {
             const feature = geneNamed(
               await rpcManager.call('getFeatures', 'CoreGetFeatures', {
                 adapterConfig: readConfObject(conf, 'adapter'),

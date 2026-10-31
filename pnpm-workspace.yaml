@@ -6,3 +6,12 @@ allowBuilds:
 minimumReleaseAgeExclude:
   - p2s_mapper@2.0.0 || 2.3.0 || 2.4.0
   - '@gmod/tabix@3.13.1'
+  - '@gmod/bgzf-filehandle@6.8.4'
+  - '@jbrowse/add-track-core@5.0.0-beta.19'
+  - '@jbrowse/cigar-utils@5.0.0-beta.19'
+  - '@jbrowse/core@5.0.0-beta.19'
+  - '@jbrowse/display-kit@5.0.0-beta.19'
+  - '@jbrowse/display-ui@5.0.0-beta.19'
+  - '@jbrowse/launch-args@5.0.0-beta.19'
+  - '@jbrowse/plugin-linear-genome-view@5.0.0-beta.19'
+  - '@jbrowse/render-core@5.0.0-beta.19'

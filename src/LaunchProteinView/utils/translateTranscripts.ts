@@ -1,4 +1,4 @@
-import { getConf } from '@jbrowse/core/configuration'
+import { readConfObject } from '@jbrowse/core/configuration'
 import { translateTranscript } from '@jbrowse/core/util/translateTranscript'
 
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
@@ -30,11 +30,12 @@ export async function fetchRegionSequence({
   const assembly = assemblyName
     ? await assemblyManager.waitForAssembly(assemblyName)
     : undefined
-  if (!assembly) {
+  const conf = assembly?.configuration
+  if (!assembly || !conf) {
     throw new Error('assembly not found')
   }
   const [feat] = await rpcManager.call('getSequence', 'CoreGetFeatures', {
-    adapterConfig: getConf(assembly, ['sequence', 'adapter']),
+    adapterConfig: readConfObject(conf, ['sequence', 'adapter']),
     regions: [
       {
         start,
