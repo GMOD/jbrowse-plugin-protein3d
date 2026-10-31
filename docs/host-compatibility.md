@@ -7,10 +7,13 @@ store to this build, and a UMD `url`, which v4 hosts load instead. v4 hosts keep
 the UMD builds already published — 0.15.3 at that url, an older one in the v1
 store — and nothing here rebuilds them.
 
-- **Loading.** The bundle externalizes every path the installed `@jbrowse/core`
-  ReExports list names. A key the host lacks throws at its first read, naming
-  the key, and `PluginLoader` fails the **entire session** — not just this view.
-  A boot on the hosts catches it.
+- **Loading.** The bundle binds every path the installed `@jbrowse/core`
+  re-exports through core's `hostShim`, which fails the build on a name that
+  core does not serve. `pnpm check-host-floor` builds against what
+  v5.0.0-beta.18 serves. A name the running host lacks throws when called,
+  naming the export; a throw while the bundle evaluates makes `PluginLoader`
+  fail the **entire session**, not just this view. A boot on the hosts catches
+  it.
 - **Working.** A host API the plugin calls but the host lacks throws at use
   time, and the bundle loads fine. Only a boot on the host catches it.
 

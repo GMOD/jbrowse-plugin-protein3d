@@ -1,27 +1,12 @@
 import fs from 'node:fs'
 import http from 'node:http'
 import * as esbuild from 'esbuild'
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals'
-import JBrowseReExports from '@jbrowse/core/ReExports/list'
 import prettyBytes from 'pretty-bytes'
+
+import { esmBuildOptions } from './scripts/esmBuildOptions.mjs'
 
 const isWatch = process.argv.includes('--watch')
 const PORT = process.env.PORT ? +process.env.PORT : 9000
-
-function createGlobalMap(jbrowseGlobals) {
-  const globalMap = {}
-  for (const global of jbrowseGlobals) {
-    globalMap[global] = {
-      varName: `JBrowseExports["${global}"]`,
-      type: 'cjs',
-    }
-  }
-  globalMap['@jbrowse/mobx-state-tree'] = {
-    varName: `JBrowseExports["mobx-state-tree"]`,
-    type: 'cjs',
-  }
-  return globalMap
-}
 
 const rebuildLogPlugin = {
   name: 'rebuild-log',
@@ -43,47 +28,8 @@ const rebuildLogPlugin = {
   },
 }
 
-// Mol*'s `produce` hands mutative recipes that return a fresh object, which
-// mutative's development build warns about on every call (since Mol* 5.13).
-// The shipped build is minified, so esbuild defines NODE_ENV as production and
-// mutative is silent; the watch build takes the same mutative so the harness
-// console says what a host's would.
-const shippedMutativePlugin = {
-  name: 'shipped-mutative',
-  setup(build) {
-    build.onResolve({ filter: /^mutative\/dist\/index\.js$/ }, args =>
-      build.resolve('mutative/dist/mutative.cjs.production.min.js', {
-        kind: args.kind,
-        resolveDir: args.resolveDir,
-      }),
-    )
-  },
-}
-
-const config = {
-  entryPoints: ['src/index.ts'],
-  bundle: true,
-  // Mol* is a plain import() in loadMolstar.ts, which splitting emits as a
-  // sibling chunk resolved against the entry's own url, on the main thread and
-  // in the RPC worker alike
-  format: 'esm',
-  splitting: true,
-  outdir: 'dist',
-  chunkNames: 'chunks/[name]-[hash]',
-  metafile: true,
-  plugins: [
-    globalExternals(createGlobalMap(JBrowseReExports)),
-    rebuildLogPlugin,
-    ...(isWatch ? [shippedMutativePlugin] : []),
-  ],
-  ...(isWatch
-    ? { entryNames: 'out' }
-    : {
-        entryNames: 'jbrowse-plugin-protein3d.esm',
-        sourcemap: true,
-        minify: true,
-      }),
-}
+const base = esmBuildOptions({ isWatch })
+const config = { ...base, plugins: [...base.plugins, rebuildLogPlugin] }
 
 if (isWatch) {
   const ctx = await esbuild.context(config)

@@ -17,7 +17,7 @@ made and tested there, and this repo keeps what needs a JBrowse `Feature`, a
 session or a Mol\* plugin.
 
 `p2s_mapper` is **bundled, never externalized**: it is not a `@jbrowse/core`
-re-export, so `esbuild.mjs` leaves it alone and no host can drop it.
+re-export, so the build leaves it alone and no host can drop it.
 
 ## PDB metadata comes from RCSB, not PDBe
 
@@ -324,17 +324,20 @@ the e2e's multi-structure leg passed only because of that.
 
 ## Host compatibility
 
-**The build is an ES module for JBrowse 5 only.** `esbuild.mjs` externalizes the
-installed `@jbrowse/core` ReExports list whole and splits Mol\* into a chunk
-under `dist/chunks/`, which the entry imports relative to its own url on the
-page and in the RPC worker. v4 hosts never load it: the hub configs carry
+**The build is an ES module for JBrowse 5 only.** `scripts/esmBuildOptions.mjs`
+binds every host re-export through core's `hostShim` and splits Mol\* into a
+chunk under `dist/chunks/`, which the entry imports relative to its own url on
+the page and in the RPC worker. v4 hosts never load it: the hub configs carry
 `storePlugin: "Protein3d"` beside a url pinned to the 0.15.3 UMD, so a v5 host
 resolves the store's ESM build and a v4 host loads a build nothing here
 rebuilds.
 
-A key the host lacks throws at its first read naming the key, and `PluginLoader`
-error-pages the session, so the gate is booting on hosted `main`
-(`host-compat:candidate`), not a list comparison.
+The shim fails the build on a name the installed `@jbrowse/core` does not serve,
+and `pnpm check-host-floor` (in `preversion`) builds against what v5.0.0-beta.18
+serves, so an import only a newer host has fails before a release. A name the
+running host lacks still throws only when called, naming the export, so
+behaviour on a host is the gate's job: booting on hosted builds
+(`host-compat:candidate`).
 
 **`host-compat` intercepted every request and broke what it was measuring.**
 `page.setRequestInterception(true)` routes the whole page through node, and with
