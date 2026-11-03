@@ -205,7 +205,8 @@ function readView() {
       seqLength: s.mappedEntity.seq.length,
       seqIdsLength: s.mappedEntity.seqIds.length,
       authSeqIds: s.mappedEntity.authSeqIds,
-      structureToTranscript: s.structureSeqToTranscriptSeqPosition,
+      structureToTranscript:
+        s.coordinateMapper?.maps.structureSeqToTranscriptSeqPosition,
       transcript: s.userProvidedTranscriptSequence,
       identity: s.alignmentQuality?.identity,
       aligned: s.alignmentQuality?.aligned,

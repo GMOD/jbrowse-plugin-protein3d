@@ -24,8 +24,8 @@ importers:
         specifier: ^5.13.1
         version: 5.13.1(@types/react@19.3.0)(fp-ts@2.16.11)(pngjs@7.0.0)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)(supports-color@7.2.0)
       p2s_mapper:
-        specifier: ^2.4.0
-        version: 2.4.0
+        specifier: ^3.0.0
+        version: 3.0.0
       swr:
         specifier: ^2.5.1
         version: 2.5.1(react@19.3.0)
@@ -1944,6 +1944,9 @@ packages:
   g2p_mapper@2.2.0:
     resolution: {integrity: sha512-E5+A1cqJZ2mhQbXgRI4P9QRUesZNpM/phixMYh4+IJBNnYoLTeZOw2Ceqd9B9JBrlvlmrghoKTqeEFJVVQZJCA==}
 
+  g2p_mapper@2.3.1:
+    resolution: {integrity: sha512-98h9iBRszDWUhTLVARBMZpJFrkmSZEvuL5jgTLHqXx8alnCzmTaoo5ptc7qRq89ppGYRDgGSGYOqSEb7rCPMvA==}
+
   generator-function@2.0.1:
     resolution: {integrity: sha512-SFdFmIJi+ybC0vjlHN0ZGVGHc3lgE0DxPAT0djjVg+kjOnSqclqmj0KQ7ykTOLP6YxoqOvuAODGdcHJn+43q3g==}
     engines: {node: '>= 0.4'}
@@ -2817,8 +2820,8 @@ packages:
     resolution: {integrity: sha512-LaNjtRWUBY++zB5nE/NwcaoMylSPk+S+ZHNB1TzdbMJMny6dynpAGt7X/tl/QYq3TIeE6nxHppbo2LGymrG5Pw==}
     engines: {node: '>=10'}
 
-  p2s_mapper@2.4.0:
-    resolution: {integrity: sha512-0kzJjtETtW35kQkvcSOQvmL8xYN+9ZUCZu/82DVQUFDwfoKWKrC6XWcKHCdWWWThH2XoJ6hmC5Y0LPI1B8GF8g==}
+  p2s_mapper@3.0.0:
+    resolution: {integrity: sha512-f3gQp32v9TRQyW88+qlDfm1PL3ucdVCkUPZy0uJkujnXrbCXv9wbI09I/aa1Rz8zKsukzRq8cLdA1yApfR2rLg==}
 
   package-json-from-dist@1.0.1:
     resolution: {integrity: sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==}
@@ -5669,6 +5672,8 @@ snapshots:
 
   g2p_mapper@2.2.0: {}
 
+  g2p_mapper@2.3.1: {}
+
   generator-function@2.0.1: {}
 
   generic-filehandle2@2.5.1: {}
@@ -6720,9 +6725,9 @@ snapshots:
     dependencies:
       p-limit: 3.1.0
 
-  p2s_mapper@2.4.0:
+  p2s_mapper@3.0.0:
     dependencies:
-      g2p_mapper: 2.2.0
+      g2p_mapper: 2.3.1
 
   package-json-from-dist@1.0.1: {}
 
