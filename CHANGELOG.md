@@ -1,3 +1,10 @@
+## [1.28.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.28.0...v1.28.1) (2026-11-03)
+
+### Refactoring
+
+- AlphaMissense through myfetch, Foldseek hits through foldseekHits ([9eb0656](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9eb065678edaf68f47d0bef019156fcb2268a0a4))
+- Take the generic helpers and typed coordinates from p2s_mapper 3 ([f509369](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f509369a107b42b523d14f3085afa58cc929d881))
+
 ## [1.28.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.27.0...v1.28.0) (2026-10-31)
 
 ### Other Changes
