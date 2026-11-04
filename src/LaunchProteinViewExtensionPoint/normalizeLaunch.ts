@@ -1,11 +1,15 @@
 import { isPairwiseAlignment, resolveStructureUrl } from 'p2s_mapper'
 
 import type { ConnectedViewSpec } from './resolveShortLaunch'
+import type { DistanceMeasurement } from '../ProteinView/measurements'
 import type {
   ProteinStructureSpec,
   ProteinViewSpec,
 } from '../ProteinView/proteinViewSpec'
 import type { StructureFilter } from '../ProteinView/residueFilter'
+import type { ResidueMark } from '../ProteinView/residueMarks'
+import type { SavedCamera } from '../ProteinView/savedCamera'
+import type { ProteinSurface } from '../ProteinView/surface'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { ResidueRange, ResidueRanges } from 'p2s_mapper'
 
@@ -82,6 +86,39 @@ function isFeature(value: unknown): value is SimpleFeatureSerialized {
 // the reason, as it does a color
 function isPredicateList(value: unknown): value is StructureFilter {
   return Array.isArray(value) && value.every(isRecord)
+}
+
+// the shape only, as for a filter: the view model refuses a site that does
+// not parse, with the reason
+function isMarkList(value: unknown): value is ResidueMark[] {
+  return Array.isArray(value) && value.every(isRecord)
+}
+
+function isDistanceList(value: unknown): value is DistanceMeasurement[] {
+  return Array.isArray(value) && value.every(isRecord)
+}
+
+function isTriple(value: unknown) {
+  return Array.isArray(value) && value.length === 3 && value.every(isNumber)
+}
+
+function isSavedCamera(value: unknown): value is SavedCamera {
+  return (
+    isRecord(value) &&
+    isTriple(value.position) &&
+    isTriple(value.target) &&
+    isTriple(value.up) &&
+    (value.radius === undefined || isNumber(value.radius)) &&
+    (value.mode === undefined ||
+      value.mode === 'perspective' ||
+      value.mode === 'orthographic')
+  )
+}
+
+function isSurface(value: unknown): value is ProteinSurface {
+  return (
+    isRecord(value) && (value.opacity === undefined || isNumber(value.opacity))
+  )
 }
 
 function isResidueRange(value: unknown): value is ResidueRange {
@@ -230,6 +267,24 @@ function readViewSettings(
     alignmentAlgorithm: read('alignmentAlgorithm', isString, 'a string'),
     color: fields.get('color'),
     colorScheme: read('colorScheme', isString, 'a string'),
+    camera: read(
+      'camera',
+      isSavedCamera,
+      '{ position, target, up } triples of numbers',
+    ),
+    surface: read('surface', isSurface, '{ opacity }'),
+    distances: read(
+      'distances',
+      isDistanceList,
+      "a list such as [{ a: 'A:46@NZ', b: 'A:80@NZ' }]",
+    ),
+    marks: read(
+      'marks',
+      isMarkList,
+      "a list such as [{ site: 'A:248', mark: 'spheres' }]",
+    ),
+    silhouettes: flag('silhouettes'),
+    occlusion: flag('occlusion'),
   } satisfies Record<keyof LaunchViewSettings, unknown>
 }
 

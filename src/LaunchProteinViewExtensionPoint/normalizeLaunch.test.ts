@@ -281,6 +281,36 @@ test('a view setting of the wrong type is dropped by name', () => {
   ])
 })
 
+// A figure from a gene name and its marks used to need a full snapshot with a
+// serialized feature, because the launch dropped these as unknown keys.
+test("a figure's layers and camera reach the view from the launch", () => {
+  const figure = {
+    camera: { position: [0, 0, 50], target: [0, 0, 0], up: [0, 1, 0] },
+    surface: { opacity: 0.3 },
+    marks: [{ site: 'A:248', mark: 'spheres' }],
+    distances: [{ a: 'A:248@NH2', b: 'B:12' }],
+    silhouettes: true,
+    occlusion: true,
+  }
+  const { settings, warnings } = accepted({ gene: 'TP53', ...figure })
+  expect(warnings).toEqual([])
+  expect(settings).toMatchObject(figure)
+})
+
+test('a figure layer of the wrong shape is dropped by name', () => {
+  const { settings, warnings } = accepted({
+    gene: 'TP53',
+    camera: { position: [0, 0] },
+    marks: 'A:248',
+  })
+  expect(settings.camera).toBeUndefined()
+  expect(settings.marks).toBeUndefined()
+  expect(warnings).toEqual([
+    '`camera` is not { position, target, up } triples of numbers and was ignored',
+    "`marks` is not a list such as [{ site: 'A:248', mark: 'spheres' }] and was ignored",
+  ])
+})
+
 test('an unknown key of the launch is reported', () => {
   expect(
     accepted({

@@ -38,6 +38,18 @@ link opens on the same picture every time.
 }
 ```
 
+A launch takes the same properties beside `gene`, so one spec opens a gene's
+structure as a figure without a serialized transcript:
+
+```jsonc
+{
+  "type": "ProteinView",
+  "gene": "TP53",
+  "marks": [{ "site": "A:248", "mark": "spheres" }],
+  "silhouettes": true,
+}
+```
+
 ## View properties
 
 - `camera`: position, target and up in the structure file's coordinates. `mode`

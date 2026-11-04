@@ -41,6 +41,12 @@ working links.
 | `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present         |
 | `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed               |
 | `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file  |
+| `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figure sessions](figure-sessions.md)  |
+| `surface`                        | No       | A translucent molecular surface, `{ opacity }`                                         |
+| `marks`                          | No       | Sites drawn as spheres, sticks or a cartoon, such as `[{ "site": "A:248" }]`           |
+| `distances`                      | No       | Dashed distances between two sites, such as `[{ "a": "A:46", "b": "A:80" }]`           |
+| `silhouettes`                    | No       | Outlines around every object, for a figure                                             |
+| `occlusion`                      | No       | Ambient occlusion, for a figure                                                        |
 
 \* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`, `pdbId` or
 `structures`), or both. `gene` finds the transcript, the AlphaFold model and the
