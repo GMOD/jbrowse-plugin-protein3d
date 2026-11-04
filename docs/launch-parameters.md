@@ -270,18 +270,23 @@ nearer limit.
   optional, and the refName may be any alias the assembly knows.
 - `chr17:7674220`: the position alone.
 
-The launch translates the variant on the launch's transcript (`gene`,
-`transcriptId` or `feature`), reading the codon off the connected genome view's
-assembly, then:
+The launch translates the variant on each structure's transcript, the entry's
+own `feature` or else the launch's (`gene`, `transcriptId` or `feature`),
+reading the codon off the connected genome view's assembly, then:
 
 - adds a session highlight on the base, labelled with the protein change. The
   genome view draws it as a band, and each structure on the transcript draws the
   residue as a labelled sphere, the label read as the residue the structure has
   there (`R248Q` reads `Arg248` on wild type, `Gln248` on an R248Q structure),
-- seeds `initialTranscriptResidues` on the residue for every structure that
-  declares no selection of its own, so the camera frames it.
+- seeds `initialTranscriptResidues` on the residue of its own transcript for
+  every structure that declares no selection of its own, so the camera frames
+  it. An isoform numbers the codon its own way: on TP53's Δ133 isoform R248 is
+  residue 116. A structure whose transcript does not hold the codon opens
+  unseeded.
 
-The label is the change in one-letter code on the transcript's numbering:
+The label is the change in one-letter code on the transcript's numbering, the
+launch's transcript where it holds the codon, otherwise the first structure's
+that does:
 
 | Change                | Label   |
 | --------------------- | ------- |
@@ -296,12 +301,13 @@ on the structure; only a missense label is rewritten to the structure's residue.
 The launch refuses, with an error naming the variant, when:
 
 - the text is neither spelling,
-- the launch has no transcript, or no connected genome view to read an assembly
-  from,
+- neither the launch nor any entry of `structures` names a transcript, or there
+  is no connected genome view to read an assembly from,
 - the assembly has no such sequence,
-- the base is outside a whole codon of the transcript's coding sequence (an
-  intron, a UTR, another chromosome, a codon cut short by the CDS's phase), or
-  in its stop codon,
+- on every structure's transcript, the base is outside a whole codon of the
+  coding sequence (an intron, a UTR, another chromosome, a codon cut short by
+  the CDS's phase), or in its stop codon; the error names each transcript's
+  reason,
 - the reference base is not the genome's
   (`names G as the reference base, and the genome has C there`), which on a
   minus-strand gene usually means the bases were written on the transcript's

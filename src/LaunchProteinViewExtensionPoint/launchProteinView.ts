@@ -18,14 +18,6 @@ import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
-function declaresSelection(structure: ProteinStructureSpec) {
-  return [
-    structure.initialSelection,
-    structure.initialResidues,
-    structure.initialTranscriptResidues,
-  ].some(ranges => ranges !== undefined)
-}
-
 /**
  * The settings as the view takes them: the algorithm coerced to the model's
  * enumeration, and the color object checked or lifted from an older
@@ -122,31 +114,31 @@ export async function launchProteinView(args: LaunchArgs) {
       `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
     )
   }
+  const launchFeature = resolved?.feature ?? feature
+  const withTranscripts = (
+    named && geneModel
+      ? normalized.requested.map(s => ({ ...s, url: named.url }))
+      : normalized.requested
+  ).map(s => ({
+    ...s,
+    userProvidedTranscriptSequence:
+      s.userProvidedTranscriptSequence ??
+      resolved?.userProvidedTranscriptSequence ??
+      userProvidedTranscriptSequence,
+    feature: s.feature ?? launchFeature,
+  }))
   const placedVariant = variant
     ? await resolveLaunchVariant({
         session,
         variant,
-        feature: resolved?.feature ?? feature,
+        structures: withTranscripts,
+        launchFeature,
         assemblyName: connectedViewId
           ? viewAssemblyName(session, connectedViewId)
           : connectedView?.assembly,
       })
     : undefined
-  const variantResidue = placedVariant
-    ? {
-        start: placedVariant.transcriptResidue,
-        end: placedVariant.transcriptResidue,
-      }
-    : undefined
-  const requested = (
-    named && geneModel
-      ? normalized.requested.map(s => ({ ...s, url: named.url }))
-      : normalized.requested
-  ).map(s =>
-    variantResidue && !declaresSelection(s)
-      ? { ...s, initialTranscriptResidues: variantResidue }
-      : s,
-  )
+  const requested = placedVariant?.structures ?? withTranscripts
 
   const { proteinView, ownsConnectedView } = await withConnectedGenomeView(
     session,
@@ -160,11 +152,6 @@ export async function launchProteinView(args: LaunchArgs) {
           displayName: settings.displayName ?? named?.displayName,
           structures: requested.map(s => ({
             ...s,
-            userProvidedTranscriptSequence:
-              s.userProvidedTranscriptSequence ??
-              resolved?.userProvidedTranscriptSequence ??
-              userProvidedTranscriptSequence,
-            feature: s.feature ?? resolved?.feature ?? feature,
             connectedViewId: s.connectedViewId ?? resolvedConnectedViewId,
           })),
         }),

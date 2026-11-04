@@ -78,10 +78,13 @@ base of codon 248 (CGG to CAG), and:
   would, so the camera frames it.
 
 The variant works with every form below as well as `gene`, and with
-`structures`, where it selects in each structure that names no selection of its
-own. A position alone (`chr17:7674220`) highlights and selects the residue and
-labels it `R248`. A base outside the coding sequence, or a reference base the
-genome does not have, fails the launch with an on-screen error;
+`structures`, where each structure places it on its own transcript, the entry's
+`feature` or the launch's, so an isoform selects its own residue (R248 is
+residue 116 of TP53's Δ133 isoform). It selects in each structure that names no
+selection of its own and whose transcript holds the codon. A position alone
+(`chr17:7674220`) highlights and selects the residue and labels it `R248`. A
+base outside the coding sequence, or a reference base the genome does not have,
+fails the launch with an on-screen error;
 [launch parameters](launch-parameters.md#variant) lists the rules.
 
 ### Short form: `uniprotId` / `pdbId` + `transcriptId`

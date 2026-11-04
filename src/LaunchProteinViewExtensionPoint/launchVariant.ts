@@ -4,8 +4,10 @@ import { transcriptGeneticCodeId } from '@jbrowse/core/util/translateTranscript'
 
 import { fetchRegionSequence } from '../LaunchProteinView/utils/translateTranscripts'
 import { transcriptCodons, translateSnv } from '../ProteinView/clinVar'
+import { errorMessage } from '../ProteinView/util'
 import { genomeToTranscriptSeqMapping } from '../mappings'
 
+import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type { GenomeHighlight } from '../ProteinView/sessionHighlights'
 import type {
   AbstractSessionModel,
@@ -116,26 +118,104 @@ function transcriptName(feature: Feature) {
   return name ?? id ?? feature.id()
 }
 
+function declaresSelection(structure: ProteinStructureSpec) {
+  return [
+    structure.initialSelection,
+    structure.initialResidues,
+    structure.initialTranscriptResidues,
+  ].some(ranges => ranges !== undefined)
+}
+
+function noTranscript(variant: LaunchVariant) {
+  return new Error(
+    `\`variant\` ${variant.text} is placed through each structure's transcript, and neither the launch nor any structure names one; give \`gene\`, \`transcriptId\` or \`feature\``,
+  )
+}
+
 /**
- * A launch's `variant` placed on its transcript, with the labelled genome
+ * A variant placed on each structure's own transcript, its `feature`, which
+ * an isoform numbers differently: TP53's R248 is residue 116 of its Δ133
+ * isoform. Every structure without a selection of its own whose transcript
+ * holds the codon is seeded on its residue, and the rest open as they are.
+ * The genome band is labelled on `launchFeature`, the transcript the launch
+ * itself names, where it holds the codon, otherwise on the first structure's
+ * that does. Throws, with each transcript's reason, when none holds it.
+ */
+export async function placeOnTranscripts({
+  variant,
+  structures,
+  launchFeature,
+  place,
+}: {
+  variant: LaunchVariant
+  structures: readonly ProteinStructureSpec[]
+  launchFeature: SimpleFeatureSerialized | undefined
+  place: (feature: SimpleFeatureSerialized) => Promise<PlacedLaunchVariant>
+}) {
+  const transcripts = [
+    ...new Set(structures.flatMap(s => (s.feature ? [s.feature] : []))),
+  ]
+  if (transcripts.length === 0) {
+    throw noTranscript(variant)
+  }
+  const results = await Promise.allSettled(transcripts.map(t => place(t)))
+  const placedOn = new Map(
+    transcripts.flatMap((t, i) => {
+      const result = results[i]
+      return result?.status === 'fulfilled' ? [[t, result.value]] : []
+    }),
+  )
+  const placements = structures.map(s =>
+    s.feature ? placedOn.get(s.feature) : undefined,
+  )
+  const labelled =
+    (launchFeature ? placedOn.get(launchFeature) : undefined) ??
+    placements.find(p => p !== undefined)
+  if (!labelled) {
+    const reasons = results.flatMap(r =>
+      r.status === 'rejected' ? [errorMessage(r.reason)] : [],
+    )
+    throw new Error([...new Set(reasons)].join('; '))
+  }
+  return {
+    label: labelled.label,
+    structures: structures.map((s, i) => {
+      const placed = placements[i]
+      return placed && !declaresSelection(s)
+        ? {
+            ...s,
+            initialTranscriptResidues: {
+              start: placed.transcriptResidue,
+              end: placed.transcriptResidue,
+            },
+          }
+        : s
+    }),
+  }
+}
+
+/**
+ * A launch's `variant` placed on the transcript of each structure, which
+ * carries its own `feature` or the launch's, with the labelled genome
  * highlight that marks it: the genome view draws the band, and every
- * structure on the transcript draws the residue under the label.
+ * structure on a transcript holding the codon draws the residue under the
+ * label and is seeded on it.
  */
 export async function resolveLaunchVariant({
   session,
   variant,
-  feature,
+  structures,
+  launchFeature,
   assemblyName,
 }: {
   session: AbstractSessionModel
   variant: LaunchVariant
-  feature: SimpleFeatureSerialized | undefined
+  structures: readonly ProteinStructureSpec[]
+  launchFeature: SimpleFeatureSerialized | undefined
   assemblyName: string | undefined
 }) {
-  if (!feature) {
-    throw new Error(
-      `\`variant\` ${variant.text} is placed through the launch's transcript, and this launch names none; give \`gene\`, \`transcriptId\` or \`feature\``,
-    )
+  if (!structures.some(s => s.feature)) {
+    throw noTranscript(variant)
   }
   if (!assemblyName) {
     throw new Error(
@@ -152,35 +232,42 @@ export async function resolveLaunchVariant({
       `\`variant\` ${variant.text} names ${variant.refName}, which ${assemblyName} has no sequence for`,
     )
   }
-  const transcript = new SimpleFeature(feature)
-  const mapping = genomeToTranscriptSeqMapping(transcript)
-  const onTranscriptChromosome =
-    assembly.getCanonicalRefName(mapping.refName) === refName
-  const residue = onTranscriptChromosome
-    ? mapping.g2p[variant.start]
-    : undefined
-  const span = [
-    variant.start,
-    ...(residue === undefined ? [] : (mapping.p2gCodon[residue] ?? [])),
-  ]
-  const start = Math.min(...span)
-  const end = Math.max(...span) + 1
-  const { seq, assemblyGeneticCodeId } = await fetchRegionSequence({
-    session,
-    assemblyName,
-    refName,
-    start,
-    end,
-  })
-  const placed = placeLaunchVariant({
+  const placed = await placeOnTranscripts({
     variant,
-    mapping,
-    onTranscriptChromosome,
-    genomeBase: position => seq?.[position - start],
-    codonTable: getGeneticCode(
-      transcriptGeneticCodeId(transcript, assemblyGeneticCodeId),
-    ).codonTable,
-    transcriptName: transcriptName(transcript),
+    structures,
+    launchFeature,
+    place: async feature => {
+      const transcript = new SimpleFeature(feature)
+      const mapping = genomeToTranscriptSeqMapping(transcript)
+      const onTranscriptChromosome =
+        assembly.getCanonicalRefName(mapping.refName) === refName
+      const residue = onTranscriptChromosome
+        ? mapping.g2p[variant.start]
+        : undefined
+      const span = [
+        variant.start,
+        ...(residue === undefined ? [] : (mapping.p2gCodon[residue] ?? [])),
+      ]
+      const start = Math.min(...span)
+      const end = Math.max(...span) + 1
+      const { seq, assemblyGeneticCodeId } = await fetchRegionSequence({
+        session,
+        assemblyName,
+        refName,
+        start,
+        end,
+      })
+      return placeLaunchVariant({
+        variant,
+        mapping,
+        onTranscriptChromosome,
+        genomeBase: position => seq?.[position - start],
+        codonTable: getGeneticCode(
+          transcriptGeneticCodeId(transcript, assemblyGeneticCodeId),
+        ).codonTable,
+        transcriptName: transcriptName(transcript),
+      })
+    },
   })
   const highlight: GenomeHighlight = {
     assemblyName,
@@ -189,5 +276,5 @@ export async function resolveLaunchVariant({
     end: variant.start + 1,
     label: placed.label,
   }
-  return { ...placed, highlight }
+  return { structures: placed.structures, highlight }
 }

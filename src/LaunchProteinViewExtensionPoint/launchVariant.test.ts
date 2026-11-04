@@ -1,8 +1,17 @@
+import { SimpleFeature } from '@jbrowse/core/util'
 import { getGeneticCode } from '@jbrowse/core/util/geneticCodes'
 import { genomeToTranscriptSeqMapping } from 'g2p_mapper'
 import { expect, test } from 'vitest'
 
-import { parseLaunchVariant, placeLaunchVariant } from './launchVariant'
+import {
+  parseLaunchVariant,
+  placeLaunchVariant,
+  placeOnTranscripts,
+} from './launchVariant'
+import { genomeToTranscriptSeqMapping as featureMapping } from '../mappings'
+
+import type { LaunchVariant } from './launchVariant'
+import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 
 const { codonTable } = getGeneticCode(1)
 
@@ -141,5 +150,158 @@ test('refuses a base in the stop codon', () => {
 test('refuses a base on another chromosome at a coding number', () => {
   expect(() => place('chr2:22 C>T', { onTranscriptChromosome: false })).toThrow(
     'not in the coding sequence of TX1',
+  )
+})
+
+// ATG GCC CGG AAA TAA, M A R K *: the canonical transcript reads the CGG as
+// residue 3, an isoform starting at it as residue 1, and one starting a codon
+// later does not hold it
+const ISOFORM_GENOME = 'ATGGCCCGGAAATAA'
+
+function transcript(uniqueId: string, start: number): SimpleFeatureSerialized {
+  return {
+    uniqueId,
+    name: uniqueId,
+    refName: 'chr1',
+    start,
+    end: 15,
+    strand: 1,
+    subfeatures: [
+      {
+        uniqueId: `${uniqueId}-cds`,
+        refName: 'chr1',
+        start,
+        end: 15,
+        type: 'CDS',
+        phase: 0,
+      },
+    ],
+  }
+}
+
+const canonical = transcript('canonical', 0)
+const isoform = transcript('isoform', 6)
+const downstream = transcript('downstream', 9)
+
+function variantOf(text: string): LaunchVariant {
+  const variant = parseLaunchVariant(text)
+  if (!variant) {
+    throw new Error(`${text} did not parse`)
+  }
+  return variant
+}
+
+// CGG to CAG, R to Q
+const R_TO_Q = variantOf('chr1:8 G>A')
+
+function placeOn(variant: LaunchVariant) {
+  const placed: string[] = []
+  return {
+    placed,
+    place: async (feature: SimpleFeatureSerialized) => {
+      const f = new SimpleFeature(feature)
+      placed.push(f.id())
+      return placeLaunchVariant({
+        variant,
+        mapping: featureMapping(f),
+        onTranscriptChromosome: true,
+        genomeBase: position => ISOFORM_GENOME[position],
+        codonTable,
+        transcriptName: f.id(),
+      })
+    },
+  }
+}
+
+test("each structure is seeded on its own transcript's residue", async () => {
+  const { place, placed } = placeOn(R_TO_Q)
+  const result = await placeOnTranscripts({
+    variant: R_TO_Q,
+    structures: [
+      { pdbId: '1AAA', feature: canonical },
+      { pdbId: '2BBB', feature: isoform },
+      { pdbId: '3CCC', feature: canonical },
+    ],
+    launchFeature: canonical,
+    place,
+  })
+  expect(result.structures.map(s => s.initialTranscriptResidues)).toEqual([
+    { start: 3, end: 3 },
+    { start: 1, end: 1 },
+    { start: 3, end: 3 },
+  ])
+  expect(result.label).toBe('R3Q')
+  // one placement per transcript, however many structures share it
+  expect(placed).toEqual(['canonical', 'isoform'])
+})
+
+test('entries that each carry a transcript place the variant with none on the launch', async () => {
+  const result = await placeOnTranscripts({
+    variant: R_TO_Q,
+    structures: [
+      { pdbId: '2BBB', feature: isoform },
+      { pdbId: '1AAA', feature: canonical },
+    ],
+    launchFeature: undefined,
+    place: placeOn(R_TO_Q).place,
+  })
+  expect(result.structures.map(s => s.initialTranscriptResidues)).toEqual([
+    { start: 1, end: 1 },
+    { start: 3, end: 3 },
+  ])
+  // no launch transcript, so the first entry's labels the band
+  expect(result.label).toBe('R1Q')
+})
+
+test('a structure whose transcript lacks the codon opens unseeded, and one with a selection keeps it', async () => {
+  const result = await placeOnTranscripts({
+    variant: R_TO_Q,
+    structures: [
+      { pdbId: '1AAA', feature: downstream },
+      {
+        pdbId: '2BBB',
+        feature: isoform,
+        initialResidues: { start: 5, end: 9 },
+      },
+      { pdbId: '3CCC', feature: isoform },
+    ],
+    launchFeature: downstream,
+    place: placeOn(R_TO_Q).place,
+  })
+  expect(result.structures).toEqual([
+    { pdbId: '1AAA', feature: downstream },
+    { pdbId: '2BBB', feature: isoform, initialResidues: { start: 5, end: 9 } },
+    {
+      pdbId: '3CCC',
+      feature: isoform,
+      initialTranscriptResidues: { start: 1, end: 1 },
+    },
+  ])
+  expect(result.label).toBe('R1Q')
+})
+
+test('refuses only when no transcript holds the codon, with each reason once', async () => {
+  await expect(
+    placeOnTranscripts({
+      variant: R_TO_Q,
+      structures: [
+        { pdbId: '1AAA', feature: downstream },
+        { pdbId: '2BBB', feature: downstream },
+      ],
+      launchFeature: downstream,
+      place: placeOn(R_TO_Q).place,
+    }),
+  ).rejects.toThrow(
+    /^`variant` chr1:8 G>A is not in the coding sequence of downstream$/,
+  )
+  await expect(
+    placeOnTranscripts({
+      variant: R_TO_Q,
+      structures: [{ pdbId: '1AAA' }],
+      launchFeature: undefined,
+      place: placeOn(R_TO_Q).place,
+    }),
+  ).rejects.toThrow(
+    'neither the launch nor any structure names one; give `gene`, `transcriptId` or `feature`',
   )
 })
