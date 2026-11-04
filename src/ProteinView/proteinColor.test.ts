@@ -5,6 +5,7 @@ import {
   colorOfScheme,
   colorProblems,
   resolvedColor,
+  trackStatLabel,
 } from './proteinColor'
 import { RESIDUE_COLORS } from './residueColors'
 
@@ -137,7 +138,7 @@ test('a track field names its track and takes a stat', () => {
   ).toEqual([])
   expect(
     colorProblems({ field: 'track', trackId: 'phyloP', stat: 'sum' }),
-  ).toEqual(['color.stat is one of mean, max, min'])
+  ).toEqual(['color.stat is one of mean, max, min, count'])
   expect(colorProblems({ field: 'track', trackId: '' })).toEqual([
     'color.trackId is a track id',
   ])
@@ -210,4 +211,63 @@ test('a member left undefined is absent, not refused', () => {
       labels: undefined,
     }),
   ).toEqual([])
+})
+
+test('a track field counts features, or reads a named field in place of score', () => {
+  expect(
+    colorProblems({ field: 'track', trackId: 'dog10k', stat: 'count' }),
+  ).toEqual([])
+  expect(
+    colorProblems({
+      field: 'track',
+      trackId: 'gnomad',
+      stat: 'max',
+      scoreField: 'INFO.AF',
+    }),
+  ).toEqual([])
+  expect(
+    resolvedColor({ field: 'track', trackId: 'gnomad', scoreField: 'INFO.AF' }),
+  ).toEqual(RESIDUE_COLORS.track)
+})
+
+test('a scoreField is a field name, and a count reads none', () => {
+  expect(
+    colorProblems({ field: 'track', trackId: 't', scoreField: 3 }),
+  ).toEqual([
+    'color.scoreField is a field name such as INFO.AF, not a jexl: expression',
+  ])
+  expect(
+    colorProblems({
+      field: 'track',
+      trackId: 't',
+      scoreField: 'jexl:get(feature,"INFO").AF',
+    }),
+  ).toEqual([
+    'color.scoreField is a field name such as INFO.AF, not a jexl: expression',
+  ])
+  expect(
+    colorProblems({
+      field: 'track',
+      trackId: 't',
+      stat: 'count',
+      scoreField: 'INFO.AF',
+    }),
+  ).toEqual([
+    "color.scoreField is refused: stat count counts the track's features and reads no value",
+  ])
+  expect(
+    colorProblems({ field: 'values', values: [1], scoreField: 'INFO.AF' }),
+  ).toEqual([
+    "color.scoreField is not a member of values's linear scale, which takes scale, domainMin, domainMax, domainMid, range, labels, title, values",
+  ])
+})
+
+test("a track's legend says what each residue's value is", () => {
+  expect(trackStatLabel({ field: 'track' })).toBe('mean per codon')
+  expect(trackStatLabel({ field: 'track', stat: 'count' })).toBe(
+    'features per codon',
+  )
+  expect(
+    trackStatLabel({ field: 'track', stat: 'max', scoreField: 'INFO.AF' }),
+  ).toBe('max INFO.AF per codon')
 })

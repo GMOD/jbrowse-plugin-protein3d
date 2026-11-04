@@ -730,6 +730,85 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
+  it('counts a VCF track per residue, and reads a named INFO field', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [{ uniprotId: 'P15056' }],
+          transcriptId: 'ENST00000646891.2',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr7:140,719,327-140,924,929',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await page.evaluate(() => {
+      window.JBrowseSession!.addTrackConf!({
+        type: 'VariantTrack',
+        trackId: 'clinvar-vcf',
+        name: 'ClinVar VCF',
+        assemblyNames: ['hg38'],
+        adapter: {
+          type: 'VcfTabixAdapter',
+          uri: 'https://ftp.ncbi.nlm.nih.gov/pub/clinvar/vcf_GRCh38/clinvar.vcf.gz',
+        },
+      })
+    })
+    const setColor = (color: Record<string, unknown>) =>
+      page.evaluate(c => {
+        window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+          .setColor!({ field: 'track', trackId: 'clinvar-vcf', ...c })
+      }, color)
+    const placed = () =>
+      page.evaluate(() => {
+        const s = window.JBrowseSession!.views!.find(
+          v => v.type === 'ProteinView',
+        )!.structures![0]!
+        const values = [...(s.placedVariantEffects?.byLabelSeqId ?? [])]
+        return {
+          pending: s.variantEffectsPending,
+          count: values.length,
+          zero: values.filter(([, v]) => v === 0).length,
+          max: Math.max(...values.map(([, v]) => v)),
+          v600: s.placedVariantEffects?.byLabelSeqId.get(600),
+          status: s.statusMessage,
+        }
+      })
+    const settled = async () => {
+      await expect
+        .poll(async () => (await placed()).pending, { timeout: 90_000 })
+        .toBe(false)
+      return placed()
+    }
+
+    await setColor({ stat: 'mean' })
+    const unscored = await settled()
+    expect(unscored.status).toMatch(
+      /^Track "clinvar-vcf"'s \d+ features under this transcript carry no number in score; name the field to read with scoreField/,
+    )
+    expect(unscored.count).toBe(0)
+
+    await setColor({ stat: 'count' })
+    const counted = await settled()
+    expect(counted.status).toBeUndefined()
+    expect(counted.count).toBeGreaterThanOrEqual(760)
+    expect(counted.zero).toBeGreaterThan(0)
+    expect(counted.v600).toBeGreaterThanOrEqual(1)
+
+    await setColor({ stat: 'max', scoreField: 'INFO.AF_EXAC' })
+    const frequency = await settled()
+    expect(frequency.status).toBeUndefined()
+    expect(frequency.count).toBeGreaterThan(0)
+    expect(frequency.count).toBeLessThan(counted.count)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
   // With no transcript there is nothing to align, so the structure reads
   // hovers from its first protein chain and lets the user pick another. On
   // 1TUP the first two entities are DNA strands.

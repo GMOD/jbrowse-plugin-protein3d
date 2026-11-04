@@ -55,8 +55,8 @@ and `surface: { opacity }` would become
   `resolvedColor`, the launch parameters (`docs/launch-parameters.md`) and every
   protein figure session in jbrowse-components.
 - A design pass first, as ADR-238 itself had: `domainMin`/`domainMax`/
-  `domainMid`, `trackId`, `stat` and `values` each need a home, and the launch
-  URL's flat parameters may want to stay flat.
+  `domainMid`, `trackId`, `stat`, `scoreField` and `values` each need a home,
+  and the launch URL's flat parameters may want to stay flat.
 - The migration is the same shape as `checkedFigure`: read the flat object in
   `preProcessSnapshot`, write the nested one.
 

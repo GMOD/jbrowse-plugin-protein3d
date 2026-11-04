@@ -25,7 +25,12 @@ import loadMolstar from './loadMolstar'
 import { makeLociChannel } from './lociChannel'
 import { checkedFigure, checkedFigureChange } from './markProblems'
 import { syncMeasurements } from './measurements'
-import { checkedColor, colorOfScheme, resolvedColor } from './proteinColor'
+import {
+  checkedColor,
+  colorOfScheme,
+  resolvedColor,
+  trackStatLabel,
+} from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
@@ -547,7 +552,7 @@ function stateModelFactory() {
             : undefined,
           label:
             color.field === 'track'
-              ? `${trackName} (${color.stat ?? 'mean'} per codon)`
+              ? `${trackName} (${trackStatLabel(color)})`
               : undefined,
         })
       },

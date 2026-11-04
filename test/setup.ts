@@ -101,7 +101,7 @@ interface SessionView {
     structures: ProteinViewStructure['report'][]
   }
   superposedCount?: number
-  setColor?: (color: { field?: string }) => void
+  setColor?: (color: { field?: string; [member: string]: unknown }) => void
   applyFigure?: (figure: { camera?: SavedCamera; marks?: object[] }) => void
   currentCamera?: () => SavedCamera
   marks?: object[]
@@ -156,6 +156,7 @@ declare global {
     JBrowseSession?: {
       views?: SessionView[]
       removeView?: (view: SessionView) => void
+      addTrackConf?: (conf: Record<string, unknown>) => unknown
       hovered?: { hoverPosition?: { coord: number; refName: string } }
       addHighlight?: (highlight: {
         assemblyName: string
