@@ -64,6 +64,9 @@ return view.report
   `loading`, so a capture still waits for the work the notice describes.
 - Each structure's `error` is a load that failed; `status` is the line beside
   its label, such as a color field that leaves it grey.
+- `selection` is what is selected on the structure, as 0-based half-open
+  position ranges; pass them to `locateResidues({ positions: selection })` to
+  name them in every numbering.
 - `mapping` is absent until the alignment settles, and for a structure opened
   without a transcript. Its numbers are p2s_mapper's `alignmentQuality`, and
   `lowSimilarity` is the verdict behind the header's warning chip.
