@@ -1,8 +1,13 @@
-import type loadMolstar from './loadMolstar'
-import type { Camera } from 'molstar/lib/mol-canvas3d/camera'
-import type { PluginContext } from 'molstar/lib/mol-plugin/context'
+import loadMolstar from './loadMolstar'
 
-type Molstar = Awaited<ReturnType<typeof loadMolstar>>
+import type { Camera } from 'molstar/lib/mol-canvas3d/camera'
+import type {
+  Canvas3D,
+  Canvas3DParams,
+  Canvas3DProps,
+} from 'molstar/lib/mol-canvas3d/canvas3d'
+import type { Vec3 as MolstarVec3 } from 'molstar/lib/mol-math/linear-algebra'
+
 type Triple = [number, number, number]
 
 /**
@@ -19,24 +24,95 @@ export interface SavedCamera {
   mode?: Camera.Mode
 }
 
+/** What fixing and releasing a camera needs of Mol*'s canvas. */
+export type CameraCanvas = Pick<
+  Canvas3D,
+  'props' | 'setProps' | 'requestCameraReset'
+>
+
+/**
+ * The fog and far clipping the canvas's own settings give a camera, which a
+ * clipping radius turns off and a reset does not restore: Mol* carries both
+ * over from the camera's last state.
+ */
+function canvasDepthCue({ cameraFog, cameraClipping }: Canvas3DProps) {
+  return {
+    fog: cameraFog.name === 'on' ? cameraFog.params.intensity : 0,
+    clipFar: cameraClipping.far,
+  }
+}
+
 export function applySavedCamera(
-  plugin: PluginContext,
-  molstar: Molstar,
+  canvas: CameraCanvas | undefined,
+  { Vec3 }: { Vec3: typeof MolstarVec3 },
   { position, target, up, radius, mode = 'perspective' }: SavedCamera,
 ) {
-  const { Vec3 } = molstar
-  plugin.canvas3d?.setProps({ camera: { mode, manualReset: true } })
-  plugin.canvas3d?.requestCameraReset({
+  canvas?.setProps({ camera: { mode, manualReset: true } })
+  canvas?.requestCameraReset({
     snapshot: {
       mode,
       position: Vec3.create(...position),
       target: Vec3.create(...target),
       up: Vec3.create(...up),
       ...(radius === undefined
-        ? {}
+        ? canvasDepthCue(canvas.props)
         : { radius, radiusMax: radius, clipFar: true, fog: 0 }),
     },
   })
+}
+
+/**
+ * Hands the camera back to Mol*: its own projection and automatic framing,
+ * so a structure loaded later is framed, and the canvas's fog and clipping,
+ * then a reset onto the whole scene.
+ */
+export function releaseSavedCamera(
+  canvas: CameraCanvas | undefined,
+  params: { Canvas3DParams: typeof Canvas3DParams },
+) {
+  const { mode, manualReset } = params.Canvas3DParams.camera.defaultValue
+  canvas?.setProps({ camera: { mode, manualReset } })
+  canvas?.requestCameraReset({
+    snapshot: { mode, ...canvasDepthCue(canvas.props) },
+  })
+}
+
+/** What keeping a view's camera reads of the view. */
+export interface CameraView<P extends { canvas3d?: CameraCanvas }> {
+  readonly plugin: P | undefined
+  readonly camera: SavedCamera | undefined
+  /** every structure loaded, so the camera frames them all */
+  readonly settled: boolean
+}
+
+/**
+ * The body of the reaction that keeps a view's fixed camera on its canvas:
+ * applied once every structure has loaded, and when the view's camera is
+ * cleared while the canvas still holds one, handed back to Mol*. The canvas
+ * says whether it holds one, so an undo or a snapshot clearing the camera
+ * releases it as applyFigure does.
+ */
+export function keepSavedCamera<P extends { canvas3d?: CameraCanvas }>(
+  view: CameraView<P>,
+  onFailure: (plugin: P) => (error: unknown) => void,
+) {
+  return () => {
+    const { plugin, camera } = view
+    const canvas = plugin?.canvas3d
+    if (plugin && camera && view.settled) {
+      loadMolstar()
+        .then(molstar => {
+          applySavedCamera(canvas, molstar, camera)
+        })
+        .catch(onFailure(plugin))
+    } else if (plugin && !camera && canvas?.props.camera.manualReset) {
+      loadMolstar()
+        .then(molstar => {
+          releaseSavedCamera(canvas, molstar)
+        })
+        .catch(onFailure(plugin))
+    }
+  }
 }
 
 function tripleOf(vector: ArrayLike<number>): Triple {

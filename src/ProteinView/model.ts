@@ -36,7 +36,7 @@ import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
 import { checkedStructureFilters } from './residueFilter'
 import { syncResidueMarks } from './residueMarks'
-import { applySavedCamera, liveCamera } from './savedCamera'
+import { applySavedCamera, keepSavedCamera, liveCamera } from './savedCamera'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -728,7 +728,7 @@ function stateModelFactory() {
                     plugin,
                     ({ snapshot: requested }) => {
                       if (!requested && self.camera) {
-                        applySavedCamera(plugin, molstar, self.camera)
+                        applySavedCamera(plugin.canvas3d, molstar, self.camera)
                         return
                       }
                       const snapshot = requested
@@ -832,19 +832,24 @@ function stateModelFactory() {
           }),
         )
 
-        // A saved camera, once every structure has loaded
         addDisposer(
           self,
-          autorun(() => {
-            const { molstarPluginContext: plugin, camera } = self
-            if (plugin && camera && structuresSettled(self)) {
-              loadMolstar()
-                .then(molstar => {
-                  applySavedCamera(plugin, molstar, camera)
-                })
-                .catch(reportPluginFailure(self, plugin))
-            }
-          }),
+          autorun(
+            keepSavedCamera(
+              {
+                get plugin() {
+                  return self.molstarPluginContext
+                },
+                get camera() {
+                  return self.camera
+                },
+                get settled() {
+                  return structuresSettled(self)
+                },
+              },
+              plugin => reportPluginFailure(self, plugin),
+            ),
+          ),
         )
 
         addDisposer(self, autorun(makeLociChannel(self, 'select')))

@@ -104,6 +104,9 @@ view.applyFigure({
   shared in its link, and undone like any other edit.
 - The camera moves when `camera` changes, not only at load, and Reset Zoom
   returns to it. Mol\* animates the move, so read the camera once it has landed.
+  `{ camera: undefined }`, or an undo that clears it, hands the camera back to
+  Mol\*: its default projection and the canvas's own fog return, the scene is
+  framed whole, and a structure added later is framed again.
 - `currentCamera()` returns the camera on screen as a `camera` value, so
   `view.applyFigure({ camera: view.currentCamera() })` keeps the view as it is.
   Its `radius` is the slab Mol\* clips to, left out when that is the whole
