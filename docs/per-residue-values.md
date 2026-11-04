@@ -52,10 +52,20 @@ follow the live model: a new track, stat or scale recolors the structure.
   that base's residue. A residue no feature falls on reads **0**, not grey,
   because the request searched every codon of the transcript, so no feature is
   an observed zero, not a missing value.
+- `filter` keeps only the features every predicate passes, for a count and a
+  score alike. It is the structure `filter`'s grammar, Vega-Lite's field
+  predicates, over feature fields named as `scoreField` names them:
+  `{ "field": "FILTER", "equal": "PASS" }`,
+  `{ "field": "INFO.AF", "gte": 0.01 }`. A predicate takes `equal`, `oneOf`,
+  `lt`, `lte`, `gt`, `gte` or `range`. A list field passes `equal` and `oneOf`
+  when any entry does; the bounds test the number `scoreField` would read, a
+  list's highest. A feature without the field passes nothing. A `jexl:`
+  expression is refused, as for `scoreField`.
 - A track that leaves the structure grey says so beside the structure's label:
   no features under the transcript's coding bases at all (which a count would
   otherwise paint as all zeros, though a VCF missing the chromosome looks the
-  same), or features that carry no number in `score` or the named field.
+  same), features that carry no number in `score` or the named field, or
+  features none of which passes `filter`.
 - `scale: "linear"` is the default: light to dark over the 2nd to 98th
   percentile of the scores. `domainMin`, `domainMax`, `domainMid` and `range`
   override it, each end independently.
@@ -158,6 +168,34 @@ Only records ExAC saw carry `AF_EXAC`, so 113 residues take a value, up to 0.21,
 and V600 reads 0.00002; the rest stay grey. The legend titles each by what a
 residue shows: `ClinVar VCF (features per codon)` and
 `ClinVar VCF (max INFO.AF_EXAC per codon)`.
+
+### Worked example: counting only the calls that pass
+
+A callset's FILTER column says which records its caller trusts, and a count
+reads every record unless told otherwise. On Dog10K's slice under canine SOD1
+(canFam4), 43 of the 45 records under the coding bases fail the callset's VQSR
+filter; counting them paints SOD1 as far more variable than the cohort shows.
+Count the passing calls alone:
+
+```jsonc
+{
+  "color": {
+    "field": "track",
+    "trackId": "dog10k-vcf",
+    "stat": "count",
+    "filter": [{ "field": "FILTER", "equal": "PASS" }],
+  },
+}
+```
+
+A VCF record's FILTER reaches the plugin as the string `PASS` when the record
+passed, as a list of the filters it failed otherwise
+(`["VQSRTrancheSNP99.00to99.90"]`), and not at all when the column is `.`. So
+`equal: "PASS"` keeps the passing records, `oneOf: ["PASS", "LowQual"]` also any
+record whose failed filters include `LowQual`, and a callset that never applied
+filters writes `.` everywhere and passes nothing: the label then says no feature
+passed. The legend names the filter, for a track named `Dog10K VCF`:
+`Dog10K VCF (features per codon where FILTER = PASS)`.
 
 ## `values`: numbers in the session
 
