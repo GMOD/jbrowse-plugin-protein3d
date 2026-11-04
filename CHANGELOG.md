@@ -1,3 +1,18 @@
+## [1.30.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.29.0...v1.30.0) (2026-11-04)
+
+### Bug Fixes
+
+- An alignment indel inside an exon no longer numbers as an intron ([70901a2](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/70901a2b7c0bb9b677db652a9254bc8593da260d))
+
+### Features
+
+- A structure's report names its selection ([9cd9493](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/9cd94931354caca2cd015a43fe57c09d881d4dfe))
+- A track color's filter keeps only the features it names ([c1d31e8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c1d31e86f3c5007d9b6488de729796a448127ee9))
+
+### Tests
+
+- A relaunching e2e leg closes the cell its protein view leaves empty ([543e6dd](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/543e6dd033cfd00eaa95d0b1dd387a05e6f3a84d))
+
 ## [1.29.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.28.1...v1.29.0) (2026-11-04)
 
 ### Bug Fixes
