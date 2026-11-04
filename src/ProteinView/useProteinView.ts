@@ -27,6 +27,7 @@ export default function useProteinView({
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
+  const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
 
   // Create the Mol* plugin once on mount. showControls is intentionally NOT a
@@ -41,6 +42,8 @@ export default function useProteinView({
     } = { cancelled: false }
     // read through a call, which the compiler does not narrow across an await
     const isCancelled = () => state.cancelled
+    // a remount retries, so a failure the last mount left is not this one's
+    model.setError(undefined)
     void (async () => {
       let created: PluginContext | undefined
       try {
@@ -102,7 +105,6 @@ export default function useProteinView({
         } else {
           state.plugin = created
           setPlugin(created)
-          model.setError(undefined)
           model.setMolstarPluginContext(created)
         }
       } catch (e) {
@@ -111,7 +113,8 @@ export default function useProteinView({
           state.host?.remove()
         }
         console.error(e)
-        if (isAlive(model)) {
+        if (!isCancelled()) {
+          setError(e)
           model.setError(e)
         }
       } finally {
@@ -160,5 +163,5 @@ export default function useProteinView({
     }
   }, [plugin, showControls, model])
 
-  return { parentRef, loading }
+  return { parentRef, error, loading }
 }

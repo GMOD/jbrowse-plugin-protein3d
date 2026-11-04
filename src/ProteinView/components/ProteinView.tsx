@@ -16,8 +16,8 @@ const ProteinView = observer(function ProteinView({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  const { showControls, error } = model
-  const { parentRef, loading } = useProteinView({
+  const { showControls } = model
+  const { parentRef, error, loading } = useProteinView({
     showControls,
     model,
   })

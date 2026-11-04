@@ -99,17 +99,20 @@ return tup.locateResidues({ residues: { start: 248, end: 248 } })
 - `residues` is author numbering, the way a paper cites a site;
   `transcriptResidues` is 1-based on the transcript's translation; `positions`
   is 0-based on the structure's sequence.
-- The answer is undefined until the structure has what the target needs (its
-  chosen chain, or its settled alignment).
+- The answer is undefined while the structure is loading (`report`'s `loading`):
+  its chain, its alignment and the unmapping of a fusion partner can all still
+  change it.
 - `codon` is 0-based half-open on the transcript's own refName, its outer bounds
   when an intron splits it; `locus` is the same codon as a 1-based locString,
   for `navToLocString`.
 
 `structure.locateGenomeRegion({ refName, start, end })` goes the other way: each
 transcript residue whose codon overlaps a 0-based half-open region, in
-transcript order. The refName may be any of the assembly's aliases. A residue
-the structure lacks keeps its transcript fields and has no structure fields, so
-"the crystal does not hold this codon" is an answer rather than an empty list.
+transcript order, or undefined while the structure is loading. The refName may
+be any alias the connected genome view's assembly knows; without a connected
+view it has to match the transcript's own spelling. A residue the structure
+lacks keeps its transcript fields and has no structure fields, so "the crystal
+does not hold this codon" is an answer rather than an empty list.
 `view.locateGenomeRegion(region)` asks every structure of the view.
 
 The lookups are p2s_mapper's `locateStructureResidue`, `locateTranscriptResidue`

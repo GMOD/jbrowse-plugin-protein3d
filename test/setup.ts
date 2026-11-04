@@ -58,7 +58,7 @@ interface ProteinViewStructure {
   locateResidues?: (target: {
     residues: { start: number; end: number }
   }) => ResidueLocation[] | undefined
-  locateGenomeRegion?: (region: GenomeSpan) => ResidueLocation[]
+  locateGenomeRegion?: (region: GenomeSpan) => ResidueLocation[] | undefined
 }
 interface GenomeSpan {
   refName: string

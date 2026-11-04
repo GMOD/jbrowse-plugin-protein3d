@@ -1507,25 +1507,29 @@ const Structure = types
      * #method
      * Each residue a selection target names, in the structure's, the
      * transcript's and the genome's numberings: `{ residues: { start: 248,
-     * end: 248 } }` names it as a paper does. Undefined until the structure
-     * has what resolving the target needs; see resolveSelection.
+     * end: 248 } }` names it as a paper does. Undefined while the structure
+     * is loading, since its chain, alignment and fusion unmapping can still
+     * change the answer.
      */
     locateResidues(target: SelectionTarget) {
       const mapping = self.residueMapping
-      return self
-        .resolveSelection(target)
-        ?.flatMap(({ start, end }) =>
-          Array.from({ length: end - start }, (_, i) =>
-            locateStructureResidue(mapping, start + i),
-          ),
-        )
-        .filter(location => location !== undefined)
+      return self.loading
+        ? undefined
+        : self
+            .resolveSelection(target)
+            ?.flatMap(({ start, end }) =>
+              Array.from({ length: end - start }, (_, i) =>
+                locateStructureResidue(mapping, start + i),
+              ),
+            )
+            .filter(location => location !== undefined)
     },
     /**
      * #method
      * Each transcript residue whose codon overlaps a 0-based half-open genome
      * region, in transcript order, with its structure residue where the
-     * structure holds one. The refName may be any of the assembly's aliases.
+     * structure holds one, or undefined while the structure is loading. The
+     * refName may be any alias the connected genome view's assembly knows.
      */
     locateGenomeRegion({
       refName,
@@ -1539,13 +1543,15 @@ const Structure = types
       const mapping = self.residueMapping
       const { genome } = mapping
       const { canonicalRefName } = self.genomeNaming
-      return genome &&
-        canonicalRefName(refName) === canonicalRefName(genome.refName)
-        ? Object.entries(genome.p2gCodon)
-            .filter(([, bases]) => bases.some(b => b >= start && b < end))
-            .map(([pos]) => locateTranscriptResidue(mapping, Number(pos)))
-            .filter(location => location !== undefined)
-        : []
+      return self.loading
+        ? undefined
+        : genome &&
+            canonicalRefName(refName) === canonicalRefName(genome.refName)
+          ? Object.entries(genome.p2gCodon)
+              .filter(([, bases]) => bases.some(b => b >= start && b < end))
+              .map(([pos]) => locateTranscriptResidue(mapping, Number(pos)))
+              .filter(location => location !== undefined)
+          : []
     },
   }))
   .extend(self => {

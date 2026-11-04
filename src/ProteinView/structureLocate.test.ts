@@ -119,7 +119,7 @@ test("a genome region finds its residues under the assembly's alias", () => {
     start: 205,
     end: 212,
   })
-  expect(residues.map(r => [r.transcriptResidue, r.residue])).toEqual([
+  expect(residues?.map(r => [r.transcriptResidue, r.residue])).toEqual([
     [1, undefined],
     [2, 2],
     [3, 3],
@@ -134,7 +134,7 @@ test("a genome region finds its residues under the assembly's alias", () => {
           refName: 'chr11',
           start: 100,
           end: 103,
-        })[0]?.residue,
+        })?.[0]?.residue,
     ),
   ).toEqual([7])
 })
@@ -157,4 +157,17 @@ test('the report says which chain maps and how well', () => {
       fusionPartnerResiduesUnmapped: 0,
     },
   })
+})
+
+// A half-settled mapping reads as a final one: a transcript-only entry would
+// say the crystal lacks a codon it holds.
+test('a structure still loading locates nothing yet', () => {
+  const { structure } = setup()
+  structure.setLoadedToMolstar(false)
+  expect(structure.locateResidues({ residues: { start: 2, end: 2 } })).toBe(
+    undefined,
+  )
+  expect(
+    structure.locateGenomeRegion({ refName: 'chr11', start: 205, end: 212 }),
+  ).toBe(undefined)
 })

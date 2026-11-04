@@ -430,7 +430,7 @@ describe('Protein3d Plugin E2E', () => {
         report: view.report!,
         r248,
         back: r248?.codon
-          ? tup.locateGenomeRegion!(r248.codon).map(r => r.residue)
+          ? tup.locateGenomeRegion!(r248.codon)?.map(r => r.residue)
           : [],
       }
     })
