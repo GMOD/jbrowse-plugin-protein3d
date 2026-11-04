@@ -18,6 +18,8 @@ import {
   fusionPartnerPositions,
   getPdbIdFromUrl,
   getUniprotIdFromAlphaFoldTarget,
+  locateStructureResidue,
+  locateTranscriptResidue,
   looksLikePlddt,
   makeCoordinateMapper,
   makeLabelSeqIdIndex,
@@ -69,6 +71,7 @@ import {
   withoutLabelledResidues,
 } from './sessionHighlights'
 import { DEPOSITED_MODEL } from './structurePipeline'
+import { structureReport } from './structureReport'
 import { structureUniProt } from './structureUniProt'
 import { type MolstarLocationInfo } from './subscribeMolstarInteraction'
 import { assemblyNaming, errorMessage } from './util'
@@ -116,6 +119,7 @@ import type {
   Entity,
   EntitySelection,
   PairwiseAlignment,
+  ResidueMapping,
   ResidueRange,
   ResidueRanges,
   ScoredAlignment,
@@ -141,7 +145,7 @@ export interface ParentProteinView {
   color: ProteinColor
   molstarPluginContext: PluginContext | undefined
   settled: boolean
-  setError: (e: unknown) => void
+  addNotice: (notice: unknown) => void
   resizeTracks: (distance: number) => void
   clearSelection: () => void
 }
@@ -1475,6 +1479,75 @@ const Structure = types
       ])
     },
   }))
+  .views(self => ({
+    /**
+     * #getter
+     * What this structure resolved to, as data a script reads instead of the
+     * header; see structureReport
+     */
+    get report() {
+      return structureReport(self)
+    },
+    /**
+     * #getter
+     * What the locate methods read: the mapped entity, its alignment to the
+     * transcript, and the transcript's genome mapping
+     */
+    get residueMapping(): ResidueMapping {
+      return {
+        entity: self.mappedEntity,
+        mapper: self.coordinateMapper,
+        transcript: self.userProvidedTranscriptSequence,
+        genome: self.genomeToTranscriptSeqMapping,
+      }
+    },
+  }))
+  .views(self => ({
+    /**
+     * #method
+     * Each residue a selection target names, in the structure's, the
+     * transcript's and the genome's numberings: `{ residues: { start: 248,
+     * end: 248 } }` names it as a paper does. Undefined until the structure
+     * has what resolving the target needs; see resolveSelection.
+     */
+    locateResidues(target: SelectionTarget) {
+      const mapping = self.residueMapping
+      return self
+        .resolveSelection(target)
+        ?.flatMap(({ start, end }) =>
+          Array.from({ length: end - start }, (_, i) =>
+            locateStructureResidue(mapping, start + i),
+          ),
+        )
+        .filter(location => location !== undefined)
+    },
+    /**
+     * #method
+     * Each transcript residue whose codon overlaps a 0-based half-open genome
+     * region, in transcript order, with its structure residue where the
+     * structure holds one. The refName may be any of the assembly's aliases.
+     */
+    locateGenomeRegion({
+      refName,
+      start,
+      end,
+    }: {
+      refName: string
+      start: number
+      end: number
+    }) {
+      const mapping = self.residueMapping
+      const { genome } = mapping
+      const { canonicalRefName } = self.genomeNaming
+      return genome &&
+        canonicalRefName(refName) === canonicalRefName(genome.refName)
+        ? Object.entries(genome.p2gCodon)
+            .filter(([, bases]) => bases.some(b => b >= start && b < end))
+            .map(([pos]) => locateTranscriptResidue(mapping, Number(pos)))
+            .filter(location => location !== undefined)
+        : []
+    },
+  }))
   .extend(self => {
     // An answer is applied only if no alignment has started since it was
     // asked for: a changed transcript or entity list, or another chain the
@@ -1647,8 +1720,8 @@ const Structure = types
      * a navigation or a chain choice the user asked for and that failed, as
      * opposed to a structure that cannot be shown at all.
      */
-    setViewError(e: unknown) {
-      self.parentView.setError(e)
+    addViewNotice(e: unknown) {
+      self.parentView.addNotice(e)
     },
     /**
      * #action
@@ -1699,7 +1772,7 @@ const Structure = types
         if (scored) {
           self.applyChosenEntity(entityId, scored.alignment)
         } else {
-          self.parentView.setError(
+          self.parentView.addNotice(
             new Error(
               `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
             ),
@@ -1718,7 +1791,7 @@ const Structure = types
         inPlace: align,
         apply,
         fail: e => {
-          self.parentView.setError(e)
+          self.parentView.addNotice(e)
           self.redecideAlignment()
         },
         pendingEntityId: entityId,
@@ -1737,7 +1810,7 @@ const Structure = types
         structureSeqEndPos,
       }).catch((e: unknown) => {
         console.error(e)
-        self.parentView.setError(e)
+        self.parentView.addNotice(e)
       })
     },
   }))
@@ -1838,7 +1911,7 @@ const Structure = types
           zoomToBaseLevel: self.zoomToBaseLevel,
         }).catch((e: unknown) => {
           console.error(e)
-          self.parentView.setError(e)
+          self.parentView.addNotice(e)
         })
       }
       return runs
@@ -1902,7 +1975,7 @@ const Structure = types
             void self.alignmentRedecisions
             const decision = decideAlignment(self)
             const reportStale = (problem: string) => {
-              self.setViewError(
+              self.addViewNotice(
                 new Error(
                   `The alignment stored for ${self.label} no longer matches its chain and was recomputed: ${problem}`,
                 ),

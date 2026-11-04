@@ -46,6 +46,33 @@ interface ProteinViewStructure {
   placedVariantEffects?: { byLabelSeqId: Map<number, number> }
   variantEffectsPending?: boolean
   statusMessage?: string
+  report?: {
+    mapping?: {
+      entityId: string
+      chains: string[]
+      identical: number
+      lowSimilarity: boolean
+      fusionPartnerResiduesUnmapped: number
+    }
+  }
+  locateResidues?: (target: {
+    residues: { start: number; end: number }
+  }) => ResidueLocation[] | undefined
+  locateGenomeRegion?: (region: GenomeSpan) => ResidueLocation[]
+}
+interface GenomeSpan {
+  refName: string
+  start: number
+  end: number
+}
+interface ResidueLocation {
+  position?: number
+  residue?: number
+  structureLetter?: string
+  transcriptResidue?: number
+  transcriptLetter?: string
+  codon?: GenomeSpan
+  locus?: string
 }
 interface MolstarCell {
   transform: { ref: string; parent: string }
@@ -60,6 +87,11 @@ interface SessionView {
     maps: { transcriptSeqToStructureSeqPosition: Record<string, number> }
   }
   structures?: ProteinViewStructure[]
+  report?: {
+    loading: boolean
+    notices: string[]
+    structures: ProteinViewStructure['report'][]
+  }
   superposedCount?: number
   setColor?: (color: { field?: string }) => void
   menuItems?: () => { label?: string; onClick?: () => void }[]

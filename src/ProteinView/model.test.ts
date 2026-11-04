@@ -72,18 +72,18 @@ test('removing a structure leaves the others as they were', () => {
 
 // The removal settles after the action has returned, so reporting its failure
 // by writing to `self` throws inside MST where nothing catches it.
-test('a removal that fails reports through the error action', async () => {
+test('a removal that fails reports through the notice action', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   const view = makeView()
   mockRemove.mockRejectedValueOnce(new Error('plugin disposed'))
   view.setMolstarPluginContext(plugin)
   view.removeStructure(view.structures[0]!)
   await new Promise(resolve => setTimeout(resolve, 0))
-  expect(view.error).toEqual(new Error('plugin disposed'))
+  expect(view.notices).toEqual([new Error('plugin disposed')])
   logged.mockRestore()
 })
 
-test('a removal failing after the view unmounts leaves no error banner', async () => {
+test('a removal failing after the view unmounts leaves no notice', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   const view = makeView()
   mockRemove.mockRejectedValueOnce(new Error('plugin disposed'))
@@ -91,9 +91,29 @@ test('a removal failing after the view unmounts leaves no error banner', async (
   view.removeStructure(view.structures[0]!)
   view.setMolstarPluginContext(undefined)
   await new Promise(resolve => setTimeout(resolve, 0))
-  expect(view.error).toBeUndefined()
+  expect(view.notices).toEqual([])
   expect(logged).toHaveBeenCalledWith(new Error('plugin disposed'))
   logged.mockRestore()
+})
+
+// A recomputed alignment or a failed recolor once went to the one error slot,
+// and the ready marker read any error as finished, so a capture fired while
+// the structure was still realigning.
+test('a notice leaves the view loading, and repeats once', () => {
+  const view = makeView()
+  expect(view.showLoading).toBe(true)
+  view.addNotice(new Error('the alignment was recomputed'))
+  view.addNotice(new Error('the alignment was recomputed'))
+  expect(view.notices).toHaveLength(1)
+  expect(view.showLoading).toBe(true)
+  view.dismissNotice(view.notices[0])
+  expect(view.notices).toEqual([])
+})
+
+test('a Mol* that failed to start settles the view', () => {
+  const view = makeView()
+  view.setError(new Error('Could not create a WebGL rendering context'))
+  expect(view.showLoading).toBe(false)
 })
 
 // The view menu used to repeat the header's four toggles, the color menu and
@@ -180,7 +200,7 @@ test('a failed structure reports on its own line and stops being pending', () =>
   expect(first!.statusMessage).toBe('HTTP 404 fetching a.cif')
   expect(first!.loading).toBe(false)
   expect(second!.statusMessage).toBeUndefined()
-  expect(view.error).toBeUndefined()
+  expect(view.notices).toEqual([])
 })
 
 // Two copies of one entry are a real thing to open, and their loading lines

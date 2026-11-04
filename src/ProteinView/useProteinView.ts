@@ -27,7 +27,6 @@ export default function useProteinView({
 }) {
   const parentRef = useRef<HTMLDivElement>(null)
   const [plugin, setPlugin] = useState<PluginContext>()
-  const [error, setError] = useState<unknown>()
   const [loading, setLoading] = useState(true)
 
   // Create the Mol* plugin once on mount. showControls is intentionally NOT a
@@ -103,6 +102,7 @@ export default function useProteinView({
         } else {
           state.plugin = created
           setPlugin(created)
+          model.setError(undefined)
           model.setMolstarPluginContext(created)
         }
       } catch (e) {
@@ -111,7 +111,9 @@ export default function useProteinView({
           state.host?.remove()
         }
         console.error(e)
-        setError(e)
+        if (isAlive(model)) {
+          model.setError(e)
+        }
       } finally {
         setLoading(false)
       }
@@ -149,7 +151,7 @@ export default function useProteinView({
       } catch (e) {
         console.error(e)
         if (isAlive(model)) {
-          model.setError(e)
+          model.addNotice(e)
         }
       }
     })()
@@ -158,5 +160,5 @@ export default function useProteinView({
     }
   }, [plugin, showControls, model])
 
-  return { parentRef, error, loading }
+  return { parentRef, loading }
 }

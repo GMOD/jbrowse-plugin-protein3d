@@ -49,6 +49,7 @@ import Structure from './structureModel'
 import { makeStructureSuperposer } from './structureSuperposer'
 import { setStructuresHidden } from './structureVisibility'
 import { syncSurfaces } from './surface'
+import { errorMessage } from './util'
 import { isValueField, paintedColor, valueDomain } from './valueScale'
 import { attachViewInteractions } from './viewInteractions'
 
@@ -327,9 +328,17 @@ function stateModelFactory() {
     .volatile(() => ({
       /**
        * #volatile
+       * the view cannot draw at all: Mol* failed to start
        */
       // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       error: undefined as unknown,
+      /**
+       * #volatile
+       * failures worth reporting that leave the view working, such as a
+       * superposition, a recolor or a navigation; the banner lists them and
+       * the ready marker does not wait on them
+       */
+      notices: [] as unknown[],
       /**
        * #volatile
        */
@@ -379,6 +388,20 @@ function stateModelFactory() {
        */
       setError(e: unknown) {
         self.error = e
+      },
+      /**
+       * #action
+       */
+      addNotice(notice: unknown) {
+        if (!self.notices.some(n => `${n}` === `${notice}`)) {
+          self.notices = [...self.notices, notice]
+        }
+      },
+      /**
+       * #action
+       */
+      dismissNotice(notice: unknown) {
+        self.notices = self.notices.filter(n => n !== notice)
       },
 
       /**
@@ -815,6 +838,36 @@ function stateModelFactory() {
        */
       get settled() {
         return structuresSettled(self)
+      },
+      /**
+       * #getter
+       * What the view resolved, as plain data: whether it is still loading,
+       * what failed, the notices its banner lists, and each structure's
+       * report. The header shows the same things to a reader.
+       */
+      get report() {
+        return {
+          loading: showLoading(self),
+          error:
+            self.error === undefined ? undefined : errorMessage(self.error),
+          notices: self.notices.map(n => errorMessage(n)),
+          structures: self.structures.map(s => s.report),
+        }
+      },
+      /**
+       * #method
+       * Each structure's residues under a 0-based half-open genome region; see
+       * the structure's locateGenomeRegion
+       */
+      locateGenomeRegion(region: {
+        refName: string
+        start: number
+        end: number
+      }) {
+        return self.structures.map(s => ({
+          label: s.label,
+          residues: s.locateGenomeRegion(region),
+        }))
       },
       /**
        * #getter

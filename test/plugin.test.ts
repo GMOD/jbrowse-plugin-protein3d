@@ -416,6 +416,41 @@ describe('Protein3d Plugin E2E', () => {
     expect(hotspot.rulerLabels).toContain('250')
     await captureScreenshot(page, screenshot('08-hotspot-panel'))
 
+    // what the header shows, as data a script reads, and R248 located in
+    // every numbering and back from its codon
+    const located = await page.evaluate(() => {
+      const view = window.JBrowseSession!.views!.find(
+        v => v.type === 'ProteinView',
+      )!
+      const tup = view.structures![1]!
+      const [r248] = tup.locateResidues!({
+        residues: { start: 248, end: 248 },
+      })!
+      return {
+        report: view.report!,
+        r248,
+        back: r248?.codon
+          ? tup.locateGenomeRegion!(r248.codon).map(r => r.residue)
+          : [],
+      }
+    })
+    expect(located.report.loading).toBe(false)
+    expect(located.report.notices).toEqual([])
+    expect(located.report.structures[1]?.mapping).toMatchObject({
+      entityId: '3',
+      lowSimilarity: false,
+      fusionPartnerResiduesUnmapped: 0,
+    })
+    expect(located.r248).toMatchObject({
+      position: 154,
+      residue: 248,
+      structureLetter: 'R',
+      transcriptResidue: 248,
+      transcriptLetter: 'R',
+    })
+    expect(located.r248!.codon!.end - located.r248!.codon!.start).toBe(3)
+    expect(located.back).toEqual([248])
+
     const peptideRuns = await page.evaluate(
       () =>
         window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
