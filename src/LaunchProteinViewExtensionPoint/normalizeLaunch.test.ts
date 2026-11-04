@@ -306,8 +306,29 @@ test('a figure layer of the wrong shape is dropped by name', () => {
   expect(settings.camera).toBeUndefined()
   expect(settings.marks).toBeUndefined()
   expect(warnings).toEqual([
-    '`camera` is not { position, target, up } triples of numbers and was ignored',
+    '`camera` was ignored: camera.position is three numbers such as [0, 1, 0], not [0,0]; camera.target is three numbers such as [0, 1, 0], not undefined; camera.up is three numbers such as [0, 1, 0], not undefined',
     "`marks` is not a list such as [{ site: 'A:248', mark: 'spheres' }] and was ignored",
+  ])
+})
+
+// the view refuses these at snapshot time, so a launch that let them through
+// failed to open where it could have dropped the layer and opened
+test('a camera or surface the view would refuse is dropped with its reason', () => {
+  const { settings, warnings } = accepted({
+    gene: 'TP53',
+    camera: {
+      position: [0, 0, 50],
+      target: [0, 0, 0],
+      up: [0, 1, 0],
+      radius: 0,
+    },
+    surface: { opacity: 1.5 },
+  })
+  expect(settings.camera).toBeUndefined()
+  expect(settings.surface).toBeUndefined()
+  expect(warnings).toEqual([
+    '`camera` was ignored: camera.radius is a positive number, not 0',
+    '`surface` was ignored: surface.opacity is a number from 0 to 1, not 1.5',
   ])
 })
 

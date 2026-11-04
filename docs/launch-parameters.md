@@ -56,7 +56,10 @@ genome view itself, and takes any of the others as an override. Without `gene`,
 
 The launch warns about a key it does not take (`ignored unknown key(s): hieght`)
 and a setting of the wrong type (`` `height` is not a number ``), drops it, and
-opens the rest. A session spec's `id`, which pins the view's id, passes through.
+opens the rest. A `camera` or `surface` the view would refuse is dropped the
+same way, with the view's reason
+(`` `camera` was ignored: camera.radius is a positive number, not 0 ``). A
+session spec's `id`, which pins the view's id, passes through.
 
 ## Which source a structure opens
 

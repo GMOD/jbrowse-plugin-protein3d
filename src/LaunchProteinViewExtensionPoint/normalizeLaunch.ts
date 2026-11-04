@@ -1,6 +1,7 @@
 import { isPairwiseAlignment, resolveStructureUrl } from 'p2s_mapper'
 
 import { VARIANT_SPELLING, parseLaunchVariant } from './launchVariant'
+import { cameraProblems, surfaceProblems } from '../ProteinView/markProblems'
 
 import type { LaunchVariant } from './launchVariant'
 import type { ConnectedViewSpec } from './resolveShortLaunch'
@@ -101,27 +102,12 @@ function isDistanceList(value: unknown): value is DistanceMeasurement[] {
   return Array.isArray(value) && value.every(isRecord)
 }
 
-function isTriple(value: unknown) {
-  return Array.isArray(value) && value.length === 3 && value.every(isNumber)
-}
-
 function isSavedCamera(value: unknown): value is SavedCamera {
-  return (
-    isRecord(value) &&
-    isTriple(value.position) &&
-    isTriple(value.target) &&
-    isTriple(value.up) &&
-    (value.radius === undefined || isNumber(value.radius)) &&
-    (value.mode === undefined ||
-      value.mode === 'perspective' ||
-      value.mode === 'orthographic')
-  )
+  return value !== undefined && cameraProblems(value).length === 0
 }
 
 function isSurface(value: unknown): value is ProteinSurface {
-  return (
-    isRecord(value) && (value.opacity === undefined || isNumber(value.opacity))
-  )
+  return value !== undefined && surfaceProblems(value).length === 0
 }
 
 function isResidueRange(value: unknown): value is ResidueRange {
@@ -177,6 +163,28 @@ function fieldReader<K extends string>(
     }
     warnings.push(`${at(key)} is not ${expected} and was ignored`)
     return undefined
+  }
+}
+
+/**
+ * A figure layer read by the view's own check, so a launch drops, with the
+ * view's reasons, what the view would refuse.
+ */
+function figureLayerReader(
+  fields: ReadonlyMap<string, unknown>,
+  warnings: string[],
+) {
+  return function read<T>(
+    key: string,
+    accepts: (value: unknown) => value is T,
+    problemsOf: (value: unknown) => string[],
+  ) {
+    const value = fields.get(key)
+    const accepted = value !== undefined && accepts(value) ? value : undefined
+    if (value !== undefined && accepted === undefined) {
+      warnings.push(`\`${key}\` was ignored: ${problemsOf(value).join('; ')}`)
+    }
+    return accepted
   }
 }
 
@@ -260,6 +268,7 @@ function readViewSettings(
     key => `\`${key}\``,
     warnings,
   )
+  const readLayer = figureLayerReader(fields, warnings)
   const flag = (key: keyof LaunchViewSettings) =>
     read(key, isBoolean, 'true or false')
   return {
@@ -278,12 +287,8 @@ function readViewSettings(
     alignmentAlgorithm: read('alignmentAlgorithm', isString, 'a string'),
     color: fields.get('color'),
     colorScheme: read('colorScheme', isString, 'a string'),
-    camera: read(
-      'camera',
-      isSavedCamera,
-      '{ position, target, up } triples of numbers',
-    ),
-    surface: read('surface', isSurface, '{ opacity }'),
+    camera: readLayer('camera', isSavedCamera, cameraProblems),
+    surface: readLayer('surface', isSurface, surfaceProblems),
     distances: read(
       'distances',
       isDistanceList,
