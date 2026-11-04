@@ -44,9 +44,14 @@ follow the live model: a new track, stat or scale recolors the structure.
 - `stat: "count"` paints how many features fall on each residue's codon, and
   reads no value, so it refuses a `scoreField`. A feature counts once on every
   residue whose codon it touches: a deletion across a codon boundary changes
-  both residues. A residue no feature falls on reads **0**, not grey, because
-  the request searched every codon of the transcript, so no feature is an
-  observed zero, not a missing value.
+  both residues. A VCF indel's first base is the padding base VCF writes before
+  the event, unchanged, so where every alternate allele keeps it the record
+  reads from the base after, for a count and a score alike: a 1-bp deletion of a
+  codon's leftmost base counts on that codon, not also on the neighbour holding
+  the padding base. An insertion, whose REF is the padding base alone, counts on
+  that base's residue. A residue no feature falls on reads **0**, not grey,
+  because the request searched every codon of the transcript, so no feature is
+  an observed zero, not a missing value.
 - A track that leaves the structure grey says so beside the structure's label:
   no features under the transcript's coding bases at all (which a count would
   otherwise paint as all zeros, though a VCF missing the chromosome looks the

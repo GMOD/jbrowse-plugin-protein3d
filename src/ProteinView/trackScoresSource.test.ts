@@ -153,3 +153,88 @@ test('a bigWig feature still reads its score', () => {
     [1, 3],
   ])
 })
+
+// VcfFeature spans POS-1 to start + REF.length, so an indel's span begins on
+// the padding base VCF writes before the event
+function record(uniqueId: string, pos: number, REF: string, ALT: string[]) {
+  return new SimpleFeature({
+    uniqueId,
+    refName: 'chr1',
+    start: pos,
+    end: pos + REF.length,
+    REF,
+    ALT,
+    INFO: {},
+  })
+}
+
+function countOf(feature: SimpleFeature) {
+  return [
+    ...trackValuesByResidue({
+      features: [feature],
+      p2gCodon,
+      stat: 'count',
+      trackId: 'cohort',
+    }),
+  ]
+}
+
+test("a deletion counts on the codon it removes, not its padding base's", () => {
+  // the padding base 102 ends codon 0; the deleted 103 starts codon 1
+  expect(countOf(record('del', 102, 'CA', ['C']))).toEqual([
+    [0, 0],
+    [1, 1],
+    [2, 0],
+  ])
+  expect(countOf(record('multi', 102, 'CAG', ['C', 'CA']))).toEqual([
+    [0, 0],
+    [1, 1],
+    [2, 0],
+  ])
+})
+
+test('a record whose first base changes counts on it', () => {
+  expect(countOf(record('mnv', 102, 'CA', ['TG']))).toEqual([
+    [0, 1],
+    [1, 1],
+    [2, 0],
+  ])
+  expect(countOf(record('mixed', 102, 'CA', ['C', 'TA']))).toEqual([
+    [0, 1],
+    [1, 1],
+    [2, 0],
+  ])
+  expect(countOf(record('star', 102, 'CA', ['C', '*']))).toEqual([
+    [0, 1],
+    [1, 1],
+    [2, 0],
+  ])
+})
+
+test('an insertion, which spans its padding base alone, counts there', () => {
+  expect(countOf(record('ins', 102, 'C', ['CTTT']))).toEqual([
+    [0, 1],
+    [1, 0],
+    [2, 0],
+  ])
+})
+
+test('a score reads on the deleted bases, not the padding base', () => {
+  const del = new SimpleFeature({
+    uniqueId: 'del',
+    refName: 'chr1',
+    start: 102,
+    end: 104,
+    REF: 'CA',
+    ALT: ['C'],
+    INFO: { AF: [0.3] },
+  })
+  const byPosition = trackValuesByResidue({
+    features: [del],
+    p2gCodon,
+    stat: 'max',
+    scoreField: 'INFO.AF',
+    trackId: 'gnomad',
+  })
+  expect([...byPosition]).toEqual([[1, 0.3]])
+})

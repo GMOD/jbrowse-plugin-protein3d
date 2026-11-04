@@ -61,12 +61,39 @@ export function numberOfField(value: unknown) {
   return numbers.length > 0 ? Math.max(...numbers) : Number.NaN
 }
 
+const SEQUENCE_ALLELE = /^[ACGTN]+$/i
+
+/**
+ * Whether a VCF record's first base is the padding base VCF writes before an
+ * indel: every alternate allele a sequence that keeps REF's first base, with
+ * REF reaching past it. That base is unchanged, so it belongs to no residue
+ * the record changes. An insertion's REF is the padding base alone, the one
+ * place its span touches, so it keeps it.
+ */
+function startsOnPaddingBase(feature: Feature) {
+  const ref: unknown = feature.get('REF')
+  const alts: unknown = feature.get('ALT')
+  return (
+    typeof ref === 'string' &&
+    ref.length > 1 &&
+    Array.isArray(alts) &&
+    alts.length > 0 &&
+    alts.every(
+      (alt: unknown) =>
+        typeof alt === 'string' &&
+        SEQUENCE_ALLELE.test(alt) &&
+        alt[0]!.toUpperCase() === ref[0]!.toUpperCase(),
+    )
+  )
+}
+
 /**
  * One value per transcript residue from a track's features under its coding
  * bases. `count` gives every residue a value, 0 where no feature falls on its
  * codon, because the request searched every codon; the other stats reduce
  * the number at `scoreField`, and a residue with none has no value. A feature
- * returned for two coding spans counts once.
+ * returned for two coding spans counts once, and a VCF indel reads from the
+ * base after its padding base.
  */
 export function trackValuesByResidue({
   features,
@@ -88,7 +115,7 @@ export function trackValuesByResidue({
     )
   }
   const intervals = unique.map(f => ({
-    start: number(f.get('start')),
+    start: number(f.get('start')) + (startsOnPaddingBase(f) ? 1 : 0),
     end: number(f.get('end')),
     score: numberOfField(readFeatureField(f, scoreField)),
   }))
