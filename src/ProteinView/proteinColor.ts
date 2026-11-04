@@ -245,22 +245,26 @@ export function colorProblems(color: unknown): string[] {
     ...SCALE_MEMBERS[preset.scale],
     ...(FIELD_MEMBERS[field] ?? []),
   ]
-  const missing =
-    field === 'track' && members.trackId === undefined
+  const missing = [
+    ...(field === 'track' && members.trackId === undefined
       ? ["color.trackId is required: a track's scores color a track field"]
-      : field === 'values' && members.values === undefined
-        ? ['color.values is required: the numbers to color the residues by']
-        : preset.scale === 'threshold' &&
-            isDataScaledField(field) &&
-            !(Array.isArray(members.domain) && members.domain.length > 0)
-          ? [`color.domain is required: the cuts of ${field}'s threshold scale`]
-          : field === 'track' &&
-              members.stat === 'count' &&
-              members.scoreField !== undefined
-            ? [
-                "color.scoreField is refused: stat count counts the track's features and reads no value",
-              ]
-            : []
+      : []),
+    ...(field === 'values' && members.values === undefined
+      ? ['color.values is required: the numbers to color the residues by']
+      : []),
+    ...(preset.scale === 'threshold' &&
+    isDataScaledField(field) &&
+    !(Array.isArray(members.domain) && members.domain.length > 0)
+      ? [`color.domain is required: the cuts of ${field}'s threshold scale`]
+      : []),
+    ...(field === 'track' &&
+    members.stat === 'count' &&
+    members.scoreField !== undefined
+      ? [
+          "color.scoreField is refused: stat count counts the track's features and reads no value",
+        ]
+      : []),
+  ]
   const problems = named.flatMap(key => {
     const value = members[key]
     if (!allowed.includes(key)) {

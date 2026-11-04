@@ -261,6 +261,18 @@ test('a scoreField is a field name, and a count reads none', () => {
     "color.scoreField is refused: stat count counts the track's features and reads no value",
   ])
   expect(
+    colorProblems({
+      field: 'track',
+      stat: 'count',
+      scoreField: 'INFO.AF',
+      scale: 'threshold',
+    }),
+  ).toEqual([
+    "color.trackId is required: a track's scores color a track field",
+    "color.domain is required: the cuts of track's threshold scale",
+    "color.scoreField is refused: stat count counts the track's features and reads no value",
+  ])
+  expect(
     colorProblems({ field: 'values', values: [1], scoreField: 'INFO.AF' }),
   ).toEqual([
     "color.scoreField is not a member of values's linear scale, which takes scale, domainMin, domainMax, domainMid, range, labels, title, values",
