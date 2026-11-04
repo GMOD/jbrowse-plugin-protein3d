@@ -148,7 +148,9 @@ function samePoint(a: unknown, b: unknown) {
 function tripleProblems(where: string, value: unknown) {
   return isTriple(value)
     ? []
-    : [`${where} is three numbers such as [0, 1, 0], not ${JSON.stringify(value)}`]
+    : [
+        `${where} is three numbers such as [0, 1, 0], not ${JSON.stringify(value)}`,
+      ]
 }
 
 const CAMERA_MODES: readonly unknown[] = ['perspective', 'orthographic']

@@ -636,7 +636,12 @@ test('a snapshot whose camera does not read is refused with the reason', () => {
     ProteinView.create({
       type: 'ProteinView',
       structures: [{ url: 'a.cif' }],
-      camera: { position: [0, 0, 1], target: [0, 0, 0], up: [0, 1, 0], radius: 0 },
+      camera: {
+        position: [0, 0, 1],
+        target: [0, 0, 0],
+        up: [0, 1, 0],
+        radius: 0,
+      },
     }),
   ).toThrow('camera.radius is a positive number, not 0')
 })
