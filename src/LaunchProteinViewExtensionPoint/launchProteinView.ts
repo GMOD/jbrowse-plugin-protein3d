@@ -1,5 +1,6 @@
 import { coerceAlignmentAlgorithm } from 'p2s_mapper'
 
+import { resolveLaunchVariant } from './launchVariant'
 import { normalizeLaunch } from './normalizeLaunch'
 import {
   resolveTranscriptLinkage,
@@ -10,11 +11,20 @@ import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { addProteinView } from '../ProteinView/addProteinView'
 import { checkedColor, colorOfScheme } from '../ProteinView/proteinColor'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
+import { viewAssemblyName } from '../ProteinView/util'
 
 import type { LaunchStructure, LaunchViewSettings } from './normalizeLaunch'
 import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
+
+function declaresSelection(structure: ProteinStructureSpec) {
+  return [
+    structure.initialSelection,
+    structure.initialResidues,
+    structure.initialTranscriptResidues,
+  ].some(ranges => ranges !== undefined)
+}
 
 /**
  * The settings as the view takes them: the algorithm coerced to the model's
@@ -52,6 +62,8 @@ export interface LaunchArgs extends LaunchViewSettings, ProteinStructureSpec {
   // launches the gene's AlphaFold model beside a genome view on the gene
   gene?: string
   transcriptId?: string
+  // 'chr17:7674220 C>T' or 'chr17:7674220', placed on the transcript
+  variant?: string
   connectedView?: ConnectedViewSpec
   // place a connectedView this launch creates beside the protein view;
   // unset, the launch dialog's stored preference decides
@@ -84,6 +96,7 @@ export async function launchProteinView(args: LaunchArgs) {
     connectedView: givenConnectedView,
     gene,
     sideBySide,
+    variant,
   } = linkage
   const settings = launchViewSettings(normalized.settings)
 
@@ -109,10 +122,31 @@ export async function launchProteinView(args: LaunchArgs) {
       `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
     )
   }
-  const requested =
+  const placedVariant = variant
+    ? await resolveLaunchVariant({
+        session,
+        variant,
+        feature: resolved?.feature ?? feature,
+        assemblyName: connectedViewId
+          ? viewAssemblyName(session, connectedViewId)
+          : connectedView?.assembly,
+      })
+    : undefined
+  const variantResidue = placedVariant
+    ? {
+        start: placedVariant.transcriptResidue,
+        end: placedVariant.transcriptResidue,
+      }
+    : undefined
+  const requested = (
     named && geneModel
       ? normalized.requested.map(s => ({ ...s, url: named.url }))
       : normalized.requested
+  ).map(s =>
+    variantResidue && !declaresSelection(s)
+      ? { ...s, initialTranscriptResidues: variantResidue }
+      : s,
+  )
 
   const { proteinView, ownsConnectedView } = await withConnectedGenomeView(
     session,
@@ -137,6 +171,9 @@ export async function launchProteinView(args: LaunchArgs) {
       ),
     }),
   )
+  if (placedVariant) {
+    session.addHighlight(placedVariant.highlight)
+  }
   if (ownsConnectedView) {
     maybeLaunchSideBySide(session, proteinView.id, sideBySide)
   }

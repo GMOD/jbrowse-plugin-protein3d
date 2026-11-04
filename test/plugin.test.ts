@@ -551,6 +551,65 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
+  // The variant's protein change comes from translating the host's own
+  // genome under the transcript, and its highlight reaches the structure
+  // through the session as a hand-added one does
+  it('opens on a variant, labelled on the genome and selected in 3D', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          pdbId: '1TUP',
+          transcriptId: 'ENST00000269305.9',
+          variant: 'chr17:7674220 C>T',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,673,700-7,674,700',
+            tracks: [TRACK_ID],
+          },
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    // R248Q on the genome, read on 1TUP's wild-type arginine
+    await page.waitForSelector('[data-highlight-label="Arg248"]', {
+      timeout: 60_000,
+    })
+    const placed = await page.evaluate(() => {
+      const session = window.JBrowseSession!
+      const view = session.views!.find(v => v.type === 'ProteinView')!
+      const structure = view.structures![0]!
+      return {
+        highlights: [...(session.highlights ?? [])],
+        clickedStructureRanges: structure.clickedStructureRanges,
+        residues: structure.locateGenomeRegion!({
+          refName: 'chr17',
+          start: 7674219,
+          end: 7674220,
+        })?.map(r => r.residue),
+        notices: view.report!.notices,
+      }
+    })
+    // on the assembly's canonical name, which this host's aliases make `17`
+    expect(placed.highlights).toEqual([
+      {
+        assemblyName: 'hg38',
+        refName: '17',
+        start: 7674219,
+        end: 7674220,
+        label: 'R248Q',
+      },
+    ])
+    // 1TUP's chain is numbered from 94, so R248 is position 154
+    expect(placed.clickedStructureRanges).toEqual([{ start: 154, end: 155 }])
+    expect(placed.residues).toEqual([248])
+    expect(placed.notices).toEqual([])
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
   // A declared selection is the user's to put down like a clicked one. This
   // leg is what shows Mol* reports a click on empty canvas at all; the unit
   // tests take that as given.

@@ -60,6 +60,13 @@ interface ProteinViewStructure {
   }) => ResidueLocation[] | undefined
   locateGenomeRegion?: (region: GenomeSpan) => ResidueLocation[] | undefined
 }
+interface SessionHighlight {
+  assemblyName: string
+  refName: string
+  start: number
+  end: number
+  label?: string
+}
 interface GenomeSpan {
   refName: string
   start: number
@@ -158,13 +165,8 @@ declare global {
       removeView?: (view: SessionView) => void
       addTrackConf?: (conf: Record<string, unknown>) => unknown
       hovered?: { hoverPosition?: { coord: number; refName: string } }
-      addHighlight?: (highlight: {
-        assemblyName: string
-        refName: string
-        start: number
-        end: number
-        label?: string
-      }) => void
+      highlights?: SessionHighlight[]
+      addHighlight?: (highlight: SessionHighlight) => void
     }
     JBrowseRootModel?: { pluginManager?: { plugins?: { name: string }[] } }
   }

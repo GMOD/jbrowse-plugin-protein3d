@@ -33,6 +33,7 @@ working links.
 | `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue ‡                                          |
 | `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                            |
 | `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view                    |
+| `variant`                        | No       | A base or change, `chr17:7674220 C>T`, labelled and selected; see [below](#variant)    |
 | `initialTranscriptResidues`      | No       | `{ start, end }` or an array of them: 1-based transcript residues lit on load          |
 | `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)          |
 | `initialSelection`               | No       | The same as 0-based half-open position ranges, for callers that already have them      |
@@ -229,6 +230,56 @@ so each needs `showAlignment`. `showAllFeatureTracks`, `compactTracks` and
 `trackHeight` change the feature tracks, so each needs `showAlignment` and
 `showProteinTracks`. The view clamps a `trackHeight` outside 2 to 40 px to the
 nearer limit.
+
+## `variant`
+
+`variant` names one genome base, and optionally the substitution there:
+
+- `chr17:7674220 C>T`: a 1-based position, then the reference and alternate
+  bases on the genome's forward strand, the way a VCF line or an HGVS `g.` name
+  spells them. Commas in the number and the space before the change are
+  optional, and the refName may be any alias the assembly knows.
+- `chr17:7674220`: the position alone.
+
+The launch translates the variant on the launch's transcript (`gene`,
+`transcriptId` or `feature`), reading the codon off the connected genome view's
+assembly, then:
+
+- adds a session highlight on the base, labelled with the protein change. The
+  genome view draws it as a band, and each structure on the transcript draws the
+  residue as a labelled sphere, the label read as the residue the structure has
+  there (`R248Q` reads `Arg248` on wild type, `Gln248` on an R248Q structure),
+- seeds `initialTranscriptResidues` on the residue for every structure that
+  declares no selection of its own, so the camera frames it.
+
+The label is the change in one-letter code on the transcript's numbering:
+
+| Change                | Label   |
+| --------------------- | ------- |
+| missense              | `R248Q` |
+| synonymous            | `R248=` |
+| nonsense              | `R248*` |
+| a position, no change | `R248`  |
+
+A synonymous or nonsense change still opens, since the residue is a real place
+on the structure; only a missense label is rewritten to the structure's residue.
+
+The launch refuses, with an error naming the variant, when:
+
+- the text is neither spelling,
+- the launch has no transcript, or no connected genome view to read an assembly
+  from,
+- the assembly has no such sequence,
+- the base is outside a whole codon of the transcript's coding sequence (an
+  intron, a UTR, another chromosome, a codon cut short by the CDS's phase), or
+  in its stop codon,
+- the reference base is not the genome's
+  (`names G as the reference base, and the genome has C there`), which on a
+  minus-strand gene usually means the bases were written on the transcript's
+  strand rather than the genome's.
+
+A codon split by an intron reads in the transcript's order, and a minus-strand
+transcript complements the bases, as the ClinVar color does.
 
 ## `connectedView`
 

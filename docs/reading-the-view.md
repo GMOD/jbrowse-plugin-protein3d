@@ -115,6 +115,13 @@ lacks keeps its transcript fields and has no structure fields, so "the crystal
 does not hold this codon" is an answer rather than an empty list.
 `view.locateGenomeRegion(region)` asks every structure of the view.
 
+A launch's [`variant`](launch-parameters.md#variant) reads back the same way:
+its highlight is in `session.highlights`, 0-based half-open on the assembly's
+canonical refName and labelled with the protein change, and `locateGenomeRegion`
+on that highlight answers the residue it selected. The e2e leg
+`opens on a variant, labelled on the genome and selected in 3D` asserts both for
+R248Q on 1TUP.
+
 The lookups are p2s_mapper's `locateStructureResidue`, `locateTranscriptResidue`
 and `locateGenomeBase`, which work without a browser from a mapped entity, an
 alignment and g2p_mapper's genome mapping.

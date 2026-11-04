@@ -1,5 +1,8 @@
 import { isPairwiseAlignment, resolveStructureUrl } from 'p2s_mapper'
 
+import { VARIANT_SPELLING, parseLaunchVariant } from './launchVariant'
+
+import type { LaunchVariant } from './launchVariant'
 import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { DistanceMeasurement } from '../ProteinView/measurements'
 import type {
@@ -198,6 +201,7 @@ export interface LaunchLinkage {
   sideBySide?: boolean
   feature?: SimpleFeatureSerialized
   userProvidedTranscriptSequence?: string
+  variant?: LaunchVariant
 }
 
 const LAUNCH_KEYS = [
@@ -206,6 +210,7 @@ const LAUNCH_KEYS = [
   'transcriptId',
   'connectedView',
   'sideBySide',
+  'variant',
 ]
 
 // `uniprotId` is a structure's source too, which readStructure reports, so
@@ -220,6 +225,11 @@ function readLinkage(
     warnings,
   )
   const uniprotId = fields.get('uniprotId')
+  const variant = read(
+    'variant',
+    isString,
+    `a string such as ${VARIANT_SPELLING}`,
+  )
   return {
     gene: read('gene', isString, 'a string'),
     transcriptId: read('transcriptId', isString, 'a string'),
@@ -237,6 +247,7 @@ function readLinkage(
       isString,
       'a string',
     ),
+    variant: variant === undefined ? undefined : parseLaunchVariant(variant),
   }
 }
 
@@ -382,6 +393,13 @@ export function normalizeLaunch(
   const unknownKeys = [...top.keys()].filter(key => !known.has(key))
   if (unknownKeys.length > 0) {
     warnings.push(`ignored unknown key(s): ${unknownKeys.join(', ')}`)
+  }
+  const variant = top.get('variant')
+  if (isString(variant) && !linkage.variant) {
+    return {
+      error: `\`variant\` "${variant}" is not a genome position or substitution such as ${VARIANT_SPELLING}`,
+      warnings,
+    }
   }
   const looksUpGene = !!linkage.gene && !linkage.userProvidedTranscriptSequence
   const noStructure = linkage.gene

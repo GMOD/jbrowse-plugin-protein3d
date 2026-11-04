@@ -365,3 +365,31 @@ test('a linkage key of the wrong type is dropped by name', () => {
     '`sideBySide` is not true or false and was ignored',
   ])
 })
+
+test('a variant parses onto the linkage', () => {
+  const { linkage, warnings } = accepted({
+    gene: 'TP53',
+    variant: 'chr17:7674220 C>T',
+  })
+  expect(warnings).toEqual([])
+  expect(linkage.variant).toEqual({
+    text: 'chr17:7674220 C>T',
+    refName: 'chr17',
+    start: 7674219,
+    change: { ref: 'C', alt: 'T' },
+  })
+})
+
+test('a variant that does not parse refuses the launch', () => {
+  expect(rejected({ gene: 'TP53', variant: 'R248Q' }).error).toBe(
+    "`variant` \"R248Q\" is not a genome position or substitution such as 'chr17:7674220 C>T' or 'chr17:7674220'",
+  )
+})
+
+test('a variant of the wrong type is reported and left out', () => {
+  const { linkage, warnings } = accepted({ gene: 'TP53', variant: 7674220 })
+  expect(linkage.variant).toBeUndefined()
+  expect(warnings).toEqual([
+    "`variant` is not a string such as 'chr17:7674220 C>T' or 'chr17:7674220' and was ignored",
+  ])
+})

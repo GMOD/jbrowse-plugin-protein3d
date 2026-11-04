@@ -58,6 +58,32 @@ The launch fails with an on-screen error when the name has no search hit, when
 two reviewed UniProt entries answer to the gene, or when AlphaFold DB has no
 model for its entry; name a `uniprotId` or `pdbId` to settle the last two.
 
+### Opening on a variant: `variant`
+
+A launch can name a variant instead of a residue, and the plugin works out which
+residue it changes:
+
+```
+https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","gene":"TP53","pdbId":"1TUP","variant":"chr17:7674220 C>T"}]}
+```
+
+`chr17:7674220 C>T` is ClinVar's NC_000017.11:g.7674220C>T, TP53 c.743G>A. TP53
+is on the minus strand, so the plugin complements the bases, finds the second
+base of codon 248 (CGG to CAG), and:
+
+- highlights the base on the genome view, labelled `R248Q`,
+- draws residue 248 on 1TUP as a sphere labelled `Arg248`, 1TUP's own residue
+  there (its chain is numbered from 94, which the alignment takes care of),
+- selects that residue, as `initialTranscriptResidues: { start: 248, end: 248 }`
+  would, so the camera frames it.
+
+The variant works with every form below as well as `gene`, and with
+`structures`, where it selects in each structure that names no selection of its
+own. A position alone (`chr17:7674220`) highlights and selects the residue and
+labels it `R248`. A base outside the coding sequence, or a reference base the
+genome does not have, fails the launch with an on-screen error;
+[launch parameters](launch-parameters.md#variant) lists the rules.
+
 ### Short form: `uniprotId` / `pdbId` + `transcriptId`
 
 If the connected genome view serves a gene track that contains the transcript,
