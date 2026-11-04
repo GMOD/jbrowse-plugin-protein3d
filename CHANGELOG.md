@@ -1,3 +1,28 @@
+## [1.29.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.28.1...v1.29.0) (2026-11-04)
+
+### Bug Fixes
+
+- A remount retries a Mol* that failed to start; lookups wait for the structure to settle ([c936f48](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c936f48d38c68623d6393f609f758a90b28904e1))
+- Report every missing or refused color member at once ([952deb1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/952deb16415256e1c3ba212866ec1bd2784deb74))
+- A launch drops a camera or surface the view would refuse ([a38b893](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a38b893d7881e1087165ba0b8de82183e86c97fc))
+- A VCF indel reads from the base after its padding base ([b4acfea](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b4acfea852fe9015ddd5064f553142dd0b9032d7))
+- The exon hover names an exon as the legend numbers it ([8886cd6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8886cd68ae4d6a9fcfc60e60fe33caa952c7a62f))
+- Clearing the view's camera hands the camera back to Mol* ([219e42a](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/219e42ac716a2263eb8344baa01c5661c7ce7714))
+- A launch variant is placed on each structure's own transcript ([233bb06](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/233bb064ca1dfe5af5ef516030db05baf368eac0))
+
+### Features
+
+- A launch carries a figure's marks, distances, camera, surface and style ([cc8c608](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cc8c60859af26162a4c4ca5e238202c7b533e61b))
+- Notices apart from the view's error, a report, and residue lookups for scripts ([54b5157](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/54b51577c99a2ad6ec531df760550257a05e58c2))
+- A script composes a figure at runtime with applyFigure and currentCamera ([1189a7f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1189a7f345bcce12d356a20c4c25c74b2485d4a5))
+- A variant track paints the structure, by count or a named INFO field ([145dfb9](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/145dfb99738dc7bb82aedad4758449235d64a3bf))
+- A variant launch key places a genome substitution on the transcript ([2386b45](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2386b45abc34d2f03f671be912b55c073c17c33b))
+- Color the structure by exon ([8e91d00](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8e91d000f4c5d4d1961bf6a3e8fe5ed25362b1cc))
+
+### Styling
+
+- Format the figure checks and their tests; the variant/track/exon idea has landed ([0467df6](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0467df6c0cb47db99641cace67b7de3a4baa9f36))
+
 ## [1.28.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.28.0...v1.28.1) (2026-11-03)
 
 ### Refactoring
