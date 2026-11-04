@@ -92,6 +92,7 @@ return tup.locateResidues({ residues: { start: 248, end: 248 } })
     "transcriptLetter": "R",
     "codon": { "refName": "chr17", "start": 7674218, "end": 7674221 },
     "locus": "chr17:7674219-7674221",
+    "exon": 7,
   },
 ]
 ```
@@ -105,6 +106,10 @@ return tup.locateResidues({ residues: { start: 248, end: 248 } })
 - `codon` is 0-based half-open on the transcript's own refName, its outer bounds
   when an intron splits it; `locus` is the same codon as a 1-based locString,
   for `navToLocString`.
+- `exon` is the transcript's exon the codon sits in, numbered as the `exon`
+  color numbers it ([launch parameters](launch-parameters.md#color)). A codon an
+  intron splits also has `codonExons`, every exon it spans, and `exon` is the
+  one holding two of its bases.
 
 `structure.locateGenomeRegion({ refName, start, end })` goes the other way: each
 transcript residue whose codon overlaps a 0-based half-open region, in

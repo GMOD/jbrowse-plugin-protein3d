@@ -39,9 +39,12 @@ const TestParent = types
       return undefined
     },
   }))
-  .actions(() => ({
+  .actions(self => ({
     addNotice(e: unknown) {
       throw e
+    },
+    setColor(color: ProteinColor) {
+      self.color = color
     },
   }))
 
@@ -108,8 +111,29 @@ test('a residue named as a paper does is located in every numbering', () => {
       transcriptLetter: 'V',
       codon: { refName: 'chr11', start: 206, end: 209 },
       locus: 'chr11:207-209',
+      exon: 1,
     },
   ])
+})
+
+// the feature names CDS alone, so its numbers count coding exons
+test('colored by exon, each mapped residue takes its exon number', () => {
+  const { parent, structure } = setup()
+  expect(structure.exonStatus).toBeUndefined()
+  parent.setColor({ field: 'exon' })
+  expect(structure.exonStatus?.placed?.byLabelSeqId).toEqual(
+    new Map([
+      [1, 1],
+      [2, 1],
+      [3, 1],
+      [4, 2],
+      [5, 2],
+      [6, 2],
+    ]),
+  )
+  expect(structure.exonStatus?.color?.title).toBe('Coding exon')
+  expect(structure.placedValues).toEqual(structure.exonStatus?.placed)
+  expect(structure.statusMessage).toBeUndefined()
 })
 
 test("a genome region finds its residues under the assembly's alias", () => {

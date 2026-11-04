@@ -25,8 +25,10 @@ test('every old colorScheme name lifts to a field the menu offers', () => {
     'clinvar',
     'alignment-domains',
   ].map(name => colorOfScheme(name).field)
-  const sessionOnly = ['track', 'values']
-  const fields = Object.keys(COLOR_FIELDS).filter(f => !sessionOnly.includes(f))
+  const newerThanColorScheme = ['track', 'values', 'exon']
+  const fields = Object.keys(COLOR_FIELDS).filter(
+    f => !newerThanColorScheme.includes(f),
+  )
   expect(lifted).toHaveLength(fields.length)
   expect(new Set(lifted)).toEqual(new Set(fields))
   expect(colorOfScheme('default')).toEqual({})
@@ -37,6 +39,9 @@ test('a field Mol* or the alignment paints names the field alone', () => {
   expect(colorProblems({ field: 'chain' })).toEqual([])
   expect(colorProblems({ field: 'plddt', domain: [50] })).toEqual([
     "color.domain is refused: plddt paints in Mol*'s pLDDT bands, so its color names the field alone",
+  ])
+  expect(colorProblems({ field: 'exon', range: ['red'] })).toEqual([
+    'color.range is refused: exon paints in a fixed palette repeated over the exons, so its color names the field alone',
   ])
   expect(colorProblems({ field: 'domain', range: ['red'] })).toEqual([
     "color.range is refused: domain paints in the connected alignment's colors, so its color names the field alone",

@@ -5,8 +5,9 @@ import type { LinearColor, ThresholdColor } from './colorScale'
 /**
  * The fields the view colors its structures by, each with its menu label and
  * the Mol* theme that paints it. The themes `mapped-chain`, `kyte-doolittle`,
- * `alphamissense`, `clinvar` and `alignment-domains` are registerColorThemes',
- * `plddt-confidence` the MAQualityAssessment behavior's, the rest Mol*'s.
+ * `alphamissense`, `clinvar`, `alignment-domains` and `exon` are
+ * registerColorThemes', `plddt-confidence` the MAQualityAssessment
+ * behavior's, the rest Mol*'s.
  */
 export const COLOR_FIELDS = {
   plddt: { label: 'pLDDT confidence (AlphaFold)', theme: 'plddt-confidence' },
@@ -32,6 +33,7 @@ export const COLOR_FIELDS = {
     theme: 'clinvar',
   },
   domain: { label: 'Domains from the alignment', theme: 'alignment-domains' },
+  exon: { label: 'Exon', theme: 'exon' },
   track: { label: 'Genome track', theme: 'genome-track' },
   values: { label: 'Your own values', theme: 'residue-values' },
 } as const
@@ -67,6 +69,7 @@ const PAINTED_BY: Record<Exclude<ColorField, ScaledField>, string> = {
   moleculeType: "Mol*'s palette",
   mappedChain: 'two fixed colors',
   domain: "the connected alignment's colors",
+  exon: 'a fixed palette repeated over the exons',
 }
 
 /**

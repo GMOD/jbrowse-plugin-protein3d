@@ -44,6 +44,7 @@ interface ProteinViewStructure {
   entities?: { entityId: string; seq: string }[]
   mappedEntity?: { entityId: string; chains: string[] }
   placedVariantEffects?: { byLabelSeqId: Map<number, number> }
+  exonStatus?: { placed?: { byLabelSeqId: Map<number, number> } }
   variantEffectsPending?: boolean
   statusMessage?: string
   report?: {
@@ -80,6 +81,7 @@ interface ResidueLocation {
   transcriptLetter?: string
   codon?: GenomeSpan
   locus?: string
+  exon?: number
 }
 interface MolstarCell {
   transform: { ref: string; parent: string; tags?: string[] }

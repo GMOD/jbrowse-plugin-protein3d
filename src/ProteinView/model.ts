@@ -603,6 +603,7 @@ function stateModelFactory() {
                     placedValues: s.placedValues,
                     placedSites: s.alignmentDomainStatus?.placedSites,
                     domainColor: s.alignmentDomainStatus?.domains?.color,
+                    exonColor: s.exonStatus?.color,
                   }))
                 : [],
             )
@@ -948,7 +949,13 @@ function stateModelFactory() {
        * What the legend of the structure colors is titled
        */
       get colorLegendTitle() {
-        return resolvedColor(self.paintColor)?.title ?? 'Structure colors'
+        const exonTitle = self.structures.find(s => s.exonStatus?.color)
+          ?.exonStatus?.color?.title
+        return (
+          resolvedColor(self.paintColor)?.title ??
+          exonTitle ??
+          'Structure colors'
+        )
       },
       /**
        * #getter
@@ -965,6 +972,7 @@ function stateModelFactory() {
               structure,
               entityId: loaded.mappedEntity?.entityId,
               domainColor: loaded.alignmentDomainStatus?.domains?.color,
+              exonColor: loaded.exonStatus?.color,
             })
           : undefined
       },

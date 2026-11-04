@@ -868,6 +868,93 @@ describe('Protein3d Plugin E2E', () => {
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 
+  // TP53's canonical transcript has eleven exons, the first all 5' UTR, so
+  // the initiator methionine sits in exon 2 and R248 in exon 7, the numbers
+  // GENCODE gives them. Eleven exons over a nine-color palette also puts two
+  // exons on the first two legend rows.
+  it('colors an AlphaFold model by exon', async () => {
+    await openSessionSpec(page, {
+      views: [
+        {
+          type: 'ProteinView',
+          structures: [{ uniprotId: 'P04637' }],
+          transcriptId: 'ENST00000269305.9',
+          connectedView: {
+            assembly: 'hg38',
+            loc: 'chr17:7,668,421-7,687,550',
+            tracks: [TRACK_ID],
+          },
+          color: { field: 'exon' },
+        },
+      ],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const themes = () =>
+      page.evaluate(
+        () =>
+          window.JBrowseSession?.views
+            ?.find(v => v.type === 'ProteinView')
+            ?.molstarPluginContext?.managers.structure.hierarchy.current.structures.flatMap(
+              s =>
+                s.components.flatMap(c =>
+                  c.representations.map(
+                    r => r.cell.transform.params?.colorTheme?.name,
+                  ),
+                ),
+            ) ?? [],
+      )
+    await expect
+      .poll(themes, { timeout: 30_000 })
+      .toSatisfy(
+        (names: (string | undefined)[]) =>
+          names.length > 0 && names.every(n => n === 'exon'),
+      )
+    const placed = await page.evaluate(() => {
+      const s = window.JBrowseSession!.views!.find(
+        v => v.type === 'ProteinView',
+      )!.structures![0]!
+      const exons = s.exonStatus?.placed?.byLabelSeqId
+      return {
+        count: exons?.size ?? 0,
+        m1: exons?.get(1),
+        r248: exons?.get(248),
+        last: exons?.get(393),
+        status: s.statusMessage,
+        located: s.locateResidues!({ residues: { start: 248, end: 248 } }),
+      }
+    })
+    expect(placed).toMatchObject({
+      count: 393,
+      m1: 2,
+      r248: 7,
+      last: 11,
+    })
+    expect(placed.status).toBeUndefined()
+    expect(placed.located?.[0]).toMatchObject({ residue: 248, exon: 7 })
+    const legend = await page.$eval('[data-testid="structure-legend"]', el =>
+      [...el.children].map(child => child.textContent),
+    )
+    expect(legend).toEqual([
+      'Exon:',
+      'Exons 1, 10',
+      'Exons 2, 11',
+      'Exon 3',
+      'Exon 4',
+      'Exon 5',
+      'Exon 6',
+      'Exon 7',
+      'Exon 8',
+      'Exon 9',
+      'Not mapped',
+    ])
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('15-exon'))
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
   // With no transcript there is nothing to align, so the structure reads
   // hovers from its first protein chain and lets the user pick another. On
   // 1TUP the first two entities are DNA strands.
@@ -920,8 +1007,7 @@ describe('Protein3d Plugin E2E', () => {
     await waitForStructureRendered(page)
     const camera = () =>
       page.evaluate(() =>
-        window
-          .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+        window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
           .currentCamera!(),
       )
     const settledCamera = async () => {
@@ -942,9 +1028,7 @@ describe('Protein3d Plugin E2E', () => {
     const loaded = await settledCamera()
 
     // the same target seen from the opposite side, through a 25 Å slab
-    const behind = loaded.target.map(
-      (t, i) => 2 * t - loaded.position[i]!,
-    )
+    const behind = loaded.target.map((t, i) => 2 * t - loaded.position[i]!)
     const wanted: SavedCamera = {
       position: [behind[0]!, behind[1]!, behind[2]!],
       target: loaded.target,
@@ -953,8 +1037,7 @@ describe('Protein3d Plugin E2E', () => {
       mode: 'orthographic',
     }
     await page.evaluate(wanted => {
-      window
-        .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+      window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
         .applyFigure!({ camera: wanted })
     }, wanted)
     const near = (a: number[], b: number[]) =>
@@ -973,23 +1056,27 @@ describe('Protein3d Plugin E2E', () => {
     expect(read.mode).toBe('orthographic')
 
     await page.evaluate(() => {
-      window
-        .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+      window.JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
         .applyFigure!({
-          marks: [
-            {
-              site: 'A:248',
-              mark: 'spheres',
-              encoding: { color: { value: '#d1007a' } },
-            },
-          ],
-        })
+        marks: [
+          {
+            site: 'A:248',
+            mark: 'spheres',
+            encoding: { color: { value: '#d1007a' } },
+          },
+        ],
+      })
     })
     await expect
       .poll(() => residueMarkCells(page), { timeout: 30_000 })
       .toSatisfy(
-        ({ atoms, representations }: { atoms: number[]; representations: number }) =>
-          atoms.length === 1 && atoms[0]! > 0 && representations === 1,
+        ({
+          atoms,
+          representations,
+        }: {
+          atoms: number[]
+          representations: number
+        }) => atoms.length === 1 && atoms[0]! > 0 && representations === 1,
       )
     await waitForMolstarIdle(page)
     await captureScreenshot(page, screenshot('15-figure-at-runtime'))

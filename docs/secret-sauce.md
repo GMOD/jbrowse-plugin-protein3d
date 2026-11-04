@@ -27,6 +27,11 @@ in jbrowse-components' grammar (a `field`, a `scale` and its members):
   its legend and the 1D protein view's track.
 - `clinvarPathogenicCount`, a threshold scale, painted by the 3D theme and its
   legend.
+- `exon`, a categorical palette with no domain of its own: `exonColor` gives it
+  one value per exon of the structure's transcript and cycles the palette over
+  them, and the 3D theme (`exonColorTheme.ts`) and its legend paint through that
+  object. The exon numbers reach each structure through the placed-value
+  registry, like `alphaMissense`'s scores.
 
 `colorScale.ts` evaluates each of them. `UNIPROT_FEATURE_COLOR` is the
 categorical object over UniProt's feature types.

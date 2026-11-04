@@ -55,6 +55,13 @@ import {
   trackGapOf,
   trackHeightOf,
 } from './constants'
+import {
+  exonLabel,
+  exonStatus,
+  exonsByTranscriptPosition,
+  transcriptExons,
+  withExon,
+} from './exons'
 import { frameResidues } from './frameSelection'
 import { codonLocus, hoverReadout } from './hoverReadout'
 import { resolvedColor } from './proteinColor'
@@ -92,6 +99,7 @@ import type {
   DomainRow,
 } from './alignmentDomains'
 import type { LinearColor } from './colorScale'
+import type { ExonStatus, ResidueExon, TranscriptExons } from './exons'
 import type {
   EntityConfidence,
   StructureAssembly,
@@ -801,22 +809,6 @@ const Structure = types
     },
     /**
      * #getter
-     * The hovered residue, read out for the header; see hoverReadout
-     */
-    get hoverString() {
-      const hover = self.hoverPosition
-      return hover
-        ? hoverReadout({
-            hover,
-            entity: this.mappedEntity,
-            structureToTranscript: this.coordinateMapper?.structureToTranscript,
-            transcript: self.userProvidedTranscriptSequence,
-            locus: this.hoverGenomeLocus,
-          })
-        : ''
-    },
-    /**
-     * #getter
      * The hovered residue's codon as a 1-based locString, so the header can
      * name where in the genome a residue sits without a click.
      */
@@ -1240,6 +1232,27 @@ const Structure = types
   .views(self => ({
     /**
      * #getter
+     * The transcript's exons, numbered as the gene's are when the feature
+     * names its exons or UTRs; see transcriptExons
+     */
+    get transcriptExons(): TranscriptExons | undefined {
+      return self.feature ? transcriptExons(self.feature) : undefined
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
+     * Each 0-based transcript residue's exon, through its codon
+     */
+    get residueExons(): ReadonlyMap<number, ResidueExon> {
+      const exons = self.transcriptExons
+      const mapping = self.genomeToTranscriptSeqMapping
+      return exons && mapping
+        ? exonsByTranscriptPosition(exons, mapping.p2gCodon)
+        : new Map()
+    },
+    /**
+     * #getter
      * The variant-effect request's standing and its values placed on the
      * mapped entity; see variantEffectStatus
      */
@@ -1323,6 +1336,49 @@ const Structure = types
             transcriptToStructure: self.coordinateMapper?.transcriptToStructure,
           })
         : undefined
+    },
+    /**
+     * #getter
+     * The exon numbers placed on the mapped entity and the color object
+     * they paint through, undefined while the view colors by something else
+     */
+    get exonStatus(): ExonStatus | undefined {
+      return self.parentView.color.field === 'exon'
+        ? exonStatus({
+            exons: self.transcriptExons,
+            byPosition: self.residueExons,
+            entity: self.mappedEntity,
+            transcriptToStructure: self.coordinateMapper?.transcriptToStructure,
+          })
+        : undefined
+    },
+    /**
+     * #getter
+     * The hovered residue, read out for the header, with its exon while the
+     * view colors by exon; see hoverReadout
+     */
+    get hoverString() {
+      const hover = self.hoverPosition
+      const pos = hover?.structureSeqPos
+      const transcriptPosition =
+        pos === undefined
+          ? undefined
+          : self.coordinateMapper?.structureToTranscript(structurePos(pos))
+      const exon =
+        self.parentView.color.field === 'exon' &&
+        transcriptPosition !== undefined
+          ? self.residueExons.get(transcriptPosition)
+          : undefined
+      return hover
+        ? hoverReadout({
+            hover,
+            entity: self.mappedEntity,
+            structureToTranscript: self.coordinateMapper?.structureToTranscript,
+            transcript: self.userProvidedTranscriptSequence,
+            locus: self.hoverGenomeLocus,
+            exon: exon ? exonLabel(exon) : undefined,
+          })
+        : ''
     },
     /**
      * #getter
@@ -1416,6 +1472,7 @@ const Structure = types
       return (
         self.alignmentDomainStatus?.placed ??
         self.residueValuesStatus?.placed ??
+        self.exonStatus?.placed ??
         self.variantEffectStatus.placed
       )
     },
@@ -1442,6 +1499,7 @@ const Structure = types
             self.plddtMissing ??
             self.variantEffectStatus.message ??
             self.residueValuesStatus?.message ??
+            self.exonStatus?.message ??
             self.alignmentDomainStatus?.message)
         : errorMessage(error)
     },
@@ -1520,7 +1578,10 @@ const Structure = types
             .resolveSelection(target)
             ?.flatMap(({ start, end }) =>
               Array.from({ length: end - start }, (_, i) =>
-                locateStructureResidue(mapping, start + i),
+                withExon(
+                  locateStructureResidue(mapping, start + i),
+                  self.residueExons,
+                ),
               ),
             )
             .filter(location => location !== undefined)
@@ -1550,7 +1611,12 @@ const Structure = types
             canonicalRefName(refName) === canonicalRefName(genome.refName)
           ? Object.entries(genome.p2gCodon)
               .filter(([, bases]) => bases.some(b => b >= start && b < end))
-              .map(([pos]) => locateTranscriptResidue(mapping, Number(pos)))
+              .map(([pos]) =>
+                withExon(
+                  locateTranscriptResidue(mapping, Number(pos)),
+                  self.residueExons,
+                ),
+              )
               .filter(location => location !== undefined)
           : []
     },

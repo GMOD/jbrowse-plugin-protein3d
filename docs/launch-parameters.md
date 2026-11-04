@@ -83,20 +83,21 @@ A color object in the grammar jbrowse-components' tracks use, applied to every
 structure. `field` names what colors a residue, the entries of the view's
 **Color by** menu:
 
-| `field`                  | Colors by                                        |
-| ------------------------ | ------------------------------------------------ |
-| unset (`{}`)             | Mol\*'s default, by element and chain            |
-| `plddt`                  | AlphaFold's pLDDT confidence                     |
-| `chain`                  | Chain                                            |
-| `secondaryStructure`     | Secondary structure                              |
-| `hydrophobicity`         | Kyte-Doolittle hydropathy                        |
-| `residueName`            | Residue type                                     |
-| `bFactor`                | B-factor, or a model's uncertainty               |
-| `moleculeType`           | Molecule type                                    |
-| `mappedChain`            | The chain the transcript maps to, the rest grey  |
-| `alphaMissense`          | Mean AlphaMissense pathogenicity                 |
-| `clinvarPathogenicCount` | How many substitutions ClinVar calls pathogenic  |
-| `domain`                 | The domains and sites a connected MSA view draws |
+| `field`                  | Colors by                                          |
+| ------------------------ | -------------------------------------------------- |
+| unset (`{}`)             | Mol\*'s default, by element and chain              |
+| `plddt`                  | AlphaFold's pLDDT confidence                       |
+| `chain`                  | Chain                                              |
+| `secondaryStructure`     | Secondary structure                                |
+| `hydrophobicity`         | Kyte-Doolittle hydropathy                          |
+| `residueName`            | Residue type                                       |
+| `bFactor`                | B-factor, or a model's uncertainty                 |
+| `moleculeType`           | Molecule type                                      |
+| `mappedChain`            | The chain the transcript maps to, the rest grey    |
+| `alphaMissense`          | Mean AlphaMissense pathogenicity                   |
+| `clinvarPathogenicCount` | How many substitutions ClinVar calls pathogenic    |
+| `domain`                 | The domains and sites a connected MSA view draws   |
+| `exon`                   | The exon of the transcript a residue's codon is in |
 
 `hydrophobicity` and `alphaMissense` are linear scales and
 `clinvarPathogenicCount` a threshold scale, so their color object also takes
@@ -109,10 +110,10 @@ legend and the alignment's hydrophobicity row all follow them:
 { "field": "alphaMissense", "range": ["#1a9850", "#ffffbf", "#d73027"] }
 ```
 
-Every other field takes Mol\*'s colors, the MSA view's (`domain`) or two fixed
-ones (`mappedChain`), so its color object names the field alone. The launch
-refuses any other member on such a field, and any member a scale does not take,
-with a message naming it.
+Every other field takes Mol\*'s colors, the MSA view's (`domain`), two fixed
+ones (`mappedChain`) or a fixed palette (`exon`), so its color object names the
+field alone. The launch refuses any other member on such a field, and any member
+a scale does not take, with a message naming it.
 
 The `colorScheme` names older sessions and urls wrote still load:
 `plddt-confidence`, `chain-id`, `secondary-structure`, `hydrophobicity`,
@@ -200,6 +201,30 @@ through its alignment to the transcript, the path a genome hover takes:
 The alignment panel also lists the alignment's domains as rows, whatever the
 view colors by; see
 [UniProt feature tracks](uniprot-feature-tracks.md#rows-from-the-alignment).
+
+`exon` colors each residue by the exon of the structure's transcript its codon
+sits in, which shows the part of the fold an exon builds: what a skipping event
+removes, where an alternative exon lands, whether an exon matches a domain.
+
+- **Numbering**: exons count from the transcript's 5′ end, from the genome's
+  right on the minus strand. The feature's `exon` subfeatures are the exons when
+  it has them (GFF3, GTF), so a 5′ UTR exon is counted and the numbers are the
+  gene's own, GENCODE's `exon_number`. Without them, its CDS and UTR rows are
+  joined where they touch, which rebuilds the exons of a bigBed or BED12
+  transcript. A feature with CDS rows alone cannot say how many UTR exons come
+  first, so its numbers count coding exons and the legend says "Coding exon".
+- **Split codons**: a codon an intron splits takes the exon holding two of its
+  three bases. Only a boundary in phase 1 or 2 splits a codon, so a "junction"
+  color would mark some boundaries and not others.
+- **Colors**: Tableau 10 without its grey, repeated along the transcript, so
+  neighboring exons always differ. The legend has one row per color naming every
+  exon it paints ("Exons 1, 10, 19"), which keeps a 50-exon gene to nine rows.
+  The hover readout ends with the residue's exon while the view colors by exon,
+  and `structure.locateResidues` always carries it (see
+  [Reading what a view resolved](reading-the-view.md#locating-a-residue)).
+- Residues the alignment to the transcript does not reach, and chains other than
+  the mapped one, stay grey. A structure with no transcript stays grey and its
+  header row says so.
 
 ## `structures`
 
@@ -333,7 +358,8 @@ minimal `feature` looks like:
 ```
 
 Each codon maps to one residue, and the mapping skips intronic and UTR positions
-and ignores exon subfeatures.
+and ignores exon subfeatures. Only the `exon` color reads them, to number the
+exons; a feature with CDS alone colors by coding exon.
 
 ## `ProteinAnnotationView`
 
