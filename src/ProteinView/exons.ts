@@ -128,6 +128,11 @@ export function exonsByTranscriptPosition(
   return byPosition
 }
 
+/** What an exon is called under its numbering, in the legend and the hover. */
+function exonTitle(numbering: ExonNumbering) {
+  return numbering === 'coding' ? 'Coding exon' : 'Exon'
+}
+
 /**
  * The color object of a transcript's exons: one domain value per exon number,
  * the palette cycled over them.
@@ -138,7 +143,7 @@ export function exonColor({ blocks, numbering }: TranscriptExons): ExonColor {
     ...RESIDUE_COLORS.exon,
     domain: blocks.map((_, i) => `${i + 1}`),
     range: blocks.map((_, i) => range[i % range.length]!),
-    title: numbering === 'coding' ? 'Coding exon' : 'Exon',
+    title: exonTitle(numbering),
   }
 }
 
@@ -160,26 +165,34 @@ export function exonKeyEntries(color: ExonColor) {
   }))
 }
 
-/** A residue's exon as the hover and a report name it. */
-export function exonLabel({ exon, codonExons }: ResidueExon) {
+/** A residue's exon as the hover names it, numbered as the legend is. */
+export function exonLabel(
+  { exon, codonExons }: ResidueExon,
+  numbering: ExonNumbering,
+) {
+  const title = exonTitle(numbering)
   return codonExons
-    ? `Exon ${exon} (codon spans ${codonExons.join('/')})`
-    : `Exon ${exon}`
+    ? `${title} ${exon} (codon spans ${codonExons.join('/')})`
+    : `${title} ${exon}`
 }
 
 /**
- * A located residue with its transcript residue's exon, and the exons its
- * codon spans where an intron splits it, so a script can read either.
+ * A located residue with its transcript residue's exon, the exons its codon
+ * spans where an intron splits it, and how the exons are counted, so a script
+ * can tell a coding exon's number from the gene's.
  */
 export function withExon(
   location: ResidueLocation | undefined,
   byPosition: ReadonlyMap<number, ResidueExon>,
+  numbering: ExonNumbering,
 ) {
   const exon =
     location?.transcriptResidue === undefined
       ? undefined
       : byPosition.get(location.transcriptResidue - 1)
-  return location && exon ? { ...location, ...exon } : location
+  return location && exon
+    ? { ...location, ...exon, exonNumbering: numbering }
+    : location
 }
 
 export interface ExonStatus {

@@ -105,9 +105,17 @@ test('a codon an intron splits takes the exon holding two of its bases', () => {
   expect(byPosition.get(0)).toEqual({ exon: 1 })
   expect(byPosition.get(1)).toEqual({ exon: 1, codonExons: [1, 2] })
   expect(byPosition.get(2)).toEqual({ exon: 2 })
-  expect(exonLabel({ exon: 1, codonExons: [1, 2] })).toBe(
+  expect(exonLabel({ exon: 1, codonExons: [1, 2] }, 'transcript')).toBe(
     'Exon 1 (codon spans 1/2)',
   )
+})
+
+test('the hover names an exon as the legend numbers it', () => {
+  expect(exonLabel({ exon: 3 }, 'coding')).toBe('Coding exon 3')
+  expect(exonLabel({ exon: 1, codonExons: [1, 2] }, 'coding')).toBe(
+    'Coding exon 1 (codon spans 1/2)',
+  )
+  expect(exonLabel({ exon: 3 }, 'transcript')).toBe('Exon 3')
 })
 
 test('one base before the intron gives the codon to the exon after it', () => {
@@ -227,12 +235,17 @@ test('a located residue carries its exon', () => {
     [0, { exon: 2 }],
     [1, { exon: 2, codonExons: [2, 3] }],
   ])
-  expect(withExon({ transcriptResidue: 2, residue: 5 }, byPosition)).toEqual({
+  expect(
+    withExon({ transcriptResidue: 2, residue: 5 }, byPosition, 'coding'),
+  ).toEqual({
     transcriptResidue: 2,
     residue: 5,
     exon: 2,
     codonExons: [2, 3],
+    exonNumbering: 'coding',
   })
-  expect(withExon({ residue: 5 }, byPosition)).toEqual({ residue: 5 })
-  expect(withExon(undefined, byPosition)).toBeUndefined()
+  expect(withExon({ residue: 5 }, byPosition, 'coding')).toEqual({
+    residue: 5,
+  })
+  expect(withExon(undefined, byPosition, 'coding')).toBeUndefined()
 })

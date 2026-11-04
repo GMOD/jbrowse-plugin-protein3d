@@ -112,6 +112,7 @@ test('a residue named as a paper does is located in every numbering', () => {
       codon: { refName: 'chr11', start: 206, end: 209 },
       locus: 'chr11:207-209',
       exon: 1,
+      exonNumbering: 'coding',
     },
   ])
 })
@@ -134,6 +135,8 @@ test('colored by exon, each mapped residue takes its exon number', () => {
   expect(structure.exonStatus?.color?.title).toBe('Coding exon')
   expect(structure.placedValues).toEqual(structure.exonStatus?.placed)
   expect(structure.statusMessage).toBeUndefined()
+  structure.setHoveredPosition({ structureSeqPos: 3 })
+  expect(structure.hoverString).toMatch(/Coding exon 2$/)
 })
 
 test("a genome region finds its residues under the assembly's alias", () => {

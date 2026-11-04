@@ -127,6 +127,7 @@ import type {
   Entity,
   EntitySelection,
   PairwiseAlignment,
+  ResidueLocation,
   ResidueMapping,
   ResidueRange,
   ResidueRanges,
@@ -1291,6 +1292,18 @@ const Structure = types
   }))
   .views(self => ({
     /**
+     * #method
+     * A located residue with its exon, numbered as the exon color is
+     */
+    withResidueExon(location: ResidueLocation | undefined) {
+      const exons = self.transcriptExons
+      return exons
+        ? withExon(location, self.residueExons, exons.numbering)
+        : location
+    },
+  }))
+  .views(self => ({
+    /**
      * #getter
      * The alignment domains placed on the mapped entity, one layer per kind,
      * undefined while the view colors by something else; see
@@ -1364,6 +1377,7 @@ const Structure = types
         pos === undefined
           ? undefined
           : self.coordinateMapper?.structureToTranscript(structurePos(pos))
+      const exons = self.transcriptExons
       const exon =
         self.parentView.color.field === 'exon' &&
         transcriptPosition !== undefined
@@ -1376,7 +1390,7 @@ const Structure = types
             structureToTranscript: self.coordinateMapper?.structureToTranscript,
             transcript: self.userProvidedTranscriptSequence,
             locus: self.hoverGenomeLocus,
-            exon: exon ? exonLabel(exon) : undefined,
+            exon: exon && exons ? exonLabel(exon, exons.numbering) : undefined,
           })
         : ''
     },
@@ -1578,9 +1592,8 @@ const Structure = types
             .resolveSelection(target)
             ?.flatMap(({ start, end }) =>
               Array.from({ length: end - start }, (_, i) =>
-                withExon(
+                self.withResidueExon(
                   locateStructureResidue(mapping, start + i),
-                  self.residueExons,
                 ),
               ),
             )
@@ -1612,9 +1625,8 @@ const Structure = types
           ? Object.entries(genome.p2gCodon)
               .filter(([, bases]) => bases.some(b => b >= start && b < end))
               .map(([pos]) =>
-                withExon(
+                self.withResidueExon(
                   locateTranscriptResidue(mapping, Number(pos)),
-                  self.residueExons,
                 ),
               )
               .filter(location => location !== undefined)
