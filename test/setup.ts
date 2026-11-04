@@ -96,6 +96,12 @@ export interface SavedCamera {
   radius?: number
   mode?: 'perspective' | 'orthographic'
 }
+
+interface WorkspaceTab {
+  id: string
+  viewIds: string[]
+}
+
 interface SessionView {
   id?: string
   type: string
@@ -165,6 +171,9 @@ declare global {
     JBrowseSession?: {
       views?: SessionView[]
       removeView?: (view: SessionView) => void
+      tabContainingView?: (viewId: string) => { tab: WorkspaceTab } | undefined
+      findTab?: (tabId: string) => { tab: WorkspaceTab } | undefined
+      closeTab?: (tabId: string) => void
       addTrackConf?: (conf: Record<string, unknown>) => unknown
       hovered?: { hoverPosition?: { coord: number; refName: string } }
       highlights?: SessionHighlight[]
@@ -707,6 +716,15 @@ export async function waitForUniProtTablePainted(page: Page): Promise<void> {
   )
 }
 
+// The structure draws before the alignment panel's UniProt rows arrive, so a
+// capture taken on the structure alone shows either state.
+export async function waitForUniProtFeatureRows(page: Page): Promise<void> {
+  await page.waitForFunction(
+    () => !document.body.innerText.includes('Loading UniProt features'),
+    { timeout: 60_000 },
+  )
+}
+
 export async function clickLaunch(page: Page): Promise<void> {
   const button = await page.$(LAUNCH_BUTTON)
   if (!button) {
@@ -807,6 +825,35 @@ export async function residueMarkCells(page: Page) {
 export async function openSessionSpec(page: Page, spec: object) {
   const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
   await page.goto(url, { waitUntil: 'domcontentloaded' })
+}
+
+/**
+ * Remove every protein view, and the workspace tab each leaves empty. The host
+ * keeps an emptied tab as a "Select a view to launch" cell, and the next launch
+ * splits beside it, so without this a leg's layout depends on which legs ran
+ * before it. Closing a cell remounts the genome view, so this waits for the
+ * gene track to draw again.
+ */
+export async function closeProteinViews(page: Page) {
+  await page.evaluate(() => {
+    const session = window.JBrowseSession!
+    for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
+      const tabId =
+        view.id === undefined
+          ? undefined
+          : session.tabContainingView?.(view.id)?.tab.id
+      session.removeView!(view)
+      if (
+        tabId !== undefined &&
+        session.findTab?.(tabId)?.tab.viewIds.length === 0
+      ) {
+        session.closeTab!(tabId)
+      }
+    }
+  })
+  await page.waitForSelector(`${TRACK_CONTAINER} ${PAINTED_FEATURES}`, {
+    timeout: 60_000,
+  })
 }
 
 // Fraction of the molstar canvas that is not blank. Read back from a real

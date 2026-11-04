@@ -13,6 +13,7 @@ import {
   clickMenuItem,
   clickTab,
   clinVarTrackFeatures,
+  closeProteinViews,
   createJBrowsePage,
   flushScreenshots,
   getProteinViewState,
@@ -32,6 +33,7 @@ import {
   waitForMolstarIdle,
   waitForStructureRendered,
   waitForTrackLoad,
+  waitForUniProtFeatureRows,
   waitForUniProtTablePainted,
 } from './setup'
 
@@ -139,6 +141,7 @@ describe('Protein3d Plugin E2E', () => {
     await clickLaunch(page)
 
     await waitForStructureRendered(page)
+    await waitForUniProtFeatureRows(page)
     await captureScreenshot(page, screenshot('06-protein-view'))
 
     const state = await getProteinViewState(page)
@@ -186,12 +189,7 @@ describe('Protein3d Plugin E2E', () => {
   // The dialog's defaults with no dialog: one click from the gene to a linked
   // structure, which is the whole point of the item.
   it('opens the AlphaFold structure in one click', async () => {
-    await page.evaluate(() => {
-      const session = window.JBrowseSession!
-      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
-        session.removeView!(view)
-      }
-    })
+    await closeProteinViews(page)
     const items = await openFeatureContextMenu(page)
     expect(items).toContain('Open AlphaFold structure')
     await clickMenuItem(page, 'Open AlphaFold structure')
@@ -213,12 +211,7 @@ describe('Protein3d Plugin E2E', () => {
   // stored on the view. NRAS's transcript is the entry, so the map is the
   // identity; another isoform's offset is pinned in linkage.test.ts.
   it('aligns a 1D protein view to its UniProt entry on the host', async () => {
-    await page.evaluate(() => {
-      const session = window.JBrowseSession!
-      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
-        session.removeView!(view)
-      }
-    })
+    await closeProteinViews(page)
     await openFeatureContextMenu(page)
     await clickMenuItem(page, 'Launch protein view')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
@@ -304,12 +297,7 @@ describe('Protein3d Plugin E2E', () => {
   // dozens of crystals, every one a fragment with partners, so the alignment
   // and the chain choice both have to come out of the load.
   it('launches an experimental structure from the PDB search tab', async () => {
-    await page.evaluate(() => {
-      const session = window.JBrowseSession!
-      for (const view of session.views!.filter(v => v.type === 'ProteinView')) {
-        session.removeView!(view)
-      }
-    })
+    await closeProteinViews(page)
     await openFeatureContextMenu(page)
     await clickMenuItem(page, 'Launch protein view')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
