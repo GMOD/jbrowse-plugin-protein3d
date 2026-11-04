@@ -23,7 +23,7 @@ import { applyFigureStyle } from './figureStyle'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import loadMolstar from './loadMolstar'
 import { makeLociChannel } from './lociChannel'
-import { checkedLayers } from './markProblems'
+import { checkedFigure, checkedFigureChange } from './markProblems'
 import { syncMeasurements } from './measurements'
 import { checkedColor, colorOfScheme, resolvedColor } from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
@@ -31,7 +31,7 @@ import { removeMolstarStructure } from './removeStructure'
 import { reportPluginFailure } from './reportPluginFailure'
 import { checkedStructureFilters } from './residueFilter'
 import { syncResidueMarks } from './residueMarks'
-import { applySavedCamera } from './savedCamera'
+import { applySavedCamera, liveCamera } from './savedCamera'
 import {
   highlightCameraSnapshot,
   syncSessionHighlightMarks,
@@ -55,7 +55,7 @@ import { attachViewInteractions } from './viewInteractions'
 
 import type { DistanceMeasurement } from './measurements'
 import type { ProteinColor } from './proteinColor'
-import type { ProteinStructureSpec } from './proteinViewSpec'
+import type { ProteinFigure, ProteinStructureSpec } from './proteinViewSpec'
 import type { ResidueMark } from './residueMarks'
 import type { SavedCamera } from './savedCamera'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
@@ -310,7 +310,7 @@ function stateModelFactory() {
       } & Record<string, unknown>) =>
         withStoredSettings(
           {
-            ...checkedLayers(
+            ...checkedFigure(
               snapshot,
               checkedStructureFilters(snapshot.structures),
             ),
@@ -479,6 +479,33 @@ function stateModelFactory() {
           removeMolstarStructure({ plugin, molstarStructure }).catch(
             reportPluginFailure(self, plugin),
           )
+        }
+      },
+      /**
+       * #action
+       * Sets the figure properties `change` names, checked as a snapshot's
+       * are, and leaves the rest; a key given as undefined clears it. Refuses
+       * the whole change, with every reason, if any of it does not read.
+       */
+      applyFigure(change: ProteinFigure) {
+        const figure = checkedFigureChange(change, self.structures)
+        if (Object.hasOwn(figure, 'camera')) {
+          self.camera = figure.camera
+        }
+        if (Object.hasOwn(figure, 'surface')) {
+          self.surface = figure.surface
+        }
+        if (Object.hasOwn(figure, 'marks')) {
+          self.marks = figure.marks
+        }
+        if (Object.hasOwn(figure, 'distances')) {
+          self.distances = figure.distances
+        }
+        if (Object.hasOwn(figure, 'silhouettes')) {
+          self.silhouettes = figure.silhouettes === true
+        }
+        if (Object.hasOwn(figure, 'occlusion')) {
+          self.occlusion = figure.occlusion === true
         }
       },
     }))
@@ -853,6 +880,19 @@ function stateModelFactory() {
           notices: self.notices.map(n => errorMessage(n)),
           structures: self.structures.map(s => s.report),
         }
+      },
+      /**
+       * #method
+       * The camera on screen as a SavedCamera, for
+       * `applyFigure({ camera: view.currentCamera() })` to keep a view a
+       * person arranged. Read once a move has landed: Mol* animates one.
+       */
+      currentCamera() {
+        const canvas = self.molstarPluginContext?.canvas3d
+        if (!canvas) {
+          throw new Error('the view has no Mol* canvas yet')
+        }
+        return liveCamera(canvas)
       },
       /**
        * #method

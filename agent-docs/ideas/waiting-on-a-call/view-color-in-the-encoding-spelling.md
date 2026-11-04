@@ -57,7 +57,7 @@ and `surface: { opacity }` would become
 - A design pass first, as ADR-238 itself had: `domainMin`/`domainMax`/
   `domainMid`, `trackId`, `stat` and `values` each need a home, and the launch
   URL's flat parameters may want to stay flat.
-- The migration is the same shape as `checkedLayers`: read the flat object in
+- The migration is the same shape as `checkedFigure`: read the flat object in
   `preProcessSnapshot`, write the nested one.
 
 Waiting on Colin's call on whether the view's channel converts, and when.

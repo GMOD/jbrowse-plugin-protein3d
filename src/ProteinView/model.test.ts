@@ -1,3 +1,4 @@
+import { getSnapshot, recordPatches } from '@jbrowse/mobx-state-tree'
 import { expect, test, vi } from 'vitest'
 
 import { COMPACT_TRACK_HEIGHT, NORMAL_TRACK_HEIGHT } from './constants'
@@ -6,7 +7,7 @@ import { removeMolstarStructure } from './removeStructure'
 import { PERSISTED_SETTINGS } from './storedSettings'
 import { parseStructure } from '../test_data/molstarStructure'
 
-import type { ProteinStructureSpec } from './proteinViewSpec'
+import type { ProteinFigure, ProteinStructureSpec } from './proteinViewSpec'
 import type { PersistedSetting, PersistedSettings } from './storedSettings'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -515,4 +516,133 @@ test('a snapshot whose marks do not parse is refused with the reason', () => {
       marks: [{ site: 'not a site' }],
     }),
   ).toThrow('marks[0].site is a site such as')
+})
+
+const FIGURE: ProteinFigure = {
+  camera: {
+    position: [10, 20, 30],
+    target: [1, 2, 3],
+    up: [0, 1, 0],
+    radius: 12,
+    mode: 'orthographic',
+  },
+  surface: { opacity: 0.4 },
+  marks: [{ site: 'A:248', mark: 'spheres' }],
+  distances: [{ a: 'A:46@NZ', b: 'A:80@NZ' }],
+  silhouettes: true,
+  occlusion: true,
+}
+
+test('applyFigure sets each figure property and the snapshot carries it', () => {
+  const view = makeView()
+  view.applyFigure(FIGURE)
+  const snapshot = getSnapshot(view)
+  expect(snapshot).toMatchObject(FIGURE)
+  expect(ProteinView.create(snapshot)).toMatchObject(FIGURE)
+})
+
+test('applyFigure leaves the properties it does not name, and clears an undefined one', () => {
+  const view = makeView()
+  view.applyFigure({ marks: [{ site: 'A:1' }], silhouettes: true })
+  view.applyFigure({ surface: {} })
+  expect(view.marks).toEqual([{ site: 'A:1' }])
+  expect(view.silhouettes).toBe(true)
+  expect(view.surface).toEqual({})
+  view.applyFigure({ marks: undefined, silhouettes: undefined })
+  expect(view.marks).toBeUndefined()
+  expect(view.silhouettes).toBe(false)
+  expect(view.surface).toEqual({})
+})
+
+test('a figure change is one set of patches, which undo reverts', () => {
+  const view = makeView()
+  view.applyFigure({ marks: [{ site: 'A:1' }] })
+  const before = getSnapshot(view)
+  const recorder = recordPatches(view)
+  view.applyFigure({ marks: [{ site: 'A:2' }], occlusion: true })
+  recorder.stop()
+  expect(recorder.patches.map(p => p.path).sort()).toEqual([
+    '/marks',
+    '/occlusion',
+  ])
+  recorder.undo()
+  expect(getSnapshot(view)).toEqual(before)
+})
+
+test('applyFigure refuses a camera that does not place the eye, with every reason', () => {
+  const view = makeView()
+  expect(() => {
+    view.applyFigure({
+      camera: {
+        // @ts-expect-error two numbers is not a point, which is the refusal
+        position: [1, 2],
+        target: [0, 0, 0],
+        up: [0, 0, 0],
+        radius: -1,
+        // @ts-expect-error not a projection Mol* has
+        mode: 'fisheye',
+      },
+    })
+  }).toThrow(
+    'camera.position is three numbers such as [0, 1, 0], not [1,2]; camera.up is [0, 0, 0], which points nowhere; camera.radius is a positive number, not -1; camera.mode is perspective or orthographic, not "fisheye"',
+  )
+  expect(() => {
+    view.applyFigure({
+      camera: { position: [1, 1, 1], target: [1, 1, 1], up: [0, 1, 0] },
+    })
+  }).toThrow('camera.position is camera.target, so the eye looks nowhere')
+  expect(view.camera).toBeUndefined()
+})
+
+test('applyFigure refuses the whole change when any of it does not read', () => {
+  const view = makeView()
+  expect(() => {
+    view.applyFigure({
+      marks: [{ site: 'A:1' }],
+      surface: { opacity: 2 },
+      // @ts-expect-error a flag is a boolean, which is the refusal
+      silhouettes: 'yes',
+      distances: [{ a: 'A:1', b: '??' }],
+    })
+  }).toThrow(
+    'distances[0].b is a site such as A:248, A:248@NH2, MOV or G:*, not ??; surface.opacity is a number from 0 to 1, not 2; silhouettes is true or false, not "yes"',
+  )
+  expect(view.marks).toBeUndefined()
+  expect(view.silhouettes).toBe(false)
+})
+
+test('applyFigure checks a mark against the structure it draws on', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif', chains: ['B', 'G'] }],
+  })
+  expect(() => {
+    view.applyFigure({ marks: [{ site: 'G:*', mark: 'cartoon' }] })
+  }).toThrow('marks[0] draws chain G as a cartoon over the one the structure')
+})
+
+test('applyFigure names a key that is not a figure property', () => {
+  const view = makeView()
+  expect(() => {
+    // @ts-expect-error a misspelled key, which is the refusal
+    view.applyFigure({ marcs: [] })
+  }).toThrow(
+    'a figure sets camera, surface, marks, distances, silhouettes, occlusion, not marcs',
+  )
+})
+
+test('a snapshot whose camera does not read is refused with the reason', () => {
+  expect(() =>
+    ProteinView.create({
+      type: 'ProteinView',
+      structures: [{ url: 'a.cif' }],
+      camera: { position: [0, 0, 1], target: [0, 0, 0], up: [0, 1, 0], radius: 0 },
+    }),
+  ).toThrow('camera.radius is a positive number, not 0')
+})
+
+test('reading the camera before Mol* has a canvas says so', () => {
+  expect(() => makeView().currentCamera()).toThrow(
+    'the view has no Mol* canvas yet',
+  )
 })

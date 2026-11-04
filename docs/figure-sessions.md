@@ -54,9 +54,10 @@ structure as a figure without a serialized transcript:
 
 - `camera`: position, target and up in the structure file's coordinates. `mode`
   is `perspective` or `orthographic`; `radius` clips to a slab that deep either
-  side of the target.
+  side of the target. A camera that does not place the eye, such as a point that
+  is not three numbers, is refused with the reason.
 - `surface`: a translucent molecular surface over each polymer, colored as the
-  cartoon is.
+  cartoon is; `opacity` is 0 to 1.
 - `silhouettes`: outlines around every object.
 - `occlusion`: ambient occlusion, which darkens crevices and folds so a cartoon
   reads as depth; with `silhouettes`, Mol\*'s illustrative look.
@@ -74,6 +75,45 @@ structure as a figure without a serialized transcript:
   not read is refused with the reason.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
   Å, with an optional `encoding.color.value`.
+
+## Composing a figure from a script
+
+An agent or a script sets the same properties on an open view with
+`view.applyFigure(change)`, and reads back the camera a person arranged with
+`view.currentCamera()`:
+
+```js
+const view = jb.view(viewId)
+const saved = view.currentCamera()
+view.applyFigure({
+  camera: { ...saved, radius: 20 },
+  marks: [{ site: 'A:248', mark: 'spheres' }],
+  silhouettes: true,
+})
+```
+
+- `applyFigure` takes any of `camera`, `surface`, `marks`, `distances`,
+  `silhouettes` and `occlusion`, spelled as above, and leaves the ones it does
+  not name. A key given as `undefined` clears it: `{ marks: undefined }` draws
+  no marks, `{ silhouettes: undefined }` turns the outlines off.
+- The change is checked the way a snapshot is, and refused whole, naming every
+  reason, if any of it does not read: a mark site that does not parse, a camera
+  point that is not three numbers, a surface opacity outside 0 to 1, a key that
+  is not one of the six.
+- Each property is a session property, so a change is saved with the session,
+  shared in its link, and undone like any other edit.
+- The camera moves when `camera` changes, not only at load, and Reset Zoom
+  returns to it. Mol\* animates the move, so read the camera once it has landed.
+- `currentCamera()` returns the camera on screen as a `camera` value, so
+  `view.applyFigure({ camera: view.currentCamera() })` keeps the view as it is.
+  Its `radius` is the slab Mol\* clips to, left out when that is the whole
+  scene; a camera with a `radius` draws without fog. It throws while Mol\* has
+  no canvas.
+- To frame residues rather than write a camera,
+  `structure.focusResidues(target)` selects them and turns the camera to them,
+  taking the selection forms `locateResidues` takes (see
+  [reading the view](reading-the-view.md)); read `currentCamera()` afterwards to
+  keep that framing.
 
 ## Structure properties
 

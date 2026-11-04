@@ -75,9 +75,17 @@ interface ResidueLocation {
   locus?: string
 }
 interface MolstarCell {
-  transform: { ref: string; parent: string }
-  obj?: { type: { name: string } }
+  transform: { ref: string; parent: string; tags?: string[] }
+  obj?: { type: { name: string }; data?: { elementCount?: number } }
   state: { isHidden?: boolean }
+}
+type Triple = [number, number, number]
+export interface SavedCamera {
+  position: Triple
+  target: Triple
+  up: Triple
+  radius?: number
+  mode?: 'perspective' | 'orthographic'
 }
 interface SessionView {
   id?: string
@@ -94,6 +102,9 @@ interface SessionView {
   }
   superposedCount?: number
   setColor?: (color: { field?: string }) => void
+  applyFigure?: (figure: { camera?: SavedCamera; marks?: object[] }) => void
+  currentCamera?: () => SavedCamera
+  marks?: object[]
   menuItems?: () => { label?: string; onClick?: () => void }[]
   tracks?: {
     configuration?: {
@@ -761,6 +772,33 @@ export async function structureCellsHidden(
 }
 
 // Open a session spec on the test instance, the way a shared link does.
+/**
+ * The residue marks the protein view drew: the atoms each mark's component
+ * holds, and how many representations draw them. A mark whose site matched
+ * nothing builds neither.
+ */
+export async function residueMarkCells(page: Page) {
+  return page.evaluate(() => {
+    const plugin = window.JBrowseSession?.views?.find(
+      v => v.type === 'ProteinView',
+    )?.molstarPluginContext
+    const marks = [...(plugin?.state.data.cells.values() ?? [])].filter(
+      cell =>
+        cell.obj && cell.transform.tags?.includes('jbrowse-residue-marks'),
+    )
+    return {
+      atoms: marks.flatMap(cell =>
+        cell.obj?.type.name === 'Structure'
+          ? [cell.obj.data?.elementCount ?? 0]
+          : [],
+      ),
+      representations: marks.filter(
+        cell => cell.obj?.type.name === 'Structure 3D',
+      ).length,
+    }
+  })
+}
+
 export async function openSessionSpec(page: Page, spec: object) {
   const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
   await page.goto(url, { waitUntil: 'domcontentloaded' })

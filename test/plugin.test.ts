@@ -21,6 +21,7 @@ import {
   openFeatureContextMenu,
   openSessionSpec,
   pageComplaintsSince,
+  residueMarkCells,
   setupJBrowse,
   startJBrowseServer,
   stopServer,
@@ -34,6 +35,7 @@ import {
   waitForUniProtTablePainted,
 } from './setup'
 
+import type { SavedCamera } from './setup'
 import type { ChildProcess } from 'node:child_process'
 import type { Browser, Page } from 'puppeteer'
 
@@ -763,6 +765,96 @@ describe('Protein3d Plugin E2E', () => {
     await expect
       .poll(async () => (await mapped()).mappedEntity, { timeout: 10_000 })
       .toBe('1')
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // A script composes a figure on an open view: the camera moves when it is
+  // set after load, not only at load, reads back as it was set, and a mark
+  // added afterwards draws. Mol* animates a camera move, which swiftshader
+  // stretches to seconds, so every camera read polls.
+  it('moves the camera and draws a mark a script sets after load', async () => {
+    await openSessionSpec(page, {
+      views: [{ type: 'ProteinView', structures: [{ pdbId: '1TUP' }] }],
+    })
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const camera = () =>
+      page.evaluate(() =>
+        window
+          .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+          .currentCamera!(),
+      )
+    const settledCamera = async () => {
+      let previous = await camera()
+      await expect
+        .poll(
+          async () => {
+            const next = await camera()
+            const still = JSON.stringify(next) === JSON.stringify(previous)
+            previous = next
+            return still
+          },
+          { timeout: 30_000, interval: 1000 },
+        )
+        .toBe(true)
+      return previous
+    }
+    const loaded = await settledCamera()
+
+    // the same target seen from the opposite side, through a 25 Å slab
+    const behind = loaded.target.map(
+      (t, i) => 2 * t - loaded.position[i]!,
+    )
+    const wanted: SavedCamera = {
+      position: [behind[0]!, behind[1]!, behind[2]!],
+      target: loaded.target,
+      up: loaded.up,
+      radius: 25,
+      mode: 'orthographic',
+    }
+    await page.evaluate(wanted => {
+      window
+        .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+        .applyFigure!({ camera: wanted })
+    }, wanted)
+    const near = (a: number[], b: number[]) =>
+      a.every((v, i) => Math.abs(v - b[i]!) < 0.01)
+    await expect
+      .poll(async () => near((await camera()).position, wanted.position), {
+        timeout: 30_000,
+        interval: 500,
+      })
+      .toBe(true)
+    const read = await settledCamera()
+    expect(near(read.position, wanted.position)).toBe(true)
+    expect(near(read.target, wanted.target)).toBe(true)
+    expect(near(read.up, wanted.up)).toBe(true)
+    expect(read.radius).toBeCloseTo(25)
+    expect(read.mode).toBe('orthographic')
+
+    await page.evaluate(() => {
+      window
+        .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+        .applyFigure!({
+          marks: [
+            {
+              site: 'A:248',
+              mark: 'spheres',
+              encoding: { color: { value: '#d1007a' } },
+            },
+          ],
+        })
+    })
+    await expect
+      .poll(() => residueMarkCells(page), { timeout: 30_000 })
+      .toSatisfy(
+        ({ atoms, representations }: { atoms: number[]; representations: number }) =>
+          atoms.length === 1 && atoms[0]! > 0 && representations === 1,
+      )
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('15-figure-at-runtime'))
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 

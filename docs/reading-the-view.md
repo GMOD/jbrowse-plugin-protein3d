@@ -118,3 +118,9 @@ does not hold this codon" is an answer rather than an empty list.
 The lookups are p2s_mapper's `locateStructureResidue`, `locateTranscriptResidue`
 and `locateGenomeBase`, which work without a browser from a mapped entity, an
 alignment and g2p_mapper's genome mapping.
+
+## Changing what the view draws
+
+To change what the view draws rather than read it, `view.applyFigure` sets the
+camera, marks, distances, surface and style, and `view.currentCamera()` reads
+the camera back; see [figure session properties](figure-sessions.md).

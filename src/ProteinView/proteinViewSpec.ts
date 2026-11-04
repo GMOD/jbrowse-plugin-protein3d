@@ -1,5 +1,6 @@
 import { resolveStructureUrl, structureDisplayLabel } from 'p2s_mapper'
 
+import type { FIGURE_KEYS } from './markProblems'
 import type { DistanceMeasurement } from './measurements'
 import type { ProteinColor } from './proteinColor'
 import type { StructureFilter } from './residueFilter'
@@ -89,6 +90,9 @@ export interface ProteinViewSpec {
   silhouettes?: boolean
   occlusion?: boolean
 }
+
+/** The figure properties of a view, which applyFigure sets at runtime. */
+export type ProteinFigure = Pick<ProteinViewSpec, (typeof FIGURE_KEYS)[number]>
 
 /**
  * The name a view gets when its snapshot carries none: the transcript it maps
