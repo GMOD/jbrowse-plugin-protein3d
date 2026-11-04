@@ -216,6 +216,15 @@ removes, where an alternative exon lands, whether an exon matches a domain.
   joined where they touch, which rebuilds the exons of a bigBed or BED12
   transcript. A feature with CDS rows alone cannot say how many UTR exons come
   first, so its numbers count coding exons and the legend says "Coding exon".
+- **Alignment indels**: blocks 9 bp apart or closer are one exon. A RefSeq
+  transcript's blocks come from its alignment to the genome, and an indel there
+  opens a gap of a base or a few inside an exon: canine SOD1 (NM_001003035.1 on
+  canFam4) carries a 1-bp gap at 27,125,696 that split its fourth exon and
+  numbered a five-exon gene as six. No intron is that short: the shortest known
+  are 15 bp, in the ciliate _Stentor_, and a mammal's run to tens of bp. Only
+  the numbering changes; the codons, and every residue's genome position, are
+  read from the blocks as given, so the base an indel skips is still in no
+  codon.
 - **Split codons**: a codon an intron splits takes the exon holding two of its
   three bases. Only a boundary in phase 1 or 2 splits a codon, so a "junction"
   color would mark some boundaries and not others.
