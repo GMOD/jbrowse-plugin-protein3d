@@ -189,13 +189,16 @@ details.
 
 `structures` opens one view holding several structures, superposed with TM-align
 and each mapped to the same transcript — what the view's **Add structure...**
-dialog builds by hand. Each entry takes `url`, `data`, `uniprotId` or `pdbId`,
-and may carry its own `initialTranscriptResidues`, `initialResidues` or
-`initialSelection`, a `mappedEntityId`, a `pairwiseAlignment`, `hidden`, and a
-`feature` and `userProvidedTranscriptSequence` of its own where the launch-wide
-ones do not apply. Those same keys written on the launch are the one-structure
-shorthand; beside `structures` a source or a selection written there applies to
-no structure, and the launch says so in a warning and opens the rest.
+dialog builds by hand, and what the launch dialog opens when several rows of its
+structure list are checked (the AlphaFold model first, so the rest are placed on
+it; a short fragment opens on its own). Each entry takes `url`, `data`,
+`uniprotId` or `pdbId`, and may carry its own `initialTranscriptResidues`,
+`initialResidues` or `initialSelection`, a `mappedEntityId`, a
+`pairwiseAlignment`, `hidden`, and a `feature` and
+`userProvidedTranscriptSequence` of its own where the launch-wide ones do not
+apply. Those same keys written on the launch are the one-structure shorthand;
+beside `structures` a source or a selection written there applies to no
+structure, and the launch says so in a warning and opens the rest.
 [Launch parameters](launch-parameters.md#structures) lists what the launch
 reports, and [residue numbering](residue-numbering.md) covers how a residue
 number in a spec becomes a position in the file.
@@ -220,12 +223,13 @@ structure again by the new chain.
 
 ## The 1D protein view: `ProteinAnnotationView`
 
-The launch dialog's **Launch 1D protein annotation view** opens a UniProt entry
-as a linear view, with its domains, ClinVar's missense calls on the transcript,
-AlphaMissense scores and AlphaFold confidence as tracks. A
-`ProteinAnnotationView` spec entry opens the same view, registered as the
-`LaunchView-ProteinAnnotationView` extension point (the view itself is a
-LinearGenomeView on a temporary assembly of the entry). It arrived in 1.6.0.
+The launch dialog's **Launch 1D protein annotation view**, under the arrow
+beside **Launch**, opens a UniProt entry as a linear view, with its domains,
+ClinVar's missense calls on the transcript, AlphaMissense scores and AlphaFold
+confidence as tracks. A `ProteinAnnotationView` spec entry opens the same view,
+registered as the `LaunchView-ProteinAnnotationView` extension point (the view
+itself is a LinearGenomeView on a temporary assembly of the entry). It arrived
+in 1.6.0.
 
 `uniprotId` names the entry, and an isoform accession such as `P04637-7` opens
 its entry, since UniProt publishes features for the entry only. The transcript

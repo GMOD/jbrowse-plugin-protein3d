@@ -7,10 +7,11 @@ through the alignment. A model you folded yourself — with ColabFold, AlphaFold
 3, Boltz, ESMFold or anything else that writes PDB or mmCIF — opens exactly like
 an AlphaFold DB model. The two routes below differ in who does the clicking.
 
-## From the gene: the "File or URL" tab
+## From the gene: the "Your file or URL" tab
 
 1. Right-click a gene or transcript and choose **Launch protein view**.
-2. Open the **File or URL** tab and either pick a local file or paste a URL.
+2. Open the **Your file or URL** tab and either pick a local file or paste a
+   URL.
 3. Choose the transcript to map. The dialog reads the structure's sequence and
    ranks the gene's isoforms against it, and flags a sequence that differs from
    the translation. A small difference is fine — the alignment absorbs it.

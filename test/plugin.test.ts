@@ -8,13 +8,15 @@ import {
   PAINTED_FEATURES,
   TRACK_ID,
   captureScreenshot,
+  checkedStructureRows,
   cleanupJBrowse,
   clickLaunch,
   clickMenuItem,
-  clickTab,
+  clickStructureRow,
   clinVarTrackFeatures,
   closeProteinViews,
   createJBrowsePage,
+  expandStructureSection,
   flushScreenshots,
   getProteinViewState,
   hoverGenomeUntilStructureResponds,
@@ -31,10 +33,10 @@ import {
   waitForJBrowseLoad,
   waitForLaunchEnabled,
   waitForMolstarIdle,
+  waitForStructureListPainted,
   waitForStructureRendered,
   waitForTrackLoad,
   waitForUniProtFeatureRows,
-  waitForUniProtTablePainted,
 } from './setup'
 
 import type { SavedCamera } from './setup'
@@ -136,7 +138,9 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('04-protein-dialog'))
 
     await waitForLaunchEnabled(page)
-    await waitForUniProtTablePainted(page)
+    await waitForStructureListPainted(page)
+    // the full-length AlphaFold model is checked by default, alone
+    expect(await checkedStructureRows(page)).toEqual(['alphafold'])
     await captureScreenshot(page, screenshot('05-dialog-ready'))
     await clickLaunch(page)
 
@@ -292,38 +296,54 @@ describe('Protein3d Plugin E2E', () => {
     // gene track the later legs look for is the first on the page either way.
   }, 300_000)
 
-  // The PDB search tab: PDBe's SIFTS listing for the resolved UniProt entry,
-  // the first row preselected, launched against the RCSB file. NRAS has
-  // dozens of crystals, every one a fragment with partners, so the alignment
-  // and the chain choice both have to come out of the load.
-  it('launches an experimental structure from the PDB search tab', async () => {
+  // The dialog's one list: RCSB's entries for the resolved UniProt entry beside
+  // AlphaFold's model and complexes, sectioned by what each shows. NRAS has
+  // dozens of crystals, every one with partners or ligands, so the chain
+  // choice has to come out of the load. Checked together, the AlphaFold model
+  // and 9BTM (NRAS with SHOC2) open in one view, 9BTM superposed onto the
+  // model through its NRAS chain. A short fragment opens on its own.
+  it('launches the AlphaFold model and an experimental complex together', async () => {
     await closeProteinViews(page)
     await openFeatureContextMenu(page)
     await clickMenuItem(page, 'Launch protein view')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
-    await clickTab(page, 'PDB search')
-    await page.waitForSelector('[data-testid="pdb-results-table"] tbody tr', {
-      timeout: 90_000,
-    })
-    await captureScreenshot(page, screenshot('09-pdb-search-tab'))
+    await waitForStructureListPainted(page)
+
+    await expandStructureSection(page, 'fragment')
+    await clickStructureRow(page, 'pdb:7ow4')
+    expect(await checkedStructureRows(page)).toEqual(['pdb:7ow4'])
+    await clickStructureRow(page, 'alphafold')
+    await clickStructureRow(page, 'pdb:9btm')
+    expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:9btm'])
     await waitForLaunchEnabled(page)
+    await captureScreenshot(page, screenshot('09-structure-list-checked'))
     await clickLaunch(page)
 
     await waitForStructureRendered(page)
+    // TM-align runs once both have loaded, and Mol* redraws after it
     await page.waitForFunction(
-      () =>
-        window.JBrowseSession?.views
-          ?.find(v => v.type === 'ProteinView')
-          ?.structures?.every(s => s.pairwiseAlignment) ?? false,
+      () => {
+        const view = window.JBrowseSession?.views?.find(
+          v => v.type === 'ProteinView',
+        )
+        return (
+          view?.structures?.length === 2 &&
+          view.structures.every(s => s.pairwiseAlignment) &&
+          (view.superposedCount ?? 0) >= 2
+        )
+      },
       { timeout: 120_000 },
     )
-    await captureScreenshot(page, screenshot('10-pdb-protein-view'))
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('10-superposed-protein-view'))
 
     const state = await getProteinViewState(page)
-    expect(state.structureCount).toBe(1)
-    expect(state.structures[0]?.url).toMatch(/files\.rcsb\.org/)
-    expect(state.hasAlignment).toBe(true)
-    expect(state.structures[0]?.mappedEntityId).toBeDefined()
+    expect(state.structureCount).toBe(2)
+    expect(state.structures[0]?.url).toMatch(/AF-P01111-F1/)
+    expect(state.structures[1]?.url).toMatch(/files\.rcsb\.org.*9btm/)
+    // 9BTM's entity 1 is SHOC2; NRAS is entity 2
+    expect(state.structures[1]?.mappedEntityId).toBe('2')
+    expect(state.structures.every(s => s.hasAlignment)).toBe(true)
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 

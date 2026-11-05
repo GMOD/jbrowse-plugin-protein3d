@@ -3,10 +3,8 @@ import { SimpleFeature } from '@jbrowse/core/util'
 import { act, renderHook, waitFor } from '@testing-library/react'
 
 import * as codingFeature from '../src/LaunchProteinView/codingFeature'
-import useAlphaFoldDBSearch from '../src/LaunchProteinView/hooks/useAlphaFoldDBSearch'
-// Import other necessary hooks and utilities from their respective paths
-import useAlphaFoldData from '../src/LaunchProteinView/hooks/useAlphaFoldData'
 import useIsoformProteinSequences from '../src/LaunchProteinView/hooks/useIsoformProteinSequences'
+import useStructureLaunch from '../src/LaunchProteinView/hooks/useStructureLaunch'
 import useUniProtIdLookup from '../src/LaunchProteinView/hooks/useUniProtIdLookup'
 import useUniProtSearch from '../src/LaunchProteinView/hooks/useUniProtSearch'
 import getSearchDescription from '../src/LaunchProteinView/utils/getSearchDescription'
@@ -16,7 +14,6 @@ import * as util from '../src/LaunchProteinView/utils/util' // Import all utilit
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 
 // Use vi.mock for Vitest
-vi.mock('../src/LaunchProteinView/hooks/useAlphaFoldData')
 vi.mock('../src/LaunchProteinView/hooks/useIsoformProteinSequences')
 vi.mock('../src/LaunchProteinView/hooks/useUniProtSearch')
 vi.mock('../src/LaunchProteinView/utils/getSearchDescription')
@@ -41,14 +38,13 @@ vi.mock('../src/LaunchProteinView/codingFeature', async importOriginal => {
 })
 
 // Import the mocked functions after mocking
-const mockUseAlphaFoldData = vi.mocked(useAlphaFoldData)
 const mockUseIsoformProteinSequences = vi.mocked(useIsoformProteinSequences)
 const mockUseUniProtSearch = vi.mocked(useUniProtSearch)
 const mockGetSearchDescription = vi.mocked(getSearchDescription)
 const mockExtractFeatureIdentifiers = vi.mocked(util.extractFeatureIdentifiers)
 const mockGetTranscriptFeatures = vi.mocked(codingFeature.codingTranscripts)
 
-describe('useAlphaFoldDBSearch', () => {
+describe('the lookup and the launch it feeds', () => {
   let mockFeature: SimpleFeature
   let mockView: any
 
@@ -57,13 +53,6 @@ describe('useAlphaFoldDBSearch', () => {
     vi.clearAllMocks()
 
     // Setup common mocks
-    mockUseAlphaFoldData.mockReturnValue({
-      isLoading: false,
-      isValidating: false,
-      modelsUnreachable: undefined,
-      model: undefined,
-      noModel: false,
-    })
     mockUseIsoformProteinSequences.mockReturnValue({
       isoformSequences: {},
       isLoading: false,
@@ -101,15 +90,8 @@ describe('useAlphaFoldDBSearch', () => {
     mockView = { id: 'mock-view-id', assemblyNames: [] } // Mock LinearGenomeViewModel
   })
 
-  // the dialog owns the lookup and hands it to every tab, so the hook under
-  // test takes one rather than making its own
   function useSearchUnderTest() {
-    const lookup = useUniProtIdLookup({ feature: mockFeature, view: mockView })
-    return useAlphaFoldDBSearch({
-      feature: mockFeature,
-      view: mockView,
-      lookup,
-    })
+    return useUniProtIdLookup({ feature: mockFeature, view: mockView })
   }
 
   it('should initialize selectedQueryId to "auto" even when recognized IDs are available', () => {
@@ -181,7 +163,7 @@ describe('useAlphaFoldDBSearch', () => {
     expect(result.current.lookupMode).toBe('manual')
   })
 
-  it('selects the isoform whose protein is the structure', async () => {
+  it('selects the isoform whose protein is the first structure', async () => {
     const mockTranscript1 = new SimpleFeature({
       uniqueId: 'transcript1',
       start: 0,
@@ -207,20 +189,29 @@ describe('useAlphaFoldDBSearch', () => {
       error: null,
       partialFailure: undefined,
     })
-    mockUseAlphaFoldData.mockReturnValue({
-      isLoading: false,
-      isValidating: false,
-      modelsUnreachable: undefined,
-      // transcript2's translation, stop codon stripped
-      model: { accession: 'P1', url: 'u', sequence: 'MKTAYIAKQRQISF' },
-      noModel: false,
-    })
+    const structures = [
+      {
+        key: 'alphafold',
+        kind: 'alphafold' as const,
+        // transcript2's translation, stop codon stripped
+        model: { accession: 'P1', url: 'u', sequence: 'MKTAYIAKQRQISF' },
+      },
+      { key: 'pdb:1abc', kind: 'pdb' as const, pdbId: '1abc' },
+    ]
 
-    const { result } = renderHook(() => useSearchUnderTest())
+    const { result } = renderHook(() =>
+      useStructureLaunch({
+        structures,
+        uniprotId: 'P1',
+        feature: mockFeature,
+        view: mockView,
+      }),
+    )
 
     await waitFor(() => {
-      expect(result.current.userSelection).toBe('transcript2')
+      expect(result.current.selectedTranscriptId).toBe('transcript2')
     })
+    expect(result.current.sequencesMatch).toBe(true)
     expect(result.current.ranking?.matches.map(m => m.id)).toEqual([
       'transcript2',
     ])

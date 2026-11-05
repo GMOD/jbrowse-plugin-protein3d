@@ -655,17 +655,6 @@ export async function hoverGenomeUntilStructureResponds(page: Page): Promise<{
   )
 }
 
-export async function clickTab(page: Page, label: string): Promise<void> {
-  for (const tab of await page.$$('[role="tab"]')) {
-    const text = await tab.evaluate(el => el.textContent)
-    if (text.includes(label)) {
-      await tab.click()
-      return
-    }
-  }
-  throw new Error(`no tab labelled "${label}"`)
-}
-
 export async function clickMenuItem(page: Page, label: string): Promise<void> {
   for (const item of await page.$$('[role="menuitem"]')) {
     const text = await item.evaluate(el => el.textContent)
@@ -681,9 +670,9 @@ export async function clickMenuItem(page: Page, label: string): Promise<void> {
 // are stable by construction: the e2e always builds and installs the plugin
 // from this working tree, so only the JBrowse version varies underneath. Match
 // on these rather than on button labels or a library's internal class names.
-// Every tab renders its own launch button and TabPanel keeps hidden tabs
-// mounted, so an unscoped selector matches the AlphaFoldDB tab's button from
-// any tab -- enabled, invisible, and unclickable. Scope to the visible panel.
+// TabPanel keeps a visited tab mounted, hidden, so an unscoped selector can
+// match a hidden tab's button -- enabled, invisible, and unclickable. Scope to
+// the visible panel.
 export const LAUNCH_BUTTON =
   '[role="tabpanel"]:not([hidden]) [data-testid="protein-launch-button"]'
 export const LAUNCH_DIALOG = '[data-testid="launch-protein-view-dialog"]'
@@ -697,26 +686,58 @@ export async function waitForLaunchEnabled(page: Page): Promise<void> {
   })
 }
 
-// Launch can enable before the UniProt table's rows, accession links and status
-// chips have painted, and a capture taken on the button alone shows an empty
-// table.
-export async function waitForUniProtTablePainted(page: Page): Promise<void> {
+// Launch enables on the right-clicked isoform before the transcript ranking
+// fills the footer's picker, and AlphaFold DB, RCSB and the complex list each
+// answer in their own time, so a capture taken on the button alone shows a
+// list still loading.
+export async function waitForStructureListPainted(page: Page): Promise<void> {
   await page.waitForFunction(
     dialog => {
-      const rows = [
-        ...document.querySelectorAll(
-          `${dialog} [data-testid="uniprot-results-table"] tbody tr`,
-        ),
-      ]
+      const list = document.querySelector(
+        `${dialog} [data-testid="structure-list"]`,
+      )
       return (
-        rows.length > 0 &&
-        rows.every(
-          row => row.querySelector('a') && row.querySelector('.MuiChip-root'),
-        )
+        !!list &&
+        list.querySelectorAll('[data-testid^="structure-row-"]').length > 0 &&
+        !/Listing PDB entries|Asking AlphaFold DB/.test(list.textContent) &&
+        !!document.querySelector(`${dialog} .MuiSelect-select`)
       )
     },
-    { timeout: 30_000 },
+    { timeout: 90_000 },
     LAUNCH_DIALOG,
+  )
+}
+
+// A row of the dialog's structure list, by its key ('alphafold', 'pdb:9btm',
+// 'complex:AF-…'); clicking anywhere on it toggles its checkbox.
+export async function clickStructureRow(page: Page, key: string) {
+  await page.click(`${LAUNCH_DIALOG} [data-testid="structure-row-${key}"]`)
+}
+
+export async function checkedStructureRows(page: Page): Promise<string[]> {
+  return page.$$eval(`${LAUNCH_DIALOG} [data-testid^="structure-row-"]`, rows =>
+    rows
+      .filter(row => row.querySelector('input[type="checkbox"]:checked'))
+      .map(row =>
+        (row.getAttribute('data-testid') ?? '').replace('structure-row-', ''),
+      ),
+  )
+}
+
+// Opens a folded section: the rest of the protein on its own, or the short
+// fragments
+export async function expandStructureSection(page: Page, section: string) {
+  await page.evaluate(
+    (dialog, section) => {
+      const buttons = document.querySelectorAll(
+        `${dialog} [data-testid="structure-section-${section}"] button`,
+      )
+      ;[...buttons]
+        .find(b => b.textContent.startsWith('Show '))
+        ?.dispatchEvent(new MouseEvent('click', { bubbles: true }))
+    },
+    LAUNCH_DIALOG,
+    section,
   )
 }
 

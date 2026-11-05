@@ -87,9 +87,10 @@ numbering, and a `uniprotId` beside it changes neither. See
 ## Complexes
 
 AlphaFold DB has predicted homomers and complexes of two proteins for many human
-proteins; the launch dialog's AlphaFold tab lists them beside the monomer, with
-each partner and its ipTM and pLDDT. A spec opens one by its model id, or by its
-file url (`https://alphafold.ebi.ac.uk/files/AF-0000000066211449-model_v1.cif`):
+proteins; the launch dialog lists them under "with another protein", after the
+experimental complexes, with each partner and its ipTM and pLDDT. A spec opens
+one by its model id, or by its file url
+(`https://alphafold.ebi.ac.uk/files/AF-0000000066211449-model_v1.cif`):
 
 ```json
 {

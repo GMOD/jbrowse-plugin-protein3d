@@ -55,6 +55,27 @@ Measured 2026-09-13: 97 → 85 → 62 → 39 → 16 → 10 over five one-second 
 
 `npx jbrowse` does not resolve in a worktree; use
 `npx -y @jbrowse/cli create .test-jbrowse-nightly --nightly`, or copy the
-primary checkout's `.test-jbrowse-nightly`. A regenerated
-`test-screenshots/*/09-pdb-search-tab.png` can capture the dialog mid-fade;
-don't commit that version.
+primary checkout's `.test-jbrowse-nightly`. A regenerated dialog capture
+(`test-screenshots/*/05-dialog-ready.png`, `09-structure-list-checked.png`) can
+catch the dialog mid-fade; don't commit that version.
+
+## The launch dialog
+
+The dialog is a page of its own to check: right-click a gene on a hosted session
+(a `LinearGenomeView` spec on `protein3d_config.json`'s GENCODE track), choose
+**Launch protein view**, and wait for the structure list to stop saying "Listing
+PDB entries" or "Asking AlphaFold DB". Find the gene the way `host-compat`'s
+`probeContextMenu` does, by hovering until the display reports
+`featureIdUnderMouse`. Checking rows is a click on
+`[data-testid="structure-row-<key>"]` (`alphafold`, `pdb:9btm`, `complex:AF-…`).
+Measure Launch at a 1280×900 viewport: the tab bounds its own height, so
+`[data-testid="protein-launch-button"]` should sit inside the window with the
+UniProt chooser open or closed. To see one source fail without the rest, answer
+only its requests with a 503 through the same CDP `Fetch.enable` that serves
+`dist/`: a POST whose body holds `entries(entry_ids` is the partners-and-ligands
+lookup, one to `sequence-coordinates.rcsb.org` the entry list.
+
+Opening the dialog on a gene AlphaFold DB has no complex for logs one console
+error, the 404 from `/api/complex/<accession>` that answers "none" (TP53 and
+OR4F5 both, 2026-11-05). It is the browser's own resource-load line, which no
+code can quiet; NRAS has complexes, so the e2e does not see it.
