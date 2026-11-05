@@ -1,0 +1,6 @@
+# A structure dataset for protein3d.datasets: transcript id, structure url
+# (relative to this file), UniProt accession, label. The two models are
+# AlphaFold DB v6 (CC BY 4.0), standing in for a site's own folds.
+#transcript_id	url	uniprot	label
+ENST00000369535.5	NRAS.pdb	P01111	NRAS rank 1
+ENST00000311936.8	KRAS.cif	P01116	KRAS-4B rank 1

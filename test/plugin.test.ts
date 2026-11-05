@@ -3,6 +3,8 @@ import path from 'node:path'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 
 import {
+  DATASET_CONFIG,
+  DATASET_ID,
   LAUNCH_DIALOG,
   MOLSTAR_CANVAS,
   PAINTED_FEATURES,
@@ -21,6 +23,7 @@ import {
   getProteinViewState,
   hoverGenomeUntilStructureResponds,
   launchBrowser,
+  openConfig,
   openFeatureContextMenu,
   openSessionSpec,
   pageComplaintsSince,
@@ -54,6 +57,9 @@ function screenshot(name: string) {
 
 // The locus lands on NRAS, whose AlphaFold structure (P01111) is 189 residues.
 const STRUCTURE_RESIDUES = 189
+const NRAS_LOC = 'chr1:114,704,469-114,716,894'
+// example_data/folds/mapping.tsv lists NRAS.pdb under NRAS's one transcript
+const SITE_ROW = `dataset:${DATASET_ID}:ENST00000369535.5:NRAS.pdb`
 
 function allHidden(hidden: boolean[]) {
   return hidden.length > 1 && hidden.every(Boolean)
@@ -1189,5 +1195,105 @@ describe('Protein3d Plugin E2E', () => {
       document.querySelector(selector)?.scrollIntoView({ block: 'center' })
     }, `[data-testid="trackRenderingContainer-${viewId}-${viewId}-P04637-ClinVar"]`)
     await captureScreenshot(page, screenshot('14-1d-clinvar'))
+  }, 300_000)
+
+  // A site that folded its genome declares one mapping file in its config,
+  // and the dialog offers the site's structure for the clicked gene, checked
+  // and leading, so the launch maps it through the transcript it was folded
+  // from. The dataset lives in a config of its own, so every leg above keeps
+  // the AlphaFold default.
+  it("offers a config dataset's structure for the gene, checked by default", async () => {
+    await openConfig(page, DATASET_CONFIG)
+    await waitForJBrowseLoad(page)
+    await waitForTrackLoad(page)
+    await openFeatureContextMenu(page)
+    await clickMenuItem(page, 'Launch protein view')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await waitForStructureListPainted(page)
+    expect(await checkedStructureRows(page)).toEqual([SITE_ROW])
+    const rowText = await page.$eval(
+      `${LAUNCH_DIALOG} [data-testid="structure-row-${SITE_ROW}"]`,
+      row => row.textContent,
+    )
+    expect(rowText).toContain('Example folds')
+    expect(rowText).toContain('NRAS rank 1')
+    await waitForLaunchEnabled(page)
+    await captureScreenshot(page, screenshot('16-dataset-row'))
+    await clickLaunch(page)
+
+    await waitForStructureRendered(page)
+    const state = await getProteinViewState(page)
+    expect(state.structures.map(s => s.url)).toEqual([
+      expect.stringMatching(/\/example_data\/folds\/NRAS\.pdb$/),
+    ])
+    expect(state.transcriptName).toMatch(/^ENST00000369535/)
+    expect(state.hasAlignment).toBe(true)
+    expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  it("superposes AlphaFold DB's model onto the dataset's", async () => {
+    await closeProteinViews(page)
+    await openFeatureContextMenu(page)
+    await clickMenuItem(page, 'Launch protein view')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await waitForStructureListPainted(page)
+    await clickStructureRow(page, 'alphafold')
+    expect(await checkedStructureRows(page)).toEqual([SITE_ROW, 'alphafold'])
+    await waitForLaunchEnabled(page)
+    await clickLaunch(page)
+
+    await waitForStructureRendered(page)
+    await page.waitForFunction(
+      () => {
+        const view = window.JBrowseSession?.views?.find(
+          v => v.type === 'ProteinView',
+        )
+        return (
+          view?.structures?.length === 2 &&
+          view.structures.every(s => s.pairwiseAlignment) &&
+          (view.superposedCount ?? 0) >= 2
+        )
+      },
+      { timeout: 120_000 },
+    )
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('17-dataset-with-alphafold'))
+    const state = await getProteinViewState(page)
+    expect(state.structures.map(s => s.url)).toEqual([
+      expect.stringMatching(/\/example_data\/folds\/NRAS\.pdb$/),
+      expect.stringMatching(/AF-P01111-F1/),
+    ])
+    expect(state.structures.every(s => s.hasAlignment)).toBe(true)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  it('opens a dataset structure a session spec names by datasetId', async () => {
+    await openSessionSpec(
+      page,
+      {
+        views: [
+          {
+            type: 'ProteinView',
+            datasetId: DATASET_ID,
+            transcriptId: 'ENST00000369535',
+            connectedView: {
+              assembly: 'hg38',
+              loc: NRAS_LOC,
+              tracks: [TRACK_ID],
+            },
+          },
+        ],
+      },
+      DATASET_CONFIG,
+    )
+    await waitForStructureRendered(page)
+    const state = await getProteinViewState(page)
+    expect(state.structures.map(s => s.url)).toEqual([
+      expect.stringMatching(/\/example_data\/folds\/NRAS\.pdb$/),
+    ])
+    expect(state.hasAlignment).toBe(true)
+    expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
+    expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })

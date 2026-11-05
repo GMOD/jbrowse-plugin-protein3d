@@ -17,6 +17,10 @@ import type { Browser, Page } from 'puppeteer'
 export const JBROWSE_PORT = Number(process.env.JBROWSE_PORT ?? 9876)
 export const VIEW_ID = 'test_lgv'
 export const TRACK_ID = 'gencode.v44.annotation.sorted.gff3'
+// the test config plus a dataset of the site's own structures, served from
+// example_data/folds beside it, so only the legs that open it see the dataset
+export const DATASET_CONFIG = 'datasets_config.json'
+export const DATASET_ID = 'example-folds'
 
 const TRACK_CONTAINER = `[data-testid="trackRenderingContainer-${VIEW_ID}-${TRACK_ID}"]`
 
@@ -224,6 +228,32 @@ export function setupJBrowse() {
     path.join(TEST_JBROWSE_DIR, 'config.json'),
     JSON.stringify(testConfig, null, 2),
   )
+  fs.writeFileSync(
+    path.join(TEST_JBROWSE_DIR, DATASET_CONFIG),
+    JSON.stringify(
+      {
+        ...testConfig,
+        protein3d: {
+          datasets: [
+            {
+              datasetId: DATASET_ID,
+              name: 'Example folds',
+              description: 'NRAS and KRAS, from example_data/folds',
+              // relative to this config, as a site would write it
+              mappingLocation: { uri: 'example_data/folds/mapping.tsv' },
+            },
+          ],
+        },
+      },
+      null,
+      2,
+    ),
+  )
+  const foldsDir = path.join(TEST_JBROWSE_DIR, 'example_data', 'folds')
+  fs.rmSync(foldsDir, { recursive: true, force: true })
+  fs.cpSync(path.join(process.cwd(), 'example_data', 'folds'), foldsDir, {
+    recursive: true,
+  })
 
   // Copy the plugin dist to JBrowse directory
   const pluginDir = path.join(TEST_JBROWSE_DIR, 'plugin')
@@ -847,8 +877,21 @@ export async function residueMarkCells(page: Page) {
   })
 }
 
-export async function openSessionSpec(page: Page, spec: object) {
-  const url = `http://localhost:${JBROWSE_PORT}/?session=spec-${encodeURIComponent(JSON.stringify(spec))}`
+// a config's default session, as a fresh visit opens it
+export async function openConfig(page: Page, config: string) {
+  await page.goto(
+    `http://localhost:${JBROWSE_PORT}/?config=${encodeURIComponent(config)}`,
+    { waitUntil: 'domcontentloaded' },
+  )
+}
+
+export async function openSessionSpec(
+  page: Page,
+  spec: object,
+  config?: string,
+) {
+  const configParam = config ? `config=${encodeURIComponent(config)}&` : ''
+  const url = `http://localhost:${JBROWSE_PORT}/?${configParam}session=spec-${encodeURIComponent(JSON.stringify(spec))}`
   await page.goto(url, { waitUntil: 'domcontentloaded' })
 }
 
