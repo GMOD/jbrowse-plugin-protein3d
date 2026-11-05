@@ -1,3 +1,31 @@
+## [1.32.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.31.0...v1.32.0) (2026-11-05)
+
+### Bug Fixes
+
+- The spell check reads GTPase as a word ([278de13](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/278de13083744541445728ee99eef462d1b1c3b7))
+- Treat citrate, unknown atoms and bis-tris as crystallization additives ([1f632d0](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1f632d0c8343ad490acb400bc912db9423c37de1))
+- The spell check reads UNX, a PDB chemical component id ([ca6d8d8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ca6d8d8eb330a4654825aa164a2288586de0b5d1))
+
+### Chores
+
+- P2s_mapper 3.3.0, which describes PDB entries' partners and ligands ([bc8bb65](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bc8bb6534f82d115ec7c33ab10a027bd48e0899e))
+
+### Documentation
+
+- CLAUDE.md records why superposition aligns by the mapped chain and normalises by the shorter one ([d68e6f4](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d68e6f47619aa5de22257aa1630c677d716a3fc8))
+
+### Features
+
+- Superpose each structure by one copy of its mapped chain, and fit a short or unlike chain on its transcript-matched residues ([82b4759](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/82b475998384c6fad1634b0bc50341bb51217b80))
+- A residue-pair fit needs half its pairs identical, so chance pairs leave a structure unmoved ([2a2ad4f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2a2ad4fe3028c3f699282e0af2ce7557b4b64a34))
+- One launch-dialog list of every structure for the gene, checked rows opening superposed ([4e63867](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4e638673ae9e0fd0538b5ee94495c62a87e0208f))
+
+### Tests
+
+- Check-demos asserts how each demo structure was superposed, with a 7OW4 peptide demo ([8268fb5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/8268fb503aef82092695547b3926402281d50433))
+- Multi-structure screenshots show 1YCR's peptide fit on its residues ([ba69d78](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ba69d7857af5b7d6959274f6077cc6dded52bdb8))
+- Hidden-structure screenshot shows 1YCR's peptide fit on its residues ([d5cbeb1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d5cbeb19301ad610451691d725cb10ed449ae996))
+
 ## [1.31.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.30.0...v1.31.0) (2026-11-05)
 
 ### Chores
