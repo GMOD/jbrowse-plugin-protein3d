@@ -1,3 +1,13 @@
+## [1.31.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.30.0...v1.31.0) (2026-11-05)
+
+### Chores
+
+- P2s_mapper 3.2.0, which lists AlphaFold DB complexes ([ca7e180](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/ca7e180fb952df809590707655d268c60b573cbd))
+
+### Features
+
+- List a gene's AlphaFold DB complexes in the AlphaFold tab and open one with its chains' UniProt entries ([2c45653](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/2c45653b338e5e08e34b65f58383c9537121d152))
+
 ## [1.30.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.29.0...v1.30.0) (2026-11-04)
 
 ### Bug Fixes
