@@ -1,3 +1,23 @@
+## [1.33.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.32.0...v1.33.0) (2026-11-05)
+
+### Documentation
+
+- Todo for naming a complex's partner chain on hover ([fabfa20](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/fabfa204cbee814fba8e606e2e079e1207478199))
+- A dataset of a site's own structures, from config to dialog and spec ([e884680](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e88468093cff51a7366c67b52235057423ad41c1))
+
+### Features
+
+- A config dataset offers a site's own structures for the gene in the launch dialog ([d1fedea](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d1fedea0792f009abd6d092f123becf1e6949fbc))
+- A session spec opens a config dataset's structure by datasetId ([71e6a37](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/71e6a37b018e15b11f04a03f2d871616a7bd26ec))
+
+### Styling
+
+- Format the partner-chain todo with prettier ([d1244fa](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/d1244fad87eee7d17e994181af3562dd4cfdbb3b))
+
+### Tests
+
+- E2e opens a config dataset's structure from the dialog, beside AlphaFold, and from a spec ([5c9b6d8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/5c9b6d8d335360cb67e806d13b1d9a774c7c7a00))
+
 ## [1.32.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.31.0...v1.32.0) (2026-11-05)
 
 ### Bug Fixes
