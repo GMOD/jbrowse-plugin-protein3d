@@ -7,12 +7,63 @@ import { superposeStructures } from './superposeStructures'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 
+import type { LoadMapping } from './superposeStructures'
+import type { TestChain } from '../test_data/molstarStructure'
+import type { Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 
 const chain = {
   asym: 'A',
   entity: '1',
   residues: Array.from({ length: 30 }, () => 'ALA'),
+}
+
+function load(
+  label: string,
+  structures: readonly Structure[],
+  mapping?: LoadMapping,
+) {
+  return { label, structures, mapping }
+}
+
+const residues = (n: number, comp = 'ALA') =>
+  Array.from({ length: n }, () => comp)
+
+// label_seq_id 1.. aligned to transcript positions from `start`
+function mapped(
+  entityId: string,
+  n: number,
+  start = 0,
+  drawnChains?: string[],
+) {
+  return {
+    entityId,
+    transcriptPositions: new Map(
+      Array.from({ length: n }, (_, i) => [i + 1, start + i] as const),
+    ),
+    drawnChains,
+  }
+}
+
+async function superposeTwo(
+  pivotChains: TestChain[],
+  pivotMapping: LoadMapping | undefined,
+  mobileChains: TestChain[],
+  mobileMapping: LoadMapping | undefined,
+  options?: { drawChains?: string[] },
+) {
+  let result: Awaited<ReturnType<typeof superposeStructures>> = []
+  let moved: ReturnType<typeof transforms> = []
+  await withTemporaryMolstarPlugin(async plugin => {
+    const pivot = await loadCaOnly(plugin, pivotChains)
+    const mobile = await loadCaOnly(plugin, mobileChains, options)
+    result = await superposeStructures(plugin, [
+      load('pivot', pivot.structures, pivotMapping),
+      load('mobile', mobile.structures, mobileMapping),
+    ])
+    moved = transforms(plugin)
+  })
+  return { outcome: result[1], pivotOutcome: result[0], moved }
 }
 
 // the superposition transforms in the state tree, as their matrices
@@ -36,7 +87,10 @@ test('an ensemble moves as one unit, by one transform', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     const pivot = await loadCaOnly(plugin, [chain])
     const ensemble = await loadCaOnly(plugin, [chain], { models: 4 })
-    await superposeStructures(plugin, [pivot.structures, ensemble.structures])
+    await superposeStructures(plugin, [
+      load('pivot', pivot.structures),
+      load('ensemble', ensemble.structures),
+    ])
     const moved = transforms(plugin)
     expect(moved).toHaveLength(4)
     expect(new Set(moved.map(m => JSON.stringify(m))).size).toBe(1)
@@ -51,7 +105,10 @@ test('a structure the published hierarchy has not caught up with is moved', asyn
     await plugin.dataTransaction(async () => {
       const pivot = await loadCaOnly(plugin, [chain])
       const other = await loadCaOnly(plugin, [chain])
-      await superposeStructures(plugin, [pivot.structures, other.structures])
+      await superposeStructures(plugin, [
+        load('pivot', pivot.structures),
+        load('other', other.structures),
+      ])
     })
     expect(transforms(plugin)).toHaveLength(1)
   })
@@ -61,7 +118,123 @@ test('an ensemble as the pivot stays where it is', async () => {
   await withTemporaryMolstarPlugin(async plugin => {
     const ensemble = await loadCaOnly(plugin, [chain], { models: 4 })
     const single = await loadCaOnly(plugin, [chain])
-    await superposeStructures(plugin, [ensemble.structures, single.structures])
+    await superposeStructures(plugin, [
+      load('ensemble', ensemble.structures),
+      load('single', single.structures),
+    ])
     expect(transforms(plugin)).toHaveLength(1)
   })
+})
+
+const gene: TestChain = { asym: 'A', entity: '1', residues: residues(40) }
+const partner: TestChain = {
+  asym: 'B',
+  entity: '2',
+  residues: residues(60, 'GLY'),
+}
+
+// TM-align flattens every chain it is given into one: a partner, another copy
+// or a DNA strand steered the fit, and 7OW4's MHC heavy chain landed on NRAS.
+test('a mapped structure aligns by its mapped chain alone', async () => {
+  const { outcome, pivotOutcome } = await superposeTwo(
+    [gene, partner],
+    mapped('1', 40),
+    [
+      { ...partner, asym: 'A' },
+      { ...gene, asym: 'B' },
+    ],
+    mapped('1', 40),
+  )
+  expect(pivotOutcome).toBeUndefined()
+  expect(outcome).toMatchObject({
+    method: 'tm-align',
+    structure: { label: 'mobile', chain: 'B' },
+    pivot: { label: 'pivot', chain: 'A' },
+    alignedLength: 40,
+    pairs: { count: 40 },
+  })
+  expect(outcome?.method === 'tm-align' && outcome.pairs?.rmsd).toBeLessThan(
+    0.1,
+  )
+})
+
+test('of several copies the first drawn one is aligned', async () => {
+  const dimer = [gene, { ...gene, asym: 'B' }]
+  const first = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    dimer,
+    mapped('1', 40),
+  )
+  expect(first.outcome?.structure.chain).toBe('A')
+  const drawn = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    dimer,
+    mapped('1', 40, 0, ['B']),
+    { drawChains: ['B'] },
+  )
+  expect(drawn.outcome?.structure.chain).toBe('B')
+})
+
+test('a structure with no mapping aligns whole, as before', async () => {
+  const { outcome } = await superposeTwo(
+    [gene, partner],
+    mapped('1', 40),
+    [gene, partner],
+    undefined,
+  )
+  expect(outcome).toMatchObject({
+    method: 'tm-align',
+    structure: { label: 'mobile', chain: undefined },
+    pairs: undefined,
+  })
+})
+
+// a 10-residue peptide gives TM-align no fold to find
+test('a short mapped chain is fit on its residue pairs', async () => {
+  const { outcome, moved } = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    [{ ...gene, residues: residues(10) }, partner],
+    mapped('1', 10, 4),
+  )
+  expect(outcome).toMatchObject({
+    method: 'residue-pairs',
+    reason: { kind: 'short', residues: 10, of: { chain: 'A' } },
+    pairs: { count: 10 },
+  })
+  expect(
+    outcome?.method === 'residue-pairs' && outcome.pairs.rmsd,
+  ).toBeLessThan(0.1)
+  expect(moved).toHaveLength(1)
+})
+
+test('a chain with no shared fold is fit on its residue pairs', async () => {
+  const { outcome } = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    [{ ...gene, extended: true }],
+    mapped('1', 40),
+  )
+  expect(outcome).toMatchObject({
+    method: 'residue-pairs',
+    reason: { kind: 'dissimilar' },
+    pairs: { count: 40 },
+  })
+})
+
+test('with too few residue pairs to fit, the structure stays put', async () => {
+  const { outcome, moved } = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    [{ ...gene, residues: residues(10) }],
+    mapped('1', 3),
+  )
+  expect(outcome).toMatchObject({
+    method: 'unmoved',
+    reason: { kind: 'short' },
+    pairCount: 3,
+  })
+  expect(moved).toEqual([])
 })

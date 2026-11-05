@@ -88,7 +88,11 @@ reference model or the crystal structure:
 }
 ```
 
-In the running view, **Add structure...** does the same by hand.
+In the running view, **Add structure...** does the same by hand. The fit uses
+only the chain each structure maps to the transcript, and a chain too short or
+too unlike the first structure's for TM-align is fit on its transcript-matched
+residues instead, with a chip on its header row; see
+[several structures in one launch](launching.md#several-structures-in-one-launch).
 
 ## What carries over from AlphaFold DB, and what does not
 

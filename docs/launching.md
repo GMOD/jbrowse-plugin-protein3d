@@ -204,6 +204,19 @@ number in a spec becomes a position in the file.
 https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","structures":[{"uniprotId":"P04637"},{"pdbId":"1TUP"}],"transcriptId":"NM_000546.6","connectedView":{"assembly":"hg38","loc":"chr17:7,668,421-7,687,550","tracks":["hg38-ncbiRefSeqCurated","hg38-clinvarMain"]}}]}
 ```
 
+Each structure is superposed on the first by one copy of the chain its
+transcript maps to: the first copy drawn, the one its highlight labels sit on. A
+binding partner, the second copy of a homodimer and a DNA strand take no part in
+the fit, so the gene's own chain lands on the gene's own chain. TM-align places
+it, unless the shorter of the two chains has fewer than 30 traced residues or
+TM-align scores the pair under 0.5 (normalised by the shorter chain). Then the
+structure is fit on the residues the two chains align to the same transcript
+positions, or, with fewer than five of those, left where its file puts it, and
+its row in the header carries a chip saying which, with the numbers in its
+tooltip. Mol\*'s log has one line per structure either way. A structure with no
+transcript is aligned whole, and picking another chain in a row's chain picker
+superposes that structure again by the new chain.
+
 ## The 1D protein view: `ProteinAnnotationView`
 
 The launch dialog's **Launch 1D protein annotation view** opens a UniProt entry
