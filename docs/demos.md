@@ -245,15 +245,31 @@ models take noticeably longer to load than one crystal structure.
 ## A predicted model and a crystal superposed
 
 This link opens the AlphaFold model of human p53 beside 1TUP, the p53 core bound
-to DNA. TM-align superposes the crystal on the model, and both map to the same
-transcript. Each structure's row in the view header has an eye button: hide 1TUP
-to see the model's full chain underneath it, then use **Re-align structures
-(TM-align)** in the view menu; the superposition runs again and 1TUP stays
-hidden until you show it.
+to DNA. TM-align superposes the crystal's chain A on the model, and both map to
+the same transcript. The DNA strands and the other two p53 copies take no part
+in the fit: until 2026-11-05 TM-align read all of them as one chain and put copy
+C on the model instead, at a logged RMSD of 38 Å for a 0.9 Å fit. Each
+structure's row in the view header has an eye button: hide 1TUP to see the
+model's full chain underneath it, then use **Re-align structures (TM-align)** in
+the view menu; the superposition runs again and 1TUP stays hidden until you show
+it.
 
 [TP53 on AlphaFold and 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22pdbId%22%3A%221TUP%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 
-<!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99,"minAligned":390},{"chain":"A","minIdentity":0.95}]} -->
+<!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99,"minAligned":390},{"chain":"A","minIdentity":0.95,"superposedBy":"tm-align"}]} -->
+
+## A peptide placed by its residues
+
+7OW4 is a ten-residue NRAS/KRAS peptide presented by an MHC class I molecule.
+TM-align cannot place a chain that short, and given the whole entry it put the
+MHC heavy chain on the NRAS model, the peptide 15 Å from its own residues. The
+plugin now fits the peptide on the eight observed residues it shares with the
+model by transcript position, and its row says **fit on 8 residues**, the reason
+and the RMSD in the chip's tooltip.
+
+[NRAS on AlphaFold and 7OW4](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P01111%22%7D%2C%7B%22pdbId%22%3A%227OW4%22%7D%5D%2C%22transcriptId%22%3A%22NM_002524.5%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr1%3A114%2C700%2C000-114%2C720%2C000%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
+
+<!-- expect {"superposed":2,"structures":[{"chain":"A","minIdentity":0.99},{"chain":"C","superposedBy":"residue-pairs"}]} -->
 
 ## A structure with no transcript
 

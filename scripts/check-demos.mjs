@@ -23,7 +23,9 @@
 //   minNonZero      of those, residues whose value is above zero, at least;
 //                   ClinVar places a zero on every residue it has no call for
 // A view of several structures takes `structures`, one such object per
-// structure in order, and `superposed`, how many TM-align must cover. A demo
+// structure in order, and `superposed`, how many the superposition must
+// cover; a structure's `superposedBy` names how it was placed on the first,
+// `tm-align`, `residue-pairs` or `unmoved`. A demo
 // with an MsaView takes `msa: { minRows }`: the alignment loads with at least
 // that many rows, without error, mapped through the transcript to the genome. A
 // demo of a 1D protein view takes `annotation: { uniprotId, residue }` in place
@@ -211,6 +213,7 @@ function readView() {
       identity: s.alignmentQuality?.identity,
       aligned: s.alignmentQuality?.aligned,
       models: s.molstarStructures?.length,
+      superposedBy: s.superposition?.method,
       selected: s.clickedStructureRanges,
       colored: s.placedVariantEffects?.byLabelSeqId.size ?? 0,
       nonZero: [
@@ -380,6 +383,11 @@ function problems(state, expect) {
       `${state.nonZero} residues above zero, under ${expect.minNonZero}`,
     )
   }
+  if (expect.superposedBy && state.superposedBy !== expect.superposedBy) {
+    found.push(
+      `superposed by ${state.superposedBy}, expected ${expect.superposedBy}`,
+    )
+  }
   if (expect.models !== undefined && state.models !== expect.models) {
     found.push(`${state.models} Mol* structures, expected ${expect.models}`)
   }
@@ -490,6 +498,9 @@ for (const demo of demos) {
             () => demo.expect.superposed,
             () => page.evaluate(readView).then(v => v?.superposed),
           )
+        // how each structure was placed is known once the run has covered it
+        view.structures =
+          (await page.evaluate(readView))?.structures ?? view.structures
       }
       found = viewProblems(view, demo.expect)
       if (demo.expect?.msa) {
