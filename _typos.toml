@@ -9,6 +9,8 @@ extend-ignore-re = ["\\(\\[[0-9a-f]{7,40}\\]\\(https://[^)]+\\)\\)"]
 # amino acid three-letter codes
 THR = "THR"
 SER = "SER"
+# PDB chemical component id for an unknown atom or ion
+UNX = "UNX"
 # GTPase, which typos splits at its case change into "GT" and "Pase"
 Pase = "Pase"
 # the mitochondrial NADH dehydrogenase genes, MT-ND1..6
