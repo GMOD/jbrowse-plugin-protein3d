@@ -703,7 +703,11 @@ export async function waitForLaunchEnabled(page: Page): Promise<void> {
 export async function waitForUniProtTablePainted(page: Page): Promise<void> {
   await page.waitForFunction(
     dialog => {
-      const rows = [...document.querySelectorAll(`${dialog} tbody tr`)]
+      const rows = [
+        ...document.querySelectorAll(
+          `${dialog} [data-testid="uniprot-results-table"] tbody tr`,
+        ),
+      ]
       return (
         rows.length > 0 &&
         rows.every(

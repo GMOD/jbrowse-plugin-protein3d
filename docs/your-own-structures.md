@@ -102,9 +102,11 @@ the file holds real B-factors from refinement, the track and the colors will
 mislead — rescale the column or leave that coloring alone.
 
 **UniProt feature tracks.** Domains, sites and variants need a UniProt
-accession, which the file name of your model does not carry. Add `uniprotId`
-beside `url` to supply it, but only for a full-length model of the canonical
-UniProt sequence numbered from 1:
+accession, which the file name of your model does not carry. A ModelCIF that
+names each entity's UniProt entry in `ma_target_ref_db_details`, as every
+AlphaFold DB file does, supplies it chain by chain with nothing added. Otherwise
+add `uniprotId` beside `url` to supply it, but only for a full-length model of
+the canonical UniProt sequence numbered from 1:
 [UniProt feature tracks](uniprot-feature-tracks.md#your-own-models) explains
 why. The genome mapping does not depend on this — it comes from the alignment
 either way.

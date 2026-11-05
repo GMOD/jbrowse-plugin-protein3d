@@ -11,6 +11,7 @@ working links.
 | `url`                            | Yes\*    | Structure file URL (PDB or mmCIF)                                                      |
 | `data`                           | Yes\*    | The structure file's text, inline, for a structure no url serves                       |
 | `uniprotId`                      | Yes\*    | UniProt accession: the AlphaFold model, or beside `url` the UniProt tracks' entry      |
+| `alphaFoldComplexId`             | Yes\*    | AlphaFold DB complex model id, `AF-0000000066211449`; see [below](#complexes)          |
 | `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url`                                                 |
 | `structures`                     | Yes\*    | Several structures in one view; see [below](#structures)                               |
 | `gene`                           | Yes\*    | Gene name, found through the assembly's text search index; enough on its own           |
@@ -49,10 +50,11 @@ working links.
 | `silhouettes`                    | No       | Outlines around every object, for a figure                                             |
 | `occlusion`                      | No       | Ambient occlusion, for a figure                                                        |
 
-\* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`, `pdbId` or
-`structures`), or both. `gene` finds the transcript, the AlphaFold model and the
-genome view itself, and takes any of the others as an override. Without `gene`,
-`transcriptId` and a `connectedView` link the structure to the genome.
+\* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`,
+`alphaFoldComplexId`, `pdbId` or `structures`), or both. `gene` finds the
+transcript, the AlphaFold model and the genome view itself, and takes any of the
+others as an override. Without `gene`, `transcriptId` and a `connectedView` link
+the structure to the genome.
 
 The launch warns about a key it does not take (`ignored unknown key(s): hieght`)
 and a setting of the wrong type (`` `height` is not a number ``), drops it, and
@@ -68,8 +70,10 @@ says nothing about the rest:
 
 1. `data`, read as given; a `url` beside `data` is not fetched.
 2. `url`.
-3. `uniprotId`: the model AlphaFold DB's prediction API names for the accession.
-4. `pdbId`: `<pdbId>.cif` from RCSB.
+3. `alphaFoldComplexId`: the file AlphaFold DB's prediction API names for the
+   complex.
+4. `uniprotId`: the model AlphaFold DB's prediction API names for the accession.
+5. `pdbId`: `<pdbId>.cif` from RCSB.
 
 A `structures: [...]` session snapshot follows the same order, since both go
 through `resolveStructureUrl` and then the structure loader.
@@ -79,6 +83,39 @@ unless the `url` is in the PDB archive (RCSB or PDBe). For a PDB entry, by
 `pdbId` or by such a `url`, SIFTS names the UniProt entry and sets the residue
 numbering, and a `uniprotId` beside it changes neither. See
 [residue numbering](residue-numbering.md).
+
+## Complexes
+
+AlphaFold DB has predicted homomers and complexes of two proteins for many human
+proteins; the launch dialog's AlphaFold tab lists them beside the monomer, with
+each partner and its ipTM and pLDDT. A spec opens one by its model id, or by its
+file url (`https://alphafold.ebi.ac.uk/files/AF-0000000066211449-model_v1.cif`):
+
+```json
+{
+  "type": "ProteinView",
+  "alphaFoldComplexId": "AF-0000000066211449",
+  "transcriptId": "NM_000454.5",
+  "connectedView": {
+    "assembly": "hg38",
+    "loc": "chr21:31,659,666-31,668,931",
+    "tracks": ["hg38-ncbiRefSeqCurated"]
+  }
+}
+```
+
+The file name of a complex names no protein, so the UniProt entry of each chain
+comes from the file itself, ModelCIF's `ma_target_ref_db_details`, which every
+AlphaFold DB model carries. The UniProt tracks and AlphaMissense follow the
+chain the transcript maps to, so picking a heterodimer's partner chain in the
+chain picker shows the partner's features, and a `uniprotId` beside a complex
+changes nothing. The structure is labelled by its proteins,
+`AlphaFold complex SOD1 ×2` or `AlphaFold complex GSTP1 + GSTM1`, once the file
+has loaded.
+
+Only the transcript's chain maps to the genome. A heterodimer's partner chain
+stays grey under AlphaMissense and the other per-residue colors, and hovering it
+lights nothing on the genome.
 
 ## `color`
 
@@ -242,11 +279,12 @@ removes, where an alternative exon lands, whether an exon matches a domain.
 ## `structures`
 
 Each entry of `structures` is one structure: a source (`url`, `data`,
-`uniprotId` or `pdbId`) and, optionally, `initialTranscriptResidues`,
-`initialResidues`, `initialSelection`, `mappedEntityId`, `pairwiseAlignment`,
-`alignmentImported`, `hidden` and `assembly`. `feature`,
-`userProvidedTranscriptSequence` and `connectedViewId` written on the launch are
-the defaults every entry shares, and an entry may carry its own.
+`uniprotId`, `alphaFoldComplexId` or `pdbId`) and, optionally,
+`initialTranscriptResidues`, `initialResidues`, `initialSelection`,
+`mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden` and
+`assembly`. `feature`, `userProvidedTranscriptSequence` and `connectedViewId`
+written on the launch are the defaults every entry shares, and an entry may
+carry its own.
 
 Written on the launch itself, the per-structure keys describe its one structure.
 Beside `structures` they apply to no structure, so the launch reports each by
