@@ -1,6 +1,7 @@
 ---
 name: todo
-description: Index of the open action items in todo/, grouped by what to do first. Read
+description:
+  Index of the open action items in todo/, grouped by what to do first. Read
   when picking up work, and before filing anything new here.
 ---
 
