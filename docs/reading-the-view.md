@@ -75,10 +75,11 @@ return view.report
 - `superposition` says how a structure after the first was placed on it:
   `method` is `tm-align`, `residue-pairs` (a chain too short or too unlike the
   first's for TM-align, fit on its transcript-matched residues) or `unmoved`
-  (too few of those to fit). `structure` and `pivot` name the chain copies
-  aligned; `tmScore`, `rmsd` and `alignedLength` are TM-align's over those
-  chains, and `pairs` is the residues aligned to the same transcript position
-  and their RMSD as placed. `description` is the header chip's tooltip and the
+  (too few of those, or under half of them identical, to be the same protein's).
+  `structure` and `pivot` name the chain copies aligned; `tmScore`, `rmsd` and
+  `alignedLength` are TM-align's over those chains, and `pairs` counts the
+  residues aligned to the same transcript position, with their `identity` and,
+  once placed, their `rmsd`. `description` is the header chip's tooltip and the
   line in Mol\*'s log. Absent for the first structure and a lone one.
 
 ## Locating a residue

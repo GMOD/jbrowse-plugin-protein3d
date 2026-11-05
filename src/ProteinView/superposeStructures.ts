@@ -2,9 +2,9 @@ import loadMolstar from './loadMolstar'
 import { serialPerPlugin } from './serialPerPlugin'
 import { structureRootCell } from './structureCells'
 import {
-  MIN_RESIDUE_PAIRS,
   describeSuperposition,
   dissimilarFold,
+  pairsCorrespond,
   shortChain,
 } from './superpositionOutcome'
 
@@ -12,6 +12,7 @@ import type * as MolstarExports from './molstarExports'
 import type {
   FallbackReason,
   ResiduePairFit,
+  ResiduePairs,
   SuperposedChain,
   SuperpositionOutcome,
 } from './superpositionOutcome'
@@ -27,9 +28,9 @@ const SuperpositionTag = 'SuperpositionTransform'
 
 export interface LoadMapping {
   entityId: string
-  /** the transcript position each aligned residue pairs with, by
+  /** each aligned residue's transcript position and one-letter code, by
    * label_seq_id */
-  transcriptPositions: ReadonlyMap<number, number>
+  residues: ReadonlyMap<number, { transcript: number; code: string }>
   /** the author chains drawn, when only some are */
   drawnChains?: readonly string[]
 }
@@ -99,24 +100,30 @@ interface Point {
   x: number
   y: number
   z: number
+  code: string
 }
 
 // each traced residue's position, by the transcript position it aligns to
 function transcriptTrace(
   { StructureElement, StructureProperties: SP }: Molstar,
   loci: TraceLoci,
-  transcriptPositions: ReadonlyMap<number, number>,
+  residues: LoadMapping['residues'],
 ) {
   const byTranscript = new Map<number, Point>()
   StructureElement.Loci.forEachLocation(loci, ({ unit, element }) => {
-    const t = transcriptPositions.get(
+    const residue = residues.get(
       SP.residue.label_seq_id(
         StructureElement.Location.create(loci.structure, unit, element),
       ),
     )
-    if (t !== undefined && !byTranscript.has(t)) {
+    if (residue && !byTranscript.has(residue.transcript)) {
       const { conformation: c } = unit
-      byTranscript.set(t, { x: c.x(element), y: c.y(element), z: c.z(element) })
+      byTranscript.set(residue.transcript, {
+        x: c.x(element),
+        y: c.y(element),
+        z: c.z(element),
+        code: residue.code,
+      })
     }
   })
   return byTranscript
@@ -174,7 +181,7 @@ function loadTrace(
         residues: molstar.StructureElement.Loci.size(loci),
         trace:
           traced.chain !== undefined && mapping
-            ? transcriptTrace(molstar, loci, mapping.transcriptPositions)
+            ? transcriptTrace(molstar, loci, mapping.residues)
             : undefined,
       }
     : undefined
@@ -192,6 +199,15 @@ function residuePairs(
 
 type Pairs = ReturnType<typeof residuePairs>
 
+function pairStats(pairs: Pairs): ResiduePairs {
+  return {
+    count: pairs.length,
+    identity: pairs.length
+      ? pairs.filter(({ a, b }) => a.code === b.code).length / pairs.length
+      : 0,
+  }
+}
+
 function placedRmsd(
   { Vec3 }: Molstar,
   pairs: Pairs,
@@ -206,7 +222,7 @@ function placedRmsd(
       ),
     0,
   )
-  return { count: pairs.length, rmsd: Math.sqrt(sum / pairs.length) }
+  return { ...pairStats(pairs), rmsd: Math.sqrt(sum / pairs.length) }
 }
 
 function fitPairs({ MinimizeRmsd }: Molstar, pairs: Pairs) {
@@ -227,7 +243,8 @@ type Trace = NonNullable<ReturnType<typeof loadTrace>>
  * Where `mobile` goes: TM-align's placement, unless both chains map to the
  * transcript and the shorter is too short to have a fold or TM-align finds
  * none, in which case the residues aligned to the same transcript positions
- * decide, and with too few of them it stays where its file places it.
+ * decide; with too few of them, or too few identical to be the same
+ * protein's, it stays where its file places it.
  */
 function place(molstar: Molstar, pivot: Trace, mobile: Trace) {
   const mapped = !!pivot.trace && !!mobile.trace
@@ -236,8 +253,8 @@ function place(molstar: Molstar, pivot: Trace, mobile: Trace) {
   const ends = { structure: mobile.chain, pivot: pivot.chain }
 
   const fallBack = (reason: FallbackReason) => {
-    const fit =
-      pairs.length >= MIN_RESIDUE_PAIRS ? fitPairs(molstar, pairs) : undefined
+    const stats = pairStats(pairs)
+    const fit = pairsCorrespond(stats) ? fitPairs(molstar, pairs) : undefined
     return fit
       ? {
           transform: fit.bTransform,
@@ -245,7 +262,7 @@ function place(molstar: Molstar, pivot: Trace, mobile: Trace) {
             method: 'residue-pairs',
             ...ends,
             reason,
-            pairs: { count: pairs.length, rmsd: fit.rmsd },
+            pairs: { ...stats, rmsd: fit.rmsd },
           } satisfies SuperpositionOutcome,
         }
       : {
@@ -254,7 +271,7 @@ function place(molstar: Molstar, pivot: Trace, mobile: Trace) {
             method: 'unmoved',
             ...ends,
             reason,
-            pairCount: pairs.length,
+            pairs: stats,
           } satisfies SuperpositionOutcome,
         }
   }

@@ -304,8 +304,12 @@ Two thresholds are measured choices, not taste:
   3.14. Pairs are the fallback, for a chain under 30 traced residues or a
   TM-score under 0.5, and the structure's header row and Mol\*'s log say so.
 
-A fallback fit on a low-similarity mapping is honest but rarely useful: 9BTM
-re-mapped to SHOC2 fits 48 chance pairs at 10.9 Å, flagged by both chips.
+**A pair fit is gated on identity over the pairs, not on RMSD.** 9BTM re-mapped
+to SHOC2 paired 48 chance residues at 27% identity, and fitting them put a
+leucine-rich repeat on a GTPase at 10.9 Å; it now stays unmoved. An RMSD cutoff
+would have rejected the right answer instead: 7OW4's peptide fits its 8 pairs,
+identical 8 of 8, at 4.62 Å, because a peptide in an MHC groove is not in the
+model's conformation. The gate is 50%, above the best ribosome decoy's 29%.
 
 ## Everything on one Mol\* plugin hears everything
 

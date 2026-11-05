@@ -24,7 +24,7 @@ const TestStructure = types
     alignmentPending: false,
     pairwiseAlignment: undefined as object | undefined,
     mappedEntity: undefined as
-      { entityId: string; seqIds: number[] } | undefined,
+      { entityId: string; seq: string; seqIds: number[] } | undefined,
     coordinateMapper: undefined as
       | {
           maps: { structureSeqToTranscriptSeqPosition: Record<number, number> }
@@ -46,7 +46,7 @@ const TestStructure = types
       seqIds: number[],
       structureSeqToTranscriptSeqPosition: Record<number, number>,
     ) {
-      self.mappedEntity = { entityId, seqIds }
+      self.mappedEntity = { entityId, seq: 'MKV', seqIds }
       self.coordinateMapper = { maps: { structureSeqToTranscriptSeqPosition } }
       self.pairwiseAlignment = {}
     },
@@ -248,9 +248,9 @@ test('hands over the mapped chain, its residues by label_seq_id', () => {
   run()
   expect(mockSuperpose.mock.calls[0]?.[1][1]?.mapping).toEqual({
     entityId: '2',
-    transcriptPositions: new Map([
-      [5, 10],
-      [7, 12],
+    residues: new Map([
+      [5, { transcript: 10, code: 'M' }],
+      [7, { transcript: 12, code: 'V' }],
     ]),
     drawnChains: undefined,
   })
@@ -272,7 +272,7 @@ test('each structure keeps its outcome until it is the only one', async () => {
     structure: { label: 'b' },
     pivot: { label: 'a' },
     reason: { kind: 'dissimilar', tmScore: 0.2 },
-    pairCount: 0,
+    pairs: { count: 0, identity: 0 },
   } satisfies SuperpositionOutcome
   mockSuperpose.mockResolvedValue([undefined, outcome])
   const { host, run } = setup({}, 2)

@@ -4,6 +4,7 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
 import { superposeStructures } from './superposeStructures'
+import { describeSuperposition } from './superpositionOutcome'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 import { loadCaOnly } from '../test_data/molstarPlugin'
 
@@ -29,17 +30,28 @@ function load(
 const residues = (n: number, comp = 'ALA') =>
   Array.from({ length: n }, () => comp)
 
-// label_seq_id 1.. aligned to transcript positions from `start`
+// label_seq_id 1.. aligned to transcript positions from `start`, each
+// spelled `code`
 function mapped(
   entityId: string,
   n: number,
-  start = 0,
-  drawnChains?: string[],
+  {
+    start = 0,
+    drawnChains,
+    code = 'A',
+  }: {
+    start?: number
+    drawnChains?: string[]
+    code?: string
+  } = {},
 ) {
   return {
     entityId,
-    transcriptPositions: new Map(
-      Array.from({ length: n }, (_, i) => [i + 1, start + i] as const),
+    residues: new Map(
+      Array.from(
+        { length: n },
+        (_, i) => [i + 1, { transcript: start + i, code }] as const,
+      ),
     ),
     drawnChains,
   }
@@ -171,7 +183,7 @@ test('of several copies the first drawn one is aligned', async () => {
     [gene],
     mapped('1', 40),
     dimer,
-    mapped('1', 40, 0, ['B']),
+    mapped('1', 40, { drawnChains: ['B'] }),
     { drawChains: ['B'] },
   )
   expect(drawn.outcome?.structure.chain).toBe('B')
@@ -197,12 +209,12 @@ test('a short mapped chain is fit on its residue pairs', async () => {
     [gene],
     mapped('1', 40),
     [{ ...gene, residues: residues(10) }, partner],
-    mapped('1', 10, 4),
+    mapped('1', 10, { start: 4 }),
   )
   expect(outcome).toMatchObject({
     method: 'residue-pairs',
     reason: { kind: 'short', residues: 10, of: { chain: 'A' } },
-    pairs: { count: 10 },
+    pairs: { count: 10, identity: 1 },
   })
   expect(
     outcome?.method === 'residue-pairs' && outcome.pairs.rmsd,
@@ -234,7 +246,28 @@ test('with too few residue pairs to fit, the structure stays put', async () => {
   expect(outcome).toMatchObject({
     method: 'unmoved',
     reason: { kind: 'short' },
-    pairCount: 3,
+    pairs: { count: 3 },
   })
+  expect(moved).toEqual([])
+})
+
+// 7OW4's NRAS peptide pairs 8 of 8 residues with the NRAS model and is fit on
+// them; NRAS re-mapped to 9BTM's SHOC2 paired 48 chance residues at 27%, and
+// a fit on those put a leucine-rich repeat on a GTPase at 10.9 Å
+test('residue pairs too unalike to be the same protein do not move it', async () => {
+  const { outcome, moved } = await superposeTwo(
+    [gene],
+    mapped('1', 40),
+    [{ ...gene, extended: true, residues: residues(40, 'GLY') }],
+    mapped('1', 40, { code: 'G' }),
+  )
+  expect(outcome).toMatchObject({
+    method: 'unmoved',
+    reason: { kind: 'dissimilar' },
+    pairs: { count: 40, identity: 0 },
+  })
+  expect(outcome && describeSuperposition(outcome)).toMatch(
+    /are 0% identical, under the 50% that says they are the same protein's/,
+  )
   expect(moved).toEqual([])
 })

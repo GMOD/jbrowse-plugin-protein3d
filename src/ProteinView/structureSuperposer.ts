@@ -17,7 +17,11 @@ export type SuperposedStructure = IAnyStateTreeNode & {
   readonly alignmentPending: boolean
   readonly pairwiseAlignment: unknown
   readonly mappedEntity:
-    | { readonly entityId: string; readonly seqIds: readonly number[] }
+    | {
+        readonly entityId: string
+        readonly seq: string
+        readonly seqIds: readonly number[]
+      }
     | undefined
   readonly coordinateMapper:
     | {
@@ -51,10 +55,14 @@ function superposedLoad(s: SuperposedStructure): SuperposedLoad {
       entity && map
         ? {
             entityId: entity.entityId,
-            transcriptPositions: new Map(
-              Object.entries(map).flatMap(([pos, t]) => {
-                const seqId = entity.seqIds[Number(pos)]
-                return seqId === undefined ? [] : [[seqId, t] as const]
+            residues: new Map(
+              Object.entries(map).flatMap(([pos, transcript]) => {
+                const i = Number(pos)
+                const seqId = entity.seqIds[i]
+                const code = entity.seq[i]
+                return seqId === undefined || code === undefined
+                  ? []
+                  : [[seqId, { transcript, code }] as const]
               }),
             ),
             drawnChains: s.chains,

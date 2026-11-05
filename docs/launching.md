@@ -211,11 +211,12 @@ the fit, so the gene's own chain lands on the gene's own chain. TM-align places
 it, unless the shorter of the two chains has fewer than 30 traced residues or
 TM-align scores the pair under 0.5 (normalised by the shorter chain). Then the
 structure is fit on the residues the two chains align to the same transcript
-positions, or, with fewer than five of those, left where its file puts it, and
-its row in the header carries a chip saying which, with the numbers in its
-tooltip. Mol\*'s log has one line per structure either way. A structure with no
-transcript is aligned whole, and picking another chain in a row's chain picker
-superposes that structure again by the new chain.
+positions, or left where its file puts it when there are fewer than five of
+those or under half of them are the same amino acid, and its row in the header
+carries a chip saying which, with the numbers in its tooltip. Mol\*'s log has
+one line per structure either way. A structure with no transcript is aligned
+whole, and picking another chain in a row's chain picker superposes that
+structure again by the new chain.
 
 ## The 1D protein view: `ProteinAnnotationView`
 

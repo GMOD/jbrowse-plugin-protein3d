@@ -10,6 +10,12 @@ export const MIN_TM_SCORE = 0.5
 /** The fewest residue pairs a fit by transcript position is trusted on. */
 export const MIN_RESIDUE_PAIRS = 5
 
+/** Identity over those pairs below which they are chance, not the same
+ * protein: NRAS's transcript re-mapped to 9BTM's SHOC2 pairs 48 residues at
+ * 27%, the best decoy among a ribosome's 55 chains reached 29%, and 7OW4's
+ * NRAS peptide pairs 8 of 8. */
+export const MIN_PAIR_IDENTITY = 0.5
+
 export interface SuperposedChain {
   label: string
   /** author chain id of the copy aligned, absent when the whole structure is */
@@ -20,8 +26,13 @@ export type FallbackReason =
   | { kind: 'short'; residues: number; of: SuperposedChain }
   | { kind: 'dissimilar'; tmScore: number }
 
-export interface ResiduePairFit {
+export interface ResiduePairs {
   count: number
+  /** the fraction of pairs whose two residues are the same amino acid */
+  identity: number
+}
+
+export interface ResiduePairFit extends ResiduePairs {
   rmsd: number
 }
 
@@ -47,7 +58,7 @@ export type SuperpositionOutcome =
       structure: SuperposedChain
       pivot: SuperposedChain
       reason: FallbackReason
-      pairCount: number
+      pairs: ResiduePairs
     }
 
 /**
@@ -72,6 +83,10 @@ export function shortChain(
 
 export function dissimilarFold(tmScore: number): FallbackReason | undefined {
   return tmScore < MIN_TM_SCORE ? { kind: 'dissimilar', tmScore } : undefined
+}
+
+export function pairsCorrespond({ count, identity }: ResiduePairs) {
+  return count >= MIN_RESIDUE_PAIRS && identity >= MIN_PAIR_IDENTITY
 }
 
 export function chainName({ label, chain }: SuperposedChain) {
@@ -102,7 +117,12 @@ export function describeSuperposition(outcome: SuperpositionOutcome) {
     const { reason, pairs } = outcome
     return `${reasonText(reason)}, so ${mobile} was superposed on ${pivot} by the ${pairs.count} residues aligned to the same transcript positions (RMSD ${pairs.rmsd.toFixed(2)} Å).`
   }
-  return `${reasonText(outcome.reason)}, and only ${outcome.pairCount} residues align to the same transcript positions as ${pivot}'s, so ${mobile} was left where its file places it.`
+  const { count, identity } = outcome.pairs
+  const why =
+    count < MIN_RESIDUE_PAIRS
+      ? `only ${count} residues align to the same transcript positions as ${pivot}'s`
+      : `the ${count} residues aligned to the same transcript positions as ${pivot}'s are ${Math.round(identity * 100)}% identical, under the ${MIN_PAIR_IDENTITY * 100}% that says they are the same protein's`
+  return `${reasonText(outcome.reason)}, and ${why}, so ${mobile} was left where its file places it.`
 }
 
 /** The header chip's text, for a superposition the reader should know of. */
