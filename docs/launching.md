@@ -131,7 +131,8 @@ the UniProt feature tracks. [demos.md](demos.md) collects more structures like
 it, and [harness/](../harness/) runs the mapping on them in isolation.
 
 `transcriptId` works with a plain `url` too, which is how a link opens a
-structure you predicted yourself: see
+structure you predicted yourself, and with `datasetId`, which opens the one a
+dataset in the site's config lists for the transcript: see
 [your own structures](your-own-structures.md).
 
 Given `transcriptId`, the plugin:
@@ -190,11 +191,11 @@ details.
 `structures` opens one view holding several structures, superposed with TM-align
 and each mapped to the same transcript — what the view's **Add structure...**
 dialog builds by hand, and what the launch dialog opens when several rows of its
-structure list are checked (the AlphaFold model first, so the rest are placed on
-it; a short fragment opens on its own). Each entry takes `url`, `data`,
-`uniprotId` or `pdbId`, and may carry its own `initialTranscriptResidues`,
-`initialResidues` or `initialSelection`, a `mappedEntityId`, a
-`pairwiseAlignment`, `hidden`, and a `feature` and
+structure list are checked (a dataset's structure, else the AlphaFold model,
+first, so the rest are placed on it; a short fragment opens on its own). Each
+entry takes `url`, `data`, `uniprotId`, `pdbId` or `datasetId`, and may carry
+its own `initialTranscriptResidues`, `initialResidues` or `initialSelection`, a
+`mappedEntityId`, a `pairwiseAlignment`, `hidden`, and a `feature` and
 `userProvidedTranscriptSequence` of its own where the launch-wide ones do not
 apply. Those same keys written on the launch are the one-structure shorthand;
 beside `structures` a source or a selection written there applies to no

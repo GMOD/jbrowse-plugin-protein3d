@@ -15,6 +15,7 @@ working links.
 | `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url`                                                 |
 | `structures`                     | Yes\*    | Several structures in one view; see [below](#structures)                               |
 | `gene`                           | Yes\*    | Gene name, found through the assembly's text search index; enough on its own           |
+| `datasetId`                      | Yes\*    | A dataset of the config's `protein3d.datasets`; see [below](#datasetid)                |
 | `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form)      |
 | `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                         |
 | `feature`                        | No       | Genomic feature for cross-linking                                                      |
@@ -51,10 +52,10 @@ working links.
 | `occlusion`                      | No       | Ambient occlusion, for a figure                                                        |
 
 \* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`,
-`alphaFoldComplexId`, `pdbId` or `structures`), or both. `gene` finds the
-transcript, the AlphaFold model and the genome view itself, and takes any of the
-others as an override. Without `gene`, `transcriptId` and a `connectedView` link
-the structure to the genome.
+`alphaFoldComplexId`, `pdbId`, `datasetId` or `structures`), or both. `gene`
+finds the transcript, the AlphaFold model and the genome view itself, and takes
+any of the others as an override. Without `gene`, `transcriptId` and a
+`connectedView` link the structure to the genome.
 
 The launch warns about a key it does not take (`ignored unknown key(s): hieght`)
 and a setting of the wrong type (`` `height` is not a number ``), drops it, and
@@ -280,7 +281,7 @@ removes, where an alternative exon lands, whether an exon matches a domain.
 ## `structures`
 
 Each entry of `structures` is one structure: a source (`url`, `data`,
-`uniprotId`, `alphaFoldComplexId` or `pdbId`) and, optionally,
+`uniprotId`, `alphaFoldComplexId`, `pdbId` or `datasetId`) and, optionally,
 `initialTranscriptResidues`, `initialResidues`, `initialSelection`,
 `mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden` and
 `assembly`. `feature`, `userProvidedTranscriptSequence` and `connectedViewId`
@@ -307,6 +308,40 @@ so each needs `showAlignment`. `showAllFeatureTracks`, `compactTracks` and
 `trackHeight` change the feature tracks, so each needs `showAlignment` and
 `showProteinTracks`. The view clamps a `trackHeight` outside 2 to 40 px to the
 nearer limit.
+
+## `datasetId`
+
+`datasetId` names one of the datasets a site's config declares under
+`protein3d.datasets`
+([your own structures](your-own-structures.md#for-a-whole-genome-a-dataset-in-the-config)),
+and opens the structure its mapping file lists under the launch's
+`transcriptId`, else under its `gene`. The id is matched as the dialog matches
+it: a version on one side only, and Ensembl's and NCBI's prefixes, are ignored.
+The launch takes the first line listed under the id, as its `url`, and the
+line's UniProt accession as `uniprotId` unless the launch names one.
+
+```json
+{
+  "type": "ProteinView",
+  "datasetId": "colabfold",
+  "transcriptId": "ENST00000369535",
+  "connectedView": {
+    "assembly": "hg38",
+    "loc": "chr1:114,704,469-114,716,894",
+    "tracks": ["hg38-gencode"]
+  }
+}
+```
+
+An entry of `structures` may carry its own `datasetId`, looked up by the same
+`transcriptId` or `gene`, to put the site's structure beside AlphaFold DB's or a
+PDB entry:
+`"structures": [{ "datasetId": "colabfold" }, { "uniprotId": "P01111" }]`.
+
+The launch fails with an on-screen error when the config declares no dataset by
+that id, when the launch names neither `transcriptId` nor `gene`, or when the
+dataset lists nothing under them. A `gene` alone finds a structure only in a set
+keyed by gene; name the `transcriptId` for one keyed by transcript.
 
 ## `variant`
 
