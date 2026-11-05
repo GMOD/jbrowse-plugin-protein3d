@@ -282,6 +282,31 @@ was built would give exactly that, and color no longer reads the snapshot (see
 the live-tree section), but the failure was never reproduced to prove it. A
 repeat means the cause was something else: treat it as a real race, not noise.
 
+## Superposition aligns by the mapped chain, and says when it cannot
+
+Mol\*'s `tmAlign` flattens every chain it is given into one with no breaks, so
+until 2026-11-05 a partner, a second copy or DNA steered the fit: 7OW4's MHC
+heavy chain landed on the NRAS model with the NRAS peptide 15 Å from its own
+residues, 1TUP put copy C rather than A on the p53 model, and the logged RMSD
+(38 Å for a 0.9 Å fit) meant nothing. `superposeStructures` now aligns one copy
+of each load's mapped chain, the first drawn, which is also the copy highlight
+labels sit on. It waits for every alignment, since the alignment names the
+chain, and re-runs when the chain picker changes it.
+
+Two thresholds are measured choices, not taste:
+
+- **The TM-score gate is normalised by the shorter chain, not the pivot.** By
+  the pivot, 1TUP's 196-residue core on the 393-residue p53 model scores 0.49
+  for a 1.06 Å fit and would have fallen back; by the shorter chain it is 0.98.
+- **TM-align stays the main method.** A fit on transcript-matched residue pairs
+  everywhere was worse on full domains: NRAS's disordered tail (170–189) pulls a
+  plain fit of the AF NRAS/SOS1 complex to 4.00 Å, where TM-align's core fit is
+  3.14. Pairs are the fallback, for a chain under 30 traced residues or a
+  TM-score under 0.5, and the structure's header row and Mol\*'s log say so.
+
+A fallback fit on a low-similarity mapping is honest but rarely useful: 9BTM
+re-mapped to SHOC2 fits 48 chance pairs at 10.9 Å, flagged by both chips.
+
 ## Everything on one Mol\* plugin hears everything
 
 Every structure of a view subscribes to the same plugin's interactions, and
