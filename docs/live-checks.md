@@ -13,9 +13,9 @@ Copy `serveCandidateBundle` from `scripts/check-demos.mjs`: a CDP `Fetch.enable`
 on `*jbrowse-plugin-protein3d*` answers the plugin's own requests from `dist/`
 by path (the molstar chunk included) and strips the plugin's
 subresource-integrity hash from the store manifest. Nothing else is intercepted;
-intercepting every request breaks the host (see CLAUDE.md, "Host
-compatibility"). Launch Chrome with `--no-sandbox --disable-setuid-sandbox` and
-no GL flag, as the scripts do.
+intercepting every request breaks the host (see
+`agent-docs/reference/testing.md`). Launch Chrome with
+`--no-sandbox --disable-setuid-sandbox` and no GL flag, as the scripts do.
 
 Open
 `https://jbrowse.org/code/jb2/<host>/?config=/ucsc/hg38/config.json&session=spec-…`

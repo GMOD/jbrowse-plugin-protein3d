@@ -2,6 +2,9 @@
 
 Top level is exactly `TODO.md` and this file. Everything else is filed:
 
+- `reference/` — settled: why a rule in a `CLAUDE.md` holds, with the
+  measurements, and runbooks. A `CLAUDE.md` keeps only the silent trap and a
+  one-line link here.
 - `ideas/` — a proposal parked, one per file, in the subfolder naming what it
   waits on: `collections/` (several small items in one file). Other subfolders
   (`ready/`, `waiting-on-a-call/`, `waiting-on-a-number/`,

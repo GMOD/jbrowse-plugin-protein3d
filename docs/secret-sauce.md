@@ -90,10 +90,10 @@ the alignment.
 msaview's react-msaview already computes per-column conservation
 (`columnCounts`, `propertyConservation`). Mapping a column to its codon is the
 bridge `connectedHover` already walks for a hover, so conservation can reach the
-structure along the same genome path, never by column number (see the MSA
-section of CLAUDE.md for why a column-number path is wrong). Once the registry
-from idea 1 exists, this is a second data source for it rather than a new
-mechanism.
+structure along the same genome path, never by column number (see
+`agent-docs/reference/genome-mapping.md` for why a column-number path is wrong).
+Once the registry from idea 1 exists, this is a second data source for it rather
+than a new mechanism.
 
 ### 3. A windowed hydropathy row
 
