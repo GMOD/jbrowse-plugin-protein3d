@@ -34,6 +34,28 @@ function parseTrajectory(
   return plugin.builders.structure.parseTrajectory(raw, format)
 }
 
+/** Mol*'s own download reverts a failed request and resolves with a selector
+ * on no cell, which the parse then reports as "Invalid data cell". Kept, the
+ * cell names the failure: "Download failed with status code 429". */
+async function download(plugin: PluginContext, url: string) {
+  const molstar = await loadMolstar()
+  const raw = await plugin.state.data
+    .build()
+    .toRoot()
+    .apply(
+      molstar.StateTransforms.Data.Download,
+      { url, isBinary: isBinaryStructureUrl(url) },
+      { state: { isGhost: true } },
+    )
+    .commit()
+  if (!raw.isOk) {
+    const reason = raw.cell?.errorText?.replace(/^Error: /, '') ?? 'no data'
+    await removeWithGhosts(plugin, molstar, raw.ref)
+    throw new Error(`Could not download ${url}: ${reason}`)
+  }
+  return raw
+}
+
 /** Download or ingest a structure and parse it into a trajectory, with the
  * format sniffed from the content or the url.
  * Needs no renderer, so a headless plugin can run it to read sequences.
@@ -61,10 +83,7 @@ export async function parseStructureTrajectory({
     )
   } else if (url !== undefined) {
     parsedAs = structureFormatFromName(url)
-    raw = await plugin.builders.data.download(
-      { url, isBinary: isBinaryStructureUrl(url) },
-      { state: { isGhost: true } },
-    )
+    raw = await download(plugin, url)
   } else {
     throw new Error('a structure needs either data or a url')
   }

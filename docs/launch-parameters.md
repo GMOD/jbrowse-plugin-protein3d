@@ -73,7 +73,8 @@ says nothing about the rest:
 2. `url`.
 3. `alphaFoldComplexId`: the file AlphaFold DB's prediction API names for the
    complex.
-4. `uniprotId`: the model AlphaFold DB's prediction API names for the accession.
+4. `uniprotId`: the accession's own model, as AlphaFold DB's prediction API
+   names it: `P04637` the canonical model, `P04637-4` the isoform's.
 5. `pdbId`: `<pdbId>.cif` from RCSB.
 
 A `structures: [...]` session snapshot follows the same order, since both go

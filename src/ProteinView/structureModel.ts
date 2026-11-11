@@ -2230,10 +2230,10 @@ const Structure = types
 // carries an already-set url, so it passes through unchanged.
 //
 // A given accession outranks the one the url spells, because they differ
-// exactly when it matters: asked for P04637, the loader may open the isoform
-// file AF-P04637-2-F1, and reading the accession back off that url would
-// save P04637-2 — which UniProt's GFF endpoint does not serve, so a reopened
-// session lost its entry link. The entry's features are numbered for the
+// exactly when it matters: a gene launch for P04637 opens the isoform file
+// AF-P04637-2-F1 its transcript was folded from, and reading the accession
+// back off that url would save P04637-2 — which UniProt's GFF endpoint does
+// not serve, so a reopened session lost its entry link. The entry's features are numbered for the
 // entry, not the isoform file, so `structureUniProt` withholds them.
 //
 // A snapshot carrying an alignment but no alignmentImported predates the

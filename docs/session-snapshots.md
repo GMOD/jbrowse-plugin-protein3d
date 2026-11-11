@@ -50,12 +50,15 @@ or `pdbId` (→ RCSB mmCIF):
 
 `pdbId` resolves to `<pdbId>.cif` at hydration and is not stored. The view
 stores `uniprotId`, and the structure loader asks AlphaFold DB's prediction API
-which of the accession's files to open, then fills in `url`. It picks the model
-folded from exactly the transcript's translation where one exists — so an
-isoform launch maps as an identity — else the canonical model, else the longest
-isoform. A spelled `AF-<id>-F1-model_v6.cif` is only the fallback for an
-unreachable API: dystrophin has fourteen isoform models and no F1 fragment, and
-the model version moves under every config already published.
+which of the accession's files to open, then fills in `url`. It opens the
+accession's own model, so `P04637` opens the canonical model even beside an
+isoform's transcript and `P04637-4` opens that isoform's. Only an accession
+AlphaFold DB folded as isoforms alone opens the isoform model folded from
+exactly the transcript's translation, else the longest. A `gene` launch with no
+structure of its own opens its transcript's isoform model by `url`. A spelled
+`AF-<id>-F1-model_v6.cif` is only the fallback for an unreachable API:
+dystrophin has fourteen isoform models and no F1 fragment, and the model version
+moves under every config already published.
 
 An explicit `url` or `data` always wins over both shorthands, and a `uniprotId`
 beside it names the protein for the UniProt tracks instead

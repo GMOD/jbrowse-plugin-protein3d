@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { createServer } from 'node:http'
+
 import {
   StructureElement,
   StructureProperties,
@@ -68,6 +70,29 @@ test('a file with no model says so, and names the parser it tried', async () => 
       parseStructureTrajectory({ plugin, data: 'not a structure\n' }),
     ).rejects.toThrow('No model could be read from the structure data as pdb')
   })
+})
+
+// Mol* reverts a failed download, and the parse after it said only "Invalid
+// data cell", which reads as a broken file rather than AlphaFold DB's 429.
+test('a download that fails names the url and the status', async () => {
+  const server = createServer((_req, res) => {
+    res.writeHead(429, { 'access-control-allow-origin': '*' }).end()
+  })
+  await new Promise<void>(resolve => server.listen(0, '127.0.0.1', resolve))
+  const address = server.address()
+  const port = typeof address === 'object' ? address?.port : undefined
+  const url = `http://127.0.0.1:${port}/AF-P04637-4-F1-model_v6.cif`
+  try {
+    await withTemporaryMolstarPlugin(async plugin => {
+      await expect(parseStructureTrajectory({ plugin, url })).rejects.toThrow(
+        `Could not download ${url}: Download failed with status code 429`,
+      )
+      const { tree } = plugin.state.data
+      expect(tree.children.get(tree.root.ref).size).toBe(0)
+    })
+  } finally {
+    server.close()
+  }
 })
 
 // A crystal's waters drew as a cloud of dots over the cartoon and the sites.
