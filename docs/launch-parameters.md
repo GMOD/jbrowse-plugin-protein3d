@@ -74,7 +74,13 @@ says nothing about the rest:
 3. `alphaFoldComplexId`: the file AlphaFold DB's prediction API names for the
    complex.
 4. `uniprotId`: the accession's own model, as AlphaFold DB's prediction API
-   names it: `P04637` the canonical model, `P04637-4` the isoform's.
+   names it: `P04637` the canonical model, `P04637-4` the isoform's. An
+   accession AlphaFold DB folded as isoforms alone (dystrophin, past the length
+   cap) opens the isoform model folded from exactly the transcript's
+   translation, else the longest. A `uniprotId` written on the launch beside
+   `gene`, with no `structures`, is instead the entry the gene lookup picks the
+   transcript's model from, so it opens the isoform model an isoform transcript
+   was folded from.
 5. `pdbId`: `<pdbId>.cif` from RCSB.
 
 A `structures: [...]` session snapshot follows the same order, since both go

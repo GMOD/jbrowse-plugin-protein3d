@@ -324,11 +324,15 @@ test('a uniprotId structure opens the model AlphaFold DB names for the accession
   expect(mockLoad).toHaveBeenCalledTimes(1)
 })
 
-test('an isoform accession opens its isoform model', async () => {
+test('an isoform accession opens its isoform model, not the one its transcript matches', async () => {
   mockLoad.mockResolvedValue({})
   const { load, structure } = setupAlphaFold(
     { uniprotId: 'P04637-2', transcript: 'MEEPQSDP*' },
-    () => Promise.resolve([alphaFoldModel('P04637-2', 'MEEPQ')]),
+    () =>
+      Promise.resolve([
+        alphaFoldModel('P04637', 'MEEPQSDP'),
+        alphaFoldModel('P04637-2', 'MEEPQ'),
+      ]),
   )
   load()
   await tick()

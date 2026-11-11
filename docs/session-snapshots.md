@@ -54,11 +54,18 @@ which of the accession's files to open, then fills in `url`. It opens the
 accession's own model, so `P04637` opens the canonical model even beside an
 isoform's transcript and `P04637-4` opens that isoform's. Only an accession
 AlphaFold DB folded as isoforms alone opens the isoform model folded from
-exactly the transcript's translation, else the longest. A `gene` launch with no
-structure of its own opens its transcript's isoform model by `url`. A spelled
+exactly the transcript's translation, else the longest. A spelled
 `AF-<id>-F1-model_v6.cif` is only the fallback for an unreachable API:
 dystrophin has fourteen isoform models and no F1 fragment, and the model version
 moves under every config already published.
+
+A `gene` launch picks the transcript's own model, an isoform's for an isoform
+transcript, and writes it as `url` on the structure the launch leaves to the
+gene: when the launch names no structure, or only a `uniprotId` on the launch
+itself. Every entry of `structures` names its own source, so
+`{ "gene": "TP53", "transcriptId": "NM_001126118.2", "structures": [{ "uniprotId": "P04637" }] }`
+opens the canonical model AF-P04637-F1 and aligns the isoform's transcript to
+it.
 
 An explicit `url` or `data` always wins over both shorthands, and a `uniprotId`
 beside it names the protein for the UniProt tracks instead
