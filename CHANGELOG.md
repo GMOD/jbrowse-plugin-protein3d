@@ -1,3 +1,18 @@
+## [1.34.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.33.0...v1.34.0) (2026-11-13)
+
+### Bug Fixes
+
+- A uniprotId structure opens its own accession's AlphaFold model ([01f9e2f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/01f9e2fe5bcab2e4f3d8b80cc5c4f5e6adb4bf50))
+- A failed structure download reverts as Mol*'s own did, and the docs say which launch opens which model ([bf8f290](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bf8f29016a4d91421a77801ca7eae96890f111e0))
+
+### Documentation
+
+- The root CLAUDE.md keeps only the traps a session hits before opening a file ([095ffa7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/095ffa7ad572d103300bafffc43cc058a653ac20))
+
+### Other Changes
+
+- A label writes text beside a site, and mark none draws the label alone ([f0a42b7](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/f0a42b7b7c504764c6368dea3e1b47e0d6671126))
+
 ## [1.33.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.32.0...v1.33.0) (2026-11-05)
 
 ### Documentation
