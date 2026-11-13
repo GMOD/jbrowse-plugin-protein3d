@@ -68,11 +68,14 @@ structure as a figure without a serialized transcript:
   A `cartoon` mark of a chain left out of `chains` draws a partner protein, such
   as a virus's envelope protein, in its own color: its polymer only, where a
   chain site drawn as `spheres` or `sticks` takes the chain's glycans and waters
-  too. A bare `G` is the component, every guanine. A `site` is an address in the
-  structure's own numbering, the one `distances` and figure anchors use, not a
-  field predicate. A session written with the older `style` and string `color`
-  (1.23 and 1.24) loads in this spelling; one whose marks or distances still do
-  not read is refused with the reason.
+  too. A bare `G` is the component, every guanine. `label` writes text beside
+  the site, in the mark's color on a white ground, such as a gene's name on its
+  chain (`{ "site": "A:*", "mark": "none", "label": "VHL" }`); `mark: "none"`
+  draws the label alone. A `site` is an address in the structure's own
+  numbering, the one `distances` and figure anchors use, not a field predicate.
+  A session written with the older `style` and string `color` (1.23 and 1.24)
+  loads in this spelling; one whose marks or distances still do not read is
+  refused with the reason.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
   Å, with an optional `encoding.color.value`.
 

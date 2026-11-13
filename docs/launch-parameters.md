@@ -6,50 +6,50 @@ working links.
 
 ## Arguments
 
-| Parameter                        | Required | Description                                                                            |
-| -------------------------------- | -------- | -------------------------------------------------------------------------------------- |
-| `url`                            | Yes\*    | Structure file URL (PDB or mmCIF)                                                      |
-| `data`                           | Yes\*    | The structure file's text, inline, for a structure no url serves                       |
-| `uniprotId`                      | Yes\*    | UniProt accession: the AlphaFold model, or beside `url` the UniProt tracks' entry      |
-| `alphaFoldComplexId`             | Yes\*    | AlphaFold DB complex model id, `AF-0000000066211449`; see [below](#complexes)          |
-| `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url`                                                 |
-| `structures`                     | Yes\*    | Several structures in one view; see [below](#structures)                               |
-| `gene`                           | Yes\*    | Gene name, found through the assembly's text search index; enough on its own           |
-| `datasetId`                      | Yes\*    | A dataset of the config's `protein3d.datasets`; see [below](#datasetid)                |
-| `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form)      |
-| `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                         |
-| `feature`                        | No       | Genomic feature for cross-linking                                                      |
-| `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                           |
-| `connectedView`                  | No       | LinearGenomeView settings (`loc`/`assembly`/`tracks`) to create and connect one        |
-| `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back             |
-| `color`                          | No       | A color object such as `{ "field": "alphaMissense" }`; see [below](#color)             |
-| `displayName`                    | No       | View name; defaults to the transcript and structure labels                             |
-| `height`                         | No       | View height in pixels (default: 650)                                                   |
-| `showControls`                   | No       | Show Mol\* controls panel                                                              |
-| `showHighlight`                  | No       | Mark the aligned residues on the structure and in the alignment panel †                |
-| `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                      |
-| `showProteinTracks`              | No       | Show the feature tracks (default: true) ‡                                              |
-| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true) ‡                            |
-| `trackHeight`                    | No       | Height in px of one feature-track row, 2 to 40, overriding `compactTracks` ‡           |
-| `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track ‡                       |
-| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue ‡                                          |
-| `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                            |
-| `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view                    |
-| `variant`                        | No       | A base or change, `chr17:7674220 C>T`, labelled and selected; see [below](#variant)    |
-| `initialTranscriptResidues`      | No       | `{ start, end }` or an array of them: 1-based transcript residues lit on load          |
-| `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)          |
-| `initialSelection`               | No       | The same as 0-based half-open position ranges, for callers that already have them      |
-| `mappedEntityId`                 | No       | mmCIF entity id the transcript maps to; chosen by alignment when absent                |
-| `pairwiseAlignment`              | No       | `{ consensus, alns: [{ id, seq }, { id, seq }] }`, transcript row first, used as given |
-| `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present         |
-| `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed               |
-| `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file  |
-| `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figure sessions](figure-sessions.md)  |
-| `surface`                        | No       | A translucent molecular surface, `{ opacity }`                                         |
-| `marks`                          | No       | Sites drawn as spheres, sticks or a cartoon, such as `[{ "site": "A:248" }]`           |
-| `distances`                      | No       | Dashed distances between two sites, such as `[{ "a": "A:46", "b": "A:80" }]`           |
-| `silhouettes`                    | No       | Outlines around every object, for a figure                                             |
-| `occlusion`                      | No       | Ambient occlusion, for a figure                                                        |
+| Parameter                        | Required | Description                                                                                            |
+| -------------------------------- | -------- | ------------------------------------------------------------------------------------------------------ |
+| `url`                            | Yes\*    | Structure file URL (PDB or mmCIF)                                                                      |
+| `data`                           | Yes\*    | The structure file's text, inline, for a structure no url serves                                       |
+| `uniprotId`                      | Yes\*    | UniProt accession: the AlphaFold model, or beside `url` the UniProt tracks' entry                      |
+| `alphaFoldComplexId`             | Yes\*    | AlphaFold DB complex model id, `AF-0000000066211449`; see [below](#complexes)                          |
+| `pdbId`                          | Yes\*    | RCSB entry id; derives the mmCIF `url`                                                                 |
+| `structures`                     | Yes\*    | Several structures in one view; see [below](#structures)                                               |
+| `gene`                           | Yes\*    | Gene name, found through the assembly's text search index; enough on its own                           |
+| `datasetId`                      | Yes\*    | A dataset of the config's `protein3d.datasets`; see [below](#datasetid)                                |
+| `transcriptId`                   | No       | Transcript id/name to resolve from `connectedView` (required with the short form)                      |
+| `userProvidedTranscriptSequence` | No       | Protein sequence for alignment                                                                         |
+| `feature`                        | No       | Genomic feature for cross-linking                                                                      |
+| `connectedViewId`                | No       | ID of an existing connected LinearGenomeView                                                           |
+| `connectedView`                  | No       | LinearGenomeView settings (`loc`/`assembly`/`tracks`) to create and connect one                        |
+| `alignmentAlgorithm`             | No       | 'smith_waterman' (default) or 'needleman_wunsch'; unknown values fall back                             |
+| `color`                          | No       | A color object such as `{ "field": "alphaMissense" }`; see [below](#color)                             |
+| `displayName`                    | No       | View name; defaults to the transcript and structure labels                                             |
+| `height`                         | No       | View height in pixels (default: 650)                                                                   |
+| `showControls`                   | No       | Show Mol\* controls panel                                                                              |
+| `showHighlight`                  | No       | Mark the aligned residues on the structure and in the alignment panel †                                |
+| `showAlignment`                  | No       | Show the pairwise alignment panel (default: true)                                                      |
+| `showProteinTracks`              | No       | Show the feature tracks (default: true) ‡                                                              |
+| `compactTracks`                  | No       | Draw the feature tracks at reduced height (default: true) ‡                                            |
+| `trackHeight`                    | No       | Height in px of one feature-track row, 2 to 40, overriding `compactTracks` ‡                           |
+| `showAllFeatureTracks`           | No       | Also draw the minor UniProt types and the hydrophobicity track ‡                                       |
+| `autoScrollAlignment`            | No       | Scroll the alignment to the hovered residue ‡                                                          |
+| `zoomToBaseLevel`                | No       | Zoom to base level on click (default: true)                                                            |
+| `sideBySide`                     | No       | Place a `connectedView` this launch creates beside the protein view                                    |
+| `variant`                        | No       | A base or change, `chr17:7674220 C>T`, labelled and selected; see [below](#variant)                    |
+| `initialTranscriptResidues`      | No       | `{ start, end }` or an array of them: 1-based transcript residues lit on load                          |
+| `initialResidues`                | No       | The same by author residue numbers, the way a paper cites a site (R248 → 248)                          |
+| `initialSelection`               | No       | The same as 0-based half-open position ranges, for callers that already have them                      |
+| `mappedEntityId`                 | No       | mmCIF entity id the transcript maps to; chosen by alignment when absent                                |
+| `pairwiseAlignment`              | No       | `{ consensus, alns: [{ id, seq }, { id, seq }] }`, transcript row first, used as given                 |
+| `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present                         |
+| `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed                               |
+| `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file                  |
+| `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figure sessions](figure-sessions.md)                  |
+| `surface`                        | No       | A translucent molecular surface, `{ opacity }`                                                         |
+| `marks`                          | No       | Sites drawn as spheres, sticks or a cartoon, with an optional `label`, such as `[{ "site": "A:248" }]` |
+| `distances`                      | No       | Dashed distances between two sites, such as `[{ "a": "A:46", "b": "A:80" }]`                           |
+| `silhouettes`                    | No       | Outlines around every object, for a figure                                                             |
+| `occlusion`                      | No       | Ambient occlusion, for a figure                                                                        |
 
 \* Provide `gene` alone, a structure (`url`, `data`, `uniprotId`,
 `alphaFoldComplexId`, `pdbId`, `datasetId` or `structures`), or both. `gene`
