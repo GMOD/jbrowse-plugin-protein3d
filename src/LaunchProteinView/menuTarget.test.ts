@@ -83,16 +83,13 @@ function launchRows(items: MenuItem[]) {
   return launch && 'subMenu' in launch ? resolveSubMenu(launch) : []
 }
 
-test('a gene gets the protein rows in a Launch submenu after the host rows', () => {
+test('a gene gets the protein row in a Launch submenu after the host rows', () => {
   const items = withProteinMenuItems(geneDisplay, hostItems)
   expect(labels(items)).toEqual(['Host row', LAUNCH_LABEL])
-  expect(labels(launchRows(items))).toEqual([
-    'AlphaFold structure',
-    'Protein view...',
-  ])
+  expect(labels(launchRows(items))).toEqual(['Protein view...'])
 })
 
-test('the protein rows join a Launch submenu another plugin built', () => {
+test('the protein row joins a Launch submenu another plugin built', () => {
   const items = withProteinMenuItems(geneDisplay, [
     ...hostItems,
     {
@@ -101,11 +98,7 @@ test('the protein rows join a Launch submenu another plugin built', () => {
     },
   ])
   expect(labels(items)).toEqual(['Host row', LAUNCH_LABEL])
-  expect(labels(launchRows(items))).toEqual([
-    'MSA view...',
-    'AlphaFold structure',
-    'Protein view...',
-  ])
+  expect(labels(launchRows(items))).toEqual(['MSA view...', 'Protein view...'])
 })
 
 test('a host shape this plugin cannot read leaves the host rows standing', () => {

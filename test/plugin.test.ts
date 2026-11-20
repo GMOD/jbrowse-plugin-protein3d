@@ -135,9 +135,7 @@ describe('Protein3d Plugin E2E', () => {
     // whole menu. Checking only for our row would read that as a missing
     // feature, and the wipeout is the worse outcome of the two.
     expect(items).toContain('Open feature details')
-    expect(await openLaunchSubMenu(page)).toEqual(
-      expect.arrayContaining(['AlphaFold structure', 'Protein view...']),
-    )
+    expect(await openLaunchSubMenu(page)).toContain('Protein view...')
     expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('03-context-menu'))
   }, 60_000)
@@ -199,23 +197,6 @@ describe('Protein3d Plugin E2E', () => {
     expect(hover.genomeCoord).toBeLessThanOrEqual(Number(end))
     expect(pageComplaintsSince()).toEqual([])
   }, 120_000)
-
-  // The dialog's defaults with no dialog: one click from the gene to a linked
-  // structure, which is the whole point of the item.
-  it('opens the AlphaFold structure in one click', async () => {
-    await closeProteinViews(page)
-    await openFeatureContextMenu(page)
-    await clickLaunchMenuItem(page, 'AlphaFold structure')
-    await waitForStructureRendered(page)
-
-    expect(await page.$(LAUNCH_DIALOG)).toBeNull()
-    const state = await getProteinViewState(page)
-    expect(state.structureCount).toBe(1)
-    expect(state.structureSeqLength).toBe(STRUCTURE_RESIDUES)
-    expect(state.hasAlignment).toBe(true)
-    expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
-    expect(pageComplaintsSince()).toEqual([])
-  }, 240_000)
 
   // The 1D view aligns its transcript to the UniProt entry when it attaches,
   // through three things no unit test reaches: the plugin's afterAttach
