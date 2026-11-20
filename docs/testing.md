@@ -19,8 +19,8 @@ path shows up as a failed nightly rather than as a bug report.
 
 `test/plugin.test.ts` drives a real `jbrowse create` instance with the built ESM
 bundle (`pnpm vitest run test/plugin.test.ts`; `SKIP_BUILD=1` reuses `dist/`).
-It clicks all the way through: right-click a gene → `Launch protein view` → wait
-for the dialog to finish resolving → Launch → molstar draws the structure.
+It clicks all the way through: right-click a gene → `Launch › Protein view...` →
+wait for the dialog to finish resolving → Launch → molstar draws the structure.
 
 Every step asserts. There is no logged-and-continue path, because a suite that
 returns early on "no menu items" passes green against a bundle that error-pages

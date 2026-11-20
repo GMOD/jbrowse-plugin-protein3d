@@ -235,10 +235,9 @@ async function probeContextMenu(page) {
   await page.mouse.click(point.x, point.y, { button: 'right' })
   const deadline = Date.now() + 5000
   const hasHostRow = ls => ls.some(l => l.includes('Open feature details'))
-  let labels = []
-  while (Date.now() < deadline && !hasHostRow(labels)) {
-    await new Promise(r => setTimeout(r, 250))
-    labels = await page.$$eval('[role="menuitem"]', els =>
+  const isOurs = ls => ls.some(l => l.includes('Protein view...'))
+  const readLabels = () =>
+    page.$$eval('[role="menuitem"]', els =>
       els
         .filter(
           el =>
@@ -247,12 +246,30 @@ async function probeContextMenu(page) {
         )
         .map(el => el.textContent ?? ''),
     )
+  let labels = []
+  while (Date.now() < deadline && !hasHostRow(labels)) {
+    await new Promise(r => setTimeout(r, 250))
+    labels = await readLabels()
+  }
+  // an open submenu hides its parent menu with aria-hidden, so the host's rows
+  // and the Launch submenu's are two reads
+  let launchLabels = []
+  for (const item of await page.$$('[role="menuitem"]')) {
+    if ((await item.evaluate(el => el.textContent)) === 'Launch') {
+      await item.hover()
+      const subMenuDeadline = Date.now() + 5000
+      while (Date.now() < subMenuDeadline && !isOurs(launchLabels)) {
+        await new Promise(r => setTimeout(r, 250))
+        launchLabels = await readLabels()
+      }
+      break
+    }
   }
   await page.keyboard.press('Escape').catch(() => {})
   return {
     reached: true,
-    labels,
-    ours: labels.some(l => l.includes('Launch protein view')),
+    labels: [...labels, ...launchLabels.map(l => `Launch › ${l}`)],
+    ours: isOurs(launchLabels),
     hostRows: hasHostRow(labels),
   }
 }
@@ -376,7 +393,7 @@ function failure(r) {
                     ? r.consoleComplaints.length > 0
                       ? `the page complained: ${[...new Set(r.consoleComplaints)].slice(0, 3).join(' / ')}`
                       : undefined
-                    : 'no "Launch protein view" row in the feature context menu'
+                    : 'no "Launch › Protein view..." row in the feature context menu'
 }
 
 async function probeWithRetry(version) {

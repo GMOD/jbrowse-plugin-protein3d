@@ -1,5 +1,6 @@
 import { lazy } from 'react'
 
+import { pushLaunchViewMenuItem } from '@jbrowse/core/ui'
 import {
   getContainingTrack,
   getContainingView,
@@ -197,14 +198,14 @@ function proteinMenuItems(self: DisplayModel): MenuItem[] {
   return target && isGeneLikeType(target.type)
     ? [
         {
-          label: 'Open AlphaFold structure',
+          label: 'AlphaFold structure',
           icon: AddIcon,
           onClick: () => {
             openAlphaFoldStructure(self, target)
           },
         },
         {
-          label: 'Launch protein view',
+          label: 'Protein view...',
           icon: AddIcon,
           onClick: () => {
             launchProteinView(self, target)
@@ -221,7 +222,11 @@ export function withProteinMenuItems(
   hostItems: MenuItem[],
 ) {
   try {
-    return [...hostItems, ...proteinMenuItems(self)]
+    const items = [...hostItems]
+    for (const item of proteinMenuItems(self)) {
+      pushLaunchViewMenuItem(items, item)
+    }
+    return items
   } catch (e) {
     console.error('Protein view menu items failed', e)
     return hostItems

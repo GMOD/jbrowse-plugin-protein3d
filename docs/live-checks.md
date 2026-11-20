@@ -63,9 +63,9 @@ catch the dialog mid-fade; don't commit that version.
 
 The dialog is a page of its own to check: right-click a gene on a hosted session
 (a `LinearGenomeView` spec on `protein3d_config.json`'s GENCODE track), choose
-**Launch protein view**, and wait for the structure list to stop saying "Listing
-PDB entries" or "Asking AlphaFold DB". Find the gene the way `host-compat`'s
-`probeContextMenu` does, by hovering until the display reports
+**Launch › Protein view...**, and wait for the structure list to stop saying
+"Listing PDB entries" or "Asking AlphaFold DB". Find the gene the way
+`host-compat`'s `probeContextMenu` does, by hovering until the display reports
 `featureIdUnderMouse`. Checking rows is a click on
 `[data-testid="structure-row-<key>"]` (`alphafold`, `pdb:9btm`, `complex:AF-…`).
 Measure Launch at a 1280×900 viewport: the tab bounds its own height, so

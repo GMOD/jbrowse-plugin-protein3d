@@ -46,8 +46,8 @@ config. The file may be gzipped. The browser fetches the mapping and every
 structure, so the server has to send `Access-Control-Allow-Origin`, as for any
 URL below.
 
-Right-click a gene and choose **Launch protein view**: the **Structures for**
-list then leads with the dataset's structures for that gene, each with the
+Right-click a gene and choose **Launch › Protein view...**: the **Structures
+for** list then leads with the dataset's structures for that gene, each with the
 dataset's name beside it, and checks the first. A structure is offered when its
 id is one of a coding transcript's — its `name`, `ID`, `transcript_id`, or its
 protein's `protein_id` — or else the gene's own name or id, so a set keyed by
@@ -79,10 +79,10 @@ the first dialog that needs it, and reads each line's id and nothing else until
 a gene asks for it, so there is no index file to build. Measured 2026-11-05 on a
 genome's worth of ColabFold paths, 60,000 lines and 7.3 MB (729 kB gzipped):
 served to hosted JBrowse from local disk, the site's row appeared 0.53–0.67 s
-after **Launch protein view** was clicked, against 0.53–0.56 s for a two-line
-file, and Node inflated and indexed the file in well under half a second. What
-grows with the set is the one download, which every dataset in the config makes
-on the first dialog of a page whichever gene was clicked.
+after **Protein view...** was clicked, against 0.53–0.56 s for a two-line file,
+and Node inflated and indexed the file in well under half a second. What grows
+with the set is the one download, which every dataset in the config makes on the
+first dialog of a page whichever gene was clicked.
 
 A session spec opens a dataset's structure too, by `datasetId` beside a
 `transcriptId` or a `gene`; see
@@ -90,7 +90,7 @@ A session spec opens a dataset's structure too, by `datasetId` beside a
 
 ## From the gene: the "Your file or URL" tab
 
-1. Right-click a gene or transcript and choose **Launch protein view**.
+1. Right-click a gene or transcript and choose **Launch › Protein view...**.
 2. Open the **Your file or URL** tab and either pick a local file or paste a
    URL.
 3. Choose the transcript to map. The dialog reads the structure's sequence and

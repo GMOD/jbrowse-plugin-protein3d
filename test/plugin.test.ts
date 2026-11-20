@@ -13,7 +13,7 @@ import {
   checkedStructureRows,
   cleanupJBrowse,
   clickLaunch,
-  clickMenuItem,
+  clickLaunchMenuItem,
   clickStructureRow,
   clinVarTrackFeatures,
   closeProteinViews,
@@ -25,6 +25,7 @@ import {
   launchBrowser,
   openConfig,
   openFeatureContextMenu,
+  openLaunchSubMenu,
   openSessionSpec,
   pageComplaintsSince,
   residueMarkCells,
@@ -126,20 +127,23 @@ describe('Protein3d Plugin E2E', () => {
     await captureScreenshot(page, screenshot('02-tracks-rendered'))
   }, 60_000)
 
-  it('contributes Launch protein view to the feature context menu', async () => {
+  it('contributes its rows to the context menu Launch submenu', async () => {
     const items = await openFeatureContextMenu(page)
-    expect(items).toContain('Launch protein view')
+    expect(items).toContain('Launch')
     // The host's own rows, asserted alongside ours because the plugin extends
     // the display's contextMenuItems and a throw in there costs the user the
     // whole menu. Checking only for our row would read that as a missing
     // feature, and the wipeout is the worse outcome of the two.
     expect(items).toContain('Open feature details')
+    expect(await openLaunchSubMenu(page)).toEqual(
+      expect.arrayContaining(['AlphaFold structure', 'Protein view...']),
+    )
     expect(pageComplaintsSince()).toEqual([])
     await captureScreenshot(page, screenshot('03-context-menu'))
   }, 60_000)
 
   it('launches a protein view with the structure aligned and rendered', async () => {
-    await clickMenuItem(page, 'Launch protein view')
+    await clickLaunchMenuItem(page, 'Protein view...')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await captureScreenshot(page, screenshot('04-protein-dialog'))
 
@@ -200,9 +204,8 @@ describe('Protein3d Plugin E2E', () => {
   // structure, which is the whole point of the item.
   it('opens the AlphaFold structure in one click', async () => {
     await closeProteinViews(page)
-    const items = await openFeatureContextMenu(page)
-    expect(items).toContain('Open AlphaFold structure')
-    await clickMenuItem(page, 'Open AlphaFold structure')
+    await openFeatureContextMenu(page)
+    await clickLaunchMenuItem(page, 'AlphaFold structure')
     await waitForStructureRendered(page)
 
     expect(await page.$(LAUNCH_DIALOG)).toBeNull()
@@ -223,7 +226,7 @@ describe('Protein3d Plugin E2E', () => {
   it('aligns a 1D protein view to its UniProt entry on the host', async () => {
     await closeProteinViews(page)
     await openFeatureContextMenu(page)
-    await clickMenuItem(page, 'Launch protein view')
+    await clickLaunchMenuItem(page, 'Protein view...')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await waitForLaunchEnabled(page)
     await page.click(
@@ -311,7 +314,7 @@ describe('Protein3d Plugin E2E', () => {
   it('launches the AlphaFold model and an experimental complex together', async () => {
     await closeProteinViews(page)
     await openFeatureContextMenu(page)
-    await clickMenuItem(page, 'Launch protein view')
+    await clickLaunchMenuItem(page, 'Protein view...')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await waitForStructureListPainted(page)
 
@@ -1207,7 +1210,7 @@ describe('Protein3d Plugin E2E', () => {
     await waitForJBrowseLoad(page)
     await waitForTrackLoad(page)
     await openFeatureContextMenu(page)
-    await clickMenuItem(page, 'Launch protein view')
+    await clickLaunchMenuItem(page, 'Protein view...')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await waitForStructureListPainted(page)
     expect(await checkedStructureRows(page)).toEqual([SITE_ROW])
@@ -1235,7 +1238,7 @@ describe('Protein3d Plugin E2E', () => {
   it("superposes AlphaFold DB's model onto the dataset's", async () => {
     await closeProteinViews(page)
     await openFeatureContextMenu(page)
-    await clickMenuItem(page, 'Launch protein view')
+    await clickLaunchMenuItem(page, 'Protein view...')
     await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
     await waitForStructureListPainted(page)
     await clickStructureRow(page, 'alphafold')

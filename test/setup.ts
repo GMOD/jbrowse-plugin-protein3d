@@ -685,6 +685,49 @@ export async function hoverGenomeUntilStructureResponds(page: Page): Promise<{
   )
 }
 
+const LAUNCH_ROW = 'Launch'
+
+async function hoverLaunchRow(page: Page) {
+  for (const item of await page.$$('[role="menuitem"]')) {
+    if ((await item.evaluate(el => el.textContent)) === LAUNCH_ROW) {
+      await item.hover()
+      return
+    }
+  }
+  throw new Error(`no context menu item labelled "${LAUNCH_ROW}"`)
+}
+
+/**
+ * Open the context menu's Launch submenu, which the plugin's rows share with
+ * every other plugin's, and return the items of both menus.
+ */
+export async function openLaunchSubMenu(page: Page): Promise<string[]> {
+  const before = (await page.$$('[role="menuitem"]')).length
+  await hoverLaunchRow(page)
+  await page.waitForFunction(
+    n => document.querySelectorAll('[role="menuitem"]').length > n,
+    { timeout: 5000 },
+    before,
+  )
+  return readMenuItems(page)
+}
+
+export async function clickLaunchMenuItem(
+  page: Page,
+  label: string,
+): Promise<void> {
+  await hoverLaunchRow(page)
+  await page.waitForFunction(
+    text =>
+      [...document.querySelectorAll('[role="menuitem"]')].some(el =>
+        el.textContent.includes(text),
+      ),
+    { timeout: 5000 },
+    label,
+  )
+  await clickMenuItem(page, label)
+}
+
 export async function clickMenuItem(page: Page, label: string): Promise<void> {
   for (const item of await page.$$('[role="menuitem"]')) {
     const text = await item.evaluate(el => el.textContent)

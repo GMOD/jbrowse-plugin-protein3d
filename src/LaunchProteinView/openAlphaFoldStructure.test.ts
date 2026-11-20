@@ -1,3 +1,4 @@
+import { resolveSubMenu } from '@jbrowse/core/ui'
 import { SimpleFeature } from '@jbrowse/core/util'
 import { expect, test, vi } from 'vitest'
 
@@ -67,9 +68,9 @@ test('a second click while the lookup runs opens no second view', async () => {
     },
     [],
   )
-  const open = items.find(
-    item => 'label' in item && item.label === 'Open AlphaFold structure',
-  )
+  const open = items
+    .flatMap(item => ('subMenu' in item ? resolveSubMenu(item) : [item]))
+    .find(item => 'label' in item && item.label === 'AlphaFold structure')
   if (!open || !('onClick' in open)) {
     throw new Error('no AlphaFold menu item')
   }
