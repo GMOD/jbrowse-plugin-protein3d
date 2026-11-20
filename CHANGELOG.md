@@ -1,3 +1,10 @@
+## [1.35.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.34.0...v1.35.0) (2026-11-20)
+
+### Other Changes
+
+- The protein rows join the host's shared Launch submenu ([c958f04](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/c958f0430b84516afcca099960fcaec5e7881c7e))
+- Drop the one-click AlphaFold structure row ([b3282af](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/b3282af63a2e88324b57d0ddc14efbfd4f7db509))
+
 ## [1.34.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.33.0...v1.34.0) (2026-11-13)
 
 ### Bug Fixes
