@@ -22,6 +22,12 @@ import { saveStableScreenshot } from './pngSnapshot.mjs'
 
 const only = process.argv[2]
 
+const gene = (assembly, loc) => ({
+  assembly,
+  loc,
+  tracks: [{ trackId: 'hg38-ncbiRefSeq', geneGlyphMode: 'longestCoding' }],
+})
+
 const tp53 = {
   assembly: 'hg38',
   loc: 'chr17:7,673,700-7,674,700',
@@ -41,32 +47,50 @@ const figures = {
     color: { field: 'mappedChain' },
     connectedView: tp53,
   },
-  // AlphaFold's model and the crystal structure superposed on one transcript.
-  superposed: {
+  // Sickle haemoglobin: Val6 of each beta chain drawn as spheres and named,
+  // on the deoxy tetramer, beside HBB's codon 7.
+  sickle: {
     type: 'ProteinView',
-    structures: [{ uniprotId: 'P04637' }, { pdbId: '1TUP' }],
-    transcriptId: 'NM_000546.6',
-    connectedView: tp53,
+    structures: [{ pdbId: '2HBS' }],
+    transcriptId: 'NM_000518.5',
+    color: { field: 'mappedChain' },
+    marks: [
+      {
+        site: 'B:6',
+        mark: 'spheres',
+        label: 'Val6',
+        encoding: { color: { value: '#f28e2b' } },
+      },
+      {
+        site: 'D:6',
+        mark: 'spheres',
+        encoding: { color: { value: '#f28e2b' } },
+      },
+    ],
+    connectedView: gene('hg38', 'chr11:5,226,900-5,227,100'),
   },
-  // The structure colored by how many ClinVar records fall on each codon.
-  clinvar: {
+  // KRAS G12C bound to sotorasib, with the three cancer hotspots named.
+  kras: {
     type: 'ProteinView',
-    structures: [{ pdbId: '1TUP' }],
-    transcriptId: 'NM_000546.6',
-    color: {
-      field: 'track',
-      trackId: 'clinvar_ncbi_hg38',
-      stat: 'count',
-      title: 'ClinVar records per residue',
-    },
-    connectedView: tp53,
+    structures: [{ pdbId: '6OIM' }],
+    transcriptId: 'NM_004985.5',
+    marks: [
+      { site: 'A:12', label: 'G12' },
+      { site: 'A:13', label: 'G13' },
+      { site: 'A:61', label: 'Q61' },
+    ].map(m => ({
+      ...m,
+      mark: 'spheres',
+      encoding: { color: { value: '#f28e2b' } },
+    })),
+    connectedView: gene('hg38', 'chr12:25,245,270-25,245,400'),
   },
-  // The 1D view: UniProt's features for P04637 aligned to the gene.
+  // The 1D view: UniProt's features for KRAS aligned to the gene.
   features: {
     type: 'ProteinAnnotationView',
-    uniprotId: 'P04637',
-    transcriptId: 'NM_000546.6',
-    connectedView: tp53,
+    uniprotId: 'P01116',
+    transcriptId: 'NM_004985.5',
+    connectedView: gene('hg38', 'chr12:25,225,000-25,250,000'),
   },
 }
 
@@ -80,7 +104,7 @@ async function render(browser, name) {
   try {
     await page.setViewport({
       width: 1300,
-      height: 720,
+      height: 960,
       deviceScaleFactor: 1.5,
     })
     const complaints = collectPageComplaints(page)
@@ -88,7 +112,7 @@ async function render(browser, name) {
     const spec = {
       views: [
         figure.type === 'ProteinView'
-          ? { height: 600, sideBySide: true, zoomToBaseLevel: false, ...figure }
+          ? { height: 800, sideBySide: true, zoomToBaseLevel: false, ...figure }
           : figure,
       ],
     }
