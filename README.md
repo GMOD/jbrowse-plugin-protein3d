@@ -30,25 +30,22 @@ hour ([scripts/readme-figure.mjs](scripts/readme-figure.mjs)).
 
 ## Documentation
 
-- Tutorials on jbrowse.org:
-  [TP53 from prediction to crystal](https://jbrowse.org/jb2/docs/tutorials/tp53_structures/)
-  and
-  [Proteins on genomes.jbrowse.org](https://jbrowse.org/jb2/docs/tutorials/genomes_proteins/)
-- [Demos](docs/demos.md): one link per case, from genes opened by name in
-  several kingdoms to the structures that are easy to map wrong
-- [Your own structures](docs/your-own-structures.md): ColabFold, AlphaFold 3 and
-  Boltz models, from a mapping file, a URL or a file
-- [Launching](docs/launching.md): session-spec links, every argument, and
-  reading what a view resolved (`report`, residue lookup) for scripts and
-  agents; [session snapshots](docs/session-snapshots.md) for the saved shape
-- [Per-residue values](docs/per-residue-values.md): coloring a structure by a
-  genome track or your own numbers
-- How it works:
-  [genome to structure alignment](docs/genome-to-structure-alignment.md),
-  [UniProt feature tracks](docs/uniprot-feature-tracks.md),
-  [the secret sauce](docs/secret-sauce.md) and
-  [residue numbering](docs/residue-numbering.md)
-- [DEVELOPERS.md](DEVELOPERS.md): running, testing and publishing
+- [TP53 tutorial][tp53]: prediction to crystal
+- [Genomes tutorial][genomes]: on genomes.jbrowse.org
+- [Demos](docs/demos.md): one link per case
+- [Your own structures](docs/your-own-structures.md): ColabFold, AF3, Boltz
+- [Launching](docs/launching.md): session-spec links and every argument
+- [Session snapshots](docs/session-snapshots.md): the saved session shape
+- [Figure sessions](docs/figure-sessions.md): fix a figure's properties
+- [Per-residue values](docs/per-residue-values.md): color by a track or numbers
+- [Alignment](docs/genome-to-structure-alignment.md): why we align on the fly
+- [UniProt feature tracks](docs/uniprot-feature-tracks.md): features as tracks
+- [Secret sauce](docs/secret-sauce.md): one encoding for every view
+- [Residue numbering](docs/residue-numbering.md): the four numberings
+- [DEVELOPERS.md](DEVELOPERS.md): running, testing, publishing
+
+[tp53]: https://jbrowse.org/jb2/docs/tutorials/tp53_structures/
+[genomes]: https://jbrowse.org/jb2/docs/tutorials/genomes_proteins/
 
 ## Citation
 
