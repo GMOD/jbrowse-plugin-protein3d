@@ -47,7 +47,6 @@ How it works:
 - [UniProt feature tracks](docs/uniprot-feature-tracks.md): features as tracks
 - [Secret sauce](docs/secret-sauce.md): one encoding for every view
 - [Residue numbering](docs/residue-numbering.md): the four numberings
-- [DEVELOPERS.md](DEVELOPERS.md): running, testing, publishing
 
 [tp53]: https://jbrowse.org/jb2/docs/tutorials/tp53_structures/
 [genomes]: https://jbrowse.org/jb2/docs/tutorials/genomes_proteins/
