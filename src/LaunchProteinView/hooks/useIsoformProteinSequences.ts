@@ -1,9 +1,9 @@
 import { getSession } from '@jbrowse/core/util'
 import useSWR from 'swr'
 
-import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { codingTranscripts } from '../codingFeature'
 import { fetchTranscriptProteinSeqs } from '../utils/translateTranscripts'
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 
 import type { IsoformSequences } from '../utils/util'
 import type { Feature } from '@jbrowse/core/util'

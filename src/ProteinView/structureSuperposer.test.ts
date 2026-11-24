@@ -2,9 +2,9 @@ import { types } from '@jbrowse/mobx-state-tree'
 import { autorun } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
 
+import { parseStructure } from '../test_data/molstarStructure'
 import { makeStructureSuperposer } from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
-import { parseStructure } from '../test_data/molstarStructure'
 
 import type { StructureSuperposerHost } from './structureSuperposer'
 import type { SuperpositionOutcome } from './superpositionOutcome'
@@ -24,7 +24,8 @@ const TestStructure = types
     alignmentPending: false,
     pairwiseAlignment: undefined as object | undefined,
     mappedEntity: undefined as
-      { entityId: string; seq: string; seqIds: number[] } | undefined,
+      | { entityId: string; seq: string; seqIds: number[] }
+      | undefined,
     coordinateMapper: undefined as
       | {
           maps: { structureSeqToTranscriptSeqPosition: Record<number, number> }

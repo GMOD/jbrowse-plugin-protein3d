@@ -6,10 +6,10 @@ import { observer } from 'mobx-react'
 import { uniprotEntryUrl } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
-import UniProtLookupControls from './UniProtLookupControls'
-import UniProtLookupResults from './UniProtLookupResults'
 import ExternalLink from '../../components/ExternalLink'
 import { unambiguousEntry } from '../resolveGeneLaunch'
+import UniProtLookupControls from './UniProtLookupControls'
+import UniProtLookupResults from './UniProtLookupResults'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
 

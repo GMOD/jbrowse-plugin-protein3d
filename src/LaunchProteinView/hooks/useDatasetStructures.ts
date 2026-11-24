@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 
 import useSWR from 'swr'
 
-import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { errorMessage } from '../../ProteinView/util'
 import {
   datasetMatches,
@@ -10,6 +9,7 @@ import {
   loadStructureMapping,
   readStructureDatasets,
 } from '../utils/structureDatasets'
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 
 import type { Feature } from '@jbrowse/core/util'
 

@@ -4,9 +4,9 @@ import { observable, reaction } from 'mobx'
 import { structurePos } from 'p2s_mapper'
 import { beforeEach, expect, test, vi } from 'vitest'
 
+import { parseStructure } from '../test_data/molstarStructure'
 import { structuresSettled } from './frameSelection'
 import Structure from './structureModel'
-import { parseStructure } from '../test_data/molstarStructure'
 
 import type { StructureAssembly } from './loadStructureData'
 import type { ProteinColor } from './proteinColor'

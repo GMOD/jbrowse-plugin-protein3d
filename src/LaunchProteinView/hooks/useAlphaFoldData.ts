@@ -3,9 +3,9 @@ import { useMemo } from 'react'
 import { fetchAlphaFoldModels } from 'p2s_mapper'
 import useSWR from 'swr'
 
+import { launchAlphaFoldModel } from '../resolveGeneLaunch'
 import { STATIC_SWR_OPTIONS } from './swrOptions'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
-import { launchAlphaFoldModel } from '../resolveGeneLaunch'
 
 import type { Feature } from '@jbrowse/core/util'
 

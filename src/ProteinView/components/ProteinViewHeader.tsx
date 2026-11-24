@@ -14,15 +14,15 @@ import MenuItem from '@mui/material/MenuItem'
 import Tooltip from '@mui/material/Tooltip'
 import { observer } from 'mobx-react'
 
-import { ColorKey, MolstarLegendKey } from './ColorKey'
-import HeaderStructureRows from './HeaderStructureRow'
-import ProteinAlignment from './ProteinAlignment'
-import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 import {
   COLOR_FIELDS,
   DEFAULT_COLOR_LABEL,
   colorLabelOf,
 } from '../proteinColor'
+import { ColorKey, MolstarLegendKey } from './ColorKey'
+import HeaderStructureRows from './HeaderStructureRow'
+import ProteinAlignment from './ProteinAlignment'
+import ProteinAlignmentHelpButton from './ProteinAlignmentHelpButton'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 import type { ColorField } from '../proteinColor'

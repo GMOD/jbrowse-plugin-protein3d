@@ -1,11 +1,6 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { fetchAlphaFoldModels } from 'p2s_mapper'
 
-import { normalizeAnnotationLaunch } from './normalizeAnnotationLaunch'
-import {
-  resolveTranscriptLinkage,
-  withConnectedGenomeView,
-} from './transcriptLinkage'
 import { clinVarTrackConfFor } from '../LaunchProteinView/components/clinVarTrackSource'
 import { openProteinAnnotationView } from '../LaunchProteinView/components/launchProteinAnnotationView'
 import { canAddTemporaryAssembly } from '../LaunchProteinView/components/proteinAssemblySetup'
@@ -13,6 +8,11 @@ import { fetchUniProtFeatureTypes } from '../LaunchProteinView/components/protei
 import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
 import { uniProtEntry } from '../LaunchProteinView/utils/launchViewUtils'
 import { viewAssemblyName } from '../ProteinView/util'
+import { normalizeAnnotationLaunch } from './normalizeAnnotationLaunch'
+import {
+  resolveTranscriptLinkage,
+  withConnectedGenomeView,
+} from './transcriptLinkage'
 
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 

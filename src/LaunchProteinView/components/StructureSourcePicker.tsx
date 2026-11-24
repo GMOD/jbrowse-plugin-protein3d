@@ -11,8 +11,8 @@ import {
 } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import HelpButton from './HelpButton'
 import { STRUCTURE_FILE_ACCEPT } from '../utils/readStructureFile'
+import HelpButton from './HelpButton'
 
 const StructureSourcePicker = observer(function StructureSourcePicker({
   choice,

@@ -12,11 +12,11 @@ import { createPluginUI } from 'molstar/lib/mol-plugin-ui'
 import { renderReact18 } from 'molstar/lib/mol-plugin-ui/react18'
 import { DefaultPluginUISpec } from 'molstar/lib/mol-plugin-ui/spec'
 import { PluginConfig } from 'molstar/lib/mol-plugin/config'
+import { extractEntities } from 'p2s_mapper'
 
 import { loadStructure } from '../src/ProteinView/structurePipeline'
 
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-import { extractEntities } from 'p2s_mapper'
 
 export interface EntityInfo {
   /** index into the plugin's entities array */

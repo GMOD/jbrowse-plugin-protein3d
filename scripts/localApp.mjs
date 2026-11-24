@@ -24,7 +24,9 @@ const isUp = () =>
       s.destroy()
       res(true)
     })
-    s.on('error', () => res(false))
+    s.on('error', () => {
+      res(false)
+    })
   })
 
 let server

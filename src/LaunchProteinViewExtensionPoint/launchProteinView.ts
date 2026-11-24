@@ -1,5 +1,11 @@
 import { coerceAlignmentAlgorithm } from 'p2s_mapper'
 
+import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
+import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
+import { addProteinView } from '../ProteinView/addProteinView'
+import { checkedColor, colorOfScheme } from '../ProteinView/proteinColor'
+import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
+import { viewAssemblyName } from '../ProteinView/util'
 import { resolveDatasetStructures } from './datasetLaunch'
 import { resolveLaunchVariant } from './launchVariant'
 import { normalizeLaunch } from './normalizeLaunch'
@@ -7,20 +13,14 @@ import {
   resolveTranscriptLinkage,
   withConnectedGenomeView,
 } from './transcriptLinkage'
-import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
-import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
-import { addProteinView } from '../ProteinView/addProteinView'
-import { checkedColor, colorOfScheme } from '../ProteinView/proteinColor'
-import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
-import { viewAssemblyName } from '../ProteinView/util'
 
+import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type {
   LaunchStructure,
   LaunchViewSettings,
   NormalizedLaunch,
 } from './normalizeLaunch'
 import type { ConnectedViewSpec } from './resolveShortLaunch'
-import type { ProteinStructureSpec } from '../ProteinView/proteinViewSpec'
 import type { AbstractSessionModel } from '@jbrowse/core/util'
 
 /**

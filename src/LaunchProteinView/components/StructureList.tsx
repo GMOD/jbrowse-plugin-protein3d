@@ -5,8 +5,8 @@ import { Link, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import StructureListRow from './StructureListRow'
 import { SECTIONS } from '../utils/structureList'
+import StructureListRow from './StructureListRow'
 
 import type { SectionStatus } from '../hooks/useGeneStructures'
 import type { StructureRow, StructureSection } from '../utils/structureList'

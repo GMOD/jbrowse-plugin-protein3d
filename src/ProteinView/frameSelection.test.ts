@@ -1,8 +1,8 @@
 import { autorun, observable, runInAction } from 'mobx'
 import { expect, test, vi } from 'vitest'
 
-import { frameResidues, makeSelectionFramer } from './frameSelection'
 import { parseStructure } from '../test_data/molstarStructure'
+import { frameResidues, makeSelectionFramer } from './frameSelection'
 
 import type { Loci } from 'molstar/lib/mol-model/loci'
 

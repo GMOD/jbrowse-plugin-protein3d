@@ -4,8 +4,8 @@ import { structurePos as toStructurePos } from 'p2s_mapper'
 
 import useUniProtFeatures from './useUniProtFeatures'
 
-import type { UniProtFeature } from './useUniProtFeatures'
 import type { JBrowsePluginProteinStructureModel } from '../model'
+import type { UniProtFeature } from './useUniProtFeatures'
 import type { CoordinateMapper, MapUniProtPosition } from 'p2s_mapper'
 
 /** A UniProt feature placed in alignment columns; drawing it is the view's

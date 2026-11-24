@@ -3,9 +3,9 @@ import React from 'react'
 import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
+import { assemblyNaming, checkHovered } from '../ProteinView/util'
 import Highlight from './Highlight'
 import { getProteinViews, getStructuresConnectedTo } from './proteinViewLookup'
-import { assemblyNaming, checkHovered } from '../ProteinView/util'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

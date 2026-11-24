@@ -20,7 +20,7 @@
 // Escape hatch: ALLOW_RED_CI=1 pnpm version patch
 //
 /* global process, console */
-/* eslint-disable no-console */
+/* oxlint-disable no-console */
 import { execFileSync } from 'node:child_process'
 import { setTimeout as sleep } from 'node:timers/promises'
 

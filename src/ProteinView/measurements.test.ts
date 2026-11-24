@@ -3,11 +3,11 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
 import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
+import { loadPocket } from '../test_data/molstarPlugin'
 import loadMolstar from './loadMolstar'
 import { MEASUREMENT_TAG, closestAtoms, syncMeasurements } from './measurements'
 import { superposeStructures } from './superposeStructures'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
-import { loadPocket } from '../test_data/molstarPlugin'
 
 import type { StructureElement as StructureElementType } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'

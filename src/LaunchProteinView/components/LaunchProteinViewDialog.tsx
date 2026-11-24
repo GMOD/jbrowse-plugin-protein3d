@@ -5,12 +5,12 @@ import { getSession } from '@jbrowse/core/util'
 import { Tab, Tabs } from '@mui/material'
 import { observer } from 'mobx-react'
 
+import { getGeneDisplayName } from '../utils/util'
 import FoldseekSearch from './FoldseekSearch'
 import GeneStructures from './GeneStructures'
 import HelpButton from './HelpButton'
 import TabPanel from './TabPanel'
 import UserProvidedStructure from './UserProvidedStructure'
-import { getGeneDisplayName } from '../utils/util'
 
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractTrackModel, Feature } from '@jbrowse/core/util'

@@ -3,8 +3,8 @@ import React from 'react'
 import { Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import UniProtResultsTable from './UniProtResultsTable'
 import ExternalLink from '../../components/ExternalLink'
+import UniProtResultsTable from './UniProtResultsTable'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
 

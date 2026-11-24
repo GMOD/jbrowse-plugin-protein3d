@@ -53,7 +53,8 @@ export function variantEffectStatus({
   ask: VariantEffectAsk | undefined
   state: VariantEffectState | undefined
   entity:
-    { entityId: string; seq: string; seqIds: readonly number[] } | undefined
+    | { entityId: string; seq: string; seqIds: readonly number[] }
+    | undefined
   pdbId: string | undefined
   mapUniProtPosition: MapUniProtPosition
   transcriptToStructure: CoordinateMapper['transcriptToStructure'] | undefined

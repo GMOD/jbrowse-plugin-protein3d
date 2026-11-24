@@ -372,7 +372,8 @@ export function resolvedColor(
   const { field, trackId, stat, scoreField, filter, values, ...members } = color
   return field && isScaledField(field)
     ? ({ ...presetOf(field, members.scale), ...members } as
-        LinearColor | ThresholdColor)
+        | LinearColor
+        | ThresholdColor)
     : undefined
 }
 

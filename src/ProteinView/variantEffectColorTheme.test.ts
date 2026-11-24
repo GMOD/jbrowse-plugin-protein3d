@@ -8,6 +8,8 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { Color } from 'molstar/lib/mol-util/color'
 import { expect, test } from 'vitest'
 
+import { loadCaOnly } from '../test_data/molstarPlugin'
+import { parseStructure } from '../test_data/molstarStructure'
 import { applyColorTheme, colorLegendOf } from './applyColorTheme'
 import { rgbScaleOf } from './colorScale'
 import { registerColorThemes } from './colorThemes'
@@ -18,8 +20,6 @@ import {
   ClinVarColorThemeProvider,
 } from './variantEffectColorTheme'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
-import { loadCaOnly } from '../test_data/molstarPlugin'
-import { parseStructure } from '../test_data/molstarStructure'
 
 import type { Structure } from 'molstar/lib/mol-model/structure'
 

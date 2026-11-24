@@ -5,9 +5,9 @@ import CloseIcon from '@mui/icons-material/Close'
 import { IconButton } from '@mui/material'
 import { observer } from 'mobx-react'
 
+import useProteinView from '../useProteinView'
 import HighlightLabels from './HighlightLabels'
 import ProteinViewHeader from './ProteinViewHeader'
-import useProteinView from '../useProteinView'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 

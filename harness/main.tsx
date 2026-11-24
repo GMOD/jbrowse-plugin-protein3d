@@ -1,8 +1,9 @@
 import React from 'react'
+
 import { createRoot } from 'react-dom/client'
 
-import App from './App'
 import molstarCss from '../src/ProteinView/css/molstar'
+import App from './App'
 
 const style = document.createElement('style')
 style.textContent = molstarCss

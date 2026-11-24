@@ -1,11 +1,11 @@
 import { getSnapshot, recordPatches } from '@jbrowse/mobx-state-tree'
 import { expect, test, vi } from 'vitest'
 
+import { parseStructure } from '../test_data/molstarStructure'
 import { COMPACT_TRACK_HEIGHT, NORMAL_TRACK_HEIGHT } from './constants'
 import stateModelFactory from './model'
 import { removeMolstarStructure } from './removeStructure'
 import { PERSISTED_SETTINGS } from './storedSettings'
-import { parseStructure } from '../test_data/molstarStructure'
 
 import type { ProteinFigure, ProteinStructureSpec } from './proteinViewSpec'
 import type { PersistedSetting, PersistedSettings } from './storedSettings'

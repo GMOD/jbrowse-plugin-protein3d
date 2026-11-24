@@ -6,8 +6,8 @@ import { fetchAndMaybeUnzipText, isUriLocation } from '@jbrowse/core/util'
 import { openLocation } from '@jbrowse/core/util/io'
 import { getEnv, isStateTreeNode } from '@jbrowse/mobx-state-tree'
 
-import { isRecord } from './isRecord'
 import { codingTranscripts, flaggedTranscriptId } from '../codingFeature'
+import { isRecord } from './isRecord'
 
 import type PluginManager from '@jbrowse/core/PluginManager'
 import type { Feature, FileLocation } from '@jbrowse/core/util'

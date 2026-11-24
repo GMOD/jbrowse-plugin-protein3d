@@ -3,6 +3,7 @@ import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
 import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test } from 'vitest'
 
+import { loadCaOnly } from '../test_data/molstarPlugin'
 import { applyColorTheme, colorLegendOf } from './applyColorTheme'
 import { registerColorThemes } from './colorThemes'
 import {
@@ -11,7 +12,6 @@ import {
   OTHER_CHAIN_COLOR,
 } from './mappedChainColorTheme'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
-import { loadCaOnly } from '../test_data/molstarPlugin'
 
 import type { ProteinColor } from './proteinColor'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'

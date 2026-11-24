@@ -3,11 +3,11 @@ import { useState } from 'react'
 import { readConfObject } from '@jbrowse/core/configuration'
 import { getSession } from '@jbrowse/core/util'
 
-import useDebouncedValue from './useDebouncedValue'
-import useUniProtSearch from './useUniProtSearch'
 import getSearchDescription from '../utils/getSearchDescription'
 import { isUniProtAccession } from '../utils/uniprotAccession'
 import { extractFeatureIdentifiers, extractTaxonId } from '../utils/util'
+import useDebouncedValue from './useDebouncedValue'
+import useUniProtSearch from './useUniProtSearch'
 
 import type { LookupMode } from '../components/UniProtIdInput'
 import type { Feature } from '@jbrowse/core/util'

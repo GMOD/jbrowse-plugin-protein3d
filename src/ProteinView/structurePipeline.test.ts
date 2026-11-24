@@ -5,16 +5,16 @@ import {
   StructureElement,
   StructureProperties,
 } from 'molstar/lib/mol-model/structure'
-import { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 import { StateTransforms } from 'molstar/lib/mol-plugin-state/transforms'
+import { PluginCommands } from 'molstar/lib/mol-plugin/commands'
 import { StateSelection } from 'molstar/lib/mol-state'
 import { expect, test, vi } from 'vitest'
 
+import { loadCaOnly } from '../test_data/molstarPlugin'
+import { caOnlyMmcif, residuesOf } from '../test_data/molstarStructure'
 import { loadStructureData } from './loadStructureData'
 import { DEPOSITED_MODEL, parseStructureTrajectory } from './structurePipeline'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
-import { loadCaOnly } from '../test_data/molstarPlugin'
-import { caOnlyMmcif, residuesOf } from '../test_data/molstarStructure'
 
 import type { FilterPredicate } from './residueFilter'
 import type { Structure } from 'molstar/lib/mol-model/structure'

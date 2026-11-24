@@ -17,8 +17,8 @@ import { makeStyles } from 'tss-react/mui'
 
 import FoldseekActionMenu from './FoldseekActionMenu'
 
-import type { FlattenedHit } from './FoldseekActionMenu'
 import type { LaunchingGenomeView } from '../utils/genomeView'
+import type { FlattenedHit } from './FoldseekActionMenu'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 import type { FoldseekResult } from 'p2s_mapper'
 

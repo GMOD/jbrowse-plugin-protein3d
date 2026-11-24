@@ -4,10 +4,10 @@ import { StateSelection } from 'molstar/lib/mol-state'
 import { Color } from 'molstar/lib/mol-util/color'
 import { expect, test } from 'vitest'
 
+import { loadPocket } from '../test_data/molstarPlugin'
 import { RESIDUE_MARKS_TAG, syncResidueMarks } from './residueMarks'
 import { formatSite, parseSite } from './residueSpec'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
-import { loadPocket } from '../test_data/molstarPlugin'
 
 test('a whole chain parses and formats as chain:*', () => {
   expect(parseSite('G:*')).toEqual({ kind: 'chain', chain: 'G' })

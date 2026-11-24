@@ -1,8 +1,8 @@
+import { codingTranscripts } from '../codingFeature'
+import { rankableIsoforms } from '../utils/util'
 import useIsoformProteinSequences from './useIsoformProteinSequences'
 import useIsoformRanking from './useIsoformRanking'
 import useTranscriptSelection from './useTranscriptSelection'
-import { codingTranscripts } from '../codingFeature'
-import { rankableIsoforms } from '../utils/util'
 
 import type { Feature } from '@jbrowse/core/util'
 

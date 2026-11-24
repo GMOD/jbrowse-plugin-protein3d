@@ -4,8 +4,8 @@ import loadMolstar from './loadMolstar'
 import { loadStructure } from './structurePipeline'
 
 import type { DrawnResidues } from './structurePipeline'
-import type { Model, Structure } from 'molstar/lib/mol-model/structure'
 import type { ModelFormat } from 'molstar/lib/mol-model-formats/format'
+import type { Model, Structure } from 'molstar/lib/mol-model/structure'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
 import type { Entity, EntityConfidence } from 'p2s_mapper'
 

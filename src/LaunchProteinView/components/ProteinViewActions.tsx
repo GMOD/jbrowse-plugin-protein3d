@@ -5,13 +5,13 @@ import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 import { Button, ButtonGroup } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import LaunchOptionsMenu from './LaunchOptionsMenu'
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
 import {
   PROTEIN_LAUNCH_LABELS,
   getConditionalProteinLaunches,
   launch3DProteinView,
 } from '../utils/launchViewUtils'
+import LaunchOptionsMenu from './LaunchOptionsMenu'
 
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { StructureSource } from '../utils/launchViewUtils'

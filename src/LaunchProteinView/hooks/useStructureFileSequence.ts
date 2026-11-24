@@ -1,10 +1,10 @@
 import { extractStructureSequences } from 'p2s_mapper'
 import useSWR from 'swr'
 
-import { STATIC_SWR_OPTIONS } from './swrOptions'
 import { parseStructureTrajectory } from '../../ProteinView/structurePipeline'
 import { withTemporaryMolstarPlugin } from '../../ProteinView/withTemporaryMolstarPlugin'
 import { readStructureFile } from '../utils/readStructureFile'
+import { STATIC_SWR_OPTIONS } from './swrOptions'
 
 // Only the model is built here, never a representation: the dialog wants the
 // sequences, and the format detection is the same one the view applies later.

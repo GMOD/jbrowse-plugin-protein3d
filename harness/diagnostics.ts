@@ -2,7 +2,6 @@
 // so the numbers shown are the numbers the plugin would actually compute, then
 // derives the verdicts the plugin never surfaces to the user.
 
-import type { EntityInfo, LoadedStructure } from './molstar'
 import {
   alignTranscriptToEntity,
   alignmentQuality,
@@ -10,6 +9,8 @@ import {
   chooseMappedEntity,
   structureSeqVsTranscriptSeqMap,
 } from 'p2s_mapper'
+
+import type { EntityInfo, LoadedStructure } from './molstar'
 import type { AlignmentAlgorithm } from 'p2s_mapper'
 
 export interface EntityAlignment {

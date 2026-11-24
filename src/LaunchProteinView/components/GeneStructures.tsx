@@ -13,12 +13,6 @@ import { observer } from 'mobx-react'
 import { isPdbId, stripStopCodon } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
-import PartialFailureNotice from './PartialFailureNotice'
-import ProteinViewActions from './ProteinViewActions'
-import SequenceMismatchNotice from './SequenceMismatchNotice'
-import StructureList from './StructureList'
-import TranscriptSelector from './TranscriptSelector'
-import UniProtSummaryBar from './UniProtSummaryBar'
 import useDebouncedValue from '../hooks/useDebouncedValue'
 import useGeneStructures from '../hooks/useGeneStructures'
 import useStructureLaunch, {
@@ -33,6 +27,12 @@ import {
   toggleStructure,
 } from '../utils/structureList'
 import { getTranscriptDisplayName } from '../utils/util'
+import PartialFailureNotice from './PartialFailureNotice'
+import ProteinViewActions from './ProteinViewActions'
+import SequenceMismatchNotice from './SequenceMismatchNotice'
+import StructureList from './StructureList'
+import TranscriptSelector from './TranscriptSelector'
+import UniProtSummaryBar from './UniProtSummaryBar'
 
 import type { LaunchStructure } from '../hooks/useStructureLaunch'
 import type { LaunchingGenomeView } from '../utils/genomeView'

@@ -335,7 +335,6 @@ function stateModelFactory() {
        * #volatile
        * the view cannot draw at all: Mol* failed to start
        */
-      // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
       error: undefined as unknown,
       /**
        * #volatile

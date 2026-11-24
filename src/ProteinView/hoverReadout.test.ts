@@ -1,8 +1,8 @@
 import { genomeToTranscriptSeqMapping } from 'g2p_mapper'
 import { expect, test } from 'vitest'
 
-import { codonLocus, hoverReadout } from './hoverReadout'
 import { toTranscript } from '../test_data/positionLookups'
+import { codonLocus, hoverReadout } from './hoverReadout'
 
 import type { Entity } from 'p2s_mapper'
 

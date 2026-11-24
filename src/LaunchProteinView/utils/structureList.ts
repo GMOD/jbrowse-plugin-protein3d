@@ -1,10 +1,10 @@
 import { pdbEntryPartners, rcsbEntryUrl } from 'p2s_mapper'
 
-import { getTranscriptDisplayName } from './util'
 import { CRYSTALLIZATION_ADDITIVES } from '../../ProteinView/crystallizationAdditives'
+import { getTranscriptDisplayName } from './util'
 
-import type { DatasetMatch } from './structureDatasets'
 import type { LaunchAlphaFoldModel } from '../resolveGeneLaunch'
+import type { DatasetMatch } from './structureDatasets'
 import type {
   AlphaFoldComplex,
   ExperimentalStructure,

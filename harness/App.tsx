@@ -1,5 +1,11 @@
 import React, { useRef, useState } from 'react'
 
+import {
+  getAlphaFoldStructureUrl,
+  getPdbStructureUrl,
+  uniprotFastaUrl,
+} from 'p2s_mapper'
+
 import { diagnose, sampleCoordinateMap } from './diagnostics'
 import { EXAMPLES } from './examples'
 import { createPlugin, loadAndIntrospect } from './molstar'
@@ -8,11 +14,6 @@ import type { Diagnosis, Severity } from './diagnostics'
 import type { Example, Launch } from './examples'
 import type { LoadedStructure } from './molstar'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
-import {
-  getAlphaFoldStructureUrl,
-  getPdbStructureUrl,
-  uniprotFastaUrl,
-} from 'p2s_mapper'
 
 // The plugin's own URL builders, imported rather than mirrored: structureUrls
 // has no imports of its own, so it costs the harness nothing, and the AlphaFold
@@ -223,7 +224,9 @@ export default function App() {
         >
           <select
             value={source}
-            onChange={e => setSource(e.target.value as Source)}
+            onChange={e => {
+              setSource(e.target.value as Source)
+            }}
           >
             <option value="pdb">PDB ID</option>
             <option value="alphafold">AlphaFold</option>
@@ -234,25 +237,33 @@ export default function App() {
               style={{ flex: 1, minWidth: 140 }}
               placeholder="https://…/structure.cif"
               value={customUrl}
-              onChange={e => setCustomUrl(e.target.value)}
+              onChange={e => {
+                setCustomUrl(e.target.value)
+              }}
             />
           ) : (
             <input
               style={{ width: 90 }}
               value={structureId}
-              onChange={e => setStructureId(e.target.value)}
+              onChange={e => {
+                setStructureId(e.target.value)
+              }}
               placeholder={source === 'pdb' ? '6M0J' : 'P38398'}
             />
           )}
           <input
             style={{ width: 90 }}
             value={uniprot}
-            onChange={e => setUniprot(e.target.value)}
+            onChange={e => {
+              setUniprot(e.target.value)
+            }}
             placeholder="UniProt"
             title="UniProt accession — auto-fetched if the sequence box is empty"
           />
           <button
-            onClick={() => runCurrent()}
+            onClick={() => {
+              runCurrent()
+            }}
             disabled={busy}
             style={{ fontWeight: 'bold' }}
           >
@@ -269,7 +280,9 @@ export default function App() {
           }}
           placeholder="optional: paste a protein sequence (overrides UniProt)"
           value={transcript}
-          onChange={e => setTranscript(e.target.value)}
+          onChange={e => {
+            setTranscript(e.target.value)
+          }}
         />
         {status ? (
           <div style={{ color: '#b00020', fontSize: 12 }}>{status}</div>
@@ -293,7 +306,9 @@ export default function App() {
             }}
           >
             <button
-              onClick={() => applyExample(ex)}
+              onClick={() => {
+                applyExample(ex)
+              }}
               disabled={busy}
               title={ex.note}
               style={{

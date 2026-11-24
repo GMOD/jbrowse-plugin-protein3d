@@ -24,7 +24,7 @@ jobs:
       # `pnpm build`'s tsc covers src only, so the e2e harness -- the thing that
       # drives every host gate -- went unchecked until 2026-09-13.
       - name: Typecheck the e2e harness
-        run: pnpm typecheck:test
+        run: pnpm typecheck
       - name: Format check
         run: pnpm format:check
       - name: Unit tests

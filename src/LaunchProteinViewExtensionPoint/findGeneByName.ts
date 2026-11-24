@@ -2,11 +2,6 @@ import { readConfObject } from '@jbrowse/core/configuration'
 import { parseLocString } from '@jbrowse/core/util'
 
 import {
-  featureTrackConfig,
-  getTrackId,
-  transcriptMatches,
-} from './resolveShortLaunch'
-import {
   codingTranscripts,
   isCodingFeature,
 } from '../LaunchProteinView/codingFeature'
@@ -16,6 +11,11 @@ import {
 } from '../LaunchProteinView/resolveGeneLaunch'
 import { formatViewName } from '../LaunchProteinView/utils/launchViewUtils'
 import { viewAssemblyName } from '../ProteinView/util'
+import {
+  featureTrackConfig,
+  getTrackId,
+  transcriptMatches,
+} from './resolveShortLaunch'
 
 import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'

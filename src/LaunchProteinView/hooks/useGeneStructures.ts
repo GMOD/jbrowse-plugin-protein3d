@@ -1,12 +1,12 @@
 import { useMemo } from 'react'
 
+import { errorMessage } from '../../ProteinView/util'
+import { datasetRow, listOrder, structureRows } from '../utils/structureList'
 import { useAlphaFoldComplexes } from './useAlphaFoldComplexes'
 import useAlphaFoldData from './useAlphaFoldData'
 import useDatasetStructures from './useDatasetStructures'
 import useExperimentalStructures from './useExperimentalStructures'
 import usePdbEntrySummaries from './usePdbEntrySummaries'
-import { errorMessage } from '../../ProteinView/util'
-import { datasetRow, listOrder, structureRows } from '../utils/structureList'
 
 import type { StructureSection } from '../utils/structureList'
 import type { Feature } from '@jbrowse/core/util'

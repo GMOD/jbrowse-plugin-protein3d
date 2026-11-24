@@ -41,6 +41,7 @@ import {
   unmapStructurePositions,
 } from 'p2s_mapper'
 
+import { genomeToTranscriptSeqMapping } from '../mappings'
 import { alignOffThread } from './alignOffThread'
 import { decideAlignment } from './alignmentDecision'
 import {
@@ -92,7 +93,6 @@ import {
   genomeTrackAsk,
 } from './variantEffectSource'
 import { variantEffectStatus } from './variantEffectStatus'
-import { genomeToTranscriptSeqMapping } from '../mappings'
 
 import type { AlignmentMethod } from './alignOffThread'
 import type {
@@ -409,7 +409,8 @@ const Structure = types
      * Range of alignment positions to highlight (e.g., when hovering a protein feature)
      */
     alignmentHoverRange: undefined as
-      { start: number; end: number } | undefined,
+      | { start: number; end: number }
+      | undefined,
     /**
      * #volatile
      * The uniqueId of the currently selected protein feature (for persistent highlight)
@@ -436,7 +437,6 @@ const Structure = types
     /**
      * #volatile
      */
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     uniProtMappingsError: undefined as unknown,
     /**
      * #volatile
@@ -453,7 +453,6 @@ const Structure = types
      * `scripts/checkProteinLaunches.ts` asks each structure of a live session
      * whether it failed.
      */
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
     error: undefined as unknown,
   }))
   .actions(self => ({
@@ -2108,7 +2107,6 @@ const Structure = types
           try {
             const { alignmentAlgorithm: algorithm } = self
             // read only so that a redecision reruns this
-            // eslint-disable-next-line @typescript-eslint/no-meaningless-void-operator
             void self.alignmentRedecisions
             const decision = decideAlignment(self)
             const reportStale = (problem: string) => {

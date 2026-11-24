@@ -1,10 +1,8 @@
 import { isPairwiseAlignment, resolveStructureUrl } from 'p2s_mapper'
 
-import { VARIANT_SPELLING, parseLaunchVariant } from './launchVariant'
 import { cameraProblems, surfaceProblems } from '../ProteinView/markProblems'
+import { VARIANT_SPELLING, parseLaunchVariant } from './launchVariant'
 
-import type { LaunchVariant } from './launchVariant'
-import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { DistanceMeasurement } from '../ProteinView/measurements'
 import type {
   ProteinStructureSpec,
@@ -14,6 +12,8 @@ import type { StructureFilter } from '../ProteinView/residueFilter'
 import type { ResidueMark } from '../ProteinView/residueMarks'
 import type { SavedCamera } from '../ProteinView/savedCamera'
 import type { ProteinSurface } from '../ProteinView/surface'
+import type { LaunchVariant } from './launchVariant'
+import type { ConnectedViewSpec } from './resolveShortLaunch'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { ResidueRange, ResidueRanges } from 'p2s_mapper'
 

@@ -1,8 +1,8 @@
 import { isGeneLikeType } from '@jbrowse/core/util'
 import { isRecognizedDatabaseId, matchDbIdPattern } from 'p2s_mapper'
 
-import { isRecord } from './isRecord'
 import { codingTranscripts, flaggedTranscriptId } from '../codingFeature'
+import { isRecord } from './isRecord'
 
 import type { Feature } from '@jbrowse/core/util'
 import type { Isoform } from 'p2s_mapper'

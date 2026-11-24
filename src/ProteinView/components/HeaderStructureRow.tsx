@@ -23,11 +23,11 @@ import {
   uniprotEntryUrl,
 } from 'p2s_mapper'
 
-import ChainSelect from './ChainSelect'
 import {
   describeSuperposition,
   superpositionChip,
 } from '../superpositionOutcome'
+import ChainSelect from './ChainSelect'
 
 import type {
   JBrowsePluginProteinStructureModel,

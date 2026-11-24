@@ -48,7 +48,7 @@ const TestStructure = types
     loadedAssembly: undefined as string | undefined,
     entities: undefined as Entity[] | undefined,
     molstarStructures: new Array<Structure>(),
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
+
     error: undefined as unknown,
   }))
   .actions(self => ({

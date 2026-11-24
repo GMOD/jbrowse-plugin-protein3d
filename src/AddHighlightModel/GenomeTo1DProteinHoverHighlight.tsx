@@ -3,11 +3,11 @@ import React from 'react'
 import { getSession } from '@jbrowse/core/util'
 import { observer } from 'mobx-react'
 
-import Highlight from './Highlight'
 import {
   getProteinLinkage,
   hovered1DProteinPosition,
 } from '../Protein1DLinkage'
+import Highlight from './Highlight'
 
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
 

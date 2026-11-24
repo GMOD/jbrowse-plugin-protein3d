@@ -18,12 +18,12 @@ import {
 } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
+import useFoldseekSearch from '../hooks/useFoldseekSearch'
+import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
 import FoldseekResultsTable from './FoldseekResultsTable'
 import PartialFailureNotice from './PartialFailureNotice'
 import TranscriptSelector from './TranscriptSelector'
-import useFoldseekSearch from '../hooks/useFoldseekSearch'
-import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
