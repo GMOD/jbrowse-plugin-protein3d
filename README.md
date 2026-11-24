@@ -36,6 +36,7 @@ hour ([scripts/readme-figure.mjs](scripts/readme-figure.mjs)).
 - [Launching](docs/launching.md): session-spec links and every argument
 - [Per-residue values](docs/per-residue-values.md): color by a track or numbers
 - [Secret sauce](docs/secret-sauce.md): how it works, in one encoding
+- [All docs](docs/README.md): every guide, by topic
 - [DEVELOPERS.md](DEVELOPERS.md): running, testing, publishing
 
 [tp53]: https://jbrowse.org/jb2/docs/tutorials/tp53_structures/
