@@ -36,18 +36,15 @@ Using it:
 - [Genomes tutorial][genomes]: proteins on genomes.jbrowse.org
 - [Demos](docs/demos.md): live links, including tricky mappings
 - [Your own structures](docs/your-own-structures.md): ColabFold, AF3, Boltz
-  models
 - [Launching](docs/launching.md): open a view from a URL or code
 - [Session snapshots](docs/session-snapshots.md): restore a saved session
 - [Reproducible figures](docs/figure-sessions.md): pin camera, marks, surface
-- [Per-residue values](docs/per-residue-values.md): color by a track or your
-  data
+- [Per-residue values](docs/per-residue-values.md): color by a track or data
 
 How it works:
 
-- [Alignment](docs/genome-to-structure-alignment.md): how a codon maps to a
-  residue
-- [UniProt feature tracks](docs/uniprot-feature-tracks.md): UniProt domains as
+- [Alignment](docs/genome-to-structure-alignment.md): codon to residue mapping
+- [UniProt feature tracks](docs/uniprot-feature-tracks.md): domains and sites as
   tracks
 - [Secret sauce](docs/secret-sauce.md): how the views stay linked
 - [Residue numbering](docs/residue-numbering.md): why a residue has four numbers
