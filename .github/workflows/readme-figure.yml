@@ -46,22 +46,23 @@ jobs:
         run: |
           mkdir -p img
           if git fetch --depth 1 origin readme-figure; then
-            git show FETCH_HEAD:readme.png > img/readme.png
-            cp img/readme.png /tmp/published.png
+            mkdir -p /tmp/published
+            git archive FETCH_HEAD | tar -x -C /tmp/published
+            cp /tmp/published/*.png img/
           fi
       - name: Render
         run: pnpm readme-figure
       - name: Publish if it changed
         run: |
-          if cmp -s img/readme.png /tmp/published.png; then
+          if diff -rq img /tmp/published >/dev/null 2>&1; then
             echo "figure unchanged"
             exit 0
           fi
           dir=$(mktemp -d)
-          cp img/readme.png "$dir/readme.png"
+          cp img/*.png "$dir/"
           cd "$dir"
           git init -q -b readme-figure
-          git add readme.png
+          git add -A
           git -c user.name=github-actions[bot] \
             -c user.email=41898282+github-actions[bot]@users.noreply.github.com \
             commit -qm "README figure from ${GITHUB_SHA::7}"

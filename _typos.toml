@@ -25,7 +25,7 @@ mis = "mis"
 unparseable = "unparseable"
 Unparseable = "Unparseable"
 # deliberately misspelled spec keys in normalizeLaunch.test.ts and
-# docs/launch-parameters.md
+# docs/launching.md
 hiden = "hiden"
 hieght = "hieght"
 Viewe = "Viewe"

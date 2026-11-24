@@ -118,8 +118,8 @@ view.applyFigure({
 - To frame residues rather than write a camera,
   `structure.focusResidues(target)` selects them and turns the camera to them,
   taking the selection forms `locateResidues` takes (see
-  [reading the view](reading-the-view.md)); read `currentCamera()` afterwards to
-  keep that framing.
+  [reading the view](launching.md#reading-the-result)); read `currentCamera()`
+  afterwards to keep that framing.
 
 ## Structure properties
 

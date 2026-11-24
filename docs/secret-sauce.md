@@ -135,9 +135,9 @@ time today, so the gain is small against a real design problem.
 ## Constraints every idea inherits
 
 - **Track color is a display-level `color` scale.** Check a track color live on
-  main (`docs/live-checks.md`), counting pixels per band; the 2026-09-25 check
-  found two configs that tsc, lint and unit tests passed but that showed the
-  track as an error.
+  main (`docs/testing.md`), counting pixels per band; the 2026-09-25 check found
+  two configs that tsc, lint and unit tests passed but that showed the track as
+  an error.
 - **Color field names are persisted.** A session saves the view's `color`
   object, so rename no field; map it to a new Mol\* theme instead, as
   `hydrophobicity` maps to `kyte-doolittle`. A session from before `color` saved

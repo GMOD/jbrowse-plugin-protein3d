@@ -16,7 +16,7 @@ host-compat.json
 /debug-*.png
 
 # published to the readme-figure branch by .github/workflows/readme-figure.yml
-/img/readme.png
+/img/*.png
 
 # test-docs.mjs smoke-test output
 test-screenshots/docs-connected.png

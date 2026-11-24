@@ -85,8 +85,7 @@ with the set is the one download, which every dataset in the config makes on the
 first dialog of a page whichever gene was clicked.
 
 A session spec opens a dataset's structure too, by `datasetId` beside a
-`transcriptId` or a `gene`; see
-[launch parameters](launch-parameters.md#datasetid).
+`transcriptId` or a `gene`; see [launch parameters](launching.md#datasetid).
 
 ## From the gene: the "Your file or URL" tab
 
@@ -147,8 +146,8 @@ BinaryCIF (`.bcif`).
 Swap `transcriptId` and the track for an explicit `feature` and
 `userProvidedTranscriptSequence` when the transcript is not in any track, such
 as a novel isoform you folded from your own annotation.
-[Launch parameters](launch-parameters.md) lists every argument and the feature
-shape.
+[Launch parameters](launching.md#parameters) lists every argument and the
+feature shape.
 
 ### Comparing your model with AlphaFold DB or the PDB
 

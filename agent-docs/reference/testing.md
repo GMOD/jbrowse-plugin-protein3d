@@ -1,6 +1,6 @@
 # Why the test gates are shaped this way
 
-The commands are in `docs/testing.md` and `docs/host-compatibility.md`; the
+The commands are in `docs/testing.md` and `docs/testing.md`; the
 rules are in the root `CLAUDE.md` and `test/CLAUDE.md`. This page is the
 reasoning.
 
@@ -77,4 +77,4 @@ under a stub parent (`structureModel.test.ts`), with real Mol\* structures from
 AlphaFold's `/api/sequence/summary` nests hits under `structures[].summary` and
 its first p53 hit is another species, which is why sequence search gave way to
 Foldseek. For what a session does on a hosted release, see
-`docs/live-checks.md`.
+`docs/testing.md`.

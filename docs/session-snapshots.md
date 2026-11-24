@@ -22,7 +22,7 @@ hand-written snapshot should keep its settings flat for the genome view as well.
       "url": "https://alphafold.ebi.ac.uk/files/AF-P04637-F1-model_v6.cif",
       "connectedViewId": "lgv-1", // links to a LinearGenomeView by id
       "feature": {
-        /* serialized transcript, see launch-parameters.md "Feature shape" */
+        /* serialized transcript, see launching.md "Feature shape" */
       },
       "userProvidedTranscriptSequence": "MEEP…", // optional; '' = use structure's own
       "initialSelection": { "start": 338, "end": 350 }, // optional pre-lit domain

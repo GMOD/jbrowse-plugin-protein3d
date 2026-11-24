@@ -52,7 +52,7 @@ and `surface: { opacity }` would become
 ## What it costs
 
 - `ProteinColor` is read by the color menu, the legend, `colorProblems`,
-  `resolvedColor`, the launch parameters (`docs/launch-parameters.md`) and every
+  `resolvedColor`, the launch parameters (`docs/launching.md`) and every
   protein figure session in jbrowse-components.
 - A design pass first, as ADR-238 itself had: `domainMin`/`domainMax`/
   `domainMid`, `trackId`, `stat`, `scoreField` and `values` each need a home,
