@@ -38,7 +38,7 @@ Using it:
 - [Your own structures](docs/your-own-structures.md): ColabFold, AF3, Boltz
 - [Launching](docs/launching.md): session-spec links and every argument
 - [Session snapshots](docs/session-snapshots.md): the saved session shape
-- [Figure sessions](docs/figure-sessions.md): fix a figure's properties
+- [Reproducible figures](docs/figure-sessions.md): pin camera, marks, surface
 - [Per-residue values](docs/per-residue-values.md): color by a track or numbers
 
 How it works:
