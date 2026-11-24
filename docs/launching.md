@@ -6,7 +6,7 @@ calls for every `ProteinView` entry in a
 a _resolving_ contract: short-form props like `uniprotId` and `transcriptId`
 become a structure URL, a transcript feature and an alignment sequence before
 the view exists. To restore a view exactly as it was saved instead, see
-[session snapshots](session-snapshots.md).
+[saved sessions](sessions.md).
 
 [Parameters](#parameters) lists every argument, the precedence between `data`,
 `url`, `uniprotId` and `pdbId`, and the `feature` shape.
@@ -325,7 +325,7 @@ spec entry or from code.
 | `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present                         |
 | `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed                               |
 | `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file                  |
-| `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figure sessions](figure-sessions.md)                  |
+| `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figures](sessions.md#figures)                         |
 | `surface`                        | No       | A translucent molecular surface, `{ opacity }`                                                         |
 | `marks`                          | No       | Sites drawn as spheres, sticks or a cartoon, with an optional `label`, such as `[{ "site": "A:248" }]` |
 | `distances`                      | No       | Dashed distances between two sites, such as `[{ "a": "A:46", "b": "A:80" }]`                           |
@@ -917,4 +917,4 @@ alignment and g2p_mapper's genome mapping.
 
 To change what the view draws rather than read it, `view.applyFigure` sets the
 camera, marks, distances, surface and style, and `view.currentCamera()` reads
-the camera back; see [figure session properties](figure-sessions.md).
+the camera back; see [figure properties](sessions.md#figures).

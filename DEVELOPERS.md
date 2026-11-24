@@ -1,9 +1,8 @@
 # Developing jbrowse-plugin-protein3d
 
 For launching views from URLs or code, see
-[docs/launching.md](docs/launching.md) and
-[docs/session-snapshots.md](docs/session-snapshots.md). This page covers
-building and releasing the plugin itself.
+[docs/launching.md](docs/launching.md) and [docs/sessions.md](docs/sessions.md).
+This page covers building and releasing the plugin itself.
 
 ## Running locally
 

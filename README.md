@@ -37,8 +37,7 @@ Using it:
 - [Demos](docs/demos.md): live links, including tricky mappings
 - [Your own structures](docs/your-own-structures.md): ColabFold, AF3, Boltz
 - [Launching](docs/launching.md): open a view from a URL or code
-- [Session snapshots](docs/session-snapshots.md): restore a saved session
-- [Reproducible figures](docs/figure-sessions.md): pin camera, marks, surface
+- [Sessions](docs/sessions.md): saved views and reproducible figures
 - [Per-residue values](docs/per-residue-values.md): color by a track or data
 
 How it works:
