@@ -32,21 +32,25 @@ hour ([scripts/readme-figure.mjs](scripts/readme-figure.mjs)).
 
 Using it:
 
-- [TP53 tutorial][tp53]: prediction to crystal
-- [Genomes tutorial][genomes]: on genomes.jbrowse.org
-- [Demos](docs/demos.md): one link per case
+- [TP53 tutorial][tp53]: AlphaFold model to crystal structure
+- [Genomes tutorial][genomes]: proteins on genomes.jbrowse.org
+- [Demos](docs/demos.md): live links, including tricky mappings
 - [Your own structures](docs/your-own-structures.md): ColabFold, AF3, Boltz
-- [Launching](docs/launching.md): session-spec links and every argument
-- [Session snapshots](docs/session-snapshots.md): the saved session shape
+  models
+- [Launching](docs/launching.md): open a view from a URL or code
+- [Session snapshots](docs/session-snapshots.md): restore a saved session
 - [Reproducible figures](docs/figure-sessions.md): pin camera, marks, surface
-- [Per-residue values](docs/per-residue-values.md): color by a track or numbers
+- [Per-residue values](docs/per-residue-values.md): color by a track or your
+  data
 
 How it works:
 
-- [Alignment](docs/genome-to-structure-alignment.md): why we align on the fly
-- [UniProt feature tracks](docs/uniprot-feature-tracks.md): features as tracks
-- [Secret sauce](docs/secret-sauce.md): one encoding for every view
-- [Residue numbering](docs/residue-numbering.md): the four numberings
+- [Alignment](docs/genome-to-structure-alignment.md): how a codon maps to a
+  residue
+- [UniProt feature tracks](docs/uniprot-feature-tracks.md): UniProt domains as
+  tracks
+- [Secret sauce](docs/secret-sauce.md): how the views stay linked
+- [Residue numbering](docs/residue-numbering.md): why a residue has four numbers
 
 [tp53]: https://jbrowse.org/jb2/docs/tutorials/tp53_structures/
 [genomes]: https://jbrowse.org/jb2/docs/tutorials/genomes_proteins/
