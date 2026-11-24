@@ -44,7 +44,7 @@ Using it:
 How it works:
 
 - [Alignment](docs/genome-to-structure-alignment.md): codon to residue mapping
-- [UniProt feature tracks](docs/uniprot-feature-tracks.md): domains and sites as
+- [UniProt feature tracks](docs/uniprot-feature-tracks.md): annotations as
   tracks
 - [Secret sauce](docs/secret-sauce.md): how the views stay linked
 - [Residue numbering](docs/residue-numbering.md): why a residue has four numbers
