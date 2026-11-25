@@ -48,7 +48,9 @@ what the lookup would pick:
 - `transcriptId` chooses the isoform, among the gene's own,
 - `connectedView.assembly` chooses the assembly (see
   [`connectedView`](#connectedview) for the order), and `connectedView.loc` and
-  `tracks` replace the gene's span and the indexed track.
+  `tracks` replace the gene's span and the indexed track; where the name has
+  hits on several sequences, as on an alt contig, the gene on the `loc`'s
+  sequence wins over the first hit.
 
 A `feature` or `userProvidedTranscriptSequence` on the launch spells the
 transcript out, and the gene is then not looked up at all, since the model,
