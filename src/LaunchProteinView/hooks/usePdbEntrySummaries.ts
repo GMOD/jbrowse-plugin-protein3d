@@ -8,11 +8,18 @@ export default function usePdbEntrySummaries(
   pdbIds: readonly string[] | undefined,
 ) {
   const ids = pdbIds?.join(',')
-  const { data, error, isLoading } = useSWR(
+  const { data, error, isLoading, mutate } = useSWR(
     ids ? (['pdb-entry-summaries', ids] as const) : null,
     ([, list]) => fetchPdbEntrySummaries(list.split(',')),
     STATIC_SWR_OPTIONS,
   )
   const summariesError: unknown = error
-  return { summaries: data, error: summariesError, isLoading }
+  return {
+    summaries: data,
+    error: summariesError,
+    isLoading,
+    retry: () => {
+      void mutate()
+    },
+  }
 }

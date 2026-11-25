@@ -5,7 +5,7 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import IdentifierSelector from './IdentifierSelector'
-import PartialFailureNotice from './PartialFailureNotice'
+import NoticeLine from './NoticeLine'
 import UniProtIdInput from './UniProtIdInput'
 
 import type { UniProtIdLookup } from '../hooks/useUniProtIdLookup'
@@ -83,7 +83,11 @@ const UniProtLookupControls = observer(function UniProtLookupControls({
         </Typography>
       ) : null}
 
-      <PartialFailureNotice message={lookup.lookupPartialFailure} />
+      <NoticeLine
+        message={lookup.lookupPartialFailure}
+        onRetry={lookup.retryLookup}
+        retrying={lookup.lookupRetrying}
+      />
     </>
   )
 })

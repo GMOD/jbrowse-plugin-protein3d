@@ -11,15 +11,24 @@ import usePdbEntrySummaries from './usePdbEntrySummaries'
 import type { StructureSection } from '../utils/structureList'
 import type { Feature } from '@jbrowse/core/util'
 
+/** A line under a section; a failed request's offers to ask again */
+export interface SectionNotice {
+  message: string
+  retry?: () => void
+  retrying?: boolean
+}
+
 export interface SectionStatus {
   loading: string[]
-  notices: string[]
+  notices: SectionNotice[]
 }
 
 interface StatusLine {
   sections: readonly StructureSection[]
   loading?: string | false
   notice?: string | false
+  retry?: () => void
+  retrying?: boolean
 }
 
 function isText(value: string | false | undefined) {
@@ -33,7 +42,11 @@ function sectionStatus(
     const mine = lines.filter(l => l.sections.includes(section))
     return {
       loading: mine.map(l => l.loading).filter(isText),
-      notices: mine.map(l => l.notice).filter(isText),
+      notices: mine.flatMap(({ notice, retry, retrying }) =>
+        typeof notice === 'string'
+          ? [{ message: notice, retry, retrying }]
+          : [],
+      ),
     }
   }
   return {
@@ -139,8 +152,13 @@ export default function useGeneStructures({
     ...datasets.notices.map(notice => ({
       sections: ['alone'] as const,
       notice,
+      retry: datasets.retry,
+      retrying: datasets.retrying,
     })),
   ]
+  // a request asked again is loading, and its old failure stops being news
+  const modelsUnreachable =
+    !alphaFold.isLoading && alphaFold.modelsUnreachable !== undefined
   const uniprotLines: StatusLine[] = uniprotId
     ? [
         {
@@ -148,8 +166,9 @@ export default function useGeneStructures({
           loading: alphaFold.isLoading && 'Asking AlphaFold DB for models',
           notice: alphaFold.noModel
             ? `AlphaFold DB has no model for ${uniprotId}`
-            : alphaFold.modelsUnreachable !== undefined &&
+            : modelsUnreachable &&
               `AlphaFold DB's model list did not answer, so its row opens the canonical model file for ${uniprotId}, without comparing its sequence to the isoforms`,
+          retry: modelsUnreachable ? alphaFold.retry : undefined,
         },
         {
           sections: pdb,
@@ -157,14 +176,18 @@ export default function useGeneStructures({
             (experimental.isLoading || summaries.isLoading) &&
             'Listing PDB entries from RCSB',
           notice:
+            !experimental.isLoading &&
             experimental.error !== undefined &&
             `RCSB did not list the PDB entries: ${errorMessage(experimental.error)}`,
+          retry: experimental.retry,
         },
         {
           sections: ['alone', 'partner'],
           notice:
+            !summaries.isLoading &&
             summaries.error !== undefined &&
             `RCSB did not describe the PDB entries, so they are placed by coverage alone: ${errorMessage(summaries.error)}`,
+          retry: summaries.retry,
         },
         {
           sections: ['alone'],
@@ -178,8 +201,10 @@ export default function useGeneStructures({
             complexes.isLoading &&
             'Asking AlphaFold DB for predicted complexes',
           notice:
+            !complexes.isLoading &&
             complexes.error !== undefined &&
             `AlphaFold DB's complex list did not answer: ${errorMessage(complexes.error)}`,
+          retry: complexes.retry,
         },
       ]
     : []

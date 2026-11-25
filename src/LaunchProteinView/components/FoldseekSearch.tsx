@@ -22,7 +22,7 @@ import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
 import FoldseekResultsTable from './FoldseekResultsTable'
-import PartialFailureNotice from './PartialFailureNotice'
+import NoticeLine from './NoticeLine'
 import TranscriptSelector from './TranscriptSelector'
 import UncodedTranscriptNotice from './UncodedTranscriptNotice'
 
@@ -91,6 +91,8 @@ const FoldseekSearch = observer(function FoldseekSearch({
     isLoading: isLoadingIsoforms,
     error: isoformError,
     partialFailure: isoformPartialFailure,
+    retryIsoforms,
+    isoformsRetrying,
     selectedTranscriptId: effectiveSelectedTranscriptId,
     setSelectedTranscriptId: setUserSelection,
     selectedTranscript,
@@ -161,7 +163,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
           />
         ) : null}
 
-        <PartialFailureNotice message={isoformPartialFailure} />
+        <NoticeLine
+          message={isoformPartialFailure}
+          onRetry={retryIsoforms}
+          retrying={isoformsRetrying}
+        />
 
         {isoformSequences && ranking ? (
           <>

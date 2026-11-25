@@ -47,29 +47,30 @@ export default function useUniProtSearch({
     idsToSearch.some(id => isRecognizedDatabaseId(id)) ||
     Boolean(geneNameToSearch)
 
-  const { data, error, isLoading } = useSWR<UniProtSearchResult>(
-    enabled && hasValidId
-      ? [
-          'uniprotSearch',
-          selectedQueryId,
-          idsToSearch.join(','),
-          geneNameToSearch,
+  const { data, error, isLoading, isValidating, mutate } =
+    useSWR<UniProtSearchResult>(
+      enabled && hasValidId
+        ? [
+            'uniprotSearch',
+            selectedQueryId,
+            idsToSearch.join(','),
+            geneNameToSearch,
+            geneId,
+            organismId,
+          ]
+        : null,
+      async () =>
+        searchUniProtEntries({
+          recognizedIds: idsToSearch,
           geneId,
+          geneName: geneNameToSearch,
           organismId,
-        ]
-      : null,
-    async () =>
-      searchUniProtEntries({
-        recognizedIds: idsToSearch,
-        geneId,
-        geneName: geneNameToSearch,
-        organismId,
-      }),
-    {
-      ...STATIC_SWR_OPTIONS,
-      keepPreviousData: true,
-    },
-  )
+        }),
+      {
+        ...STATIC_SWR_OPTIONS,
+        keepPreviousData: true,
+      },
+    )
 
   const result = error ? undefined : data
   return {
@@ -77,5 +78,9 @@ export default function useUniProtSearch({
     isLoading,
     error,
     partialFailure: result ? partialFailureNotice(result) : undefined,
+    retry: () => {
+      void mutate()
+    },
+    retrying: isValidating,
   }
 }

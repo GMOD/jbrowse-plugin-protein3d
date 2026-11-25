@@ -1,13 +1,14 @@
 import React, { useState } from 'react'
 
-import { ErrorMessage } from '@jbrowse/core/ui'
 import { Chip, Link, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { uniprotEntryUrl } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
+import { errorMessage } from '../../ProteinView/util'
 import ExternalLink from '../../components/ExternalLink'
 import { unambiguousEntry } from '../resolveGeneLaunch'
+import NoticeLine from './NoticeLine'
 import UniProtLookupControls from './UniProtLookupControls'
 import UniProtLookupResults from './UniProtLookupResults'
 
@@ -157,7 +158,12 @@ const UniProtSummaryBar = observer(function UniProtSummaryBar({
       {open ? (
         <div className={classes.panel} data-testid="uniprot-chooser">
           {lookup.lookupError ? (
-            <ErrorMessage error={lookup.lookupError} />
+            <NoticeLine
+              color="error"
+              message={`UniProt lookup failed: ${errorMessage(lookup.lookupError)}`}
+              onRetry={lookup.retryLookup}
+              retrying={lookup.lookupRetrying}
+            />
           ) : null}
           <UniProtLookupControls lookup={lookup} />
           <UniProtLookupResults lookup={lookup} />

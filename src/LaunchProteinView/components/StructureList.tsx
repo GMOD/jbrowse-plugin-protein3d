@@ -6,6 +6,7 @@ import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
 import { SECTIONS } from '../utils/structureList'
+import NoticeLine from './NoticeLine'
 import StructureListRow from './StructureListRow'
 
 import type { SectionStatus } from '../hooks/useGeneStructures'
@@ -155,15 +156,15 @@ const Section = observer(function Section({
           <LoadingEllipses variant="body2" message={message} />
         </div>
       ))}
-      {notices.map(message => (
-        <Typography
-          key={message}
+      {notices.map(notice => (
+        <NoticeLine
+          key={notice.message}
           className={classes.line}
-          variant="body2"
           color="textSecondary"
-        >
-          {message}
-        </Typography>
+          message={notice.message}
+          onRetry={notice.retry}
+          retrying={notice.retrying}
+        />
       ))}
     </div>
   )

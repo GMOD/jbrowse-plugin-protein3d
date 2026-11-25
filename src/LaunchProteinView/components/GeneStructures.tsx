@@ -30,7 +30,7 @@ import {
 } from '../utils/structureList'
 import { getTranscriptDisplayName } from '../utils/util'
 import IsoformMatchNotice from './IsoformMatchNotice'
-import PartialFailureNotice from './PartialFailureNotice'
+import NoticeLine from './NoticeLine'
 import ProteinViewActions from './ProteinViewActions'
 import StructureList from './StructureList'
 import TranscriptSelector from './TranscriptSelector'
@@ -321,7 +321,11 @@ const GeneStructures = observer(function GeneStructures({
           {launch.loadingStatuses.map(status => (
             <LoadingEllipses key={status} variant="caption" message={status} />
           ))}
-          <PartialFailureNotice message={launch.partialFailure} />
+          <NoticeLine
+            message={launch.partialFailure}
+            onRetry={launch.retryIsoforms}
+            retrying={launch.isoformsRetrying}
+          />
           <UncodedTranscriptNotice
             feature={feature}
             preferredTranscriptId={preferredTranscriptId}

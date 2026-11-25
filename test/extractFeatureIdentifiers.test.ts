@@ -58,12 +58,16 @@ describe('the lookup and the launch it feeds', () => {
       isLoading: false,
       error: null,
       partialFailure: undefined,
+      retry: () => {},
+      retrying: false,
     })
     mockUseUniProtSearch.mockReturnValue({
       entries: [],
       isLoading: false,
       error: null,
       partialFailure: undefined,
+      retry: () => {},
+      retrying: false,
     })
     mockGetSearchDescription.mockReturnValue('mock search description')
 
@@ -188,6 +192,8 @@ describe('the lookup and the launch it feeds', () => {
       isLoading: false,
       error: null,
       partialFailure: undefined,
+      retry: () => {},
+      retrying: false,
     })
     const structures = [
       {

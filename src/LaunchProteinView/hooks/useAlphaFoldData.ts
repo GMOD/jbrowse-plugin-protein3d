@@ -24,7 +24,7 @@ export default function useAlphaFoldData({
   view?: { assemblyNames?: string[] }
   preferredTranscriptId?: string
 }) {
-  const { data, isLoading, error } = useSWR(
+  const { data, isLoading, error, mutate } = useSWR(
     uniprotId ? (['alphafold-models', uniprotId] as const) : null,
     ([, id]) => fetchAlphaFoldModels(id),
     STATIC_SWR_OPTIONS,
@@ -51,5 +51,8 @@ export default function useAlphaFoldData({
     /** the length of the entry's own sequence, which PDB entries number on */
     entryLength: data?.find(m => m.accession === entry)?.sequence.length,
     noModel: data?.length === 0,
+    retry: () => {
+      void mutate()
+    },
   }
 }

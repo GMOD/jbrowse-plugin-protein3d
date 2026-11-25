@@ -87,6 +87,8 @@ export default function useUniProtIdLookup({
     isLoading: isSearchLoading,
     error: lookupError,
     partialFailure: lookupPartialFailure,
+    retry: retryLookup,
+    retrying: lookupRetrying,
   } = useUniProtSearch({
     recognizedIds: geneIds.recognizedIds,
     geneId: geneIds.geneId,
@@ -144,6 +146,8 @@ export default function useUniProtIdLookup({
     isLookupLoading,
     lookupError,
     lookupPartialFailure,
+    retryLookup,
+    lookupRetrying,
     uniprotId,
     featureUniprotId,
     recognizedIds: geneIds.recognizedIds,

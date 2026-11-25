@@ -13,7 +13,7 @@ import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelectio
 import { launch3DProteinView } from '../utils/launchViewUtils'
 import { readStructureFile } from '../utils/readStructureFile'
 import IsoformMatchNotice from './IsoformMatchNotice'
-import PartialFailureNotice from './PartialFailureNotice'
+import NoticeLine from './NoticeLine'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 import UncodedTranscriptNotice from './UncodedTranscriptNotice'
@@ -90,6 +90,8 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     selectedIsoform: protein,
     error: isoformError,
     partialFailure: isoformPartialFailure,
+    retryIsoforms,
+    isoformsRetrying,
   } = useTranscriptIsoformSelection({
     feature,
     view,
@@ -155,7 +157,11 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
               message="Reading residues from the structure"
             />
           ) : null}
-          <PartialFailureNotice message={isoformPartialFailure} />
+          <NoticeLine
+            message={isoformPartialFailure}
+            onRetry={retryIsoforms}
+            retrying={isoformsRetrying}
+          />
           {isRanking ? (
             <LoadingEllipses
               variant="subtitle2"
