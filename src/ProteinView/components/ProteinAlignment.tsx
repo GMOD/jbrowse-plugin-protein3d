@@ -13,7 +13,7 @@ import { makeStyles } from 'tss-react/mui'
 
 import { followHover, offScreenCenterTarget } from '../autoScroll'
 import { cssScaleOf, keyEntriesOf } from '../colorScale'
-import { LABEL_WIDTH, ROW_HEIGHT } from '../constants'
+import { LABEL_ELLIPSIS, LABEL_WIDTH, ROW_HEIGHT } from '../constants'
 import useProteinFeatureTrackData from '../hooks/useProteinFeatureTrackData'
 import { RESIDUE_COLORS } from '../residueColors'
 import { errorMessage } from '../util'
@@ -87,7 +87,7 @@ const GutterLabel = observer(function GutterLabel({
           justifyContent: 'flex-end',
         }}
       >
-        {label}
+        <span style={LABEL_ELLIPSIS}>{label}</span>
       </div>
     </Tooltip>
   )
@@ -381,7 +381,7 @@ const ProteinAlignment = observer(function ProteinAlignment({
         <div
           style={{
             flexShrink: 0,
-            minWidth: LABEL_WIDTH,
+            width: LABEL_WIDTH,
             paddingRight: 4,
             whiteSpace: 'nowrap',
             lineHeight: 1,

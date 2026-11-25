@@ -128,7 +128,12 @@ const StructureRow = observer(function StructureRow({
           </span>
         </Tooltip>
       ) : null}
-      <Typography variant="caption" sx={{ fontWeight: 'bold', flexShrink: 0 }}>
+      <Typography
+        variant="caption"
+        noWrap
+        title={label}
+        sx={{ fontWeight: 'bold', flexShrink: 0, maxWidth: '40%' }}
+      >
         {label}
       </Typography>
       {statusMessage ? (
