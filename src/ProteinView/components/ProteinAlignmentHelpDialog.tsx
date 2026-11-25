@@ -45,6 +45,10 @@ const ProteinAlignmentHelpDialog = observer(
             structure&apos;s header row means the mapping may be chance: check
             the chain picker or the transcript isoform first.
           </Typography2>
+          <Typography2>
+            A structure opened without a transcript shows its own protein chain:
+            there is no GENOME row, and a click selects in 3D only.
+          </Typography2>
           <ul style={{ margin: 4, paddingLeft: 20 }}>
             <li>
               <strong>GENOME</strong> is the transcript&apos;s translation;{' '}
