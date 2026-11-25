@@ -27,9 +27,9 @@ import {
   toggleStructure,
 } from '../utils/structureList'
 import { getTranscriptDisplayName } from '../utils/util'
+import IsoformMatchNotice from './IsoformMatchNotice'
 import PartialFailureNotice from './PartialFailureNotice'
 import ProteinViewActions from './ProteinViewActions'
-import SequenceMismatchNotice from './SequenceMismatchNotice'
 import StructureList from './StructureList'
 import TranscriptSelector from './TranscriptSelector'
 import UniProtSummaryBar from './UniProtSummaryBar'
@@ -338,7 +338,12 @@ const GeneStructures = observer(function GeneStructures({
               {stripStopCodon(launch.selectedIsoform.seq).length} aa)
             </Typography>
           ) : null}
-          {launch.sequencesMatch === false ? <SequenceMismatchNotice /> : null}
+          <IsoformMatchNotice
+            ranking={launch.ranking}
+            selectedTranscript={launch.selectedTranscript}
+            structureSequence={launch.structureSequence}
+            feature={feature}
+          />
           {!isLoading && !error && missingReasons.length > 0 ? (
             <Typography variant="body2" color="error">
               {missingReasons.join('; ')}

@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 
-import { getPdbStructureUrl, sameProtein } from 'p2s_mapper'
+import { getPdbStructureUrl } from 'p2s_mapper'
 
 import { useAlphaFoldComplexModel } from './useAlphaFoldComplexes'
 import usePdbEntry from './usePdbEntry'
@@ -115,12 +115,6 @@ export default function useStructureLaunch({
   ].filter(s => typeof s === 'string')
   const isLoading = loadingStatuses.length > 0
 
-  // a site's own structure is folded from the transcript it is listed under
-  const predicted =
-    pivot?.kind === 'alphafold' ||
-    pivot?.kind === 'complex' ||
-    pivot?.kind === 'url'
-  const isoformSequence = selection.selectedIsoform?.seq
   return {
     ...selection,
     loadingStatuses,
@@ -130,14 +124,5 @@ export default function useStructureLaunch({
       ? undefined
       : (selection.error ?? complex.error ?? file.error),
     pdbEntryError: pdb.error,
-    // only a prediction is meant to be the transcript's own protein; a crystal
-    // is a construct, usually of one domain
-    sequencesMatch:
-      predicted &&
-      !complex.isLoading &&
-      isoformSequence &&
-      selection.structureSequence
-        ? sameProtein(isoformSequence, selection.structureSequence)
-        : undefined,
   }
 }

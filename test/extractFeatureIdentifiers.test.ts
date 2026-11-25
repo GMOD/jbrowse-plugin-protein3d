@@ -211,7 +211,6 @@ describe('the lookup and the launch it feeds', () => {
     await waitFor(() => {
       expect(result.current.selectedTranscriptId).toBe('transcript2')
     })
-    expect(result.current.sequencesMatch).toBe(true)
     expect(result.current.ranking?.matches.map(m => m.id)).toEqual([
       'transcript2',
     ])

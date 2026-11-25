@@ -3,7 +3,6 @@ import React, { useState } from 'react'
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import { Button, DialogActions, DialogContent } from '@mui/material'
 import { observer } from 'mobx-react'
-import { sameProtein } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
 import ExternalLink from '../../components/ExternalLink'
@@ -13,8 +12,8 @@ import useStructureFileSequence from '../hooks/useStructureFileSequence'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import { launch3DProteinView } from '../utils/launchViewUtils'
 import { readStructureFile } from '../utils/readStructureFile'
+import IsoformMatchNotice from './IsoformMatchNotice'
 import PartialFailureNotice from './PartialFailureNotice'
-import SequenceMismatchNotice from './SequenceMismatchNotice'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
 
@@ -115,10 +114,6 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     !awaitsStructure &&
     !readFailed &&
     !launching
-  const sequencesDiffer =
-    !!protein?.seq &&
-    !!structureSequence &&
-    !sameProtein(protein.seq, structureSequence)
 
   const handleLaunch = runLaunch(async () => {
     if (protein && selectedTranscript) {
@@ -183,7 +178,12 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         </div>
       </DialogContent>
       <DialogActions>
-        {sequencesDiffer ? <SequenceMismatchNotice /> : null}
+        <IsoformMatchNotice
+          ranking={ranking}
+          selectedTranscript={selectedTranscript}
+          structureSequence={structureSequence}
+          feature={feature}
+        />
         <Button
           variant="contained"
           color="secondary"
