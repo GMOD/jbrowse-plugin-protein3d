@@ -273,6 +273,19 @@ test('resolves a pdbId shorthand to an RCSB url at hydration', () => {
   )
 })
 
+// a stalled download read as a stalled API lookup, and a 404 reported no file
+test('an AlphaFold file being loaded is named by the loading text and the report', () => {
+  const parent = TestParent.create({ structures: [{ uniprotId: 'P04637' }] })
+  const [s] = parent.structures
+  expect(s!.loadingMessage).toBe('Resolving AlphaFold model for P04637')
+  s!.setResolvedUrl('https://alphafold.ebi.ac.uk/files/AF-P04637-F1.cif')
+  expect(s!.loadingMessage).toMatch(/^Loading /)
+  s!.setError(new Error('404'))
+  expect(s!.report.url).toBe(
+    'https://alphafold.ebi.ac.uk/files/AF-P04637-F1.cif',
+  )
+})
+
 test('an explicit url wins over a uniprotId shorthand', () => {
   const parent = TestParent.create({
     structures: [{ url: 'https://example.com/x.cif', uniprotId: 'P04637' }],

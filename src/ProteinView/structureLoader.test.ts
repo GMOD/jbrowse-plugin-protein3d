@@ -52,10 +52,15 @@ const TestStructure = types
 
     error: undefined as unknown,
     loadAttempt: 0,
+    resolvedUrl: undefined as string | undefined,
   }))
   .actions(self => ({
     setUrl(url: string) {
       self.url = url
+      self.resolvedUrl = undefined
+    },
+    setResolvedUrl(url: string | undefined) {
+      self.resolvedUrl = url
     },
     retryLoad() {
       self.loadAttempt += 1
@@ -404,13 +409,16 @@ test('a spelled filename that fails is not kept, so the next attempt asks the AP
     getAlphaFoldStructureUrl('P04637'),
   )
   expect(structure.url).toBeUndefined()
+  expect(structure.resolvedUrl).toBe(getAlphaFoldStructureUrl('P04637'))
   expect(structure.error).toEqual(new Error('404'))
 
   host.setPlugin({ id: 'B' })
   load()
+  expect(structure.resolvedUrl).toBeUndefined()
   await tick()
   expect(fetchModels).toHaveBeenCalledTimes(2)
   expect(structure.url).toBe(alphaFoldModel('P04637', '').url)
+  expect(structure.resolvedUrl).toBeUndefined()
   expect(structure.loadedToMolstar).toBe(true)
   logged.mockRestore()
 })

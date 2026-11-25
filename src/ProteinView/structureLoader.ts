@@ -134,19 +134,27 @@ export function makeStructureLoader(
     return picked.url
   }
 
-  async function loadResolved(
+  async function loadResolvedFile(
+    structure: StructureInstance,
+    plugin: PluginContext,
+    url: string,
+  ) {
+    structure.setResolvedUrl(url)
+    const data = await loadStructureData({ structure, plugin, url })
+    if (isAlive(structure)) {
+      structure.setUrl(url)
+    }
+    return data
+  }
+
+  function loadResolved(
     structure: StructureInstance,
     plugin: PluginContext,
     url: string | undefined,
   ) {
-    if (url !== undefined && isAlive(structure)) {
-      const data = await loadStructureData({ structure, plugin, url })
-      if (isAlive(structure)) {
-        structure.setUrl(url)
-      }
-      return data
-    }
-    return undefined
+    return url !== undefined && isAlive(structure)
+      ? loadResolvedFile(structure, plugin, url)
+      : undefined
   }
 
   function settle(structure: StructureInstance, plugin: PluginContext) {
@@ -168,6 +176,7 @@ export function makeStructureLoader(
     // failure goes with it. Left in place it also reported the structure as
     // settled for the whole of the retry, since `loading` reads it.
     structure.setError(undefined)
+    structure.setResolvedUrl(undefined)
     // a structure that already knows its file dispatches synchronously, so the
     // in-flight guard covers it before the autorun body returns
     const unresolved = unresolvedId(structure)

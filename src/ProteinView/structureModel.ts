@@ -460,6 +460,12 @@ const Structure = types
      * changes or the plugin does
      */
     loadAttempt: 0,
+    /**
+     * #volatile
+     * The AlphaFold file an attempt is loading, kept as `url` only once it
+     * loads, so a 404 is asked about again rather than saved
+     */
+    resolvedUrl: undefined as string | undefined,
   }))
   .actions(self => ({
     /**
@@ -476,6 +482,13 @@ const Structure = types
      */
     setUrl(url: string) {
       self.url = url
+      self.resolvedUrl = undefined
+    },
+    /**
+     * #action
+     */
+    setResolvedUrl(url: string | undefined) {
+      self.resolvedUrl = url
     },
     /**
      * #action
@@ -1073,7 +1086,10 @@ const Structure = types
         return undefined
       }
       if (!self.loadedToMolstar) {
-        const unresolved = self.url === undefined && self.data === undefined
+        const unresolved =
+          self.url === undefined &&
+          self.data === undefined &&
+          self.resolvedUrl === undefined
         return unresolved && self.alphaFoldComplexId
           ? `Resolving AlphaFold complex ${self.alphaFoldComplexId}`
           : unresolved && self.uniprotId
