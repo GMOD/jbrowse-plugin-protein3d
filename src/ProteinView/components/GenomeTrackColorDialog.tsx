@@ -15,6 +15,7 @@ import {
 import { observer } from 'mobx-react'
 
 import { trackConfigNode } from '../../trackConfigNode'
+import { isFeatureFieldName } from '../featureFields'
 import { TRACK_STATS } from '../proteinColor'
 import { parseCuts, thresholdRange } from '../thresholdPalette'
 
@@ -65,6 +66,7 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
     })
     .map(entry => ({
       trackId: entry.trackId,
+      type: entry.type,
       name: getTrackName(entry, session),
     }))
     .toSorted((a, b) => a.name.localeCompare(b.name))
@@ -83,8 +85,16 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
   const [cutsText, setCutsText] = useState(
     color.field === 'track' && color.domain ? color.domain.join(', ') : '',
   )
+  const [scoreFieldText, setScoreFieldText] = useState(
+    color.field === 'track' ? (color.scoreField ?? '') : '',
+  )
   const cuts = parseCuts(cutsText)
   const cutsInvalid = scale === 'threshold' && !cuts
+  const asksScoreField =
+    stat !== 'count' &&
+    tracks.find(t => t.trackId === trackId)?.type === 'VariantTrack'
+  const scoreFieldInvalid =
+    asksScoreField && !isFeatureFieldName(scoreFieldText.trim())
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Color by a genome track</DialogTitle>
@@ -136,6 +146,24 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
             </MenuItem>
           ))}
         </TextField>
+        {asksScoreField ? (
+          <TextField
+            fullWidth
+            label="Score field"
+            placeholder="INFO.AF"
+            value={scoreFieldText}
+            error={scoreFieldInvalid && scoreFieldText !== ''}
+            helperText={
+              scoreFieldInvalid && scoreFieldText !== ''
+                ? 'A field name such as INFO.AF, not a jexl: expression'
+                : "The field holding each variant's number, such as INFO.AF"
+            }
+            onChange={e => {
+              setScoreFieldText(e.target.value)
+            }}
+            sx={{ mt: 2 }}
+          />
+        ) : null}
         <TextField
           select
           fullWidth
@@ -172,11 +200,12 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
         <Button onClick={handleClose}>Cancel</Button>
         <Button
           variant="contained"
-          disabled={!trackId || cutsInvalid}
+          disabled={!trackId || cutsInvalid || scoreFieldInvalid}
           onClick={() => {
             // the same track on the same scale keeps what a session wrote
             // beside it: its palette, labels, title and domain, and the same
-            // track its filter, and its scoreField, which a count does not read
+            // track its filter, and its scoreField, which a count does not read,
+            // unless the dialog asked for one
             const sameTrack =
               color.field === 'track' && color.trackId === trackId
             const kept =
@@ -184,8 +213,11 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
               (color.scale === 'threshold') === (scale === 'threshold')
                 ? color
                 : undefined
-            const scoreField =
-              sameTrack && stat !== 'count' ? color.scoreField : undefined
+            const scoreField = asksScoreField
+              ? scoreFieldText.trim()
+              : sameTrack && stat !== 'count'
+                ? color.scoreField
+                : undefined
             const filter = sameTrack ? color.filter : undefined
             const sameBands = kept?.range?.length === (cuts?.length ?? 0) + 1
             model.setColor(
