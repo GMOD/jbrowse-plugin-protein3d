@@ -5,7 +5,7 @@ import { Link, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
-import { SECTIONS } from '../utils/structureList'
+import { SECTIONS, firstRowsAndChecked } from '../utils/structureList'
 import NoticeLine from './NoticeLine'
 import StructureListRow from './StructureListRow'
 
@@ -45,8 +45,9 @@ const useStyles = makeStyles()(theme => ({
 }))
 
 // the protein on its own is mostly the same crystal again, so the section
-// shows its best few and the partners start above the fold
-const ALONE_SHOWN = 5
+// shows its best few and the partners start above the fold; the partners fold
+// to as many, so two dozen complexes do not bury the fragments
+const SHOWN = 5
 
 function sectionText(section: StructureSection, geneName: string) {
   return section === 'added'
@@ -95,7 +96,9 @@ const Section = observer(function Section({
     !expanded &&
     !rows.some(r => checked.includes(r.key))
   const shown =
-    section === 'alone' && !expanded ? rows.slice(0, ALONE_SHOWN) : rows
+    (section === 'alone' || section === 'partner') && !expanded
+      ? firstRowsAndChecked(rows, checked, SHOWN)
+      : rows
   const hidden = rows.length - shown.length
   const loading = status?.loading ?? []
   const notices = status?.notices ?? []

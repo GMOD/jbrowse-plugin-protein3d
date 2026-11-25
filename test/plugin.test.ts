@@ -303,6 +303,7 @@ describe('Protein3d Plugin E2E', () => {
     await clickStructureRow(page, 'pdb:7ow4')
     expect(await checkedStructureRows(page)).toEqual(['pdb:7ow4'])
     await clickStructureRow(page, 'alphafold')
+    await expandStructureSection(page, 'partner')
     await clickStructureRow(page, 'pdb:9btm')
     expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:9btm'])
     await waitForLaunchEnabled(page)

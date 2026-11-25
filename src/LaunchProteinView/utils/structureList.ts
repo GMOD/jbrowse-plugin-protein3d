@@ -457,6 +457,15 @@ export function listOrder(rows: readonly StructureRow[]) {
   return SECTIONS.flatMap(section => rows.filter(r => r.section === section))
 }
 
+/** A folded section's first rows, and any checked row below them, in order */
+export function firstRowsAndChecked(
+  rows: readonly StructureRow[],
+  checked: readonly string[],
+  count: number,
+) {
+  return rows.filter((r, i) => i < count || checked.includes(r.key))
+}
+
 /**
  * A site's own structure when its datasets list one, else the AlphaFold model,
  * else the list's first structure. The site's leads because it was folded from

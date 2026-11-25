@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addedRows,
   defaultChecked,
+  firstRowsAndChecked,
   ligandTags,
   listOrder,
   matchesFilter,
@@ -377,6 +378,15 @@ describe('checking rows', () => {
     expect(
       toggleStructure(['alphafold', 'pdb:9btm'], row('alphafold'), rows),
     ).toEqual(['pdb:9btm'])
+  })
+
+  it('folds a section to its first rows, never hiding a checked one', () => {
+    expect(firstRowsAndChecked(rows, ['pdb:7ow4'], 2).map(r => r.key)).toEqual([
+      'alphafold',
+      'pdb:6zio',
+      'pdb:7ow4',
+    ])
+    expect(firstRowsAndChecked(rows, [], 10)).toHaveLength(rows.length)
   })
 
   it('opens a short fragment alone', () => {

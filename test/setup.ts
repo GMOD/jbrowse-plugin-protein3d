@@ -797,8 +797,8 @@ export async function checkedStructureRows(page: Page): Promise<string[]> {
   )
 }
 
-// Opens a folded section: the rest of the protein on its own, or the short
-// fragments
+// Opens a folded section: the rest of the protein on its own or with a
+// partner, or the short fragments
 export async function expandStructureSection(page: Page, section: string) {
   await page.evaluate(
     (dialog, section) => {
