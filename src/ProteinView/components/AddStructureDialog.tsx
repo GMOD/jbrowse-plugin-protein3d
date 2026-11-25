@@ -65,7 +65,7 @@ const AddStructureDialog = observer(function AddStructureDialog({
             : choice === 'url' && structureURL
               ? { url: structureURL }
               : choice === 'file' && file
-                ? { data: await readStructureFile(file) }
+                ? { data: await readStructureFile(file), fileName: file.name }
                 : undefined
 
       if (source) {

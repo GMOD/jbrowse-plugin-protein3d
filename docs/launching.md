@@ -589,9 +589,10 @@ Each entry of `structures` is one structure: a source (`url`, `data`,
 `uniprotId`, `alphaFoldComplexId`, `pdbId` or `datasetId`) and, optionally,
 `initialTranscriptResidues`, `initialResidues`, `initialSelection`,
 `mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden`,
-`assembly`, `chains` and `filter`. `feature`, `userProvidedTranscriptSequence`
-and `connectedViewId` written on the launch are the defaults every entry shares,
-and an entry may carry its own.
+`assembly`, `chains`, `filter` and `fileName`, the name that labels a structure
+given as `data`. `feature`, `userProvidedTranscriptSequence` and
+`connectedViewId` written on the launch are the defaults every entry shares, and
+an entry may carry its own.
 
 Written on the launch itself, the per-structure keys describe its one structure.
 Beside `structures` they apply to no structure, so the launch reports each by

@@ -917,12 +917,18 @@ test('an unmapped structure reads hovers from its first protein chain', () => {
 
 test('label names the structure by id so stacked panels can be told apart', () => {
   const parent = TestParent.create({
-    structures: [{ pdbId: '1TUP' }, { uniprotId: 'P04637' }, { data: 'ATOM' }],
+    structures: [
+      { pdbId: '1TUP' },
+      { uniprotId: 'P04637' },
+      { data: 'ATOM' },
+      { data: 'ATOM', fileName: 'kras_g12c.pdb' },
+    ],
   })
   expect(parent.structures.map(s => s.label)).toEqual([
     '1TUP',
     'AlphaFold P04637',
     'Uploaded structure',
+    'kras_g12c.pdb',
   ])
 })
 

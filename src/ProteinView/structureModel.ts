@@ -184,6 +184,11 @@ const Structure = types
     data: types.maybe(types.string),
     /**
      * #property
+     * The name of the file `data` was read from, which labels the structure
+     */
+    fileName: types.maybe(types.string),
+    /**
+     * #property
      * UniProt accession of the structure: the one a `{ uniprotId }` shorthand
      * asked for, or the one an AlphaFold url names. With no url the structure
      * loader asks AlphaFold DB which of the accession's models to open and
@@ -786,7 +791,7 @@ const Structure = types
         : undefined
       return members
         ? `AlphaFold complex ${members}`
-        : structureDisplayLabel(self)
+        : (self.fileName ?? structureDisplayLabel(self))
     },
     /**
      * #getter

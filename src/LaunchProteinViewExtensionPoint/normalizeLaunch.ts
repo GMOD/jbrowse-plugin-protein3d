@@ -32,6 +32,7 @@ type TopLevelRole = 'source' | 'selection' | 'setting' | 'launchWide'
 const STRUCTURE_KEY_ROLES = {
   url: 'source',
   data: 'source',
+  fileName: 'setting',
   uniprotId: 'source',
   alphaFoldComplexId: 'source',
   pdbId: 'source',
@@ -346,6 +347,7 @@ function readStructure(
   return {
     url: read('url', isString, 'a string'),
     data: read('data', isString, 'a string'),
+    fileName: read('fileName', isString, 'a string'),
     uniprotId: read('uniprotId', isString, 'a string'),
     alphaFoldComplexId: read('alphaFoldComplexId', isString, 'a string'),
     pdbId: read('pdbId', isString, 'a string'),

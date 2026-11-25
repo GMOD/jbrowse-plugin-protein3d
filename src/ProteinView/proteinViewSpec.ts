@@ -24,6 +24,8 @@ import type {
 export interface ProteinStructureSpec {
   url?: string
   data?: string
+  // the name of the file `data` was read from, which labels the structure
+  fileName?: string
   // shorthands resolved to `url` at hydration when neither url nor data is set:
   // uniprotId -> AlphaFold model, alphaFoldComplexId -> AlphaFold DB's
   // predicted complex, pdbId -> RCSB mmCIF
@@ -108,13 +110,15 @@ export function defaultDisplayName(structures: ProteinStructureSpec[]) {
   return [
     'Protein view',
     typeof featureName === 'string' ? featureName : undefined,
-    ...structures.map(s =>
-      structureDisplayLabel({
-        url: resolveStructureUrl(s),
-        data: s.data,
-        uniprotId: s.uniprotId,
-        alphaFoldComplexId: s.alphaFoldComplexId,
-      }),
+    ...structures.map(
+      s =>
+        s.fileName ??
+        structureDisplayLabel({
+          url: resolveStructureUrl(s),
+          data: s.data,
+          uniprotId: s.uniprotId,
+          alphaFoldComplexId: s.alphaFoldComplexId,
+        }),
     ),
   ]
     .filter(s => !!s)
