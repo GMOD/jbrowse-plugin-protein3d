@@ -260,7 +260,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
             handleClose()
           }}
         >
-          Cancel
+          Close
         </Button>
         {isBusy ? (
           <Button
