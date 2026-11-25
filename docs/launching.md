@@ -573,7 +573,7 @@ removes, where an alternative exon lands, whether an exon matches a domain.
   The hover readout ends with the residue's exon while the view colors by exon,
   named as the legend names it ("Coding exon 3" under coding numbering), and
   `structure.locateResidues` always carries it (see
-  [Reading what a view resolved](reading-the-view.md#locating-a-residue)).
+  [Locating a residue](#locating-a-residue)).
 - Residues the alignment to the transcript does not reach, and chains other than
   the mapped one, stay grey. A structure with no transcript stays grey and its
   header row says so.
