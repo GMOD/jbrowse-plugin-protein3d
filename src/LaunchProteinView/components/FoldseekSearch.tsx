@@ -190,7 +190,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
               message={
                 userEditedSequence === undefined &&
                 selectedIsoformData &&
-                hasInternalStop(selectedIsoformData.seq)
+                hasInternalStop(selectedIsoformData.seq, selectedTranscript)
                   ? 'This translation has a stop codon inside it; Foldseek searches it with the stop removed, as a read-through protein'
                   : undefined
               }

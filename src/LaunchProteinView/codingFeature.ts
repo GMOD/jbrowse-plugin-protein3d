@@ -49,9 +49,17 @@ function tagsOf(feature: Feature): unknown[] {
       : []
 }
 
-/** A stop codon inside the translation; a trailing one is its ordinary end */
-export function hasInternalStop(seq: string) {
-  return stripStopCodon(seq).includes('*')
+/**
+ * A stop codon inside the translation. A trailing one is its ordinary end, and
+ * a selenoprotein's is selenocysteine: GENCODE tags its transcript `seleno` and
+ * the translation keeps the `*`, while RefSeq's `transl_except` is translated
+ * as U and leaves none.
+ */
+export function hasInternalStop(seq: string, transcript?: Feature) {
+  return (
+    stripStopCodon(seq).includes('*') &&
+    !(transcript && tagsOf(transcript).includes('seleno'))
+  )
 }
 
 /**
@@ -60,7 +68,7 @@ export function hasInternalStop(seq: string) {
  */
 export function translationCautions(transcript?: Feature, seq?: string) {
   return [
-    seq !== undefined && hasInternalStop(seq) && 'internal stop',
+    seq !== undefined && hasInternalStop(seq, transcript) && 'internal stop',
     transcript &&
       tagsOf(transcript).some(
         t => t === 'cds_start_NF' || t === 'cds_end_NF',

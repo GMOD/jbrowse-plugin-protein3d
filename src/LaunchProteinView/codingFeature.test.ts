@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   codingTranscripts,
+  hasInternalStop,
   isCodingFeature,
   translationCautions,
   uncodedTranscript,
@@ -20,21 +21,29 @@ function feature(type: string, subfeatures: SimpleFeature[] = []) {
 }
 
 describe('translationCautions', () => {
+  const tagged = (tag: unknown) =>
+    new SimpleFeature({
+      uniqueId: 't',
+      refName: 'chr1',
+      start: 0,
+      end: 100,
+      type: 'mRNA',
+      tag,
+    })
+
   it('flags a stop inside the translation, not the one ending it', () => {
     expect(translationCautions(undefined, 'MKT*')).toEqual([])
     expect(translationCautions(undefined, 'MK*TL*')).toEqual(['internal stop'])
   })
 
+  it("reads a GENCODE selenoprotein's interior stop as selenocysteine", () => {
+    expect(
+      translationCautions(tagged('basic,seleno,MANE_Select'), 'MCAAR*LAA*'),
+    ).toEqual([])
+    expect(hasInternalStop('MCAAR*LAA*', tagged(['seleno']))).toBe(false)
+  })
+
   it("flags GENCODE's incomplete-CDS tags in either spelling of the tag list", () => {
-    const tagged = (tag: unknown) =>
-      new SimpleFeature({
-        uniqueId: 't',
-        refName: 'chr1',
-        start: 0,
-        end: 100,
-        type: 'mRNA',
-        tag,
-      })
     expect(translationCautions(tagged('basic,cds_start_NF'))).toEqual([
       'incomplete CDS',
     ])
