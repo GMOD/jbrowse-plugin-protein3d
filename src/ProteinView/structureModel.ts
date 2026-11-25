@@ -117,6 +117,7 @@ import type {
   VariantEffectAsk,
   VariantEffectState,
 } from './variantEffectLoader'
+import type { StatusSeverity } from './variantEffectStatus'
 import type { PlacedValues } from './variantEffects'
 import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
@@ -144,6 +145,18 @@ function isGenomeView(view: { id: string }): view is LGV {
   return 'assemblyNames' in view
 }
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
+
+interface StructureStatus {
+  message: string
+  severity: StatusSeverity
+}
+
+function note(
+  message: string | undefined,
+  severity: StatusSeverity = 'info',
+): StructureStatus | undefined {
+  return message === undefined ? undefined : { message, severity }
+}
 
 export interface ParentProteinView {
   zoomToBaseLevel: boolean
@@ -1590,18 +1603,28 @@ const Structure = types
      * the header: a failed load, a structure with no chain the transcript
      * can be aligned to, or a color field that leaves it grey. One line per
      * structure, rather than a view-wide banner that names neither which
-     * structure nor what it was doing.
+     * structure nor what it was doing. Its severity says whether something
+     * failed, a load or a fetch, or the line only notes a fact.
+     */
+    get status(): StructureStatus | undefined {
+      const { error } = self
+      const variantEffects = self.variantEffectStatus
+      return error === undefined
+        ? (note(self.alignmentSkipped) ??
+            note(self.plddtMissing) ??
+            note(variantEffects.message, variantEffects.severity) ??
+            note(self.residueValuesStatus?.message) ??
+            note(self.exonStatus?.message) ??
+            note(self.alignmentDomainStatus?.message))
+        : { message: errorMessage(error), severity: 'error' }
+    },
+  }))
+  .views(self => ({
+    /**
+     * #getter
      */
     get statusMessage() {
-      const { error } = self
-      return error === undefined
-        ? (self.alignmentSkipped ??
-            self.plddtMissing ??
-            self.variantEffectStatus.message ??
-            self.residueValuesStatus?.message ??
-            self.exonStatus?.message ??
-            self.alignmentDomainStatus?.message)
-        : errorMessage(error)
+      return self.status?.message
     },
     /**
      * #getter

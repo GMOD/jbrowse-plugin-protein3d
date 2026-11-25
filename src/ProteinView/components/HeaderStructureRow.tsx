@@ -134,7 +134,9 @@ const StructureRow = observer(function StructureRow({
       {statusMessage ? (
         <Typography
           variant="caption"
-          color={structure.error === undefined ? 'textSecondary' : 'error'}
+          color={
+            structure.status?.severity === 'error' ? 'error' : 'textSecondary'
+          }
           data-testid="structure-status"
         >
           {statusMessage}
