@@ -2,7 +2,7 @@
 import { createElement } from 'react'
 
 import { createTheme } from '@mui/material/styles'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 
 import stateModelFactory from '../model'
@@ -39,6 +39,42 @@ test('a note on a structure is not drawn as an error', () => {
   view.structures[0]!.setAlignmentSkipped('This structure has no chain')
   render(createElement(HeaderStructureRows, { model: view }))
   expect(statusColor()).not.toBe(rgb(palette.error.main))
+})
+
+test('a failed load offers Retry, and Retry asks for another attempt', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  const [structure] = view.structures
+  structure!.setError(new Error('404'))
+  render(createElement(HeaderStructureRows, { model: view }))
+  fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
+  expect(structure!.loadAttempt).toBe(1)
+})
+
+test('a failed alignment of a loaded structure offers no Retry', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  view.structures[0]!.setLoadedToMolstar(true)
+  view.structures[0]!.setError(new Error('worker died'))
+  render(createElement(HeaderStructureRows, { model: view }))
+  expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
+})
+
+test('only a view of several structures offers to remove one', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  render(createElement(HeaderStructureRows, { model: view }))
+  expect(screen.queryByRole('button', { name: /^Remove / })).toBeNull()
+  cleanup()
+  view.addStructure({ url: 'b.cif' })
+  render(createElement(HeaderStructureRows, { model: view }))
+  expect(screen.getAllByRole('button', { name: /^Remove / })).toHaveLength(2)
 })
 
 test('a failed structure is drawn as an error', () => {
