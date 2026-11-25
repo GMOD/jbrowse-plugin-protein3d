@@ -6,12 +6,10 @@ import {
   isAlive,
   types,
 } from '@jbrowse/mobx-state-tree'
-import { autorun, untracked, when } from 'mobx'
+import { autorun, when } from 'mobx'
 import {
-  alignTranscriptToEntity,
   alignmentCol,
   alignmentQuality,
-  chooseMappedEntity,
   entityAlignedTo,
   entityLabel,
   fetchUniProtStructureMappings,
@@ -31,7 +29,6 @@ import {
   residueNumber,
   residueRuns,
   resolveStructureUrl,
-  sameProtein,
   stripStopCodon,
   structureDisplayLabel,
   structurePos,
@@ -42,8 +39,6 @@ import {
 } from 'p2s_mapper'
 
 import { genomeToTranscriptSeqMapping } from '../mappings'
-import { alignOffThread } from './alignOffThread'
-import { decideAlignment } from './alignmentDecision'
 import {
   alignmentDomainStatus,
   connectedAlignmentDomains,
@@ -80,6 +75,7 @@ import {
   sessionHighlightResidues,
   withoutLabelledResidues,
 } from './sessionHighlights'
+import { makeStructureAligner } from './structureAligner'
 import { DEPOSITED_MODEL } from './structurePipeline'
 import { structureReport } from './structureReport'
 import { structureUniProt } from './structureUniProt'
@@ -94,7 +90,6 @@ import {
 } from './variantEffectSource'
 import { variantEffectStatus } from './variantEffectStatus'
 
-import type { AlignmentMethod } from './alignOffThread'
 import type {
   AlignmentDomainStatus,
   ConnectedDomains,
@@ -119,7 +114,6 @@ import type {
 } from './variantEffectLoader'
 import type { StatusSeverity } from './variantEffectStatus'
 import type { PlacedValues } from './variantEffects'
-import type { RpcCallArgs, RpcCallReturn } from '@jbrowse/core/rpc/RpcRegistry'
 import type { SimpleFeatureSerialized } from '@jbrowse/core/util'
 import type { Region as IRegion } from '@jbrowse/core/util/types'
 import type { LinearGenomeViewModel } from '@jbrowse/plugin-linear-genome-view'
@@ -698,6 +692,9 @@ const Structure = types
       self.aligning = false
       self.pendingEntityId = undefined
       apply()
+    },
+    requestRedecision() {
+      self.alignmentRedecisions++
     },
     /**
      * #action
@@ -1771,92 +1768,6 @@ const Structure = types
           : []
     },
   }))
-  .extend(self => {
-    // An answer is applied only if no alignment has started since it was
-    // asked for: a changed transcript or entity list, or another chain the
-    // user picked, supersedes whatever is still running in the worker. The
-    // worker finishes a superseded DP regardless; only its answer is dropped.
-    let latestRequest = 0
-    function supersedeAlignment() {
-      latestRequest++
-      self.setAligning(false)
-    }
-    return {
-      actions: {
-        supersedeAlignment,
-        redecideAlignment() {
-          latestRequest++
-          self.aligning = false
-          self.pendingEntityId = undefined
-          self.alignmentRedecisions++
-        },
-        /**
-         * #action
-         * Applies an identical sequence's free alignment at once, superseding
-         * whatever is still running, and sends any other to the worker.
-         */
-        runAlignment<M extends AlignmentMethod>({
-          identical,
-          name,
-          args,
-          inPlace,
-          apply,
-          fail,
-          pendingEntityId,
-        }: {
-          identical: boolean
-          name: M
-          args: RpcCallArgs<M>
-          inPlace: () => RpcCallReturn<M>
-          apply: (result: RpcCallReturn<M>) => void
-          fail: (e: unknown) => void
-          pendingEntityId?: string
-        }) {
-          if (identical) {
-            supersedeAlignment()
-            try {
-              apply(inPlace())
-            } catch (e) {
-              console.error(e)
-              self.setError(e)
-            }
-            return
-          }
-          const request = ++latestRequest
-          const current = () => request === latestRequest && isAlive(self)
-          self.setAligning(true, pendingEntityId)
-          alignOffThread({
-            rpcManager: getSession(self).rpcManager,
-            name,
-            args,
-            inPlace,
-            current,
-          }).then(
-            result => {
-              if (current()) {
-                try {
-                  self.settleAlignment(() => {
-                    apply(result)
-                  })
-                } catch (e) {
-                  console.error(e)
-                  self.setError(e)
-                }
-              }
-            },
-            (e: unknown) => {
-              if (current()) {
-                console.error(e)
-                self.settleAlignment(() => {
-                  fail(e)
-                })
-              }
-            },
-          )
-        },
-      },
-    }
-  })
   .actions(self => ({
     /**
      * #action
@@ -1913,28 +1824,6 @@ const Structure = types
       self.switchEntity(entityId)
       self.setAlignment(alignment)
     },
-    /**
-     * #action
-     * A user's own alignment, which no answer still running in the worker
-     * may replace. One spelling another chain switches to it as a pick would,
-     * so the old chain's selection does not land on the new chain's residues.
-     */
-    importAlignment(alignment: PairwiseAlignment) {
-      const { entities, mappedEntityId } = self
-      const fit = entities
-        ? entityAlignedTo(
-            alignment,
-            self.userProvidedTranscriptSequence,
-            entities,
-            mappedEntityId,
-          )
-        : undefined
-      if (fit && 'entityId' in fit && fit.entityId !== mappedEntityId) {
-        self.switchEntity(fit.entityId)
-      }
-      self.supersedeAlignment()
-      self.setAlignment(alignment, true)
-    },
   }))
   .actions(self => ({
     /**
@@ -1955,61 +1844,6 @@ const Structure = types
           structureSeqPos !== undefined ? { structureSeqPos } : undefined,
         )
       }
-    },
-    /**
-     * #action
-     * The user's override of which chain the transcript maps to. The alignment
-     * is recomputed against that entity's sequence, and every highlight that
-     * derived from the old one is dropped, since its positions meant residues
-     * of another chain.
-     */
-    chooseEntity(entityId: string) {
-      const entity = self.entities?.find(e => e.entityId === entityId)
-      const shown = self.mappedEntity?.entityId
-      if (!entity || entityId === (self.pendingEntityId ?? shown)) {
-        return
-      }
-      if (!self.userProvidedTranscriptSequence) {
-        self.switchEntity(entityId)
-        return
-      }
-      if (self.pendingEntityId !== undefined && entityId === shown) {
-        // back to the chain on screen: the pick may have superseded the
-        // automatic alignment, so that decides again
-        self.redecideAlignment()
-        return
-      }
-      const transcript = self.userProvidedTranscriptSequence
-      const align = () =>
-        alignTranscriptToEntity(transcript, entity.seq, self.alignmentAlgorithm)
-      const apply = (scored: ScoredAlignment | undefined) => {
-        if (scored) {
-          self.applyChosenEntity(entityId, scored.alignment)
-        } else {
-          self.parentView.addNotice(
-            new Error(
-              `${entity.chains.join('/') || entity.entityId} is too long to align to this transcript`,
-            ),
-          )
-          self.redecideAlignment()
-        }
-      }
-      self.runAlignment({
-        identical: sameProtein(transcript, entity.seq),
-        name: 'ProteinAlignTranscriptToEntity',
-        args: {
-          transcript,
-          entitySeq: entity.seq,
-          algorithm: self.alignmentAlgorithm,
-        },
-        inPlace: align,
-        apply,
-        fail: e => {
-          self.parentView.addNotice(e)
-          self.redecideAlignment()
-        },
-        pendingEntityId: entityId,
-      })
     },
     /**
      * #action
@@ -2178,104 +2012,6 @@ const Structure = types
         )
       }
 
-      let realigning: string | undefined
-      addDisposer(
-        self,
-        autorun(() => {
-          try {
-            const { alignmentAlgorithm: algorithm } = self
-            // read only so that a redecision reruns this
-            void self.alignmentRedecisions
-            const decision = decideAlignment(self)
-            const reportStale = (problem: string) => {
-              self.parentView.addNotice(
-                new Error(
-                  `The alignment stored for ${self.label} no longer matches its chain and was recomputed: ${problem}`,
-                ),
-              )
-            }
-            switch (decision.kind) {
-              case 'nothingToAlign':
-                self.supersedeAlignment()
-                break
-              case 'skip':
-                self.supersedeAlignment()
-                self.setAlignment(undefined)
-                self.setAlignmentSkipped(decision.reason)
-                self.setEntityChosen()
-                break
-              case 'keep':
-                self.setEntityChosen()
-                break
-              case 'adopt':
-                self.setMappedEntityId(decision.entityId)
-                self.setEntityChosen()
-                break
-              case 'discard':
-                reportStale(decision.problem)
-                self.supersedeAlignment()
-                self.applyRealignment(undefined)
-                break
-              case 'realign': {
-                const {
-                  transcript,
-                  entity: { seq },
-                } = decision
-                const key = `${algorithm}:${transcript}:${seq}`
-                // read untracked: the realign ending would rerun this, and a
-                // realign that keeps failing would start itself again forever
-                if (key === realigning && untracked(() => self.aligning)) {
-                  break
-                }
-                realigning = key
-                reportStale(decision.problem)
-                self.runAlignment({
-                  identical: decision.identical,
-                  name: 'ProteinAlignTranscriptToEntity',
-                  args: { transcript, entitySeq: seq, algorithm },
-                  inPlace: () =>
-                    alignTranscriptToEntity(transcript, seq, algorithm),
-                  apply: realigned => {
-                    self.applyRealignment(realigned)
-                  },
-                  fail: e => {
-                    self.setError(e)
-                  },
-                })
-                break
-              }
-              case 'choose': {
-                const { transcript, entities } = decision
-                self.runAlignment({
-                  identical: decision.identical,
-                  name: 'ProteinChooseMappedEntity',
-                  args: {
-                    transcript,
-                    entities: entities.map(({ seq, nucleicAcid }) => ({
-                      seq,
-                      nucleicAcid,
-                    })),
-                    algorithm,
-                  },
-                  inPlace: () =>
-                    chooseMappedEntity(transcript, entities, algorithm),
-                  apply: selection => {
-                    self.applyEntitySelection(selection)
-                  },
-                  fail: e => {
-                    self.setError(e)
-                  },
-                })
-                break
-              }
-            }
-          } catch (e) {
-            console.error(e)
-            self.setError(e)
-          }
-        }),
-      )
-
       addDisposer(
         self,
         autorun(() => {
@@ -2301,6 +2037,55 @@ const Structure = types
           }
         }),
       )
+    },
+  }))
+  .extend(self => {
+    const aligner = makeStructureAligner(self)
+    return {
+      actions: {
+        supersedeAlignment: aligner.supersede,
+        /**
+         * #action
+         * Applies an identical sequence's free alignment at once, superseding
+         * whatever is still running, and sends any other to the worker.
+         */
+        runAlignment: aligner.runAlignment,
+        /**
+         * #action
+         * The user's override of which chain the transcript maps to. The
+         * alignment is recomputed against that entity's sequence, and every
+         * highlight that derived from the old one is dropped, since its
+         * positions meant residues of another chain.
+         */
+        chooseEntity: aligner.chooseEntity,
+        afterAttach() {
+          addDisposer(self, autorun(aligner.decide))
+        },
+      },
+    }
+  })
+  .actions(self => ({
+    /**
+     * #action
+     * A user's own alignment, which no answer still running in the worker
+     * may replace. One spelling another chain switches to it as a pick would,
+     * so the old chain's selection does not land on the new chain's residues.
+     */
+    importAlignment(alignment: PairwiseAlignment) {
+      const { entities, mappedEntityId } = self
+      const fit = entities
+        ? entityAlignedTo(
+            alignment,
+            self.userProvidedTranscriptSequence,
+            entities,
+            mappedEntityId,
+          )
+        : undefined
+      if (fit && 'entityId' in fit && fit.entityId !== mappedEntityId) {
+        self.switchEntity(fit.entityId)
+      }
+      self.supersedeAlignment()
+      self.setAlignment(alignment, true)
     },
   }))
 
