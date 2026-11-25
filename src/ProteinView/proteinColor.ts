@@ -386,21 +386,23 @@ export function checkedColor(color: unknown): ProteinColor {
 
 /**
  * checkedColor for a saved session. Before 1.36.0 any strings passed as
- * `color.range`, so a see-through entry is made opaque, as it was painted, and
- * a color still refused falls back to the default rather than keep the view
- * from opening.
+ * `color.range`: a see-through entry is made opaque, as it was painted, a range
+ * with an entry that is not a color gives way to the field's own, and a color
+ * still refused falls back to the default rather than keep the view from
+ * opening.
  */
 export function checkedStoredColor(color: unknown) {
-  const opaque =
-    isRecord(color) && isStrings(color.range)
-      ? {
-          ...color,
-          range: color.range.map(c =>
-            isCssColor(c) ? colord(c).alpha(1).toHex() : c,
-          ),
-        }
-      : color
-  return checkedColor(colorProblems(opaque).length > 0 ? {} : opaque)
+  const repaired = isRecord(color) ? withStoredRange(color) : color
+  return checkedColor(colorProblems(repaired).length > 0 ? {} : repaired)
+}
+
+function withStoredRange(color: Record<string, unknown>) {
+  const { range, ...rest } = color
+  return !isStrings(range)
+    ? color
+    : range.every(isCssColor)
+      ? { ...rest, range: range.map(c => colord(c).alpha(1).toHex()) }
+      : rest
 }
 
 /**

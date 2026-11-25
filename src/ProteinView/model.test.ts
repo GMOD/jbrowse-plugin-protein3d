@@ -711,7 +711,14 @@ test('a saved session with a see-through or unknown range color still opens', ()
     structures: [],
     color: { field: 'alphaMissense', range: ['bleu', '#0000ff'] },
   })
-  expect(unknown.color).toEqual({})
+  expect(unknown.color).toEqual({ field: 'alphaMissense' })
+  const unknownField = ProteinView.create({
+    type: 'ProteinView',
+    structures: [],
+    // @ts-expect-error a field no release has offered
+    color: { field: 'nonesuch' },
+  })
+  expect(unknownField.color).toEqual({})
 })
 
 test('setColor still refuses a see-through range color', () => {
