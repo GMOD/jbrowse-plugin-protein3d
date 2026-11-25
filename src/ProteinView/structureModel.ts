@@ -1610,6 +1610,20 @@ const Structure = types
     get loadFailed() {
       return self.error !== undefined && !self.loadedToMolstar
     },
+    /**
+     * #getter
+     * An alignment computed here that SIFTS has yet to answer for, and so may
+     * still lose a fusion partner's residues (see `alignment`)
+     */
+    get alignmentAwaitingSifts() {
+      return (
+        !!self.pdbId &&
+        !!self.pairwiseAlignment &&
+        !self.alignmentImported &&
+        self.uniProtMappings === undefined &&
+        self.uniProtMappingsError === undefined
+      )
+    },
   }))
   .views(self => ({
     /**

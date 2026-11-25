@@ -287,6 +287,28 @@ test('an AlphaFold file being loaded is named by the loading text and the report
   )
 })
 
+// two standalone PDB entries superposed at once before the superposer gated
+// on loading, which waits on SIFTS for every PDB entry
+test('only an aligned PDB entry has an alignment awaiting SIFTS', () => {
+  const parent = TestParent.create({
+    structures: [
+      { pdbId: '1CRN' },
+      { pdbId: '1CRN', userProvidedTranscriptSequence: 'MKAA' },
+    ],
+  })
+  const [standalone, aligned] = parent.structures
+  for (const s of parent.structures) {
+    s.setStructureData({ entities: NUMBERED_FROM_94 })
+    s.setLoadedToMolstar(true)
+  }
+  expect(standalone!.loading).toBe(true)
+  expect(standalone!.alignmentAwaitingSifts).toBe(false)
+  expect(aligned!.pairwiseAlignment).toBeDefined()
+  expect(aligned!.alignmentAwaitingSifts).toBe(true)
+  aligned!.setUniProtMappings([])
+  expect(aligned!.alignmentAwaitingSifts).toBe(false)
+})
+
 test('an explicit url wins over a uniprotId shorthand', () => {
   const parent = TestParent.create({
     structures: [{ url: 'https://example.com/x.cif', uniprotId: 'P04637' }],

@@ -26,7 +26,9 @@ const TestStructure = types
     label: 'test',
     loadedToMolstar: false,
     molstarStructures: new Array<Structure>(),
-    loading: false,
+    error: undefined as unknown,
+    alignmentPending: false,
+    alignmentAwaitingSifts: false,
     alignment: undefined as object | undefined,
     mappedEntity: undefined as
       | { entityId: string; seq: string; seqIds: number[] }
@@ -44,8 +46,14 @@ const TestStructure = types
       self.loadedToMolstar = v
       self.molstarStructures = molstarStructures
     },
-    setLoading(loading: boolean) {
-      self.loading = loading
+    setAlignmentPending(pending: boolean) {
+      self.alignmentPending = pending
+    },
+    awaitSifts() {
+      self.alignmentAwaitingSifts = true
+    },
+    setError(error: unknown) {
+      self.error = error
     },
     setMapping(
       entityId: string,
@@ -56,11 +64,10 @@ const TestStructure = types
       self.coordinateMapper = { maps: { structureSeqToTranscriptSeqPosition } }
       self.alignment = {}
     },
-    trimFusionPartner(
-      structureSeqToTranscriptSeqPosition: Record<number, number>,
-    ) {
+    answerSifts(structureSeqToTranscriptSeqPosition: Record<number, number>) {
       self.coordinateMapper = { maps: { structureSeqToTranscriptSeqPosition } }
       self.alignment = {}
+      self.alignmentAwaitingSifts = false
     },
     setSuperposition(outcome: SuperpositionOutcome | undefined) {
       self.superposition = outcome
@@ -255,25 +262,35 @@ test('a structure swapped for another during a run is superposed too', async () 
 // alignment, so moving it before that would move it twice
 test('waits for every loaded structure to be aligned', () => {
   const { host, run } = setup({}, 2)
-  host.structures[1]!.setLoading(true)
+  host.structures[1]!.setAlignmentPending(true)
   run()
   expect(mockSuperpose).not.toHaveBeenCalled()
-  host.structures[1]!.setLoading(false)
+  host.structures[1]!.setAlignmentPending(false)
+  run()
+  expect(mockSuperpose).toHaveBeenCalledTimes(1)
+})
+
+test('a structure whose alignment failed holds nothing back', () => {
+  const { host, run } = setup({}, 2)
+  host.structures[1]!.setAlignmentPending(true)
+  host.structures[1]!.setError(new Error('worker died'))
   run()
   expect(mockSuperpose).toHaveBeenCalledTimes(1)
 })
 
 // SIFTS unmaps a fusion partner's residues from the alignment the mapper is
 // built from, and a run before it paired the partner's chance residues
-test('re-superposes on the pairs SIFTS leaves once it trims a fusion partner', async () => {
+test('an aligned PDB entry is superposed on the pairs SIFTS leaves', async () => {
   const { host, run } = setup({}, 2)
   host.structures[1]!.setMapping('1', [1, 2, 3], { 0: 0, 1: 1, 2: 2 })
+  host.structures[1]!.awaitSifts()
   const dispose = autorun(run)
   await tick()
-  host.structures[1]!.trimFusionPartner({ 0: 0 })
+  expect(mockSuperpose).not.toHaveBeenCalled()
+  host.structures[1]!.answerSifts({ 0: 0 })
   await tick()
-  expect(mockSuperpose).toHaveBeenCalledTimes(2)
-  expect(mockSuperpose.mock.calls[1]?.[1][1]?.mapping?.residues).toEqual(
+  expect(mockSuperpose).toHaveBeenCalledTimes(1)
+  expect(mockSuperpose.mock.calls[0]?.[1][1]?.mapping?.residues).toEqual(
     new Map([[1, { transcript: 0, code: 'M' }]]),
   )
   dispose()

@@ -13,7 +13,9 @@ export type SuperposedStructure = IAnyStateTreeNode & {
   readonly label: string
   readonly loadedToMolstar: boolean
   readonly molstarStructures: readonly Structure[]
-  readonly loading: boolean
+  readonly error: unknown
+  readonly alignmentPending: boolean
+  readonly alignmentAwaitingSifts: boolean
   readonly alignment: unknown
   readonly mappedEntity:
     | {
@@ -134,11 +136,12 @@ export function structuresSuperposed(
  * dependencies synchronously (MobX only tracks reads before the first
  * `await`) and dispatches one guarded, fire-and-forget run:
  *
- *   - it waits for every loaded structure to settle, its alignment and a PDB
- *     entry's SIFTS answer, which say which chain to align by and which
- *     residues pair, so a structure is moved once rather than by its whole
- *     contents and again by its chain, and a fusion partner's chance pairs
- *     never steer it;
+ *   - it waits for every loaded structure's alignment, and for the SIFTS
+ *     answer of a PDB entry that has one, which say which chain to align by
+ *     and which residues pair, so a structure is moved once rather than by
+ *     its whole contents and again by its chain, and a fusion partner's
+ *     chance pairs never steer it. A failed structure and a PDB entry with no
+ *     transcript wait for nothing;
  *   - a non-observable in-flight flag serializes runs so overlapping molstar
  *     state mutations can't interleave. The host's `superposing` mirrors it
  *     for the current plugin, so settling waits for the camera reset a run
@@ -163,7 +166,11 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
     const { molstarPluginContext: plugin, structures } = host
     const loaded = structures.filter(s => s.loadedToMolstar)
     const keys = loaded.map(loadKey)
-    const mapped = loaded.every(s => !s.loading)
+    const mapped = loaded.every(
+      s =>
+        s.error !== undefined ||
+        (!s.alignmentPending && !s.alignmentAwaitingSifts),
+    )
     const loads = mapped ? loaded.map(superposedLoad) : []
     const loadedCount = loaded.length
     if (plugin !== superposedPlugin) {
