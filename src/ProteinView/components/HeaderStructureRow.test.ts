@@ -93,13 +93,18 @@ test('a failed structure is drawn as an error', () => {
   expect(statusColor()).toBe(rgb(palette.error.main))
 })
 
-// a long file name is cut short so the row's buttons stay on it
-test('a structure label carries its full text as a title', () => {
+// A long file name is cut short so the row's buttons stay on it, and only when
+// the row overflows: a cap of 40% cut "AlphaFold P04637" in a narrow view.
+test('a structure label shrinks only with its row and carries its full text as a title', () => {
   const name = 'a_very_long_structure_file_name_from_a_lab_share.cif'
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ data: 'ATOM', fileName: name }],
   })
   render(createElement(HeaderStructureRows, { model: view }))
-  expect(screen.getByText(name).getAttribute('title')).toBe(name)
+  const label = screen.getByText(name)
+  expect(label.getAttribute('title')).toBe(name)
+  const { flexShrink, maxWidth } = getComputedStyle(label)
+  expect(flexShrink).toBe('1')
+  expect(maxWidth).not.toMatch(/%$/)
 })
