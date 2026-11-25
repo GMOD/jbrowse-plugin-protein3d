@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Checkbox, Link, Typography } from '@mui/material'
+import { Checkbox, Link, Tooltip, Typography } from '@mui/material'
 import { observer } from 'mobx-react'
 import { makeStyles } from 'tss-react/mui'
 
@@ -220,15 +220,22 @@ const Tags = observer(function Tags({
   const { classes, cx } = useStyles()
   return (
     <>
-      {tags.map(tag => (
-        <span
-          key={tag.label}
-          className={cx(classes.tag, className)}
-          title={tag.title}
-        >
-          {tag.label}
-        </span>
-      ))}
+      {tags.map(tag =>
+        tag.title ? (
+          <Tooltip
+            key={tag.label}
+            title={<span style={{ whiteSpace: 'pre-line' }}>{tag.title}</span>}
+          >
+            <span className={cx(classes.tag, className)} tabIndex={0}>
+              {tag.label}
+            </span>
+          </Tooltip>
+        ) : (
+          <span key={tag.label} className={cx(classes.tag, className)}>
+            {tag.label}
+          </span>
+        ),
+      )}
     </>
   )
 })
