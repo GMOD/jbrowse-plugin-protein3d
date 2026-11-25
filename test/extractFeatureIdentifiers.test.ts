@@ -110,7 +110,8 @@ describe('the lookup and the launch it feeds', () => {
     const { result } = renderHook(() => useSearchUnderTest())
 
     // The default is 'auto' (= query all recognized IDs); individual IDs remain
-    // selectable via the IdentifierSelector but are not the initial default.
+    // selectable in the chooser's "Query UniProt by" menu but are not the
+    // initial default.
     expect(result.current.selectedQueryId).toBe('auto')
   })
 

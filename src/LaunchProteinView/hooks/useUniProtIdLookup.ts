@@ -9,8 +9,15 @@ import { extractFeatureIdentifiers, extractTaxonId } from '../utils/util'
 import useDebouncedValue from './useDebouncedValue'
 import useUniProtSearch from './useUniProtSearch'
 
-import type { LookupMode } from '../components/UniProtIdInput'
 import type { Feature } from '@jbrowse/core/util'
+
+export type LookupMode = 'auto' | 'manual' | 'feature'
+
+const LOOKUP_MODES: readonly LookupMode[] = ['auto', 'manual', 'feature']
+
+export function isLookupMode(value: string): value is LookupMode {
+  return LOOKUP_MODES.some(mode => mode === value)
+}
 
 export function describeOrganism(
   taxonId: number | undefined,
