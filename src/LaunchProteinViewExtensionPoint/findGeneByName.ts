@@ -153,42 +153,24 @@ function hitRegion(hit: SearchHit, assembly: HitAssembly) {
     : undefined
 }
 
-async function* genesUnderHits<F>({
-  hits,
-  assembly,
-  trackIds,
-  geneIn,
-}: {
-  hits: readonly SearchHit[]
-  assembly: HitAssembly
-  trackIds: readonly string[]
-  geneIn: (region: HitRegion, trackId: string) => Promise<F | undefined>
-}) {
-  for (const hit of hits) {
-    const region = hitRegion(hit, assembly)
-    const hitTrackId = hit.getTrackId()
-    if (region) {
-      for (const trackId of new Set([
-        ...(hitTrackId ? [hitTrackId] : []),
-        ...trackIds,
-      ])) {
-        const feature = await geneIn(region, trackId)
-        if (feature) {
-          yield { feature, trackId, refName: region.refName }
-        }
-      }
-    }
-  }
+function hitTrackIds(hit: SearchHit, trackIds: readonly string[]) {
+  const hitTrackId = hit.getTrackId()
+  return new Set([...(hitTrackId ? [hitTrackId] : []), ...trackIds])
 }
 
 /**
  * The gene under the search hits: the first found on the refName of
  * `preferredLoc`, the genome view the launch names, else the first found. A
- * hit whose location the assembly cannot parse is passed over.
+ * hit whose location the assembly cannot parse is passed over. Once a gene is
+ * found, only hits on the preferred refName are fetched, and one of those
+ * failing leaves the gene already found.
  */
 export async function geneUnderHits<F>({
+  hits,
+  assembly,
+  trackIds,
   preferredLoc,
-  ...search
+  geneIn,
 }: {
   hits: readonly SearchHit[]
   assembly: HitAssembly
@@ -197,16 +179,54 @@ export async function geneUnderHits<F>({
   geneIn: (region: HitRegion, trackId: string) => Promise<F | undefined>
 }) {
   const preferredRefName = preferredLoc
-    ? parsedLoc(preferredLoc, search.assembly)?.refName
+    ? parsedLoc(preferredLoc, assembly)?.refName
     : undefined
   let first: { feature: F; trackId: string } | undefined
-  for await (const { refName, ...found } of genesUnderHits(search)) {
-    first ??= found
-    if (preferredRefName === undefined || refName === preferredRefName) {
-      return found
+  for (const hit of hits) {
+    const region = hitRegion(hit, assembly)
+    const preferred =
+      preferredRefName === undefined || region?.refName === preferredRefName
+    if (region) {
+      for (const trackId of hitTrackIds(hit, trackIds)) {
+        if (first === undefined || preferred) {
+          const feature =
+            first === undefined
+              ? await geneIn(region, trackId)
+              : await geneIn(region, trackId).catch(() => undefined)
+          if (feature && preferred) {
+            return { feature, trackId }
+          }
+          first ??= feature ? { feature, trackId } : undefined
+        }
+      }
     }
   }
   return first
+}
+
+/** Why no gene was found, naming the hits the assembly could not place. */
+export function noGeneFound({
+  gene,
+  assemblyName,
+  hits,
+  assembly,
+}: {
+  gene: string
+  assemblyName: string
+  hits: readonly SearchHit[]
+  assembly: HitAssembly
+}) {
+  const unplaced = hits.flatMap(hit => {
+    const loc = hit.getLocation()
+    return loc && !hitRegion(hit, assembly) ? [loc] : []
+  })
+  const unplacedNote =
+    unplaced.length > 0
+      ? `; ${unplaced.length} of the ${hits.length} search hits name a location ${assemblyName} cannot place, such as "${unplaced[0]}"; an index written with other reference names (chr17 for 17) needs refName aliases on the assembly`
+      : ''
+  return hits.length > 0
+    ? `no coding gene named "${gene}" in the tracks the ${assemblyName} search index names${unplacedNote}`
+    : `no search result for "${gene}" on ${assemblyName}; the assembly needs a text search index covering a gene track`
 }
 
 /**
@@ -261,11 +281,7 @@ export async function findGeneByName({
     },
   })
   if (!found) {
-    throw new Error(
-      hits.length > 0
-        ? `no coding gene named "${gene}" in the tracks the ${assemblyName} search index names`
-        : `no search result for "${gene}" on ${assemblyName}; the assembly needs a text search index covering a gene track`,
-    )
+    throw new Error(noGeneFound({ gene, assemblyName, hits, assembly }))
   }
   return found
 }
