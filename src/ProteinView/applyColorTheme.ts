@@ -160,12 +160,12 @@ function hasUnvaluedResidue({
 }: {
   placedValues?: PlacedValues
   entity?: { entityId: string; seqIds: readonly number[] }
-  entities?: readonly { entityId: string }[]
+  entities?: readonly { entityId: string; chains: readonly string[] }[]
 }) {
   return (
     !entity ||
     placedValues?.entityId !== entity.entityId ||
-    entities.some(e => e.entityId !== entity.entityId) ||
+    entities.some(e => e.entityId !== entity.entityId && e.chains.length > 0) ||
     entity.seqIds.some(id => !placedValues.byLabelSeqId.has(id))
   )
 }
