@@ -11,8 +11,8 @@ import type {
   PdbEntrySummary,
 } from 'p2s_mapper'
 
-/** What a structure shows of the gene's protein */
-export type StructureSection = 'alone' | 'partner' | 'fragment'
+/** What a structure shows of the gene's protein, or that the user added it */
+export type StructureSection = 'added' | 'alone' | 'partner' | 'fragment'
 
 export type StructureFilter = 'all' | 'experimental' | 'predicted'
 
@@ -43,6 +43,7 @@ export type StructureRow =
   | (RowBase & { kind: 'pdb'; entry: ExperimentalStructure })
   | (RowBase & { kind: 'complex'; complex: AlphaFoldComplex })
   | (RowBase & { kind: 'dataset'; match: DatasetMatch })
+  | (Omit<RowBase, 'start' | 'end'> & { kind: 'added'; pdbId: string })
 
 /** Below this share of the protein a structure is a peptide or one small
  * domain, too short for TM-align to place beside the whole protein */
@@ -153,6 +154,16 @@ export function partnerTags(summary: PdbEntrySummary, uniprotId: string) {
   }
 }
 
+function pdbTitle(
+  pdbId: string,
+  summary: PdbEntrySummary | undefined,
+  geneName: string,
+) {
+  return summary?.title
+    ? sentenceCase(summary.title, [geneName, ...summary.ligands.map(l => l.id)])
+    : `PDB entry ${pdbId.toUpperCase()}`
+}
+
 function pdbRow({
   entry,
   summary,
@@ -166,7 +177,6 @@ function pdbRow({
 }): StructureRow {
   const partners = summary ? partnerTags(summary, uniprotId) : undefined
   const ligands = summary ? ligandTags(summary) : []
-  const id = entry.pdbId.toUpperCase()
   return {
     kind: 'pdb',
     key: `pdb:${entry.pdbId}`,
@@ -178,19 +188,45 @@ function pdbRow({
           ? 'partner'
           : 'alone',
     predicted: false,
-    label: id,
+    label: entry.pdbId.toUpperCase(),
     href: rcsbEntryUrl(entry.pdbId),
-    title: summary?.title
-      ? sentenceCase(summary.title, [
-          geneName,
-          ...summary.ligands.map(l => l.id),
-        ])
-      : `PDB entry ${id}`,
+    title: pdbTitle(entry.pdbId, summary, geneName),
     partners: partners?.tags ?? [],
     ligands,
     notes: [],
     start: entry.start,
     end: entry.end,
+  }
+}
+
+/**
+ * An entry added by its PDB id, which RCSB may file under another protein: a
+ * complex listed under its partner, an entry a paper names. With no accession
+ * every polymer counts as a partner. What it covers is unknown until it loads.
+ */
+export function addedRow({
+  pdbId,
+  summary,
+  geneName,
+  uniprotId = '',
+}: {
+  pdbId: string
+  summary?: PdbEntrySummary
+  geneName: string
+  uniprotId?: string
+}): StructureRow {
+  return {
+    kind: 'added',
+    key: `pdb:${pdbId}`,
+    pdbId,
+    section: 'added',
+    predicted: false,
+    label: pdbId.toUpperCase(),
+    href: rcsbEntryUrl(pdbId),
+    title: pdbTitle(pdbId, summary, geneName),
+    partners: summary ? partnerTags(summary, uniprotId).tags : [],
+    ligands: summary ? ligandTags(summary) : [],
+    notes: [],
   }
 }
 
@@ -349,6 +385,42 @@ export function structureRows({
   ]
 }
 
+/**
+ * The rows of the entries added by id that the listing does not already hold,
+ * and the ids RCSB described no entry for. An entry RCSB has not described
+ * yet, or could not, is listed under its id alone.
+ */
+export function addedRows({
+  pdbIds,
+  summaries,
+  listed,
+  geneName,
+  uniprotId,
+}: {
+  pdbIds: readonly string[]
+  summaries?: ReadonlyMap<string, PdbEntrySummary>
+  listed: readonly StructureRow[]
+  geneName: string
+  uniprotId?: string
+}) {
+  const unknown = summaries ? pdbIds.filter(id => !summaries.has(id)) : []
+  return {
+    rows: pdbIds
+      .filter(
+        id => !unknown.includes(id) && !listed.some(r => r.key === `pdb:${id}`),
+      )
+      .map(pdbId =>
+        addedRow({
+          pdbId,
+          summary: summaries?.get(pdbId),
+          geneName,
+          uniprotId,
+        }),
+      ),
+    unknown,
+  }
+}
+
 export function matchesFilter(row: StructureRow, filter: StructureFilter) {
   return filter === 'all' || (filter === 'predicted') === row.predicted
 }
@@ -374,6 +446,7 @@ export function toggleStructure(
 }
 
 export const SECTIONS: readonly StructureSection[] = [
+  'added',
   'alone',
   'partner',
   'fragment',

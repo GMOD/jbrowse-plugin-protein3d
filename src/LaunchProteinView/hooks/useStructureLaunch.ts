@@ -11,7 +11,7 @@ import type { LaunchAlphaFoldModel } from '../resolveGeneLaunch'
 import type { StructureSource } from '../utils/launchViewUtils'
 import type { Feature } from '@jbrowse/core/util'
 
-/** A structure the launch opens, as the list or the PDB ID field names it */
+/** A structure the launch opens, as the list names it */
 export type LaunchStructure =
   | { key: string; kind: 'alphafold'; model: LaunchAlphaFoldModel }
   | { key: string; kind: 'pdb'; pdbId: string }
@@ -123,6 +123,5 @@ export default function useStructureLaunch({
     error: isLoading
       ? undefined
       : (selection.error ?? complex.error ?? file.error),
-    pdbEntryError: pdb.error,
   }
 }

@@ -48,20 +48,25 @@ const useStyles = makeStyles()(theme => ({
 const ALONE_SHOWN = 5
 
 function sectionText(section: StructureSection, geneName: string) {
-  return section === 'alone'
+  return section === 'added'
     ? {
-        title: `${geneName} on its own`,
-        note: 'whole protein or most of it, with any bound nucleotide or drug',
+        title: 'Added by PDB ID',
+        note: 'any entry, whichever protein RCSB files it under',
       }
-    : section === 'partner'
+    : section === 'alone'
       ? {
-          title: `${geneName} with another protein`,
-          note: 'experimental complexes first, then AlphaFold DB predictions',
+          title: `${geneName} on its own`,
+          note: 'whole protein or most of it, with any bound nucleotide or drug',
         }
-      : {
-          title: 'Short fragments',
-          note: 'under half the protein, so each opens on its own',
-        }
+      : section === 'partner'
+        ? {
+            title: `${geneName} with another protein`,
+            note: 'experimental complexes first, then AlphaFold DB predictions',
+          }
+        : {
+            title: 'Short fragments',
+            note: 'under half the protein, so each opens on its own',
+          }
 }
 
 const Section = observer(function Section({
@@ -192,7 +197,7 @@ const StructureList = observer(function StructureList({
           variant="body2"
           data-testid="structure-list-empty"
         >
-          No structures listed for {geneName}. Pick a UniProt entry above, open
+          No structures listed for {geneName}. Pick a UniProt entry above, add
           one by PDB ID, or use the Similar structures (Foldseek) or Your file
           or URL tab.
         </Typography>

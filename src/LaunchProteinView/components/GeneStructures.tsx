@@ -13,8 +13,8 @@ import { observer } from 'mobx-react'
 import { isPdbId, stripStopCodon } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
-import useDebouncedValue from '../hooks/useDebouncedValue'
 import useGeneStructures from '../hooks/useGeneStructures'
+import usePdbEntrySummaries from '../hooks/usePdbEntrySummaries'
 import useStructureLaunch, {
   structureSource,
 } from '../hooks/useStructureLaunch'
@@ -22,6 +22,8 @@ import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
 import { launchReadiness } from '../utils/launchHelpers'
 import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 import {
+  addedRow,
+  addedRows,
   defaultChecked,
   matchesFilter,
   toggleStructure,
@@ -98,35 +100,31 @@ function launchStructure(row: StructureRow): LaunchStructure {
     ? { key: row.key, kind: 'alphafold', model: row.model }
     : row.kind === 'pdb'
       ? { key: row.key, kind: 'pdb', pdbId: row.entry.pdbId }
-      : row.kind === 'dataset'
-        ? {
-            key: row.key,
-            kind: 'url',
-            url: row.match.structure.url,
-            uniprotId: row.match.structure.uniprotId,
-          }
-        : { key: row.key, kind: 'complex', entity: row.complex.entity }
+      : row.kind === 'added'
+        ? { key: row.key, kind: 'pdb', pdbId: row.pdbId }
+        : row.kind === 'dataset'
+          ? {
+              key: row.key,
+              kind: 'url',
+              url: row.match.structure.url,
+              uniprotId: row.match.structure.uniprotId,
+            }
+          : { key: row.key, kind: 'complex', entity: row.complex.entity }
 }
 
-function describeLaunch(
-  rows: readonly StructureRow[],
-  typedPdbId: string | undefined,
-  listing: Listing,
-) {
+function describeLaunch(rows: readonly StructureRow[], listing: Listing) {
   const [first, ...rest] = rows
-  return typedPdbId
-    ? `PDB ${typedPdbId.toUpperCase()}, typed above, in place of the checked rows`
-    : !first
-      ? listing === 'finding'
-        ? 'Finding structures…'
-        : listing === 'empty'
-          ? 'No structure to open yet'
-          : 'Check a structure to open it'
-      : rest.length > 0
-        ? `${rows.map(r => r.label).join(' + ')}, superposed onto ${first.label}`
-        : first.section === 'fragment'
-          ? `${first.label}, a short fragment, on its own`
-          : `${first.label}: ${first.title}`
+  return !first
+    ? listing === 'finding'
+      ? 'Finding structures…'
+      : listing === 'empty'
+        ? 'No structure to open yet'
+        : 'Check a structure to open it'
+    : rest.length > 0
+      ? `${rows.map(r => r.label).join(' + ')}, superposed onto ${first.label}`
+      : first.section === 'fragment'
+        ? `${first.label}, a short fragment, on its own`
+        : `${first.label}: ${first.title}`
 }
 
 /**
@@ -160,7 +158,20 @@ const GeneStructures = observer(function GeneStructures({
     view,
     preferredTranscriptId,
   })
-  const { rows } = structures
+  // an id adds entries the accession's listing never offers: a structure of a
+  // complex filed under a partner, anything a paper names
+  const [addedIds, setAddedIds] = useState<string[]>([])
+  const addedSummaries = usePdbEntrySummaries(addedIds)
+  const added = addedRows({
+    pdbIds: addedIds,
+    summaries: addedSummaries.summaries,
+    listed: structures.rows,
+    geneName,
+    uniprotId,
+  })
+  // listed first, so the first listed checked row stays the one the rest are
+  // superposed onto
+  const rows = [...structures.rows, ...added.rows]
   const [filter, setFilter] = useState<StructureFilter>('all')
   // a pick belongs to the accession it was made from
   const [picked, setPicked] = useState<{ uniprotId?: string; keys: string[] }>()
@@ -169,29 +180,20 @@ const GeneStructures = observer(function GeneStructures({
   // nothing is checked until the default is known, or the first structure to
   // arrive would be ranked against and fetched for nothing
   const defaultPending = !structures.defaultSettled
-  const checked = userPick ?? (defaultPending ? [] : defaultChecked(rows))
+  const checked =
+    userPick ?? (defaultPending ? [] : defaultChecked(structures.rows))
   const checkedRows = rows.filter(r => checked.includes(r.key))
 
   const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
 
-  // A typed id reaches entries the accession's listing never offers: a
-  // structure of a complex filed under a partner, anything a paper names.
-  // Debounced, so the three characters on the way to four are not three
-  // fetches.
   const [typedPdbId, setTypedPdbId] = useState('')
   const trimmedTypedPdbId = typedPdbId.trim()
-  const debouncedTypedPdbId = useDebouncedValue(trimmedTypedPdbId, 400)
-  const typedPdbIdInvalid =
-    trimmedTypedPdbId !== '' && !isPdbId(trimmedTypedPdbId)
-  const typedId = isPdbId(debouncedTypedPdbId)
-    ? debouncedTypedPdbId.toLowerCase()
-    : undefined
+  const typedPdbIdValid = isPdbId(trimmedTypedPdbId)
+  const typedPdbIdInvalid = trimmedTypedPdbId.length >= 4 && !typedPdbIdValid
 
-  const launchStructures: LaunchStructure[] = typedId
-    ? [{ key: `typed:${typedId}`, kind: 'pdb', pdbId: typedId }]
-    : checkedRows.map(launchStructure)
+  const launchStructures = checkedRows.map(launchStructure)
   // a site's structure is mapped through the transcript it is listed under
-  const pivotRow = typedId ? undefined : checkedRows[0]
+  const pivotRow = checkedRows[0]
   const launch = useStructureLaunch({
     structures: launchStructures,
     uniprotId,
@@ -203,39 +205,22 @@ const GeneStructures = observer(function GeneStructures({
         : undefined) ?? preferredTranscriptId,
   })
 
-  // RCSB answering that it has no such entry, as opposed to failing to
-  // answer, means the launch would open a view on a 404
-  const typedIdUnknown =
-    !!typedId &&
-    launch.pdbEntryError instanceof Error &&
-    'status' in launch.pdbEntryError &&
-    launch.pdbEntryError.status === 404
-  const typedPending = trimmedTypedPdbId !== debouncedTypedPdbId
-  const isLoading =
-    launch.isLoading ||
-    typedPending ||
-    (!typedId && !userPick && defaultPending)
-  const error =
-    launch.error ?? (typedIdUnknown ? launch.pdbEntryError : undefined)
+  const isLoading = launch.isLoading || (!userPick && defaultPending)
+  const { error } = launch
   const alphaFoldChecked = launchStructures.find(s => s.kind === 'alphafold')
-  // Loading or failed, the lookup can still hold the previous query's
-  // accession, which would name the view and its 1D entry
   const launchUniprotId =
-    typedId && (lookup.isLookupLoading || lookup.lookupError)
-      ? undefined
-      : launchStructures[0]?.kind === 'alphafold'
-        ? launchStructures[0].model.accession
-        : launchStructures[0]?.kind === 'url'
-          ? (launchStructures[0].uniprotId ?? uniprotId)
-          : uniprotId
+    launchStructures[0]?.kind === 'alphafold'
+      ? launchStructures[0].model.accession
+      : launchStructures[0]?.kind === 'url'
+        ? (launchStructures[0].uniprotId ?? uniprotId)
+        : uniprotId
   const { listing, missingReasons, ready, ready1D } = launchReadiness({
     rowCount: rows.length,
     userPicked: !!userPick,
     defaultPending,
-    typed: !!typedId,
     structureCount: launchStructures.length,
-    loading: launch.isLoading || typedPending,
-    failed: !!error || typedPdbIdInvalid,
+    loading: launch.isLoading,
+    failed: !!error,
     userSelectedProteinSequence: launch.selectedIsoform,
     selectedTranscript: launch.selectedTranscript,
     uniprotId: launchUniprotId,
@@ -244,6 +229,28 @@ const GeneStructures = observer(function GeneStructures({
 
   const toggle = (row: StructureRow) => {
     setPicked({ uniprotId, keys: toggleStructure(checked, row, rows) })
+  }
+
+  const knownAddedIds = addedIds.filter(id => !added.unknown.includes(id))
+  const addTypedPdbId = () => {
+    if (typedPdbIdValid) {
+      const pdbId = trimmedTypedPdbId.toLowerCase()
+      const row =
+        rows.find(r => r.key === `pdb:${pdbId}`) ??
+        addedRow({ pdbId, geneName, uniprotId })
+      setAddedIds(
+        row.kind === 'added' && !knownAddedIds.includes(pdbId)
+          ? [...knownAddedIds, pdbId]
+          : knownAddedIds,
+      )
+      if (!checked.includes(row.key)) {
+        toggle(row)
+      }
+      if (!matchesFilter(row, filter)) {
+        setFilter('all')
+      }
+      setTypedPdbId('')
+    }
   }
 
   return (
@@ -267,20 +274,30 @@ const GeneStructures = observer(function GeneStructures({
         </div>
         <TextField
           size="small"
-          label="Open by PDB ID"
+          label="Add PDB ID"
           placeholder="e.g. 1TUP"
           data-testid="pdb-id-input"
-          error={typedPdbIdInvalid || typedIdUnknown}
+          error={typedPdbIdInvalid || added.unknown.length > 0}
           helperText={
             typedPdbIdInvalid
               ? 'Four characters beginning with a digit'
-              : typedIdUnknown
-                ? `RCSB has no entry ${debouncedTypedPdbId.toUpperCase()}`
-                : undefined
+              : added.unknown.length > 0
+                ? `RCSB has no entry ${added.unknown.map(id => id.toUpperCase()).join(', ')}`
+                : typedPdbIdValid
+                  ? 'Press Enter to add it'
+                  : undefined
           }
           value={typedPdbId}
           onChange={event => {
             setTypedPdbId(event.target.value)
+            if (added.unknown.length > 0) {
+              setAddedIds(knownAddedIds)
+            }
+          }}
+          onKeyDown={event => {
+            if (event.key === 'Enter') {
+              addTypedPdbId()
+            }
           }}
           slotProps={{ inputLabel: { shrink: true } }}
           sx={{ width: 200 }}
@@ -291,17 +308,14 @@ const GeneStructures = observer(function GeneStructures({
         sections={structures.sections}
         geneName={geneName}
         empty={listing === 'empty'}
-        checked={typedId ? [] : checked}
+        checked={checked}
         uniprotLength={structures.uniprotLength}
-        onToggle={row => {
-          setTypedPdbId('')
-          toggle(row)
-        }}
+        onToggle={toggle}
       />
       <div className={classes.footer}>
         <div className={classes.summary}>
           <Typography variant="body2" data-testid="launch-summary">
-            <strong>{describeLaunch(checkedRows, typedId, listing)}</strong>
+            <strong>{describeLaunch(checkedRows, listing)}</strong>
           </Typography>
           {error ? <ErrorMessage error={error} /> : null}
           {launch.loadingStatuses.map(status => (

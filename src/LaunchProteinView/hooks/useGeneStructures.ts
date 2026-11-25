@@ -37,6 +37,7 @@ function sectionStatus(
     }
   }
   return {
+    added: of('added'),
     alone: of('alone'),
     partner: of('partner'),
     fragment: of('fragment'),
@@ -83,7 +84,9 @@ export default function useGeneStructures({
   })
   const complexes = useAlphaFoldComplexes(uniprotId)
   const experimental = useExperimentalStructures(uniprotId)
-  const summaries = usePdbEntrySummaries(experimental.entries)
+  const summaries = usePdbEntrySummaries(
+    experimental.entries?.map(e => e.pdbId),
+  )
 
   const entries = experimental.entries
   // A row's section waits on its partners, so entries are listed once RCSB has

@@ -29,7 +29,7 @@ interface LaunchRequirements {
  * suppressed while loading or while a real upstream error is already shown
  * via <ErrorMessage>, where a duplicate hint would mislead). A structure names
  * its own source, so no accession is asked for: bypassing a lookup that failed
- * or found the wrong gene is what a typed PDB id is for.
+ * or found the wrong gene is what adding a PDB id is for.
  */
 export function getLaunchMissingReasons({
   userSelectedProteinSequence,
@@ -56,7 +56,6 @@ export function launchReadiness({
   rowCount,
   userPicked,
   defaultPending,
-  typed,
   structureCount,
   loading,
   failed,
@@ -69,8 +68,6 @@ export function launchReadiness({
   /** the checked rows are the user's, not the default */
   userPicked: boolean
   defaultPending: boolean
-  /** a typed PDB id stands in for the checked rows */
-  typed: boolean
   structureCount: number
   loading: boolean
   failed: boolean
@@ -83,7 +80,7 @@ export function launchReadiness({
       : rowCount === 0
         ? 'empty'
         : 'listed'
-  const awaitingDefault = !typed && listing === 'finding'
+  const awaitingDefault = listing === 'finding'
   const transcriptReasons = getLaunchMissingReasons({
     userSelectedProteinSequence,
     selectedTranscript,

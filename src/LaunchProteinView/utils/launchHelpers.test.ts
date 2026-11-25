@@ -29,7 +29,6 @@ const settled = {
   rowCount: 3,
   userPicked: false,
   defaultPending: false,
-  typed: false,
   structureCount: 1,
   loading: false,
   failed: false,
@@ -96,7 +95,8 @@ describe('launch gating', () => {
       can1D: false,
       canOpenOptions: false,
     })
-    expect(gate({ defaultPending: true, typed: true })).toMatchObject({
+    expect(gate({ defaultPending: true, userPicked: true })).toMatchObject({
+      listing: 'listed',
       can3D: true,
       can1D: true,
     })

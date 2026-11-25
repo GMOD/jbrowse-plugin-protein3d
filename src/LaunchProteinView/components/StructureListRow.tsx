@@ -163,7 +163,7 @@ const Quality = observer(function Quality({ row }: { row: StructureRow }) {
           )}
           <Plddt value={row.complex.meanPlddt} />
         </>
-      ) : (
+      ) : row.kind === 'added' ? null : (
         <>
           <Typography variant="body2">
             {row.entry.method}
@@ -301,7 +301,7 @@ const StructureListRow = observer(function StructureListRow({
         <Typography variant="caption" color="textSecondary">
           listed as {row.match.structure.id}
         </Typography>
-      ) : (
+      ) : row.kind === 'added' ? null : (
         <Coverage start={row.start} end={row.end} length={uniprotLength} />
       )}
     </div>
