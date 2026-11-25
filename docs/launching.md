@@ -380,10 +380,12 @@ A `structures: [...]` session snapshot follows the same order, since both go
 through `resolveStructureUrl` and then the structure loader.
 
 `uniprotId` beside a `url` names the entry the UniProt feature tracks come from,
-unless the `url` is in the PDB archive (RCSB or PDBe). For a PDB entry, by
-`pdbId` or by such a `url`, SIFTS names the UniProt entry and sets the residue
-numbering, and a `uniprotId` beside it changes neither. See
-[residue numbering](residue-numbering.md).
+unless the `url` is in the PDB archive (RCSB or PDBe). For such a `url`, SIFTS
+names the UniProt entry and sets the residue numbering, and a `uniprotId` beside
+it changes neither. A `uniprotId` beside a `pdbId` is different: it ranks above
+`pdbId` in the list above, so the structure opens as the AlphaFold model and the
+`pdbId` is not fetched. Give the `pdbId` alone to open the PDB entry with its
+SIFTS mapping. See [residue numbering](residue-numbering.md).
 
 ### Complexes
 
