@@ -41,7 +41,9 @@ test('an ensemble load returns every model it made', async () => {
     const loaded = await loadCaOnly(plugin, [chain], { models: 4 })
     expect(plugin.managers.structure.hierarchy.current.models).toHaveLength(4)
     expect(loaded.structures).toHaveLength(4)
-    expect(new Set(loaded.modelIds).size).toBe(4)
+    expect(
+      new Set(loaded.structures.flatMap(s => s.models.map(m => m.id))).size,
+    ).toBe(4)
   })
 })
 

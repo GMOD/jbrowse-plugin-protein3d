@@ -329,11 +329,7 @@ async function collectPreset(
       `No structure could be built from ${source} by Mol*'s all-models preset`,
     )
   }
-  return {
-    model: models[0],
-    structures: loaded,
-    modelIds: loaded.flatMap(s => s.models.map(m => m.id)),
-  }
+  return { model: models[0], structures: loaded }
 }
 
 /**
