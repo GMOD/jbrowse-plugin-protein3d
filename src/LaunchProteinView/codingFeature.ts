@@ -1,4 +1,5 @@
 import { isGeneLikeType } from '@jbrowse/core/util'
+import { stripStopCodon } from 'p2s_mapper'
 
 import type { Feature } from '@jbrowse/core/util'
 
@@ -46,6 +47,26 @@ function tagsOf(feature: Feature): unknown[] {
     : typeof tag === 'string'
       ? tag.split(',')
       : []
+}
+
+/** A stop codon inside the translation; a trailing one is its ordinary end */
+export function hasInternalStop(seq: string) {
+  return stripStopCodon(seq).includes('*')
+}
+
+/**
+ * What a transcript's translation should be read with: a stop inside it, or a
+ * CDS GENCODE tags as running past its annotated start or end.
+ */
+export function translationCautions(transcript?: Feature, seq?: string) {
+  return [
+    seq !== undefined && hasInternalStop(seq) && 'internal stop',
+    transcript &&
+      tagsOf(transcript).some(
+        t => t === 'cds_start_NF' || t === 'cds_end_NF',
+      ) &&
+      'incomplete CDS',
+  ].filter(caution => typeof caution === 'string')
 }
 
 /** The transcript its annotation flags as the gene's representative. */

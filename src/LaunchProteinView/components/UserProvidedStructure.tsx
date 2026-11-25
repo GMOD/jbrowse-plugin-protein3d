@@ -181,6 +181,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
                   setVal={setUserSelection}
                   structureSequence={structureSequence}
                   isoforms={options}
+                  isoformSequences={isoformSequences}
                   feature={feature}
                   ranking={ranking}
                 />

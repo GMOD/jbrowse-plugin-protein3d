@@ -338,6 +338,7 @@ const GeneStructures = observer(function GeneStructures({
               structureSequence={launch.structureSequence}
               feature={feature}
               isoforms={launch.transcripts}
+              isoformSequences={launch.isoformSequences}
               ranking={launch.ranking}
               size="small"
             />

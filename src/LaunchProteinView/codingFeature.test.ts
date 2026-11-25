@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import {
   codingTranscripts,
   isCodingFeature,
+  translationCautions,
   uncodedTranscript,
 } from './codingFeature'
 
@@ -17,6 +18,33 @@ function feature(type: string, subfeatures: SimpleFeature[] = []) {
     subfeatures: subfeatures.map(s => s.toJSON()),
   })
 }
+
+describe('translationCautions', () => {
+  it('flags a stop inside the translation, not the one ending it', () => {
+    expect(translationCautions(undefined, 'MKT*')).toEqual([])
+    expect(translationCautions(undefined, 'MK*TL*')).toEqual(['internal stop'])
+  })
+
+  it("flags GENCODE's incomplete-CDS tags in either spelling of the tag list", () => {
+    const tagged = (tag: unknown) =>
+      new SimpleFeature({
+        uniqueId: 't',
+        refName: 'chr1',
+        start: 0,
+        end: 100,
+        type: 'mRNA',
+        tag,
+      })
+    expect(translationCautions(tagged('basic,cds_start_NF'))).toEqual([
+      'incomplete CDS',
+    ])
+    expect(translationCautions(tagged(['cds_end_NF']), 'M*K')).toEqual([
+      'internal stop',
+      'incomplete CDS',
+    ])
+    expect(translationCautions(tagged('MANE_Select'), 'MK')).toEqual([])
+  })
+})
 
 describe('isCodingFeature', () => {
   it('finds a CDS anywhere below the feature', () => {

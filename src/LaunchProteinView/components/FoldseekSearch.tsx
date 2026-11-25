@@ -18,6 +18,7 @@ import {
 } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
+import { hasInternalStop } from '../codingFeature'
 import useFoldseekSearch from '../hooks/useFoldseekSearch'
 import useTranscriptIsoformSelection from '../hooks/useTranscriptIsoformSelection'
 import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
@@ -180,9 +181,19 @@ const FoldseekSearch = observer(function FoldseekSearch({
               val={effectiveSelectedTranscriptId}
               setVal={setUserSelectionWithReset}
               isoforms={transcripts}
+              isoformSequences={isoformSequences}
               ranking={ranking}
               feature={feature}
               disabled={isBusy}
+            />
+            <NoticeLine
+              message={
+                userEditedSequence === undefined &&
+                selectedIsoformData &&
+                hasInternalStop(selectedIsoformData.seq)
+                  ? 'This translation has a stop codon inside it; Foldseek searches it with the stop removed, as a read-through protein'
+                  : undefined
+              }
             />
             <TextField
               label="Protein sequence (amino acids)"
