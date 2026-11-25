@@ -98,6 +98,24 @@ test('every preset passes its own check', () => {
   }
 })
 
+test('a range entry that is not a CSS color is refused by name', () => {
+  expect(
+    colorProblems({ field: 'alphaMissense', range: ['#d7191', 'red', 'bleu'] }),
+  ).toEqual([
+    'color.range is a list of CSS colors; "#d7191" is not one',
+    'color.range is a list of CSS colors; "bleu" is not one',
+  ])
+  expect(colorProblems({ field: 'alphaMissense', range: [1] })).toEqual([
+    'color.range is a list of CSS colors',
+  ])
+  expect(
+    colorProblems({
+      field: 'alphaMissense',
+      range: ['#2c7bb6', 'rgb(255, 255, 255)', 'hsl(0, 80%, 50%)'],
+    }),
+  ).toEqual([])
+})
+
 test('a scale that cannot paint a value is refused before it reaches a painter', () => {
   expect(
     colorProblems({ field: 'alphaMissense', domainMin: 1, domainMax: 1 }),

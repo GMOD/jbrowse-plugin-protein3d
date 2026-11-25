@@ -1,3 +1,5 @@
+import { isCssColor } from '@jbrowse/core/util/colorBits'
+
 import {
   featureFilterLabel,
   featureFilterProblems,
@@ -174,8 +176,19 @@ function isScaledField(field: ColorField): field is ScaledField {
   return SCALED_FIELDS.some(f => f === field)
 }
 
-function isStrings(value: unknown) {
+function isStrings(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every(v => typeof v === 'string')
+}
+
+function rangeProblems(value: unknown) {
+  return isStrings(value)
+    ? value
+        .filter(c => !isCssColor(c))
+        .map(
+          c =>
+            `color.range is a list of CSS colors; ${JSON.stringify(c)} is not one`,
+        )
+    : ['color.range is a list of CSS colors']
 }
 
 function isNumbers(value: unknown) {
@@ -206,7 +219,6 @@ function isResidueValues(value: unknown) {
 
 const MEMBER_TYPES: Record<string, [(value: unknown) => boolean, string]> = {
   domain: [isNumbers, 'a list of numbers'],
-  range: [isStrings, 'a list of CSS colors'],
   labels: [isStrings, 'a list of strings'],
   title: [v => typeof v === 'string', 'a string'],
   trackId: [v => typeof v === 'string' && v !== '', 'a track id'],
@@ -290,6 +302,9 @@ export function colorProblems(color: unknown): string[] {
     }
     if (key === 'filter') {
       return featureFilterProblems(value, 'color.filter')
+    }
+    if (key === 'range') {
+      return rangeProblems(value)
     }
     const [accepts, kind] = MEMBER_TYPES[key]!
     return accepts(value) ? [] : [`color.${key} is ${kind}`]
