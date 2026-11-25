@@ -1127,6 +1127,22 @@ test('focusResidues works on a structure opened without a transcript', async () 
   ])
 })
 
+test('focusResidues settles on a structure with a transcript and no chain', async () => {
+  const parent = TestParent.create({
+    structures: [{ url: 'x.cif', userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const [s] = parent.structures
+  s!.setStructureData({ entities: [] })
+  s!.setLoadedToMolstar(true)
+  expect(s!.statusMessage).toBe('This structure has no chain to align')
+  expect(
+    await s!.focusResidues(
+      { residues: { start: 95, end: 95 } },
+      { timeout: 1000 },
+    ),
+  ).toEqual([])
+})
+
 // nothing will ever align such a structure, and a transcript range used to
 // wait for a mapper until the timeout
 test('focusResidues names no residue for a transcript range on a structure without a transcript', async () => {

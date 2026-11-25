@@ -2146,6 +2146,11 @@ const Structure = types
               case 'nothingToAlign':
                 self.supersedeAlignment()
                 break
+              case 'skip':
+                self.supersedeAlignment()
+                self.setAlignmentSkipped(decision.reason)
+                self.setEntityChosen()
+                break
               case 'keep':
                 self.setEntityChosen()
                 break
