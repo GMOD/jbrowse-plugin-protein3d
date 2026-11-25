@@ -192,7 +192,10 @@ test('a distance that will not draw on a loaded structure is a notice, one still
         { a: 'A:12', b: 'MOV', structure: 1 },
       ],
     })
-    expect(measurementNotices(results)).toEqual([
+    expect(measurementNotices(results, 2)).toEqual([
+      'distance A:999 to MOV on structures[0]: A:999 is not in the structure',
+    ])
+    expect(measurementNotices(results.slice(0, 2), 1)).toEqual([
       'distance A:999 to MOV: A:999 is not in the structure',
     ])
   })

@@ -33,7 +33,11 @@ import {
 } from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
-import { reportPluginFailure, reportPluginNotices } from './reportPluginFailure'
+import {
+  noFigureNotices,
+  reportFigureNotices,
+  reportPluginFailure,
+} from './reportPluginFailure'
 import { checkedStructureFilters } from './residueFilter'
 import { syncResidueMarks, unmatchedMarkNotices } from './residueMarks'
 import { applySavedCamera, keepSavedCamera, liveCamera } from './savedCamera'
@@ -61,6 +65,7 @@ import { attachViewInteractions } from './viewInteractions'
 import type { DistanceMeasurement } from './measurements'
 import type { ProteinColor } from './proteinColor'
 import type { ProteinFigure, ProteinStructureSpec } from './proteinViewSpec'
+import type { FigureNoticeKind } from './reportPluginFailure'
 import type { ResidueMark } from './residueMarks'
 import type { SavedCamera } from './savedCamera'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
@@ -345,6 +350,17 @@ function stateModelFactory() {
       notices: [] as unknown[],
       /**
        * #volatile
+       * the marks and distances that draw nothing on their loaded structure,
+       * one line each, as the last sync of each kind found them
+       */
+      figureNotices: noFigureNotices(),
+      /**
+       * #volatile
+       * the figure notices dismissed since marks or distances last changed
+       */
+      dismissedFigureNotices: new Array<string>(),
+      /**
+       * #volatile
        */
       molstarPluginContext: undefined as PluginContext | undefined,
       /**
@@ -406,6 +422,20 @@ function stateModelFactory() {
        */
       dismissNotice(notice: unknown) {
         self.notices = self.notices.filter(n => n !== notice)
+        if (
+          typeof notice === 'string' &&
+          Object.values(self.figureNotices).some(lines =>
+            lines.includes(notice),
+          )
+        ) {
+          self.dismissedFigureNotices = [...self.dismissedFigureNotices, notice]
+        }
+      },
+      /**
+       * #action
+       */
+      setFigureNotices(kind: FigureNoticeKind, notices: readonly string[]) {
+        self.figureNotices = { ...self.figureNotices, [kind]: notices }
       },
 
       /**
@@ -504,6 +534,12 @@ function stateModelFactory() {
         }
         if (Object.hasOwn(figure, 'distances')) {
           self.distances = figure.distances
+        }
+        if (
+          Object.hasOwn(figure, 'marks') ||
+          Object.hasOwn(figure, 'distances')
+        ) {
+          self.dismissedFigureNotices = []
         }
         if (Object.hasOwn(figure, 'silhouettes')) {
           self.silhouettes = figure.silhouettes === true
@@ -793,7 +829,11 @@ function stateModelFactory() {
                 measurements: distances,
               })
                 .then(results => {
-                  reportPluginNotices(self, plugin)(measurementNotices(results))
+                  reportFigureNotices(
+                    self,
+                    plugin,
+                    'distances',
+                  )(measurementNotices(results, structures.length))
                 })
                 .catch(reportPluginFailure(self, plugin))
             }
@@ -812,10 +852,11 @@ function stateModelFactory() {
             if (plugin && structures.some(Boolean)) {
               syncResidueMarks({ plugin, structures, marks })
                 .then(unmatched => {
-                  reportPluginNotices(
+                  reportFigureNotices(
                     self,
                     plugin,
-                  )(unmatchedMarkNotices(unmatched))
+                    'marks',
+                  )(unmatchedMarkNotices(unmatched, structures.length))
                 })
                 .catch(reportPluginFailure(self, plugin))
             }
@@ -868,6 +909,22 @@ function stateModelFactory() {
       },
     }))
     .views(self => ({
+      /**
+       * #getter
+       * The banner's lines: the notices added, then the figure notices not
+       * dismissed.
+       */
+      get shownNotices() {
+        return [
+          ...self.notices,
+          ...[
+            ...self.figureNotices.marks,
+            ...self.figureNotices.distances,
+          ].filter(n => !self.dismissedFigureNotices.includes(n)),
+        ]
+      },
+    }))
+    .views(self => ({
       get primaryStructure() {
         return self.structures[0]
       },
@@ -896,7 +953,7 @@ function stateModelFactory() {
           loading: showLoading(self),
           error:
             self.error === undefined ? undefined : errorMessage(self.error),
-          notices: self.notices.map(n => errorMessage(n)),
+          notices: self.shownNotices.map(n => errorMessage(n)),
           structures: self.structures.map(s => s.report),
         }
       },

@@ -20,13 +20,29 @@ export function reportPluginFailure(host: FailureHost, plugin: unknown) {
   }
 }
 
-/** Shows each of `notices` on `host` on the same terms. */
-export function reportPluginNotices(host: FailureHost, plugin: unknown) {
+export type FigureNoticeKind = 'marks' | 'distances'
+
+export function noFigureNotices(): Record<FigureNoticeKind, readonly string[]> {
+  return { marks: [], distances: [] }
+}
+
+export type FigureNoticeHost = IAnyStateTreeNode & {
+  readonly molstarPluginContext: unknown
+  setFigureNotices: (kind: FigureNoticeKind, notices: readonly string[]) => void
+}
+
+/**
+ * Replaces `host`'s notices of `kind` with a sync's, on the same terms as
+ * {@link reportPluginFailure}: a fixed mark's line goes with the next sync.
+ */
+export function reportFigureNotices(
+  host: FigureNoticeHost,
+  plugin: unknown,
+  kind: FigureNoticeKind,
+) {
   return (notices: readonly string[]) => {
     if (isAlive(host) && host.molstarPluginContext === plugin) {
-      for (const notice of notices) {
-        host.addNotice(notice)
-      }
+      host.setFigureNotices(kind, notices)
     }
   }
 }

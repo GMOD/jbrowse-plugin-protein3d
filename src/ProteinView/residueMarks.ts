@@ -49,9 +49,18 @@ function markRepresentation(mark: Exclude<ResidueMark['mark'], 'none'>) {
 }
 export const DEFAULT_MARK_COLOR = '#f28e2b'
 
-/** One line for each mark whose site selects nothing in its loaded structure. */
-export function unmatchedMarkNotices(unmatched: readonly ResidueMark[]) {
-  return unmatched.map(({ site }) => `mark ${site} is not in the structure`)
+/**
+ * One line for each mark whose site selects nothing in its loaded structure,
+ * naming the structure as `structures[i]` in a view of `structureCount` > 1.
+ */
+export function unmatchedMarkNotices(
+  unmatched: readonly ResidueMark[],
+  structureCount: number,
+) {
+  return unmatched.map(
+    ({ site, structure = 0 }) =>
+      `mark ${site} is not in ${structureCount > 1 ? `structures[${structure}]` : 'the structure'}`,
+  )
 }
 
 /**

@@ -41,7 +41,7 @@ const DismissableNotices = observer(function DismissableNotices({
 }: {
   model: JBrowsePluginProteinViewModel
 }) {
-  return model.notices.map(notice => (
+  return model.shownNotices.map(notice => (
     <div
       key={`${notice}`}
       style={{ display: 'flex', alignItems: 'flex-start' }}

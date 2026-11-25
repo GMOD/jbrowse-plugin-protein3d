@@ -111,6 +111,37 @@ test('a notice leaves the view loading, and repeats once', () => {
   expect(view.notices).toEqual([])
 })
 
+test("a figure notice goes with the sync that no longer finds it, beside the view's own", () => {
+  const view = makeView()
+  view.addNotice(new Error('superposition failed'))
+  view.setFigureNotices('marks', ['mark A:999 is not in the structure'])
+  view.setFigureNotices('distances', ['distance A:1 to A:2: no atoms'])
+  expect(view.report.notices).toEqual([
+    'superposition failed',
+    'mark A:999 is not in the structure',
+    'distance A:1 to A:2: no atoms',
+  ])
+  view.applyFigure({ marks: [{ site: 'A:99' }] })
+  view.setFigureNotices('marks', [])
+  expect(view.report.notices).toEqual([
+    'superposition failed',
+    'distance A:1 to A:2: no atoms',
+  ])
+})
+
+test('a dismissed figure notice stays dismissed until the figure changes', () => {
+  const view = makeView()
+  const line = 'mark A:999 is not in the structure'
+  view.setFigureNotices('marks', [line])
+  view.dismissNotice(line)
+  expect(view.shownNotices).toEqual([])
+  view.setFigureNotices('marks', [line])
+  expect(view.shownNotices).toEqual([])
+  view.applyFigure({ marks: [{ site: 'A:999' }, { site: 'A:1' }] })
+  view.setFigureNotices('marks', [line])
+  expect(view.shownNotices).toEqual([line])
+})
+
 test('a Mol* that failed to start settles the view', () => {
   const view = makeView()
   view.setError(new Error('Could not create a WebGL rendering context'))

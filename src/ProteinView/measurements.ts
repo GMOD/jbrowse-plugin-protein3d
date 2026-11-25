@@ -127,13 +127,20 @@ const NOT_LOADED = 'the structure is not loaded'
 
 /**
  * The distances that will not draw on a structure that has loaded, one line
- * each; one whose structure is still loading draws once it has.
+ * each, naming the structure as `structures[i]` in a view of
+ * `structureCount` > 1; one whose structure is still loading draws once it
+ * has.
  */
-export function measurementNotices(results: readonly MeasurementResult[]) {
-  return results.flatMap(({ measurement: { a, b }, error }) =>
+export function measurementNotices(
+  results: readonly MeasurementResult[],
+  structureCount: number,
+) {
+  return results.flatMap(({ measurement: { a, b, structure = 0 }, error }) =>
     error === undefined || error === NOT_LOADED
       ? []
-      : [`distance ${a} to ${b}: ${error}`],
+      : [
+          `distance ${a} to ${b}${structureCount > 1 ? ` on structures[${structure}]` : ''}: ${error}`,
+        ],
   )
 }
 

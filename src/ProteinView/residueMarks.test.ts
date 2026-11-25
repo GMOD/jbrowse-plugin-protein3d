@@ -63,7 +63,11 @@ test('a mark whose site selects nothing is reported, one still loading is not', 
       ],
       labels: false,
     })
-    expect(unmatchedMarkNotices(unmatched)).toEqual([
+    expect(unmatchedMarkNotices(unmatched, 2)).toEqual([
+      'mark A:999 is not in structures[0]',
+      'mark Z:* is not in structures[0]',
+    ])
+    expect(unmatchedMarkNotices(unmatched, 1)).toEqual([
       'mark A:999 is not in the structure',
       'mark Z:* is not in the structure',
     ])
