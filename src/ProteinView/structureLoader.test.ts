@@ -1,4 +1,5 @@
 import { types } from '@jbrowse/mobx-state-tree'
+import { autorun } from 'mobx'
 import { getAlphaFoldStructureUrl } from 'p2s_mapper'
 import { beforeEach, expect, test, vi } from 'vitest'
 
@@ -50,10 +51,14 @@ const TestStructure = types
     molstarStructures: new Array<Structure>(),
 
     error: undefined as unknown,
+    loadAttempt: 0,
   }))
   .actions(self => ({
     setUrl(url: string) {
       self.url = url
+    },
+    retryLoad() {
+      self.loadAttempt += 1
     },
     setError(e: unknown) {
       self.error = e
@@ -498,6 +503,22 @@ test('a failure in the current plugin is not retried by an unrelated rerun', asy
   load()
   expect(mockLoad).toHaveBeenCalledTimes(2)
   expect(structure.error).toBe(err)
+  logged.mockRestore()
+})
+
+test('a failed load loads again when the structure asks to retry', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  mockLoad.mockRejectedValueOnce(new Error('503')).mockResolvedValue({})
+  const { load, structure } = setup({})
+  const dispose = autorun(load)
+  await tick()
+  expect(structure.error).toEqual(new Error('503'))
+  structure.retryLoad()
+  expect(structure.error).toBeUndefined()
+  await tick()
+  expect(mockLoad).toHaveBeenCalledTimes(2)
+  expect(structure.loadedToMolstar).toBe(true)
+  dispose()
   logged.mockRestore()
 })
 

@@ -5,6 +5,7 @@ import CloseIcon from '@mui/icons-material/Close'
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore'
 import VisibilityIcon from '@mui/icons-material/Visibility'
 import VisibilityOffIcon from '@mui/icons-material/VisibilityOff'
+import Button from '@mui/material/Button'
 import Chip from '@mui/material/Chip'
 import IconButton from '@mui/material/IconButton'
 import Link from '@mui/material/Link'
@@ -138,6 +139,17 @@ const StructureRow = observer(function StructureRow({
         >
           {statusMessage}
         </Typography>
+      ) : null}
+      {structure.loadFailed ? (
+        <Button
+          size="small"
+          onClick={() => {
+            structure.retryLoad()
+          }}
+          sx={{ minWidth: 0, py: 0 }}
+        >
+          Retry
+        </Button>
       ) : null}
       {readout ? (
         <Typography

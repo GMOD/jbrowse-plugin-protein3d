@@ -454,8 +454,21 @@ const Structure = types
      * whether it failed.
      */
     error: undefined as unknown,
+    /**
+     * #volatile
+     * Bumped by retryLoad; the loader leaves a failed load alone until it
+     * changes or the plugin does
+     */
+    loadAttempt: 0,
   }))
   .actions(self => ({
+    /**
+     * #action
+     * Loads again after a failed load.
+     */
+    retryLoad() {
+      self.loadAttempt += 1
+    },
     /**
      * #action
      * The file the accession's structure lives in, once the loader has asked
@@ -618,6 +631,9 @@ const Structure = types
       self.pairwiseAlignment = r
       self.alignmentImported = imported
       self.alignmentSkipped = undefined
+      if (r && self.loadedToMolstar) {
+        self.error = undefined
+      }
     },
     setAlignmentSkipped(reason?: string) {
       self.alignmentSkipped = reason
@@ -1567,6 +1583,13 @@ const Structure = types
             self.exonStatus?.message ??
             self.alignmentDomainStatus?.message)
         : errorMessage(error)
+    },
+    /**
+     * #getter
+     * The error is the load's: an alignment fails only once loaded.
+     */
+    get loadFailed() {
+      return self.error !== undefined && !self.loadedToMolstar
     },
   }))
   .views(self => ({

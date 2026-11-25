@@ -57,7 +57,17 @@ export function makeStructureLoader(
   fetchComplex: AlphaFoldComplexFetcher = fetchAlphaFoldComplexModel,
 ) {
   const loadingIn = new Map<StructureInstance, PluginContext>()
-  const failedIn = new WeakMap<StructureInstance, PluginContext>()
+  const failedIn = new WeakMap<
+    StructureInstance,
+    { plugin: PluginContext; attempt: number }
+  >()
+
+  /** A failure stands until the plugin changes or the structure asks to
+   * retry, which bumps its `loadAttempt` */
+  function failedInto(structure: StructureInstance, plugin: PluginContext) {
+    const failed = failedIn.get(structure)
+    return failed?.plugin === plugin && failed.attempt === structure.loadAttempt
+  }
 
   /** The AlphaFold id a structure still has to turn into a file, if any. */
   function unresolvedId(structure: StructureInstance) {
@@ -150,6 +160,7 @@ export function makeStructureLoader(
 
   function loadInto(structure: StructureInstance, plugin: PluginContext) {
     loadingIn.set(structure, plugin)
+    const attempt = structure.loadAttempt
     // A retry — a plugin swap, a remount — starts over, so the last attempt's
     // failure goes with it. Left in place it also reported the structure as
     // settled for the whole of the retry, since `loading` reads it.
@@ -207,7 +218,7 @@ export function makeStructureLoader(
         } else {
           // the structure carries its own failure: a view-wide "Failed to
           // fetch" names neither which structure nor what it was fetching
-          failedIn.set(structure, plugin)
+          failedIn.set(structure, { plugin, attempt })
           structure.setError(e)
           console.error(e)
         }
@@ -238,7 +249,7 @@ export function makeStructureLoader(
         if (
           !structure.loadedToMolstar &&
           loadingIn.get(structure) !== molstarPluginContext &&
-          failedIn.get(structure) !== molstarPluginContext
+          !failedInto(structure, molstarPluginContext)
         ) {
           loadInto(structure, molstarPluginContext)
         }

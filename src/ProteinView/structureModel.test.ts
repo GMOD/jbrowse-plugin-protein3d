@@ -1493,3 +1493,21 @@ test('a pLDDT color on an experimental structure says it shows no confidence', (
   expect(crystal!.plddtMissing).toMatch(/experimental/)
   expect(model!.plddtMissing).toBeUndefined()
 })
+
+test('an alignment that lands clears the failure of the alignment before it', () => {
+  const s = makeModel()
+  s.setStructureData({ entities: NUMBERED_FROM_94 })
+  s.setLoadedToMolstar(true)
+  s.setError(new Error('worker died'))
+  expect(s.loadFailed).toBe(false)
+  s.setAlignment(pairwiseAlignment)
+  expect(s.error).toBeUndefined()
+})
+
+test('an alignment leaves a failed load failed', () => {
+  const s = makeModel()
+  s.setError(new Error('404'))
+  expect(s.loadFailed).toBe(true)
+  s.setAlignment(pairwiseAlignment)
+  expect(s.error).toEqual(new Error('404'))
+})
