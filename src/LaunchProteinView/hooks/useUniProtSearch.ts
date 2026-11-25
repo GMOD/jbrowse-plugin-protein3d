@@ -71,10 +71,11 @@ export default function useUniProtSearch({
     },
   )
 
+  const result = error ? undefined : data
   return {
-    entries: data?.entries ?? [],
+    entries: result?.entries ?? [],
     isLoading,
     error,
-    partialFailure: data ? partialFailureNotice(data) : undefined,
+    partialFailure: result ? partialFailureNotice(result) : undefined,
   }
 }
