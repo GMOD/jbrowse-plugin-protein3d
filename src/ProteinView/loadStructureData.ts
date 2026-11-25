@@ -122,6 +122,7 @@ function structureAssemblies(model: Model, molstar: Molstar) {
 export async function loadStructureData({
   structure,
   plugin,
+  url = structure.url,
 }: {
   structure: {
     data?: string
@@ -129,8 +130,9 @@ export async function loadStructureData({
     assembly?: string
   } & DrawnResidues
   plugin: PluginContext
+  url?: string
 }): Promise<StructureData> {
-  const { data, url, assembly, chains, filter } = structure
+  const { data, assembly, chains, filter } = structure
   const {
     model,
     structures: molstarStructures,

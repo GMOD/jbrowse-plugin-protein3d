@@ -382,6 +382,34 @@ test('a failed prediction API falls back to the canonical filename', async () =>
   expect(structure.loadedToMolstar).toBe(true)
 })
 
+test('a spelled filename that fails is not kept, so the next attempt asks the API again', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  mockLoad.mockRejectedValueOnce(new Error('404')).mockResolvedValue({})
+  const fetchModels = vi
+    .fn<AlphaFoldModelFetcher>()
+    .mockRejectedValueOnce(new Error('HTTP 503'))
+    .mockResolvedValue([alphaFoldModel('P04637', 'MEEP')])
+  const host = TestHost.create({ structures: [{ uniprotId: 'P04637' }] })
+  host.setPlugin({ id: 'A' })
+  const load = makeStructureLoader(asLoaderHost(host), fetchModels)
+  const structure = host.structures[0]!
+  load()
+  await tick()
+  expect(mockLoad.mock.calls[0]![0].url).toBe(
+    getAlphaFoldStructureUrl('P04637'),
+  )
+  expect(structure.url).toBeUndefined()
+  expect(structure.error).toEqual(new Error('404'))
+
+  host.setPlugin({ id: 'B' })
+  load()
+  await tick()
+  expect(fetchModels).toHaveBeenCalledTimes(2)
+  expect(structure.url).toBe(alphaFoldModel('P04637', '').url)
+  expect(structure.loadedToMolstar).toBe(true)
+  logged.mockRestore()
+})
+
 // An API that answers with no models has: spelling a filename anyway turns
 // "AlphaFold has not folded this protein" into a 404 to diagnose.
 test('an accession AlphaFold has no model for is reported, not guessed at', async () => {

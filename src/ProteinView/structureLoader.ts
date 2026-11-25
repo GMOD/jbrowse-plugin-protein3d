@@ -73,17 +73,12 @@ export function makeStructureLoader(
 
   /** A complex's file carries a model version that moves, so it is asked
    * for, like an accession's */
-  async function resolveComplexUrl(
-    structure: StructureInstance,
-    entity: string,
-  ) {
+  async function resolveComplexUrl(entity: string) {
     const model = await fetchComplex(entity)
     if (!model) {
       throw new Error(`AlphaFold DB has no complex ${entity}`)
     }
-    if (isAlive(structure)) {
-      structure.setUrl(model.url)
-    }
+    return model.url
   }
 
   /**
@@ -100,6 +95,9 @@ export function makeStructureLoader(
    * An API that answers with no models has told us there is nothing to open,
    * and spelling a filename anyway just turns that into a 404 the reader has
    * to diagnose.
+   *
+   * The resolved url is kept only once its file loads, so a spelled filename
+   * that 404s leaves the next attempt asking the API again.
    */
   async function resolveAlphaFoldUrl(
     structure: StructureInstance,
@@ -107,11 +105,10 @@ export function makeStructureLoader(
   ) {
     const models = await fetchModels(uniprotId).catch(() => undefined)
     if (!isAlive(structure)) {
-      return
+      return undefined
     }
     if (models === undefined) {
-      structure.setUrl(getAlphaFoldStructureUrl(uniprotId))
-      return
+      return getAlphaFoldStructureUrl(uniprotId)
     }
     const picked =
       models.find(m => m.accession === uniprotId) ??
@@ -121,7 +118,22 @@ export function makeStructureLoader(
     if (!picked) {
       throw new Error(`AlphaFold DB has no model for ${uniprotId}`)
     }
-    structure.setUrl(picked.url)
+    return picked.url
+  }
+
+  async function loadResolved(
+    structure: StructureInstance,
+    plugin: PluginContext,
+    url: string | undefined,
+  ) {
+    if (url !== undefined && isAlive(structure)) {
+      const data = await loadStructureData({ structure, plugin, url })
+      if (isAlive(structure)) {
+        structure.setUrl(url)
+      }
+      return data
+    }
+    return undefined
   }
 
   function settle(structure: StructureInstance, plugin: PluginContext) {
@@ -149,13 +161,9 @@ export function makeStructureLoader(
       unresolved === undefined
         ? loadStructureData({ structure, plugin })
         : (unresolved.kind === 'complex'
-            ? resolveComplexUrl(structure, unresolved.id)
+            ? resolveComplexUrl(unresolved.id)
             : resolveAlphaFoldUrl(structure, unresolved.id)
-          ).then(() =>
-            isAlive(structure)
-              ? loadStructureData({ structure, plugin })
-              : undefined,
-          )
+          ).then(url => loadResolved(structure, plugin, url))
     loaded
       .then(data => {
         if (!data) {
