@@ -347,7 +347,12 @@ function readStructure(
   return {
     url: read('url', isString, 'a string'),
     data: read('data', isString, 'a string'),
-    fileName: read('fileName', isString, 'a string'),
+    fileName: read(
+      'fileName',
+      (value): value is string =>
+        isString(value) && isString(fields.get('data')),
+      'a string beside `data`',
+    ),
     uniprotId: read('uniprotId', isString, 'a string'),
     alphaFoldComplexId: read('alphaFoldComplexId', isString, 'a string'),
     pdbId: read('pdbId', isString, 'a string'),

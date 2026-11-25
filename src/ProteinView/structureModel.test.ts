@@ -922,6 +922,7 @@ test('label names the structure by id so stacked panels can be told apart', () =
       { uniprotId: 'P04637' },
       { data: 'ATOM' },
       { data: 'ATOM', fileName: 'kras_g12c.pdb' },
+      { pdbId: '1YCR', fileName: 'renamed.cif' },
     ],
   })
   expect(parent.structures.map(s => s.label)).toEqual([
@@ -929,6 +930,7 @@ test('label names the structure by id so stacked panels can be told apart', () =
     'AlphaFold P04637',
     'Uploaded structure',
     'kras_g12c.pdb',
+    '1YCR',
   ])
 })
 

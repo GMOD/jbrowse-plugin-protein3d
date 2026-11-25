@@ -112,7 +112,7 @@ export function defaultDisplayName(structures: ProteinStructureSpec[]) {
     typeof featureName === 'string' ? featureName : undefined,
     ...structures.map(
       s =>
-        s.fileName ??
+        (s.data === undefined ? undefined : s.fileName) ??
         structureDisplayLabel({
           url: resolveStructureUrl(s),
           data: s.data,

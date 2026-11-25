@@ -85,5 +85,8 @@ test('a view with no name is titled by its transcript and structures', () => {
   expect(defaultDisplayName([{ data: 'ATOM', fileName: 'kras.pdb' }])).toBe(
     'Protein view - kras.pdb',
   )
+  expect(defaultDisplayName([{ pdbId: '1YCR', fileName: 'x.cif' }])).toBe(
+    'Protein view - 1YCR',
+  )
   expect(defaultDisplayName([])).toBe('Protein view')
 })

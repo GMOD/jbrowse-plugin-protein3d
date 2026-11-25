@@ -106,6 +106,20 @@ test('a value the structure model would throw on is dropped by name', () => {
   ])
 })
 
+// a file name labels an uploaded file, and would rename a PDB entry
+test('a fileName is kept only beside data', () => {
+  const { requested, warnings } = accepted({
+    structures: [
+      { data: 'ATOM', fileName: 'kras.pdb' },
+      { pdbId: '1TUP', fileName: 'x.cif' },
+    ],
+  })
+  expect(requested.map(s => s.fileName)).toEqual(['kras.pdb', undefined])
+  expect(warnings).toEqual([
+    '`structures[1].fileName` is not a string beside `data` and was ignored',
+  ])
+})
+
 test('every structure key written on the launch reaches its one structure', () => {
   const shorthand = {
     pdbId: '1TUP',

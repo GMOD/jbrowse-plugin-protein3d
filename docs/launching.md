@@ -590,9 +590,9 @@ Each entry of `structures` is one structure: a source (`url`, `data`,
 `initialTranscriptResidues`, `initialResidues`, `initialSelection`,
 `mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden`,
 `assembly`, `chains`, `filter` and `fileName`, the name that labels a structure
-given as `data`. `feature`, `userProvidedTranscriptSequence` and
-`connectedViewId` written on the launch are the defaults every entry shares, and
-an entry may carry its own.
+given as `data` (beside any other source it is ignored, with a warning).
+`feature`, `userProvidedTranscriptSequence` and `connectedViewId` written on the
+launch are the defaults every entry shares, and an entry may carry its own.
 
 Written on the launch itself, the per-structure keys describe its one structure.
 Beside `structures` they apply to no structure, so the launch reports each by

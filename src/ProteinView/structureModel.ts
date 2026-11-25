@@ -791,7 +791,8 @@ const Structure = types
         : undefined
       return members
         ? `AlphaFold complex ${members}`
-        : (self.fileName ?? structureDisplayLabel(self))
+        : ((self.data === undefined ? undefined : self.fileName) ??
+            structureDisplayLabel(self))
     },
     /**
      * #getter
