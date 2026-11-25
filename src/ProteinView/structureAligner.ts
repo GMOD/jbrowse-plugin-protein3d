@@ -29,7 +29,6 @@ export type StructureAlignerHost = IAnyStateTreeNode &
     readonly pendingEntityId: string | undefined
     readonly mappedEntity: Entity | undefined
     readonly label: string
-    readonly alignmentRedecisions: number
     readonly parentView: { addNotice: (notice: unknown) => void }
     setAligning: (aligning: boolean, pendingEntityId?: string) => void
     settleAlignment: (apply: () => void) => void
@@ -42,7 +41,6 @@ export type StructureAlignerHost = IAnyStateTreeNode &
     applyRealignment: (realigned: ScoredAlignment | undefined) => void
     applyChosenEntity: (entityId: string, alignment: PairwiseAlignment) => void
     switchEntity: (entityId: string) => void
-    requestRedecision: () => void
   }
 
 export interface AlignmentRun<M extends AlignmentMethod> {
@@ -74,9 +72,11 @@ export function makeStructureAligner(host: StructureAlignerHost) {
     host.setAligning(false)
   }
 
+  /** Decides again after a chain pick that superseded the decision was
+   * cancelled or failed */
   function redecide() {
     supersede()
-    host.requestRedecision()
+    decide()
   }
 
   /** Applies an identical sequence's free alignment at once, superseding
@@ -189,8 +189,6 @@ export function makeStructureAligner(host: StructureAlignerHost) {
   function decide() {
     try {
       const { alignmentAlgorithm: algorithm } = host
-      // read only so that a redecision reruns this
-      void host.alignmentRedecisions
       const decision = decideAlignment(host)
       const reportStale = (problem: string) => {
         host.parentView.addNotice(
@@ -278,5 +276,5 @@ export function makeStructureAligner(host: StructureAlignerHost) {
     }
   }
 
-  return { decide, chooseEntity, runAlignment, supersede, redecide }
+  return { decide, chooseEntity, runAlignment, supersede }
 }

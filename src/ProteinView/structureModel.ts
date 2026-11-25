@@ -370,12 +370,6 @@ const Structure = types
     pendingEntityId: undefined as string | undefined,
     /**
      * #volatile
-     * Bumped to have the load autorun decide the alignment again, after a
-     * chain pick that superseded its request was cancelled or failed
-     */
-    alignmentRedecisions: 0,
-    /**
-     * #volatile
      * The Mol* structures this model's load produced, one per model of the
      * file, captured from the loader rather than looked up by position in
      * `hierarchy.current.structures` — that array is ordered by load
@@ -692,9 +686,6 @@ const Structure = types
       self.aligning = false
       self.pendingEntityId = undefined
       apply()
-    },
-    requestRedecision() {
-      self.alignmentRedecisions++
     },
     /**
      * #action
