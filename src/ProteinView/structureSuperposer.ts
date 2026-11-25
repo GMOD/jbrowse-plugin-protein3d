@@ -13,9 +13,8 @@ export type SuperposedStructure = IAnyStateTreeNode & {
   readonly label: string
   readonly loadedToMolstar: boolean
   readonly molstarStructures: readonly Structure[]
-  readonly error: unknown
-  readonly alignmentPending: boolean
-  readonly pairwiseAlignment: unknown
+  readonly loading: boolean
+  readonly alignment: unknown
   readonly mappedEntity:
     | {
         readonly entityId: string
@@ -41,7 +40,7 @@ export interface KeyedStructure {
   readonly loadedToMolstar: boolean
   readonly molstarStructures: readonly unknown[]
   readonly mappedEntity: { readonly entityId: string } | undefined
-  readonly pairwiseAlignment: unknown
+  readonly alignment: unknown
 }
 
 export type StructureSuperposerHost = IAnyStateTreeNode & {
@@ -81,9 +80,12 @@ function superposedLoad(s: SuperposedStructure): SuperposedLoad {
 }
 
 // what a superposition of `s` depends on: its Mol* structures, and the chain
-// and alignment that pick the copy it aligns by
+// and alignment that pick the copy it aligns by. The alignment is the one the
+// coordinate mapper is built from, SIFTS-trimmed for a fusion, and a stable
+// computed while this autorun reads it; the mapper itself is a new object on
+// every read outside a reaction.
 function loadKey(s: KeyedStructure): SuperpositionKey {
-  return [s.molstarStructures, s.mappedEntity?.entityId, s.pairwiseAlignment]
+  return [s.molstarStructures, s.mappedEntity?.entityId, s.alignment]
 }
 
 function sameKeys(
@@ -121,9 +123,11 @@ export function structuresSuperposed(host: {
  * dependencies synchronously (MobX only tracks reads before the first
  * `await`) and dispatches one guarded, fire-and-forget run:
  *
- *   - it waits for every loaded structure's alignment, which says which chain
- *     to align by and which residues pair, so a structure is moved once
- *     rather than by its whole contents and again by its chain;
+ *   - it waits for every loaded structure to settle, its alignment and a PDB
+ *     entry's SIFTS answer, which say which chain to align by and which
+ *     residues pair, so a structure is moved once rather than by its whole
+ *     contents and again by its chain, and a fusion partner's chance pairs
+ *     never steer it;
  *   - a non-observable in-flight flag serializes runs so overlapping molstar
  *     state mutations can't interleave;
  *   - the host's `superposedKeys`, the keys of the loads it covered, and
@@ -145,9 +149,7 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
     const { molstarPluginContext: plugin, structures } = host
     const loaded = structures.filter(s => s.loadedToMolstar)
     const keys = loaded.map(loadKey)
-    const mapped = loaded.every(
-      s => !s.alignmentPending || s.error !== undefined,
-    )
+    const mapped = loaded.every(s => !s.loading)
     const loads = mapped ? loaded.map(superposedLoad) : []
     const loadedCount = loaded.length
     if (plugin !== superposedPlugin) {

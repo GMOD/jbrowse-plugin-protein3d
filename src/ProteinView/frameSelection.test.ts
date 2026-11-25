@@ -55,7 +55,7 @@ async function structure(
     molstarStructure,
     molstarStructures: [molstarStructure],
     mappedEntity: { entityId: '1' },
-    pairwiseAlignment: undefined,
+    alignment: undefined,
     clickedLabelSeqIds,
   })
 }

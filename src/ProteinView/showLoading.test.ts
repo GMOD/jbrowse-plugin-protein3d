@@ -15,7 +15,7 @@ function structure(state: {
     loadedToMolstar: !state.loading,
     molstarStructures: [],
     mappedEntity: undefined,
-    pairwiseAlignment: undefined,
+    alignment: undefined,
     ...state,
   }
 }
