@@ -19,3 +19,14 @@ export function reportPluginFailure(host: FailureHost, plugin: unknown) {
     }
   }
 }
+
+/** Shows each of `notices` on `host` on the same terms. */
+export function reportPluginNotices(host: FailureHost, plugin: unknown) {
+  return (notices: readonly string[]) => {
+    if (isAlive(host) && host.molstarPluginContext === plugin) {
+      for (const notice of notices) {
+        host.addNotice(notice)
+      }
+    }
+  }
+}

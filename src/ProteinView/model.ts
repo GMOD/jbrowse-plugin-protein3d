@@ -24,7 +24,7 @@ import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import loadMolstar from './loadMolstar'
 import { makeLociChannel } from './lociChannel'
 import { checkedFigure, checkedFigureChange } from './markProblems'
-import { syncMeasurements } from './measurements'
+import { measurementNotices, syncMeasurements } from './measurements'
 import {
   checkedColor,
   colorOfScheme,
@@ -33,9 +33,9 @@ import {
 } from './proteinColor'
 import { defaultDisplayName } from './proteinViewSpec'
 import { removeMolstarStructure } from './removeStructure'
-import { reportPluginFailure } from './reportPluginFailure'
+import { reportPluginFailure, reportPluginNotices } from './reportPluginFailure'
 import { checkedStructureFilters } from './residueFilter'
-import { syncResidueMarks } from './residueMarks'
+import { syncResidueMarks, unmatchedMarkNotices } from './residueMarks'
 import { applySavedCamera, keepSavedCamera, liveCamera } from './savedCamera'
 import {
   highlightCameraSnapshot,
@@ -791,7 +791,11 @@ function stateModelFactory() {
                 plugin,
                 structures,
                 measurements: distances,
-              }).catch(reportPluginFailure(self, plugin))
+              })
+                .then(results => {
+                  reportPluginNotices(self, plugin)(measurementNotices(results))
+                })
+                .catch(reportPluginFailure(self, plugin))
             }
           }),
         )
@@ -806,9 +810,14 @@ function stateModelFactory() {
               s.entities ? s.molstarStructures[0] : undefined,
             )
             if (plugin && structures.some(Boolean)) {
-              syncResidueMarks({ plugin, structures, marks }).catch(
-                reportPluginFailure(self, plugin),
-              )
+              syncResidueMarks({ plugin, structures, marks })
+                .then(unmatched => {
+                  reportPluginNotices(
+                    self,
+                    plugin,
+                  )(unmatchedMarkNotices(unmatched))
+                })
+                .catch(reportPluginFailure(self, plugin))
             }
           }),
         )

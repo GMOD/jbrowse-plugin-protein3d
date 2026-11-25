@@ -49,6 +49,15 @@ function markRepresentation(mark: Exclude<ResidueMark['mark'], 'none'>) {
 }
 export const DEFAULT_MARK_COLOR = '#f28e2b'
 
+/** One line for each mark whose site selects nothing in its loaded structure. */
+export function unmatchedMarkNotices(unmatched: readonly ResidueMark[]) {
+  return unmatched.map(({ site }) => `mark ${site} is not in the structure`)
+}
+
+/**
+ * Draws `marks` in place of the ones drawn before, and resolves to the marks
+ * whose site selects nothing in a structure that has loaded.
+ */
 export function syncResidueMarks({
   plugin,
   structures,
@@ -78,6 +87,7 @@ export function syncResidueMarks({
     )) {
       update.delete(cell.transform.ref)
     }
+    const unmatched: ResidueMark[] = []
     for (const mark of marks) {
       const structure = structures[mark.structure ?? 0]
       const site = parseSite(mark.site)
@@ -87,7 +97,13 @@ export function syncResidueMarks({
       if (!structure || !site || !root) {
         continue
       }
-      if (mark.mark !== 'none') {
+      if (
+        StructureSelection.isEmpty(
+          Script.getStructureSelection(siteExpression(MS, site), structure),
+        )
+      ) {
+        unmatched.push(mark)
+      } else if (mark.mark !== 'none') {
         const color = encodedColor(mark.encoding, DEFAULT_MARK_COLOR)
         update
           .to(root)
@@ -140,5 +156,6 @@ export function syncResidueMarks({
         }
       }
     }
+    return unmatched
   })
 }

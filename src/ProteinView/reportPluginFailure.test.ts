@@ -1,7 +1,7 @@
 import { destroy, types } from '@jbrowse/mobx-state-tree'
 import { afterEach, expect, test, vi } from 'vitest'
 
-import { reportPluginFailure } from './reportPluginFailure'
+import { reportPluginFailure, reportPluginNotices } from './reportPluginFailure'
 
 function noPlugin(): object | undefined {
   return undefined
@@ -59,4 +59,16 @@ test('a failure after the view is destroyed reaches the console alone', () => {
     report(new Error('destroyed'))
   }).not.toThrow()
   expect(consoleError).toHaveBeenCalledTimes(1)
+})
+
+test('notices reach the view only while their plugin is its own', () => {
+  const plugin = {}
+  const host = Host.create()
+  host.setPlugin(plugin)
+  const report = reportPluginNotices(host, plugin)
+  report(['mark A:999 is not in the structure'])
+  host.setPlugin({})
+  report(['mark B:1 is not in the structure'])
+  expect(host.errors).toEqual(['mark A:999 is not in the structure'])
+  expect(consoleError).not.toHaveBeenCalled()
 })

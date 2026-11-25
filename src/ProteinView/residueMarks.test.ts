@@ -5,7 +5,11 @@ import { Color } from 'molstar/lib/mol-util/color'
 import { expect, test } from 'vitest'
 
 import { loadPocket } from '../test_data/molstarPlugin'
-import { RESIDUE_MARKS_TAG, syncResidueMarks } from './residueMarks'
+import {
+  RESIDUE_MARKS_TAG,
+  syncResidueMarks,
+  unmatchedMarkNotices,
+} from './residueMarks'
 import { formatSite, parseSite } from './residueSpec'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 
@@ -43,6 +47,27 @@ test('a cartoon mark of a chain draws that chain as a cartoon in its color', asy
     expect(representation?.obj?.data.repr.renderObjects.length).toBeGreaterThan(
       0,
     )
+  })
+})
+
+test('a mark whose site selects nothing is reported, one still loading is not', async () => {
+  await withTemporaryMolstarPlugin(async plugin => {
+    const { structure } = await loadPocket(plugin)
+    const unmatched = await syncResidueMarks({
+      plugin,
+      structures: [structure, undefined],
+      marks: [
+        { site: 'A:12', mark: 'sticks' },
+        { site: 'A:999', mark: 'spheres' },
+        { site: 'Z:*', mark: 'none', label: 'gone' },
+        { site: 'A:999', structure: 1 },
+      ],
+      labels: false,
+    })
+    expect(unmatchedMarkNotices(unmatched)).toEqual([
+      'mark A:999 is not in the structure',
+      'mark Z:* is not in the structure',
+    ])
   })
 })
 
