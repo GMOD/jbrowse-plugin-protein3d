@@ -349,6 +349,25 @@ function signalServer(proc: ChildProcess, signal: NodeJS.Signals) {
   }
 }
 
+const WORKER_STOPS = ['SIGINT', 'SIGTERM', 'SIGHUP'] as const
+
+// The server's own process group keeps a terminal's Ctrl-C from reaching it,
+// so the test process passes a stop on before it dies of it
+function stopWithTestProcess(proc: ChildProcess) {
+  const forward = (signal: NodeJS.Signals) => {
+    signalServer(proc, 'SIGTERM')
+    process.kill(process.pid, signal)
+  }
+  for (const signal of WORKER_STOPS) {
+    process.once(signal, forward)
+  }
+  proc.once('exit', () => {
+    for (const signal of WORKER_STOPS) {
+      process.off(signal, forward)
+    }
+  })
+}
+
 export async function startJBrowseServer(): Promise<ChildProcess> {
   // Kill any existing process on the port
   killProcessOnPort(JBROWSE_PORT)
@@ -360,6 +379,7 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
       // npx starts serve as its own child, so the server is signalled as a group
       { stdio: ['ignore', 'pipe', 'pipe'], detached: true },
     )
+    stopWithTestProcess(proc)
 
     const timeout = setTimeout(() => {
       signalServer(proc, 'SIGTERM')
