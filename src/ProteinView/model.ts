@@ -31,6 +31,7 @@ import { checkedFigureChange, checkedStoredFigure } from './markProblems'
 import { measurementNotices, syncMeasurements } from './measurements'
 import {
   checkedColor,
+  checkedStoredColor,
   colorOfScheme,
   resolvedColor,
   trackStatLabel,
@@ -333,7 +334,7 @@ function stateModelFactory() {
             displayName:
               snapshot.displayName ??
               defaultDisplayName(snapshot.structures ?? []),
-            color: checkedColor(
+            color: checkedStoredColor(
               snapshot.color ??
                 (colorScheme === undefined ? {} : colorOfScheme(colorScheme)),
             ),
