@@ -21,6 +21,11 @@ jobs:
         run: pnpm build
       - name: Lint
         run: pnpm lint
+      # oxlint has no equivalent of the display-kit rules (every component an
+      # observer, no restricted syntax or imports), and with eslint in no gate
+      # a plain component reached main within one batch.
+      - name: Lint the display-kit rules
+        run: pnpm lint:eslint
       # `pnpm build`'s tsc covers src only, so the e2e harness -- the thing that
       # drives every host gate -- went unchecked until 2026-09-13.
       - name: Typecheck the e2e harness

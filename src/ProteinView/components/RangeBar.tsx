@@ -38,13 +38,17 @@ export function moveBarFocus(event: React.KeyboardEvent<HTMLElement>) {
  * and arrow keys between them, so a keyboard passes a track of 1,400 natural
  * variants with one Tab.
  */
-export function RangeBarTrack({ children }: { children: React.ReactNode }) {
+export const RangeBarTrack = observer(function RangeBarTrack({
+  children,
+}: {
+  children: React.ReactNode
+}) {
   return (
     <div style={{ display: 'contents' }} onKeyDown={moveBarFocus}>
       {children}
     </div>
   )
-}
+})
 
 /**
  * One bar over a run of alignment columns, `alignmentEnd` inclusive: a UniProt
