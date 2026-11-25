@@ -287,12 +287,16 @@ test('hoverAlignmentPosition updates hoverPosition when no feature is hovered', 
   expect(model.hoverPosition?.structureSeqPos).toBe(0)
 })
 
-test('hoverAlignmentPosition is blocked when alignmentHoverRange is set', () => {
+// the residue hovered before the feature bar stayed lit beside the range, and
+// the header kept naming it
+test('a feature range hover replaces the residue hover and blocks the next', () => {
   const model = makeModel()
   model.setHoveredPosition({ structureSeqPos: 42 })
   model.setAlignmentHoverRange({ start: 5, end: 15 })
+  expect(model.hoverPosition).toBeUndefined()
+  expect(model.alignmentHoverPos).toBeUndefined()
   model.hoverAlignmentPosition(0)
-  expect(model.hoverPosition?.structureSeqPos).toBe(42)
+  expect(model.hoverPosition).toBeUndefined()
 })
 
 test('hoverAlignmentPosition resumes after alignmentHoverRange is cleared', () => {

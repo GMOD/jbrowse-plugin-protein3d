@@ -576,6 +576,9 @@ const Structure = types
      */
     setAlignmentHoverRange(range?: { start: number; end: number }) {
       self.alignmentHoverRange = range
+      if (range) {
+        self.hoverPosition = undefined
+      }
     },
     /**
      * #action
