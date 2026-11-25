@@ -132,7 +132,9 @@ export default function useStructureLaunch({
     error: isLoading
       ? undefined
       : (selection.error ?? complex.error ?? file.error),
-    /** the picked file's text, read once for its chains and the launch */
-    fileText: file.text,
+    /** characters of the picked file's text, once read for its chains */
+    fileTextLength: file.textLength,
+    /** the picked file's text, as read for its chains */
+    readFileText: file.readText,
   }
 }

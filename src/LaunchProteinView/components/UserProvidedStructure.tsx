@@ -106,9 +106,9 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     !launch.isLoading &&
     !typing &&
     !launch.error &&
-    (!activeFile || launch.fileText !== undefined) &&
+    (!activeFile || launch.fileTextLength !== undefined) &&
     !launching
-  const textSize = launch.fileText?.length ?? activeFile?.size ?? 0
+  const textSize = launch.fileTextLength ?? activeFile?.size ?? 0
 
   const handleLaunch = runLaunch(async () => {
     if (protein && selectedTranscript) {
@@ -120,7 +120,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
         sources: [
           {
             url: activeURL ? activeURL : undefined,
-            data: activeFile ? launch.fileText : undefined,
+            data: activeFile ? await launch.readFileText?.() : undefined,
           },
         ],
         userProvidedTranscriptSequence: protein.seq,

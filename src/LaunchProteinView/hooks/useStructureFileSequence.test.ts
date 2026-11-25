@@ -7,6 +7,14 @@ import useStructureFileSequence from './useStructureFileSequence'
 import type * as P2sMapper from 'p2s_mapper'
 
 let reads = 0
+let fileReads = 0
+
+vi.mock('../utils/readStructureFile', () => ({
+  readStructureFile: async (file: File) => {
+    fileReads++
+    return file.text()
+  },
+}))
 
 vi.mock('../../ProteinView/withTemporaryMolstarPlugin', () => ({
   withTemporaryMolstarPlugin: (fn: (plugin: unknown) => unknown) =>
@@ -56,7 +64,9 @@ test("a picked file's text is kept for the launch, so it is read once", async ()
   const file = new File(['data_1ABC\n'], '1abc.cif')
   const { result } = renderHook(() => useStructureFileSequence({ file }))
   await waitFor(() => {
-    expect(result.current.text).toBe('data_1ABC\n')
+    expect(result.current.textLength).toBe(10)
   })
-  expect(result.current.sequences).toHaveLength(1)
+  expect(result.current.sequences).toEqual(['data_1ABC\n'])
+  expect(await result.current.readText?.()).toBe('data_1ABC\n')
+  expect(fileReads).toBe(1)
 })
