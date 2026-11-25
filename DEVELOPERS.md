@@ -16,7 +16,7 @@ pnpm start
 `http://localhost:9000/config.json`.
 
 The genome↔structure mapping — the aligner, chain choice, SIFTS, the AlphaFold
-and PDBe lookups — lives in the
+and RCSB lookups — lives in the
 [`p2s_mapper`](https://github.com/GMOD/p2s_mapper) package, which the plugin
 bundles. A change to those rules is made and tested there. [harness/](harness/)
 runs that code on real structures without JBrowse.
