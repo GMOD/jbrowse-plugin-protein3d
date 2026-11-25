@@ -105,6 +105,18 @@ test('a range entry that is not a CSS color is refused by name', () => {
     'color.range is a list of CSS colors; "#d7191" is not one',
     'color.range is a list of CSS colors; "bleu" is not one',
   ])
+  expect(
+    colorProblems({ field: 'alphaMissense', range: ['bleu', 'bleu'] }),
+  ).toEqual(['color.range is a list of CSS colors; "bleu" is not one'])
+  expect(
+    colorProblems({
+      field: 'alphaMissense',
+      range: ['transparent', '#ff000080', '#d7191c'],
+    }),
+  ).toEqual([
+    'color.range is a list of opaque colors; "transparent" is see-through, and the scale would paint it opaque',
+    'color.range is a list of opaque colors; "#ff000080" is see-through, and the scale would paint it opaque',
+  ])
   expect(colorProblems({ field: 'alphaMissense', range: [1] })).toEqual([
     'color.range is a list of CSS colors',
   ])

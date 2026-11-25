@@ -1,4 +1,5 @@
 import { isCssColor } from '@jbrowse/core/util/colorBits'
+import { colord } from '@jbrowse/core/util/colord'
 
 import {
   featureFilterLabel,
@@ -180,14 +181,19 @@ function isStrings(value: unknown): value is readonly string[] {
   return Array.isArray(value) && value.every(v => typeof v === 'string')
 }
 
+function rangeColorProblem(c: string) {
+  return !isCssColor(c)
+    ? [`color.range is a list of CSS colors; ${JSON.stringify(c)} is not one`]
+    : colord(c).alpha() < 1
+      ? [
+          `color.range is a list of opaque colors; ${JSON.stringify(c)} is see-through, and the scale would paint it opaque`,
+        ]
+      : []
+}
+
 function rangeProblems(value: unknown) {
   return isStrings(value)
-    ? value
-        .filter(c => !isCssColor(c))
-        .map(
-          c =>
-            `color.range is a list of CSS colors; ${JSON.stringify(c)} is not one`,
-        )
+    ? [...new Set(value)].flatMap(rangeColorProblem)
     : ['color.range is a list of CSS colors']
 }
 
