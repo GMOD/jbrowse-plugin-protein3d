@@ -62,7 +62,7 @@ interface DrawnBy {
  */
 export function markProblems(
   marks: unknown,
-  structures: readonly DrawnBy[] = [],
+  structures: readonly DrawnBy[],
 ): string[] {
   if (marks === undefined) {
     return []
@@ -113,7 +113,7 @@ export function markProblems(
  */
 export function distanceProblems(
   distances: unknown,
-  structures: readonly DrawnBy[] = [],
+  structures: readonly DrawnBy[],
 ): string[] {
   if (distances === undefined) {
     return []
@@ -261,7 +261,7 @@ const FIGURE_KEY_SET: ReadonlySet<string> = new Set(FIGURE_KEYS)
  */
 export function checkedFigure<T extends Record<string, unknown>>(
   snapshot: T,
-  structures: readonly DrawnBy[] = [],
+  structures: readonly DrawnBy[],
 ): T {
   const migrated = {
     ...snapshot,
@@ -283,6 +283,47 @@ export function checkedFigure<T extends Record<string, unknown>>(
     throw new Error(problems.join('; '))
   }
   return migrated
+}
+
+function pastStructures(entry: unknown, count: number) {
+  return (
+    isRecord(entry) &&
+    typeof entry.structure === 'number' &&
+    Number.isInteger(entry.structure) &&
+    (entry.structure < 0 || entry.structure >= count)
+  )
+}
+
+function withinStructures(list: unknown, count: number) {
+  return Array.isArray(list)
+    ? list.filter(entry => !pastStructures(entry, count))
+    : list
+}
+
+/**
+ * checkedFigure for a saved session, less each mark or distance whose
+ * structure index is past the view's structures: before 1.26.1 removing a
+ * structure left the later ones' indices as they were, so a session saved
+ * then may carry one, and a view that refused it would not open at all.
+ */
+export function checkedStoredFigure<T extends Record<string, unknown>>(
+  snapshot: T,
+  structures: readonly DrawnBy[],
+): T {
+  return checkedFigure(
+    {
+      ...snapshot,
+      ...(snapshot.marks === undefined
+        ? {}
+        : { marks: withinStructures(snapshot.marks, structures.length) }),
+      ...(snapshot.distances === undefined
+        ? {}
+        : {
+            distances: withinStructures(snapshot.distances, structures.length),
+          }),
+    },
+    structures,
+  )
 }
 
 /**

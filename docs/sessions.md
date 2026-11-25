@@ -233,9 +233,12 @@ structure as a figure without a serialized transcript:
   draws the label alone. A `site` is an address in the structure's own
   numbering, the one `distances` and figure anchors use, not a field predicate.
   A session written with the older `style` and string `color` (1.23 and 1.24)
-  loads in this spelling; one whose marks or distances still do not read, or
-  name a structure the view lacks, is refused with the reason. A site the loaded
-  structure does not have draws nothing and shows a notice above the view.
+  loads in this spelling; one whose marks or distances still do not read is
+  refused with the reason. A launch or `applyFigure` whose mark or distance
+  names a structure the view lacks is refused too, while a saved session drops
+  that mark or distance: before 1.26.1 removing a structure left the indices
+  after it unchanged. A site the loaded structure does not have draws nothing
+  and shows a notice above the view.
 - `distances`: a dashed line between the nearest atoms of two sites, labelled in
   Å, with an optional `encoding.color.value`.
 

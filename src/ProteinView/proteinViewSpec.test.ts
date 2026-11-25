@@ -29,6 +29,24 @@ test('emits a flat top-level snapshot with view props alongside structures', () 
   })
 })
 
+test('a launch whose mark or distance names a structure it lacks is refused', () => {
+  const structures = [{ url: 'a.cif' }, { url: 'b.cif' }]
+  expect(
+    proteinViewSnapshot({
+      structures,
+      marks: [{ site: 'A:1', structure: 1 }],
+    }).marks,
+  ).toEqual([{ site: 'A:1', structure: 1 }])
+  expect(() =>
+    proteinViewSnapshot({
+      structures,
+      distances: [{ a: 'A:1', b: 'A:2', structure: 2 }],
+    }),
+  ).toThrow(
+    "distances[0].structure is the index of one of the view's 2 structures, not 2",
+  )
+})
+
 test('defaults a missing userProvidedTranscriptSequence to empty string', () => {
   const snap = proteinViewSnapshot({
     structures: [{ url: 'https://example.com/1CRN.cif' }],

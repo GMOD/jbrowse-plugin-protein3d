@@ -1,5 +1,7 @@
 import { resolveStructureUrl, structureDisplayLabel } from 'p2s_mapper'
 
+import { checkedFigure } from './markProblems'
+
 import type { FIGURE_KEYS } from './markProblems'
 import type { DistanceMeasurement } from './measurements'
 import type { ProteinColor } from './proteinColor'
@@ -123,9 +125,12 @@ export function defaultDisplayName(structures: ProteinStructureSpec[]) {
  * The single source of truth for turning a ProteinViewSpec into the snapshot
  * handed to `session.addView('ProteinView', ...)`. Every launch path funnels
  * through here so they can't drift into different subsets of the same view.
+ * Throws on a mark or distance the spec's own structures cannot carry, which a
+ * saved session's snapshot would only drop.
  */
 export function proteinViewSnapshot(spec: ProteinViewSpec) {
   const { structures, ...view } = spec
+  checkedFigure({ marks: view.marks, distances: view.distances }, structures)
   return {
     type: 'ProteinView' as const,
     ...view,

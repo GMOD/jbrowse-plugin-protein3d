@@ -23,7 +23,7 @@ import { applyFigureStyle } from './figureStyle'
 import { makeSelectionFramer, structuresSettled } from './frameSelection'
 import loadMolstar from './loadMolstar'
 import { makeLociChannel } from './lociChannel'
-import { checkedFigure, checkedFigureChange } from './markProblems'
+import { checkedFigureChange, checkedStoredFigure } from './markProblems'
 import { measurementNotices, syncMeasurements } from './measurements'
 import {
   checkedColor,
@@ -315,7 +315,7 @@ function stateModelFactory() {
       } & Record<string, unknown>) =>
         withStoredSettings(
           {
-            ...checkedFigure(
+            ...checkedStoredFigure(
               snapshot,
               checkedStructureFilters(snapshot.structures),
             ),
