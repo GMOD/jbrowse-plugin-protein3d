@@ -1,3 +1,22 @@
+## [1.36.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.36.0...v1.36.1) (2026-11-25)
+
+### Bug Fixes
+
+- Every sentence of a title deposited in capitals starts with a capital ([445dd2e](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/445dd2ebe506b50f0061194d2618b71ddf21bcea))
+- A session saved with a see-through or unknown range color still opens ([1517a9f](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/1517a9f1c6a0e496fe49b06f759840a24c1f7421))
+- The No value swatch shows while another chain is drawn grey ([e1cf5da](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/e1cf5da8fed85fe4431f3313618d9858c872f73a))
+- A saved range with an entry that is not a color gives way to the field's own, keeping the field ([4931cd8](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/4931cd8ce74bcd419620d4aa76d8b4e4dc40da0a))
+- Sp., vs. and similar abbreviations do not end a sentence in a capitalised title ([cea64f1](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/cea64f1ec5ed210104e2c1930b8d176bb882bc6a))
+- An entity with no modelled chain does not raise the No value swatch ([bdfe36c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/bdfe36cf5db7fe45b7a09358233a47f2ce4eab1d))
+
+### Chores
+
+- Publish uses the same pnpm as the other workflows ([6584d25](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6584d25bc7c484b1daebcba9c14658dc05e4f546))
+
+### Tests
+
+- The e2e server is stopped as a process group, so serve no longer outlives npx ([a536464](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/a53646482a6394c92e5fd09e64f9142a996559d8))
+
 ## [1.36.0](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.35.0...v1.36.0) (2026-11-25)
 
 ### Bug Fixes
