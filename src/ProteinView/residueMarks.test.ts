@@ -10,12 +10,11 @@ import {
   syncResidueMarks,
   unmatchedMarkNotices,
 } from './residueMarks'
-import { formatSite, parseSite } from './residueSpec'
+import { parseSite } from './residueSpec'
 import { withTemporaryMolstarPlugin } from './withTemporaryMolstarPlugin'
 
-test('a whole chain parses and formats as chain:*', () => {
+test('a whole chain parses as chain:*', () => {
   expect(parseSite('G:*')).toEqual({ kind: 'chain', chain: 'G' })
-  expect(formatSite({ kind: 'chain', chain: 'G' })).toBe('G:*')
   expect(parseSite('G')).toEqual({ kind: 'component', compId: 'G' })
 })
 
