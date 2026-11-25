@@ -14,6 +14,7 @@ import {
   cleanupJBrowse,
   clickLaunch,
   clickLaunchMenuItem,
+  clickMenuItem,
   clickStructureRow,
   clinVarTrackFeatures,
   closeProteinViews,
@@ -27,6 +28,7 @@ import {
   openConfig,
   openFeatureContextMenu,
   openLaunchSubMenu,
+  openProteinViewMenu,
   openSessionSpec,
   pageComplaintsSince,
   residueMarkCells,
@@ -63,6 +65,7 @@ const NRAS_LOC = 'chr1:114,704,469-114,716,894'
 // example_data/folds/mapping.tsv lists NRAS.pdb under NRAS's one transcript
 const SITE_ROW = `dataset:${DATASET_ID}:ENST00000369535.5:NRAS.pdb`
 const PDB_ID_INPUT = `${LAUNCH_DIALOG} [data-testid="pdb-id-input"] input`
+const GO_TO_RESIDUE_INPUT = '[role="dialog"] input[placeholder="R248"]'
 
 function inputValue(el: Element) {
   return el instanceof HTMLInputElement ? el.value : undefined
@@ -1372,6 +1375,101 @@ describe('Protein3d Plugin E2E', () => {
       { label: 'AlphaFold P01111', loading: false, error: undefined },
       { label: '1CRN', loading: false, error: undefined },
     ])
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // The view menu's Go to residue selects the residue, frames it and moves
+  // the connected genome view onto its codon. NRAS's AlphaFold model numbers
+  // from 1, so G12 is position 11.
+  it('goes to a typed residue in 3D and on the genome, and says why it cannot', async () => {
+    await closeProteinViews(page)
+    await openFeatureContextMenu(page)
+    await clickLaunchMenuItem(page, 'Protein view...')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await waitForStructureListPainted(page)
+    expect(await checkedStructureRows(page)).toEqual(['alphafold'])
+    await waitForLaunchEnabled(page)
+    await clickLaunch(page)
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+
+    // away from NRAS, so landing on the codon is the dialog's doing
+    await page.evaluate(() =>
+      window.JBrowseSession!.views!.find(v => v.type === 'LinearGenomeView')!
+        .navToLocString!('chr1:100,000,000-100,010,000'),
+    )
+    const g12 = () =>
+      page.evaluate(() => {
+        const session = window.JBrowseSession!
+        const structure = session.views!.find(v => v.type === 'ProteinView')!
+          .structures![0]!
+        const [located] =
+          structure.locateResidues!({ residues: { start: 12, end: 12 } }) ?? []
+        const codon = located?.codon
+        const { canonicalRefName } = structure.genomeNaming!
+        const blocks =
+          session.views!.find(v => v.type === 'LinearGenomeView')!.dynamicBlocks
+            ?.contentBlocks ?? []
+        return {
+          letter: located?.structureLetter,
+          selection: structure.report?.selection,
+          codonInView:
+            !!codon &&
+            blocks.some(
+              b =>
+                canonicalRefName(b.refName) ===
+                  canonicalRefName(codon.refName) &&
+                b.start <= codon.start &&
+                codon.end <= b.end,
+            ),
+        }
+      })
+    expect(await g12()).toEqual({
+      letter: 'G',
+      selection: [],
+      codonInView: false,
+    })
+
+    const goTo = async (text: string) => {
+      await openProteinViewMenu(page)
+      await clickMenuItem(page, 'Go to residue...')
+      await page.waitForSelector(GO_TO_RESIDUE_INPUT, { timeout: 10_000 })
+      await page.type(GO_TO_RESIDUE_INPUT, text)
+      await page.keyboard.press('Enter')
+    }
+    await goTo('G12')
+    await page.waitForSelector(GO_TO_RESIDUE_INPUT, {
+      hidden: true,
+      timeout: 10_000,
+    })
+    await expect.poll(g12, { timeout: 60_000 }).toEqual({
+      letter: 'G',
+      selection: [{ start: 11, end: 12 }],
+      codonInView: true,
+    })
+
+    await goTo('500')
+    await expect
+      .poll(() => fieldHelperText(page, GO_TO_RESIDUE_INPUT))
+      .toBe('No residue numbered 500 in this structure')
+    await page.click(GO_TO_RESIDUE_INPUT, { count: 3 })
+    await page.type(GO_TO_RESIDUE_INPUT, 'R1')
+    await page.keyboard.press('Enter')
+    await expect
+      .poll(() => fieldHelperText(page, GO_TO_RESIDUE_INPUT))
+      .toBe('Residue 1 is M1, not R1')
+    expect(await page.$eval(GO_TO_RESIDUE_INPUT, inputValue)).toBe('R1')
+    await waitForMolstarIdle(page)
+    await captureScreenshot(page, screenshot('19-go-to-residue'))
+
+    await page.keyboard.press('Escape')
+    await page.waitForSelector(GO_TO_RESIDUE_INPUT, {
+      hidden: true,
+      timeout: 10_000,
+    })
+    expect((await g12()).selection).toEqual([{ start: 11, end: 12 }])
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })

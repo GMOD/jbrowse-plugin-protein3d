@@ -55,6 +55,7 @@ interface ProteinViewStructure {
     label?: string
     loading?: boolean
     error?: string
+    selection?: { start: number; end: number }[]
     mapping?: {
       entityId: string
       chains: string[]
@@ -63,6 +64,7 @@ interface ProteinViewStructure {
       fusionPartnerResiduesUnmapped: number
     }
   }
+  genomeNaming?: { canonicalRefName: (refName: string) => string }
   locateResidues?: (target: {
     residues: { start: number; end: number }
   }) => ResidueLocation[] | undefined
@@ -128,6 +130,8 @@ interface SessionView {
   currentCamera?: () => SavedCamera
   marks?: object[]
   menuItems?: () => { label?: string; onClick?: () => void }[]
+  dynamicBlocks?: { contentBlocks: GenomeSpan[] }
+  navToLocString?: (locString: string) => Promise<void>
   tracks?: {
     configuration?: {
       trackId?: string
@@ -843,6 +847,28 @@ export async function fieldHelperText(page: Page, input: string) {
       document.getElementById(el.getAttribute('aria-describedby') ?? '')
         ?.textContent ?? '',
   )
+}
+
+// The host's view menu of the protein view: the one menu button among the
+// protein view's own ancestors, so a genome view beside it is not asked
+export async function openProteinViewMenu(page: Page) {
+  const menuButton = '[data-testid="view_menu_icon"]'
+  const index = await page.evaluate(selector => {
+    let el = document.querySelector('[data-testid="protein-view-molstar"]')
+    while (el && el.querySelectorAll(selector).length === 0) {
+      el = el.parentElement
+    }
+    const buttons = el?.querySelectorAll(selector)
+    return buttons?.length === 1
+      ? [...document.querySelectorAll(selector)].indexOf(buttons[0]!)
+      : -1
+  }, menuButton)
+  const button = (await page.$$(menuButton))[index]
+  if (!button) {
+    throw new Error('found no view menu button of its own above the Mol* view')
+  }
+  await button.click()
+  await readMenuItems(page)
 }
 
 export async function getProteinViewState(page: Page) {
