@@ -20,6 +20,7 @@ import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 const ProteinViewActions = observer(function ProteinViewActions({
   handleClose,
   ready,
+  ready1D,
   uniprotId,
   userSelectedProteinSequence,
   selectedTranscript,
@@ -31,8 +32,11 @@ const ProteinViewActions = observer(function ProteinViewActions({
   sideBySide,
 }: {
   handleClose: () => void
-  /** everything the launch needs has arrived */
+  /** everything the 3D launch needs has arrived */
   ready: boolean
+  /** the 1D annotation view's accession and transcript have arrived; it opens
+   * no structure */
+  ready1D: boolean
   uniprotId?: string
   userSelectedProteinSequence?: { seq: string }
   selectedTranscript?: Feature
@@ -52,6 +56,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
     closeMenu,
   )
   const canLaunch = ready && !launching
+  const canLaunch1D = ready1D && !launching
 
   const handleLaunch3DView = runLaunch(() =>
     launch3DProteinView({
@@ -81,6 +86,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
       title: PROTEIN_LAUNCH_LABELS['3d'],
       description:
         'View protein structure with genome-to-structure coordinate mapping',
+      disabled: !canLaunch,
       onClick: handleLaunch3DView,
     },
     ...(launch1D
@@ -90,6 +96,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
             title: PROTEIN_LAUNCH_LABELS['1d'],
             description:
               'View protein features and annotations as a linear track',
+            disabled: !canLaunch1D,
             onClick: runLaunch(launch1D),
           },
         ]
@@ -122,7 +129,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
         </Button>
         <Button
           data-testid="protein-launch-options-button"
-          disabled={!canLaunch}
+          disabled={launchOptions.every(o => o.disabled)}
           onClick={event => {
             setMenuAnchor(event.currentTarget)
           }}

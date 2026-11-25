@@ -213,11 +213,14 @@ const GeneStructures = observer(function GeneStructures({
     (!typedId && !userPick && defaultPending)
   const error =
     launch.error ?? (typedIdUnknown ? launch.pdbEntryError : undefined)
-  const missingReasons = getLaunchMissingReasons({
-    structureCount: launchStructures.length,
-    userSelectedProteinSequence: launch.selectedIsoform,
-    selectedTranscript: launch.selectedTranscript,
-  })
+  const noStructureChecked = launchStructures.length === 0
+  const missingReasons = [
+    ...(noStructureChecked ? ['No structure checked'] : []),
+    ...getLaunchMissingReasons({
+      userSelectedProteinSequence: launch.selectedIsoform,
+      selectedTranscript: launch.selectedTranscript,
+    }),
+  ]
   const ready =
     !isLoading && !error && !typedPdbIdInvalid && missingReasons.length === 0
   const alphaFoldChecked = launchStructures.find(s => s.kind === 'alphafold')
@@ -231,6 +234,8 @@ const GeneStructures = observer(function GeneStructures({
         : launchStructures[0]?.kind === 'url'
           ? (launchStructures[0].uniprotId ?? uniprotId)
           : uniprotId
+  const ready1D =
+    !!launchUniprotId && !!launch.selectedTranscript && !lookup.isLookupLoading
 
   const toggle = (row: StructureRow) => {
     setPicked({ uniprotId, keys: toggleStructure(checked, row, rows) })
@@ -351,6 +356,7 @@ const GeneStructures = observer(function GeneStructures({
           <ProteinViewActions
             handleClose={handleClose}
             ready={ready}
+            ready1D={ready1D}
             uniprotId={launchUniprotId}
             userSelectedProteinSequence={launch.selectedIsoform}
             selectedTranscript={launch.selectedTranscript}

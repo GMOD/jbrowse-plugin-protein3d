@@ -18,26 +18,24 @@ export async function safeLaunch(
 }
 
 interface LaunchRequirements {
-  structureCount: number
   userSelectedProteinSequence?: { seq: string }
   selectedTranscript?: unknown
 }
 
 /**
- * The requirements a launch needs, as user-facing reasons for any that are
- * unmet. An empty array means the launch can proceed. Callers decide whether to
- * surface these (e.g. suppressed while loading or while a real upstream error
- * is already shown via <ErrorMessage>, where a duplicate hint would mislead).
- * A structure names its own source, so no accession is asked for: bypassing a
- * lookup that failed or found the wrong gene is what a typed PDB id is for.
+ * The transcript requirements a 3D launch needs, as user-facing reasons for
+ * any that are unmet; the structure it opens is the caller's to require, since
+ * the 1D view opens without one. Callers decide whether to surface these (e.g.
+ * suppressed while loading or while a real upstream error is already shown
+ * via <ErrorMessage>, where a duplicate hint would mislead). A structure names
+ * its own source, so no accession is asked for: bypassing a lookup that failed
+ * or found the wrong gene is what a typed PDB id is for.
  */
 export function getLaunchMissingReasons({
-  structureCount,
   userSelectedProteinSequence,
   selectedTranscript,
 }: LaunchRequirements): string[] {
   return [
-    structureCount === 0 && 'No structure checked',
     !userSelectedProteinSequence?.seq &&
       'Could not compute protein sequence (feature may be missing CDS subfeatures)',
     !selectedTranscript && 'No transcript selected',
