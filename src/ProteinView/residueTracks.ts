@@ -4,7 +4,6 @@ import { cssScaleOf, rampKeyOf } from './colorScale'
 import { resolvedColor } from './proteinColor'
 import { RESIDUE_COLORS } from './residueColors'
 
-import type { LinearColor } from './colorScale'
 import type { ProteinColor } from './proteinColor'
 import type { CoordinateMapper, Entity, EntityConfidence } from 'p2s_mapper'
 
@@ -101,10 +100,10 @@ export function hydrophobicityCells(
 /** The hydrophobicity row's color: the view's color object while the view
  * colors by hydrophobicity, so a member it sets reaches the row too */
 export function hydrophobicityScale(color: ProteinColor) {
+  const resolved =
+    color.field === 'hydrophobicity' ? resolvedColor(color) : undefined
   const scale =
-    (color.field === 'hydrophobicity'
-      ? (resolvedColor(color) as LinearColor | undefined)
-      : undefined) ?? RESIDUE_COLORS.hydrophobicity
+    resolved?.scale === 'linear' ? resolved : RESIDUE_COLORS.hydrophobicity
   return {
     title: scale.title ?? '',
     paint: cssScaleOf(scale),
