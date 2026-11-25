@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  addPdbId,
   addedRows,
+  checkedKeys,
   defaultChecked,
   firstRowsAndChecked,
   ligandTags,
@@ -9,10 +11,12 @@ import {
   matchesFilter,
   partnerTags,
   sentenceCase,
+  splitChecked,
   structureRows,
   toggleStructure,
 } from './structureList'
 
+import type { AddedEntry } from './structureList'
 import type {
   AlphaFoldComplex,
   ExperimentalStructure,
@@ -355,6 +359,63 @@ describe('addedRows', () => {
       'alphafold',
       'pdb:1abc',
     ])
+  })
+})
+
+describe('addPdbId', () => {
+  const rows = nrasRows()
+  const add = (
+    pdbId: string,
+    added: AddedEntry[] = [],
+    checked: string[] = ['alphafold'],
+    unknown: string[] = [],
+  ) => addPdbId({ pdbId, added, unknown, checked, rows })
+
+  it('adds a new id checked and last, leaving the listed pick alone', () => {
+    expect(
+      add('1abc', [{ pdbId: '2xyz', checked: false }], ['alphafold']),
+    ).toEqual({
+      listed: ['alphafold'],
+      added: [
+        { pdbId: '2xyz', checked: false },
+        { pdbId: '1abc', checked: true },
+      ],
+    })
+  })
+
+  it('checks an id added before again rather than adding it twice', () => {
+    expect(add('1abc', [{ pdbId: '1abc', checked: false }]).added).toEqual([
+      { pdbId: '1abc', checked: true },
+    ])
+  })
+
+  it('checks a listed entry in its section, and keeps it as added', () => {
+    const { listed, added } = add('9btm')
+    expect(listed).toEqual(['alphafold'])
+    expect(added).toEqual([{ pdbId: '9btm', checked: true }])
+    expect(checkedKeys(listed, added)).toEqual(['alphafold', 'pdb:9btm'])
+  })
+
+  it('drops ids RCSB has no entry for', () => {
+    expect(
+      add('1abc', [{ pdbId: '9zzz', checked: true }], [], ['9zzz']).added,
+    ).toEqual([{ pdbId: '1abc', checked: true }])
+  })
+
+  it('unchecks a checked short fragment, which opens alone', () => {
+    expect(add('1abc', [], ['pdb:7ow4']).listed).toEqual([])
+  })
+
+  it('keeps an added entry checked when the accession changes', () => {
+    // added while the lookup ran, so the listed pick was empty
+    const { added } = add('6zio', [], [])
+    // the lookup lands: the listed pick resets to the default
+    expect(checkedKeys(defaultChecked(rows), added)).toEqual([
+      'alphafold',
+      'pdb:6zio',
+    ])
+    const unchecked = splitChecked(['alphafold'], added)
+    expect(unchecked.added).toEqual([{ pdbId: '6zio', checked: false }])
   })
 })
 

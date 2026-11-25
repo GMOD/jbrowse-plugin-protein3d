@@ -421,6 +421,82 @@ export function addedRows({
   }
 }
 
+/** An entry added by its PDB id, and whether it is checked. It outlives the
+ * accession, which the pick of listed rows belongs to. */
+export interface AddedEntry {
+  pdbId: string
+  checked: boolean
+}
+
+function addedKey(pdbId: string) {
+  return `pdb:${pdbId}`
+}
+
+/** The checked rows: the listed ones picked for the accession, and the
+ * entries added by id, wherever they are now listed */
+export function checkedKeys(
+  listed: readonly string[],
+  added: readonly AddedEntry[],
+) {
+  return [
+    ...new Set([
+      ...listed,
+      ...added.filter(a => a.checked).map(a => addedKey(a.pdbId)),
+    ]),
+  ]
+}
+
+/** Checked keys split back into the pick of listed rows and the added
+ * entries, so a change of accession resets the one and keeps the other */
+export function splitChecked(
+  keys: readonly string[],
+  added: readonly AddedEntry[],
+) {
+  const addedKeys = new Set(added.map(a => addedKey(a.pdbId)))
+  return {
+    listed: keys.filter(key => !addedKeys.has(key)),
+    added: added.map(a => ({
+      ...a,
+      checked: keys.includes(addedKey(a.pdbId)),
+    })),
+  }
+}
+
+/**
+ * Adding an id, checked beside the checked rows: an id added before is checked
+ * again, a new one goes last, and ids RCSB has no entry for are dropped. A
+ * listed entry is checked in its own section, and kept as added so it stays
+ * checked if the accession changes.
+ */
+export function addPdbId({
+  pdbId,
+  added,
+  unknown,
+  checked,
+  rows,
+}: {
+  pdbId: string
+  added: readonly AddedEntry[]
+  unknown: readonly string[]
+  checked: readonly string[]
+  rows: readonly StructureRow[]
+}) {
+  const key = addedKey(pdbId)
+  const kept = added.filter(a => !unknown.includes(a.pdbId))
+  return splitChecked(
+    checked.includes(key)
+      ? checked
+      : toggleStructure(
+          checked,
+          rows.find(r => r.key === key) ?? { key, section: 'added' },
+          rows,
+        ),
+    kept.some(a => a.pdbId === pdbId)
+      ? kept
+      : [...kept, { pdbId, checked: true }],
+  )
+}
+
 export function matchesFilter(row: StructureRow, filter: StructureFilter) {
   return filter === 'all' || (filter === 'predicted') === row.predicted
 }
@@ -432,7 +508,7 @@ export function matchesFilter(row: StructureRow, filter: StructureFilter) {
  */
 export function toggleStructure(
   checked: readonly string[],
-  row: StructureRow,
+  row: Pick<StructureRow, 'key' | 'section'>,
   rows: readonly StructureRow[],
 ) {
   const fragments = new Set(
@@ -445,11 +521,13 @@ export function toggleStructure(
       : [...checked.filter(key => !fragments.has(key)), row.key]
 }
 
+// the added entries last, as they come last in the launch, so the first
+// checked row shown is the one the rest are superposed onto
 export const SECTIONS: readonly StructureSection[] = [
-  'added',
   'alone',
   'partner',
   'fragment',
+  'added',
 ]
 
 /** The rows as the dialog lists them, section by section */

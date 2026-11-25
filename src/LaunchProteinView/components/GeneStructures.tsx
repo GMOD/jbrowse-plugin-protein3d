@@ -22,10 +22,12 @@ import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
 import { launchReadiness } from '../utils/launchHelpers'
 import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 import {
-  addedRow,
+  addPdbId,
   addedRows,
+  checkedKeys,
   defaultChecked,
   matchesFilter,
+  splitChecked,
   toggleStructure,
 } from '../utils/structureList'
 import { getTranscriptDisplayName } from '../utils/util'
@@ -40,7 +42,11 @@ import UniProtSummaryBar from './UniProtSummaryBar'
 import type { ListedStructure } from '../hooks/useStructureLaunch'
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { Listing } from '../utils/launchHelpers'
-import type { StructureFilter, StructureRow } from '../utils/structureList'
+import type {
+  AddedEntry,
+  StructureFilter,
+  StructureRow,
+} from '../utils/structureList'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 
 const useStyles = makeStyles()(theme => ({
@@ -160,7 +166,8 @@ const GeneStructures = observer(function GeneStructures({
   })
   // an id adds entries the accession's listing never offers: a structure of a
   // complex filed under a partner, anything a paper names
-  const [addedIds, setAddedIds] = useState<string[]>([])
+  const [addedEntries, setAddedEntries] = useState<AddedEntry[]>([])
+  const addedIds = addedEntries.map(a => a.pdbId)
   const addedSummaries = usePdbEntrySummaries(addedIds)
   const added = addedRows({
     pdbIds: addedIds,
@@ -173,15 +180,16 @@ const GeneStructures = observer(function GeneStructures({
   // superposed onto
   const rows = [...structures.rows, ...added.rows]
   const [filter, setFilter] = useState<StructureFilter>('all')
-  // a pick belongs to the accession it was made from
+  // a pick of listed rows belongs to the accession it was made from
   const [picked, setPicked] = useState<{ uniprotId?: string; keys: string[] }>()
   const userPick =
     picked && picked.uniprotId === uniprotId ? picked.keys : undefined
   // nothing is checked until the default is known, or the first structure to
   // arrive would be ranked against and fetched for nothing
   const defaultPending = !structures.defaultSettled
-  const checked =
+  const listedChecked =
     userPick ?? (defaultPending ? [] : defaultChecked(structures.rows))
+  const checked = checkedKeys(listedChecked, addedEntries)
   const checkedRows = rows.filter(r => checked.includes(r.key))
 
   const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
@@ -227,26 +235,38 @@ const GeneStructures = observer(function GeneStructures({
     lookupLoading: lookup.isLookupLoading,
   })
 
+  // the listed rows' pick changes only when they do, so adding an entry while
+  // the default is still being found leaves the default to come
+  const applyChecked = (next: {
+    listed: readonly string[]
+    added: AddedEntry[]
+  }) => {
+    setAddedEntries(next.added)
+    if (
+      next.listed.length !== listedChecked.length ||
+      next.listed.some(key => !listedChecked.includes(key))
+    ) {
+      setPicked({ uniprotId, keys: [...next.listed] })
+    }
+  }
   const toggle = (row: StructureRow) => {
-    setPicked({ uniprotId, keys: toggleStructure(checked, row, rows) })
+    applyChecked(
+      splitChecked(toggleStructure(checked, row, rows), addedEntries),
+    )
   }
 
-  const knownAddedIds = addedIds.filter(id => !added.unknown.includes(id))
   const addTypedPdbId = () => {
     if (typedPdbIdValid) {
-      const pdbId = trimmedTypedPdbId.toLowerCase()
-      const row =
-        rows.find(r => r.key === `pdb:${pdbId}`) ??
-        addedRow({ pdbId, geneName, uniprotId })
-      setAddedIds(
-        row.kind === 'added' && !knownAddedIds.includes(pdbId)
-          ? [...knownAddedIds, pdbId]
-          : knownAddedIds,
+      applyChecked(
+        addPdbId({
+          pdbId: trimmedTypedPdbId.toLowerCase(),
+          added: addedEntries,
+          unknown: added.unknown,
+          checked,
+          rows,
+        }),
       )
-      if (!checked.includes(row.key)) {
-        toggle(row)
-      }
-      if (!matchesFilter(row, filter)) {
+      if (filter === 'predicted') {
         setFilter('all')
       }
       setTypedPdbId('')
@@ -291,7 +311,9 @@ const GeneStructures = observer(function GeneStructures({
           onChange={event => {
             setTypedPdbId(event.target.value)
             if (added.unknown.length > 0) {
-              setAddedIds(knownAddedIds)
+              setAddedEntries(
+                addedEntries.filter(a => !added.unknown.includes(a.pdbId)),
+              )
             }
           }}
           onKeyDown={event => {
