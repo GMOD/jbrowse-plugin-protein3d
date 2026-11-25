@@ -20,6 +20,7 @@ import {
   closeProteinViews,
   createJBrowsePage,
   expandStructureSection,
+  failRequests,
   fieldHelperText,
   flushScreenshots,
   getProteinViewState,
@@ -1471,5 +1472,71 @@ describe('Protein3d Plugin E2E', () => {
     })
     expect((await g12()).selection).toEqual([{ start: 11, end: 12 }])
     expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // A source that fails leaves a line with Retry in the section it would have
+  // filled, while the other sources' rows stay usable. RCSB's entry list is
+  // the one POST to sequence-coordinates.rcsb.org; the page is reloaded first
+  // so the dialog asks rather than reading the earlier legs' cached answer.
+  it('lists the PDB entries once a failed RCSB listing is retried', async () => {
+    await openConfig(page, 'config.json')
+    await waitForJBrowseLoad(page)
+    await waitForTrackLoad(page)
+    const rcsb = await failRequests(
+      page,
+      'https://sequence-coordinates.rcsb.org/*',
+    )
+    try {
+      await openFeatureContextMenu(page)
+      await clickLaunchMenuItem(page, 'Protein view...')
+      await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+      await waitForStructureListPainted(page)
+      const retry = `${LAUNCH_DIALOG} [data-testid="structure-section-alone"] [data-testid="notice-retry"]`
+      await page.waitForSelector(retry, { timeout: 60_000 })
+      const listed = () =>
+        page.$$eval(
+          `${LAUNCH_DIALOG} [data-testid^="structure-row-pdb:"]`,
+          rows => rows.length,
+        )
+      const notice = () =>
+        page.evaluate(
+          dialog =>
+            [
+              ...document.querySelectorAll(
+                `${dialog} [data-testid="structure-list"] p`,
+              ),
+            ]
+              .map(p => p.textContent)
+              .find(t => t.startsWith('RCSB did not list')),
+          LAUNCH_DIALOG,
+        )
+      expect(await notice()).toMatch(
+        /^RCSB did not list the PDB entries: HTTP 503.* from sequence-coordinates\.rcsb\.org.* Retry$/,
+      )
+      expect(await listed()).toBe(0)
+      expect(await checkedStructureRows(page)).toEqual(['alphafold'])
+      await waitForLaunchEnabled(page)
+      expect(rcsb.failed.length).toBeGreaterThan(0)
+      // the browser's own line for each refused request, and nothing else
+      expect(pageComplaintsSince()).toEqual(
+        rcsb.failed.map(() =>
+          expect.stringMatching(
+            /status of 503.*sequence-coordinates\.rcsb\.org/,
+          ),
+        ),
+      )
+      await captureScreenshot(page, screenshot('20-source-retry'))
+
+      rcsb.pass()
+      await page.click(retry)
+      await expect.poll(listed, { timeout: 60_000 }).toBeGreaterThan(0)
+      await waitForStructureListPainted(page)
+      expect(await notice()).toBeUndefined()
+      expect(await page.$(retry)).toBeNull()
+      expect(await checkedStructureRows(page)).toEqual(['alphafold'])
+      expect(pageComplaintsSince()).toEqual([])
+    } finally {
+      await rcsb.stop()
+    }
   }, 300_000)
 })

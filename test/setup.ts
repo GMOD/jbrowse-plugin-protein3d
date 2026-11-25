@@ -871,6 +871,48 @@ export async function openProteinViewMenu(page: Page) {
   await readMenuItems(page)
 }
 
+/**
+ * Answer the page's POSTs to urls matching `urlPattern` with a 503 until
+ * `pass()`, through a CDP `Fetch.enable` scoped to that pattern alone:
+ * intercepting every request leaves the host on an empty session. A CORS
+ * preflight, and everything once passing, goes through untouched. `stop()`
+ * ends the interception.
+ */
+export async function failRequests(page: Page, urlPattern: string) {
+  const client = await page.createCDPSession()
+  const failed: string[] = []
+  let failing = true
+  client.on('Fetch.requestPaused', ({ requestId, request }) => {
+    if (failing && request.method === 'POST') {
+      failed.push(request.url)
+      client
+        .send('Fetch.fulfillRequest', {
+          requestId,
+          responseCode: 503,
+          responseHeaders: [
+            { name: 'access-control-allow-origin', value: '*' },
+          ],
+        })
+        .catch(() => {})
+    } else {
+      client.send('Fetch.continueRequest', { requestId }).catch(() => {})
+    }
+  })
+  await client.send('Fetch.enable', {
+    patterns: [{ urlPattern, requestStage: 'Request' }],
+  })
+  return {
+    failed,
+    pass: () => {
+      failing = false
+    },
+    stop: async () => {
+      await client.send('Fetch.disable').catch(() => {})
+      await client.detach().catch(() => {})
+    },
+  }
+}
+
 export async function getProteinViewState(page: Page) {
   return page.evaluate(() => {
     const view = window.JBrowseSession?.views?.find(
