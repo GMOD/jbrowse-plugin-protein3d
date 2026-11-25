@@ -73,8 +73,6 @@ test('a launch that opens hands its view the genome view and says it owns it', a
   ).toEqual({ connectedViewId: 'existing', ownsConnectedView: false })
 })
 
-// a gene lookup fell through to the session's first assembly here, and the
-// variant then found no assembly at all
 test('a genome view still navigating gives the launch the assembly it is launching on', () => {
   const session = {
     assemblyNames: ['hg38', 'hg19'],
@@ -89,7 +87,7 @@ test('a genome view still navigating gives the launch the assembly it is launchi
   expect(launchAssemblyName(session, { connectedViewId: 'shown' })).toBe('hg19')
 })
 
-test("a launch's assembly is its view's, then the one it names, then the session's first", () => {
+test("a launch's assembly is its view's, then the one it names, then the session's only one", () => {
   const session = {
     assemblyNames: ['hg38', 'hg19'],
     views: [{ id: 'shown', assemblyNames: ['hg19'] }],
@@ -99,5 +97,8 @@ test("a launch's assembly is its view's, then the one it names, then the session
     launchAssemblyName(session, { connectedViewId: 'shown', connectedView }),
   ).toBe('hg19')
   expect(launchAssemblyName(session, { connectedView })).toBe('mm39')
-  expect(launchAssemblyName(session, {})).toBe('hg38')
+  expect(launchAssemblyName(session, {})).toBeUndefined()
+  expect(launchAssemblyName({ assemblyNames: ['hg38'], views: [] }, {})).toBe(
+    'hg38',
+  )
 })

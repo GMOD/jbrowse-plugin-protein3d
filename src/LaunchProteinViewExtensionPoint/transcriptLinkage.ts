@@ -35,10 +35,10 @@ function connectedViewAssembly(
 }
 
 /**
- * The one assembly a launch looks its gene or transcript up on, places its
- * variant on and connects through: the `connectedViewId` view's, which a view
+ * The assembly a launch names: the `connectedViewId` view's, which a view
  * still navigating to its launch location already knows, else
- * `connectedView.assembly`, else the session's first.
+ * `connectedView.assembly`, else the session's when it holds only one. A
+ * session of several leaves it undefined rather than guessing.
  */
 export function launchAssemblyName(
   session: { views: { id: string }[]; assemblyNames: readonly string[] },
@@ -47,12 +47,13 @@ export function launchAssemblyName(
     connectedView,
   }: { connectedViewId?: string; connectedView?: ConnectedViewSpec },
 ) {
+  const [only, ...others] = session.assemblyNames
   return (
     (connectedViewId
       ? connectedViewAssembly(session, connectedViewId)
       : undefined) ??
     connectedView?.assembly ??
-    session.assemblyNames[0]
+    (others.length === 0 ? only : undefined)
   )
 }
 
@@ -62,8 +63,10 @@ export function launchAssemblyName(
  * looked up through the text search index, which also supplies a genome view
  * on the gene; otherwise a `transcriptId` is found in the `connectedView`'s
  * tracks. A `connectedViewId` keeps the view spec the launch gave. A launch
- * that spells its transcript out has neither looked up. Every failure throws,
- * so a launch never opens half-linked.
+ * that spells its transcript out has neither looked up. A gene is looked up
+ * on the session's first assembly when the launch names none, and the launch
+ * then stays on that one. Every failure throws, so a launch never opens
+ * half-linked.
  */
 export async function resolveTranscriptLinkage(
   session: AbstractSessionModel,
@@ -99,7 +102,7 @@ export async function resolveTranscriptLinkage(
           uniprotId,
           findStructure,
           connectedView: givenConnectedView,
-          assemblyName,
+          assemblyName: assemblyName ?? session.assemblyNames[0],
         })
       : undefined
   const connectedView = connectedViewId
@@ -114,7 +117,12 @@ export async function resolveTranscriptLinkage(
           connectedView: onAssembly,
         })
       : undefined)
-  return { named, resolved, connectedView, assemblyName }
+  return {
+    named,
+    resolved,
+    connectedView,
+    assemblyName: named?.connectedView.assembly ?? assemblyName,
+  }
 }
 
 interface GenomeViewHost<V extends { id: string }> {

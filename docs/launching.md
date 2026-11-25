@@ -660,7 +660,8 @@ keyed by gene; name the `transcriptId` for one keyed by transcript.
 
 The launch translates the variant on each structure's transcript, the entry's
 own `feature` or else the launch's (`gene`, `transcriptId` or `feature`),
-reading the codon off the connected genome view's assembly, then:
+reading the codon off the launch's assembly (see
+[`connectedView`](#connectedview)), then:
 
 - adds a session highlight on the base, labelled with the protein change. The
   genome view draws it as a band, and each structure on the transcript draws the
@@ -723,7 +724,11 @@ Write them flat, as shown; JBrowse 5 deprecates nesting them under `init`.
 A launch works on one assembly: it looks its `gene` or `transcriptId` up there,
 places its `variant` there and connects through it. That is the assembly of the
 `connectedViewId` view (the one it is navigating to, while it still is), else
-`connectedView.assembly`, else the session's first.
+`connectedView.assembly`, else the session's when it holds only one. A `gene`
+naming none of these is looked up on the session's first assembly, and the
+launch stays on that one. A `transcriptId` or `variant` without a `gene` in a
+session of several assemblies fails, asking for `connectedView.assembly` or a
+`connectedViewId`, rather than reading another assembly's bases.
 
 ### Feature shape
 
