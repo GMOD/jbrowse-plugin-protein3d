@@ -63,10 +63,13 @@ export function makeStructureLoader(
   >()
 
   /** A failure stands until the plugin changes or the structure asks to
-   * retry, which bumps its `loadAttempt` */
+   * retry, which bumps its `loadAttempt`. That is read first, whatever the
+   * answer: a failure lands outside the autorun, so a run that skipped the
+   * read would leave a retry unheard. */
   function failedInto(structure: StructureInstance, plugin: PluginContext) {
+    const { loadAttempt } = structure
     const failed = failedIn.get(structure)
-    return failed?.plugin === plugin && failed.attempt === structure.loadAttempt
+    return failed?.plugin === plugin && failed.attempt === loadAttempt
   }
 
   /** The AlphaFold id a structure still has to turn into a file, if any. */
@@ -246,10 +249,11 @@ export function makeStructureLoader(
         ) {
           unloadOtherAssembly(structure, molstarPluginContext)
         }
+        const failed = failedInto(structure, molstarPluginContext)
         if (
           !structure.loadedToMolstar &&
           loadingIn.get(structure) !== molstarPluginContext &&
-          !failedInto(structure, molstarPluginContext)
+          !failed
         ) {
           loadInto(structure, molstarPluginContext)
         }

@@ -522,6 +522,31 @@ test('a failed load loads again when the structure asks to retry', async () => {
   logged.mockRestore()
 })
 
+// B landing reran the autorun while A was in flight, and that run, skipping A
+// as loading, never read A's attempt, so A's Retry bumped a counter nothing
+// observed
+test('a retry is heard after another structure landed during the failing load', async () => {
+  const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
+  let failFirst: (e: unknown) => void = () => {}
+  mockLoad
+    .mockImplementationOnce(() => new Promise((_, rej) => (failFirst = rej)))
+    .mockResolvedValue({})
+  const { host, load } = setup({}, 2)
+  const [a, b] = host.structures
+  const dispose = autorun(load)
+  await tick()
+  expect(b!.loadedToMolstar).toBe(true)
+  failFirst(new Error('404'))
+  await tick()
+  expect(a!.error).toEqual(new Error('404'))
+  a!.retryLoad()
+  await tick()
+  expect(mockLoad).toHaveBeenCalledTimes(3)
+  expect(a!.loadedToMolstar).toBe(true)
+  dispose()
+  logged.mockRestore()
+})
+
 test('a structure removed during its AlphaFold lookup is never loaded', async () => {
   let answer: (models: AlphaFoldModel[]) => void = () => {}
   const host = TestHost.create({ structures: [{ uniprotId: 'P04637' }] })
