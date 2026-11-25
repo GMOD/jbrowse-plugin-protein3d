@@ -1089,15 +1089,15 @@ function stateModelFactory() {
       /**
        * #getter
        * Why the view can draw no sequence panel, while no structure in it has a
-       * transcript or an alignment; one with either can open its panel from
-       * its header row.
+       * transcript or a chain of its own to draw; one with either can open its
+       * panel from its header row.
        */
       get noPanelReason() {
         return self.structures.some(
-          s => s.pairwiseAlignment || s.userProvidedTranscriptSequence,
+          s => s.panelAlignment || s.userProvidedTranscriptSequence,
         )
           ? undefined
-          : 'No structure in this view has a transcript to align to'
+          : 'No structure in this view has a chain to show'
       },
     }))
     .views(self => ({

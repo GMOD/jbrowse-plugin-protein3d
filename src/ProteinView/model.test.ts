@@ -476,9 +476,9 @@ test('a toggle is disabled while a setting it needs is off', () => {
   expect(new Set(disabledKeys(noTracks))).toEqual(new Set(TRACK_TOGGLES))
 })
 
-// A structure with no transcript has no sequence panel, so the toggles for it
-// changed nothing on screen.
-test('the panel toggles are disabled, with why, while no structure has a transcript', () => {
+// A structure with no transcript and no chain yet has no sequence panel, so
+// the toggles for it changed nothing on screen.
+test('the panel toggles are disabled, with why, while no structure has a transcript or a chain', () => {
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }],
@@ -487,8 +487,16 @@ test('the panel toggles are disabled, with why, while no structure has a transcr
     new Set(['showAlignment', ...PANEL_TOGGLES, ...TRACK_TOGGLES]),
   )
   expect(view.noPanelReason).toBe(
-    'No structure in this view has a transcript to align to',
+    'No structure in this view has a chain to show',
   )
+
+  view.structures[0]!.setStructureData({
+    entities: [
+      { entityId: '1', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['A'] },
+    ],
+  })
+  expect(view.noPanelReason).toBeUndefined()
+  expect(disabledKeys(view)).toEqual([])
 })
 
 // The panel opens on the first structure, but the second's header row offers

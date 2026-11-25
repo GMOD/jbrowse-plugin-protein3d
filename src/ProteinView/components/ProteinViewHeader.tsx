@@ -228,7 +228,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           noValue={colorLegendNoValue}
         />
       ) : null}
-      {showAlignment && alignmentStructure?.pairwiseAlignment ? (
+      {showAlignment && alignmentStructure?.panelAlignment ? (
         <ProteinAlignment model={alignmentStructure} />
       ) : showAlignment && alignmentStructure?.alignmentPending ? (
         <LoadingEllipses message="Loading pairwise alignment" />

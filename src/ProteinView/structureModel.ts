@@ -139,6 +139,11 @@ function isGenomeView(view: { id: string }): view is LGV {
 }
 type MaybePairwiseAlignment = PairwiseAlignment | undefined
 
+function chainAgainstItself(seq: string): PairwiseAlignment {
+  const row = { id: 'structure', seq }
+  return { consensus: '|'.repeat(seq.length), alns: [row, row] }
+}
+
 interface StructureStatus {
   message: string
   severity: StatusSeverity
@@ -872,6 +877,34 @@ const Structure = types
     },
     /**
      * #getter
+     * The columns the sequence panel draws: the transcript alignment, or for
+     * a structure with no transcript its mapped chain against itself, so the
+     * chain's sequence, ruler and tracks still show. Only the panel reads it;
+     * whatever means the transcript reads `alignment`.
+     */
+    get panelAlignment(): MaybePairwiseAlignment {
+      const seq = this.mappedEntity?.seq
+      return (
+        this.alignment ??
+        (!self.userProvidedTranscriptSequence && seq
+          ? chainAgainstItself(seq)
+          : undefined)
+      )
+    },
+    /**
+     * #getter
+     * The panel's column conversions: `coordinateMapper` whenever there is a
+     * transcript alignment
+     */
+    get panelMapper(): CoordinateMapper | undefined {
+      const { coordinateMapper, panelAlignment } = this
+      return (
+        coordinateMapper ??
+        (panelAlignment ? makeCoordinateMapper(panelAlignment) : undefined)
+      )
+    },
+    /**
+     * #getter
      * The hovered residue's codon as a 1-based locString, so the header can
      * name where in the genome a residue sits without a click.
      */
@@ -906,7 +939,7 @@ const Structure = types
       const pos = this.structureSeqHoverPos
       return pos === undefined
         ? undefined
-        : this.coordinateMapper?.structureToAlignment(structurePos(pos))
+        : this.panelMapper?.structureToAlignment(structurePos(pos))
     },
 
     /**
@@ -917,7 +950,7 @@ const Structure = types
      */
     get hoverStructureRange() {
       const { alignmentHoverRange } = self
-      const mapper = this.coordinateMapper
+      const mapper = this.panelMapper
       if (!alignmentHoverRange || !mapper) {
         return undefined
       }
@@ -993,7 +1026,7 @@ const Structure = types
      * run of clickedStructureRanges.
      */
     get clickAlignmentRanges() {
-      const mapper = this.coordinateMapper
+      const mapper = this.panelMapper
       return mapper
         ? self.clickedStructureRanges.flatMap(range => {
             const start = mapper.structureToAlignment(structurePos(range.start))
@@ -1247,7 +1280,7 @@ const Structure = types
       return confidenceCells(
         self.mappedEntity,
         self.structureConfidence,
-        self.coordinateMapper?.structureToAlignment,
+        self.panelMapper?.structureToAlignment,
       )
     },
     /**
@@ -1257,7 +1290,7 @@ const Structure = types
     get hydrophobicityCells() {
       return hydrophobicityCells(
         self.mappedEntity,
-        self.coordinateMapper?.structureToAlignment,
+        self.panelMapper?.structureToAlignment,
       )
     },
     /**
@@ -1811,7 +1844,7 @@ const Structure = types
      */
     hoverAlignmentPosition(alignmentPos: number) {
       if (!self.alignmentHoverRange) {
-        const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
+        const structureSeqPos = self.panelMapper?.alignmentToStructure(
           alignmentCol(alignmentPos),
         )
         self.setHoveredPosition(
@@ -1842,7 +1875,7 @@ const Structure = types
      * A gap puts the whole view's selection down, as Mol*'s background does.
      */
     clickAlignmentPosition(alignmentPos: number) {
-      const structureSeqPos = self.coordinateMapper?.alignmentToStructure(
+      const structureSeqPos = self.panelMapper?.alignmentToStructure(
         alignmentCol(alignmentPos),
       )
       if (structureSeqPos === undefined) {

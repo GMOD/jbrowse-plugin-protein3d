@@ -130,8 +130,8 @@ export default function useProteinFeatureTrackData(
   error: unknown
 } {
   const { features, isLoading, error } = useUniProtFeatures(uniprotId)
-  const { omittedFeatureTypes, coordinateMapper } = model
-  const structureToAlignment = coordinateMapper?.structureToAlignment
+  const { omittedFeatureTypes, panelMapper } = model
+  const structureToAlignment = panelMapper?.structureToAlignment
 
   const groups = useMemo(() => {
     if (!features || !structureToAlignment) {

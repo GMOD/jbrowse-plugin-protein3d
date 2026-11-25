@@ -1,11 +1,13 @@
 import { getSession } from '@jbrowse/core/util'
 import { destroy, getSnapshot, types } from '@jbrowse/mobx-state-tree'
 import { observable, reaction } from 'mobx'
-import { structurePos } from 'p2s_mapper'
+import { alignmentLength, structureAlignedSeq, structurePos } from 'p2s_mapper'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { parseStructure } from '../test_data/molstarStructure'
+import { rulerTicks } from './components/AlignmentRuler'
 import { structuresSettled } from './frameSelection'
+import { layoutFeature } from './hooks/useProteinFeatureTrackData'
 import Structure from './structureModel'
 import { superpositionKeys } from './structureSuperposer'
 
@@ -1623,4 +1625,189 @@ test('an alignment leaves a failed load failed', () => {
   expect(s.loadFailed).toBe(true)
   s.setAlignment(pairwiseAlignment)
   expect(s.error).toEqual(new Error('404'))
+})
+
+// with a second protein entity for the chain picker
+const STANDALONE_1TUP = [
+  ...ONE_TUP_ENTITIES,
+  { entityId: '4', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['D'] },
+]
+
+async function standalone1tup() {
+  const parent = TestParent.create({ structures: [{ pdbId: '1TUP' }] })
+  const s = parent.structures[0]!
+  s.setStructureData({
+    entities: STANDALONE_1TUP,
+    molstarStructures: LOADED_STRUCTURES,
+  })
+  await vi.waitFor(() => {
+    expect(s.uniProtMappings).toBeDefined()
+  })
+  return { parent, s }
+}
+
+test('a structure with no transcript draws its chain against itself, and nothing else reads it as aligned', async () => {
+  const { parent, s } = await standalone1tup()
+  const snapshot = getSnapshot(parent)
+  expect(s.mappedEntity?.entityId).toBe('3')
+  expect(s.panelAlignment && alignmentLength(s.panelAlignment)).toBe(
+    P53_CORE.length,
+  )
+  expect(s.panelAlignment && structureAlignedSeq(s.panelAlignment)).toBe(
+    P53_CORE,
+  )
+  expect(s.alignment).toBeUndefined()
+  expect(s.coordinateMapper).toBeUndefined()
+  expect(s.alignmentQuality).toBeUndefined()
+  expect(s.alignmentPending).toBe(false)
+  expect(s.alignmentSkipped).toBeUndefined()
+  expect(s.alignmentMatchSet).toBeUndefined()
+  expect(s.report.mapping).toBeUndefined()
+  expect(s.clickGenomeHighlights).toEqual([])
+  expect(getSnapshot(parent)).toEqual(snapshot)
+})
+
+test("the ruler numbers a transcript-less chain by its authors' numbering", async () => {
+  const { s } = await standalone1tup()
+  const ticks = rulerTicks(
+    s.panelMapper?.alignmentToStructure,
+    P53_CORE.length,
+    pos => s.residueNumber(pos),
+  )
+  expect(ticks.slice(0, 3)).toEqual([
+    { col: 1 },
+    { col: 6, label: '100' },
+    { col: 11 },
+  ])
+  expect(ticks.at(-1)).toEqual({ col: 216, label: '310' })
+})
+
+test('a hover and a click in a transcript-less panel light the residue in Mol*', async () => {
+  const { s } = await standalone1tup()
+  s.hoverAlignmentPosition(6)
+  expect(s.structureSeqHoverPos).toBe(6)
+  expect(s.alignmentHoverPos).toBe(6)
+  expect(s.hoverLabelSeqIds).toEqual([7])
+  expect(s.hoverGenomeHighlights).toEqual([])
+
+  s.setHoveredPosition(undefined)
+  s.setAlignmentHoverRange({ start: 2, end: 4 })
+  expect(s.hoverLabelSeqIds).toEqual([3, 4, 5])
+  s.setAlignmentHoverRange(undefined)
+
+  s.clickAlignmentPosition(10)
+  expect(s.clickedStructureRanges).toEqual([{ start: 10, end: 11 }])
+  expect(s.clickAlignmentRanges).toEqual([{ start: 10, end: 10 }])
+  expect(s.selectLabelSeqIds).toEqual([11])
+})
+
+// SEQRES-less, with residue 97 unobserved: Mol* numbers by author residue and
+// the hole carries into label_seq_id
+test('a transcript-less panel addresses Mol* through the entity seqIds', () => {
+  const parent = TestParent.create({ structures: [{ url: 'x.pdb' }] })
+  const s = parent.structures[0]!
+  s.setStructureData({
+    entities: [
+      {
+        entityId: '1',
+        seq: 'SSSPSQ',
+        seqIds: [94, 95, 96, 98, 99, 100],
+        authSeqIds: [94, 95, 96, 98, 99, 100],
+        chains: ['A'],
+      },
+    ],
+  })
+  s.hoverAlignmentPosition(3)
+  expect(s.hoverLabelSeqIds).toEqual([98])
+  expect(
+    rulerTicks(s.panelMapper?.alignmentToStructure, 6, pos =>
+      s.residueNumber(pos),
+    ),
+  ).toEqual([{ col: 1 }, { col: 5, label: '100' }])
+})
+
+test("a UniProt feature lands on a transcript-less entity's columns through SIFTS", async () => {
+  const { s } = await standalone1tup()
+  s.setUniProtMappings([
+    {
+      accession: 'P04637',
+      segments: [
+        {
+          entityId: '3',
+          unpStart: 94,
+          unpEnd: 312,
+          structStart: 0,
+          structEnd: 218,
+        },
+      ],
+    },
+  ])
+  const { uniprotId, mapUniProtPosition } = s.uniProtEntry
+  expect(uniprotId).toBe('P04637')
+  const layout = layoutFeature(
+    {
+      type: 'Region',
+      start: 245,
+      end: 250,
+      description: '',
+      uniqueId: 'r',
+    },
+    s.panelMapper!.structureToAlignment,
+    mapUniProtPosition,
+  )
+  expect(layout).toMatchObject({
+    structureStart: 151,
+    structureEnd: 157,
+    alignmentStart: 151,
+    alignmentEnd: 156,
+    clipped: false,
+  })
+  expect(s.residueNumber(154)).toBe(248)
+})
+
+test('the chain picker switches a transcript-less panel to the picked entity', async () => {
+  const { s } = await standalone1tup()
+  s.clickAlignmentPosition(2)
+  s.chooseEntity('4')
+  expect(s.mappedEntity?.entityId).toBe('4')
+  expect(s.panelAlignment && structureAlignedSeq(s.panelAlignment)).toBe('MKAA')
+  expect(s.clickedStructureRanges).toEqual([])
+  expect(s.alignment).toBeUndefined()
+})
+
+test('a transcript-less pLDDT model draws its confidence on its own columns', () => {
+  const parent = TestParent.create({ structures: [{ uniprotId: 'P04637' }] })
+  const s = parent.structures[0]!
+  s.setStructureData({
+    entities: [
+      { entityId: '1', seq: 'MEEP', seqIds: [1, 2, 3, 4], chains: ['A'] },
+    ],
+    confidence: [
+      {
+        entityId: '1',
+        byLabelSeqId: new Map([
+          [1, 30],
+          [2, 60],
+          [3, 80],
+          [4, 95],
+        ]),
+      },
+    ],
+  })
+  expect(s.confidenceCells).toEqual([
+    { col: 0, value: 30 },
+    { col: 1, value: 60 },
+    { col: 2, value: 80 },
+    { col: 3, value: 95 },
+  ])
+})
+
+test('a structure with a transcript has no panel until it is aligned, then the alignment', () => {
+  const parent = TestParent.create({
+    structures: [{ userProvidedTranscriptSequence: 'MKAA' }],
+  })
+  const s = parent.structures[0]!
+  expect(s.panelAlignment).toBeUndefined()
+  s.setAlignment(pairwiseAlignment)
+  expect(s.panelAlignment).toBe(s.alignment)
 })
