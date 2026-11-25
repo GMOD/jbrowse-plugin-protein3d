@@ -1,7 +1,11 @@
 import { SimpleFeature } from '@jbrowse/core/util'
 import { describe, expect, it } from 'vitest'
 
-import { codingTranscripts, isCodingFeature } from './codingFeature'
+import {
+  codingTranscripts,
+  isCodingFeature,
+  uncodedTranscript,
+} from './codingFeature'
 
 function feature(type: string, subfeatures: SimpleFeature[] = []) {
   return new SimpleFeature({
@@ -48,5 +52,20 @@ describe('codingTranscripts', () => {
   it('reaches a V_gene_segment the way it reaches an mRNA', () => {
     const gene = feature('gene', [feature('V_gene_segment', [feature('CDS')])])
     expect(codingTranscripts(gene)).toHaveLength(1)
+  })
+})
+
+describe('uncodedTranscript', () => {
+  const coding = feature('mRNA', [feature('CDS')])
+  const retained = feature('transcript', [feature('exon')])
+  const gene = feature('gene', [coding, retained])
+
+  it('is the right-clicked transcript when it has no CDS', () => {
+    expect(uncodedTranscript(gene, retained.id())?.id()).toBe(retained.id())
+  })
+
+  it('is nothing for a coding transcript, or with none right-clicked', () => {
+    expect(uncodedTranscript(gene, coding.id())).toBeUndefined()
+    expect(uncodedTranscript(gene)).toBeUndefined()
   })
 })

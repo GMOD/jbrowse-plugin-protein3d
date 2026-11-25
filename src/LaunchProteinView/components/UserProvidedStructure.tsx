@@ -16,6 +16,7 @@ import IsoformMatchNotice from './IsoformMatchNotice'
 import PartialFailureNotice from './PartialFailureNotice'
 import StructureSourcePicker from './StructureSourcePicker'
 import TranscriptSelector from './TranscriptSelector'
+import UncodedTranscriptNotice from './UncodedTranscriptNotice'
 
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
@@ -163,14 +164,21 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
           ) : null}
           {isoformSequences ? (
             ranking ? (
-              <TranscriptSelector
-                val={userSelection}
-                setVal={setUserSelection}
-                structureSequence={structureSequence}
-                isoforms={options}
-                feature={feature}
-                ranking={ranking}
-              />
+              <>
+                <UncodedTranscriptNotice
+                  feature={feature}
+                  preferredTranscriptId={preferredTranscriptId}
+                  selectedTranscript={selectedTranscript}
+                />
+                <TranscriptSelector
+                  val={userSelection}
+                  setVal={setUserSelection}
+                  structureSequence={structureSequence}
+                  isoforms={options}
+                  feature={feature}
+                  ranking={ranking}
+                />
+              </>
             ) : null
           ) : (
             <LoadingEllipses title="Loading protein sequences" variant="h6" />

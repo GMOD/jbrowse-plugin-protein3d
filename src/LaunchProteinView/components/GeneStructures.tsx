@@ -32,6 +32,7 @@ import PartialFailureNotice from './PartialFailureNotice'
 import ProteinViewActions from './ProteinViewActions'
 import StructureList from './StructureList'
 import TranscriptSelector from './TranscriptSelector'
+import UncodedTranscriptNotice from './UncodedTranscriptNotice'
 import UniProtSummaryBar from './UniProtSummaryBar'
 
 import type { LaunchStructure } from '../hooks/useStructureLaunch'
@@ -319,6 +320,11 @@ const GeneStructures = observer(function GeneStructures({
             <LoadingEllipses key={status} variant="caption" message={status} />
           ))}
           <PartialFailureNotice message={launch.partialFailure} />
+          <UncodedTranscriptNotice
+            feature={feature}
+            preferredTranscriptId={preferredTranscriptId}
+            selectedTranscript={launch.selectedTranscript}
+          />
           {launch.ranking && launch.selectedTranscript ? (
             <TranscriptSelector
               val={launch.selectedTranscriptId}

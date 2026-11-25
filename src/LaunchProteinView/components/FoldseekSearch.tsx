@@ -24,6 +24,7 @@ import FoldseekDatabaseSelector from './FoldseekDatabaseSelector'
 import FoldseekResultsTable from './FoldseekResultsTable'
 import PartialFailureNotice from './PartialFailureNotice'
 import TranscriptSelector from './TranscriptSelector'
+import UncodedTranscriptNotice from './UncodedTranscriptNotice'
 
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
@@ -164,6 +165,11 @@ const FoldseekSearch = observer(function FoldseekSearch({
 
         {isoformSequences && ranking ? (
           <>
+            <UncodedTranscriptNotice
+              feature={feature}
+              preferredTranscriptId={preferredTranscriptId}
+              selectedTranscript={selectedTranscript}
+            />
             <TranscriptSelector
               val={effectiveSelectedTranscriptId}
               setVal={setUserSelectionWithReset}

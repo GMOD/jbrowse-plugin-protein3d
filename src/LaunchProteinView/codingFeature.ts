@@ -26,6 +26,15 @@ export function isCodingFeature(feature: Feature) {
   return codingTranscripts(feature).length > 0
 }
 
+/** The right-clicked transcript when it has no CDS, so the dialog maps
+ * another of the gene's transcripts in its place */
+export function uncodedTranscript(feature: Feature, transcriptId?: string) {
+  return transcriptId &&
+    !codingTranscripts(feature).some(t => t.id() === transcriptId)
+    ? feature.get('subfeatures')?.find(f => f.id() === transcriptId)
+    : undefined
+}
+
 // GENCODE tags the transcript row; NCBI's RefSeq GFF carries no such tag and
 // keeps Select status in separate tracks.
 const REPRESENTATIVE_TAGS = ['MANE_Select', 'Ensembl_canonical']
