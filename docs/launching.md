@@ -337,6 +337,8 @@ spec entry or from code.
 | `alignmentImported`              | No       | Whether `pairwiseAlignment` is used exactly as given; true when one is present                         |
 | `hidden`                         | No       | Leave the structure out of the 3D canvas; it stays mapped and superposed                               |
 | `assembly`                       | No       | Assembly id to build (default: the first), or `deposited` for every chain in the file                  |
+| `chains`                         | No       | Author chain ids to draw, such as `["B"]`; see [sessions](sessions.md#structure-properties)            |
+| `filter`                         | No       | Which residues to draw, as field predicates; see [sessions](sessions.md#structure-properties)          |
 | `camera`                         | No       | A fixed camera, `{ position, target, up }`; see [figures](sessions.md#figures)                         |
 | `surface`                        | No       | A translucent molecular surface, `{ opacity }`                                                         |
 | `marks`                          | No       | Sites drawn as spheres, sticks or a cartoon, with an optional `label`, such as `[{ "site": "A:248" }]` |
@@ -585,10 +587,10 @@ removes, where an alternative exon lands, whether an exon matches a domain.
 Each entry of `structures` is one structure: a source (`url`, `data`,
 `uniprotId`, `alphaFoldComplexId`, `pdbId` or `datasetId`) and, optionally,
 `initialTranscriptResidues`, `initialResidues`, `initialSelection`,
-`mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden` and
-`assembly`. `feature`, `userProvidedTranscriptSequence` and `connectedViewId`
-written on the launch are the defaults every entry shares, and an entry may
-carry its own.
+`mappedEntityId`, `pairwiseAlignment`, `alignmentImported`, `hidden`,
+`assembly`, `chains` and `filter`. `feature`, `userProvidedTranscriptSequence`
+and `connectedViewId` written on the launch are the defaults every entry shares,
+and an entry may carry its own.
 
 Written on the launch itself, the per-structure keys describe its one structure.
 Beside `structures` they apply to no structure, so the launch reports each by
