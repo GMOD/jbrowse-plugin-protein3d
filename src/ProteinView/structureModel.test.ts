@@ -943,7 +943,7 @@ test('hoverString reads out the aligned transcript residue beside the structure 
   })
   const model = parent.structures[0]!
   model.setHoveredPosition({ structureSeqPos: 1 })
-  expect(model.hoverString).toBe('2, Transcript residue: 4')
+  expect(model.hoverString).toBe('2 (transcript K4)')
 })
 
 test('hoverString uses the author number and drops the transcript residue when they agree', () => {
@@ -977,7 +977,7 @@ test('hoverString uses the author number and drops the transcript residue when t
   })
   model.setHoveredPosition({ structureSeqPos: 1 })
   expect(model.residueNumber(1)).toBe(4)
-  expect(model.hoverString).toBe('4, Structure: K')
+  expect(model.hoverString).toBe('K4')
 })
 
 test('initialTranscriptResidues seeds the selection through the alignment once the structure settles', async () => {
