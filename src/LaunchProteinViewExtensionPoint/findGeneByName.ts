@@ -10,7 +10,6 @@ import {
   sessionGeneLaunchHost,
 } from '../LaunchProteinView/resolveGeneLaunch'
 import { formatViewName } from '../LaunchProteinView/utils/launchViewUtils'
-import { viewAssemblyName } from '../ProteinView/util'
 import {
   featureTrackConfig,
   getTrackId,
@@ -58,7 +57,7 @@ export async function resolveGeneNameLaunch({
   uniprotId,
   findStructure,
   connectedView,
-  connectedViewId,
+  assemblyName,
 }: {
   session: AbstractSessionModel
   gene: string
@@ -66,15 +65,8 @@ export async function resolveGeneNameLaunch({
   uniprotId?: string
   findStructure?: boolean
   connectedView?: ConnectedViewSpec
-  /** the genome view the launch connects to, whose assembly the gene is on */
-  connectedViewId?: string
+  assemblyName: string | undefined
 }) {
-  const assemblyName =
-    (connectedViewId
-      ? viewAssemblyName(session, connectedViewId)
-      : undefined) ??
-    connectedView?.assembly ??
-    session.assemblyNames[0]
   if (!assemblyName) {
     throw new Error('no assembly to look the gene up on')
   }

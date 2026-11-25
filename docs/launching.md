@@ -46,9 +46,9 @@ what the lookup would pick:
 
 - `pdbId`, `uniprotId`, `url` or `structures` choose the structure,
 - `transcriptId` chooses the isoform, among the gene's own,
-- `connectedView.assembly` chooses the assembly (the session's first otherwise),
-  and `connectedView.loc` and `tracks` replace the gene's span and the indexed
-  track.
+- `connectedView.assembly` chooses the assembly (see
+  [`connectedView`](#connectedview) for the order), and `connectedView.loc` and
+  `tracks` replace the gene's span and the indexed track.
 
 A `feature` or `userProvidedTranscriptSequence` on the launch spells the
 transcript out, and the gene is then not looked up at all, since the model,
@@ -712,6 +712,11 @@ connectedView: {
 ```
 
 Write them flat, as shown; JBrowse 5 deprecates nesting them under `init`.
+
+A launch works on one assembly: it looks its `gene` or `transcriptId` up there,
+places its `variant` there and connects through it. That is the assembly of the
+`connectedViewId` view (the one it is navigating to, while it still is), else
+`connectedView.assembly`, else the session's first.
 
 ### Feature shape
 

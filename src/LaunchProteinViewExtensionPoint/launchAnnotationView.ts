@@ -7,7 +7,6 @@ import { canAddTemporaryAssembly } from '../LaunchProteinView/components/protein
 import { fetchUniProtFeatureTypes } from '../LaunchProteinView/components/proteinTrackSetup'
 import { describeMissingStructure } from '../LaunchProteinView/resolveGeneLaunch'
 import { uniProtEntry } from '../LaunchProteinView/utils/launchViewUtils'
-import { viewAssemblyName } from '../ProteinView/util'
 import { normalizeAnnotationLaunch } from './normalizeAnnotationLaunch'
 import {
   resolveTranscriptLinkage,
@@ -48,13 +47,10 @@ export async function launchAnnotationView(args: AnnotationLaunchArgs) {
     )
   }
   const { launch } = normalized
-  const { named, resolved, connectedView } = await resolveTranscriptLinkage(
-    session,
-    launch,
-    {
+  const { named, resolved, connectedView, assemblyName } =
+    await resolveTranscriptLinkage(session, launch, {
       findStructure: !launch.uniprotId,
-    },
-  )
+    })
   const accession = launch.uniprotId ?? named?.uniprotId
   if (!accession) {
     throw new Error(
@@ -82,10 +78,7 @@ export async function launchAnnotationView(args: AnnotationLaunchArgs) {
         uniprotId,
         confidenceUrl,
         connectedViewId,
-        connectedAssemblyName:
-          (launch.connectedViewId
-            ? viewAssemblyName(session, launch.connectedViewId)
-            : undefined) ?? connectedView?.assembly,
+        connectedAssemblyName: assemblyName,
         featureTypes,
         clinVar: (linkage, idPrefix) =>
           clinVarTrackConfFor({ session, linkage, idPrefix }),

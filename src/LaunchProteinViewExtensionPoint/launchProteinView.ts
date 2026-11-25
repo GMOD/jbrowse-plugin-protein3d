@@ -5,7 +5,6 @@ import { maybeLaunchSideBySide } from '../LaunchProteinView/utils/sideBySide'
 import { addProteinView } from '../ProteinView/addProteinView'
 import { checkedColor, colorOfScheme } from '../ProteinView/proteinColor'
 import { proteinViewSnapshot } from '../ProteinView/proteinViewSpec'
-import { viewAssemblyName } from '../ProteinView/util'
 import { resolveDatasetStructures } from './datasetLaunch'
 import { resolveLaunchVariant } from './launchVariant'
 import { normalizeLaunch } from './normalizeLaunch'
@@ -123,19 +122,20 @@ export async function launchProteinView(args: LaunchArgs) {
   // structure, transcript or locus the spec names wins over those. The
   // short form instead derives the feature and sequence from the
   // connected track, and the same mapping applies to every structure.
-  const { named, resolved, connectedView } = await resolveTranscriptLinkage(
-    session,
-    {
-      gene,
-      transcriptId,
-      uniprotId,
-      feature,
-      userProvidedTranscriptSequence,
-      connectedView: givenConnectedView,
-      connectedViewId,
-    },
-    { findStructure: geneModel === 'required' },
-  )
+  const { named, resolved, connectedView, assemblyName } =
+    await resolveTranscriptLinkage(
+      session,
+      {
+        gene,
+        transcriptId,
+        uniprotId,
+        feature,
+        userProvidedTranscriptSequence,
+        connectedView: givenConnectedView,
+        connectedViewId,
+      },
+      { findStructure: geneModel === 'required' },
+    )
   if (gene && named && geneModel === 'required' && !named.url) {
     throw new Error(
       `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
@@ -156,9 +156,7 @@ export async function launchProteinView(args: LaunchArgs) {
         variant,
         structures: withTranscripts,
         launchFeature,
-        assemblyName: connectedViewId
-          ? viewAssemblyName(session, connectedViewId)
-          : connectedView?.assembly,
+        assemblyName,
       })
     : undefined
   const requested = placedVariant?.structures ?? withTranscripts

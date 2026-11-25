@@ -1,6 +1,9 @@
 import { expect, test } from 'vitest'
 
-import { withConnectedGenomeView } from './transcriptLinkage'
+import {
+  launchAssemblyName,
+  withConnectedGenomeView,
+} from './transcriptLinkage'
 
 interface FakeView {
   id: string
@@ -68,4 +71,33 @@ test('a launch that opens hands its view the genome view and says it owns it', a
         Promise.resolve({ connectedViewId, ownsConnectedView }),
     ),
   ).toEqual({ connectedViewId: 'existing', ownsConnectedView: false })
+})
+
+// a gene lookup fell through to the session's first assembly here, and the
+// variant then found no assembly at all
+test('a genome view still navigating gives the launch the assembly it is launching on', () => {
+  const session = {
+    assemblyNames: ['hg38', 'hg19'],
+    views: [
+      { id: 'navigating', assemblyNames: [], launchAssemblyName: 'hg19' },
+      { id: 'shown', assemblyNames: ['hg19'] },
+    ],
+  }
+  expect(launchAssemblyName(session, { connectedViewId: 'navigating' })).toBe(
+    'hg19',
+  )
+  expect(launchAssemblyName(session, { connectedViewId: 'shown' })).toBe('hg19')
+})
+
+test("a launch's assembly is its view's, then the one it names, then the session's first", () => {
+  const session = {
+    assemblyNames: ['hg38', 'hg19'],
+    views: [{ id: 'shown', assemblyNames: ['hg19'] }],
+  }
+  const connectedView = { assembly: 'mm39' }
+  expect(
+    launchAssemblyName(session, { connectedViewId: 'shown', connectedView }),
+  ).toBe('hg19')
+  expect(launchAssemblyName(session, { connectedView })).toBe('mm39')
+  expect(launchAssemblyName(session, {})).toBe('hg38')
 })

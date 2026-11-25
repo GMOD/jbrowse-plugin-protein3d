@@ -1,3 +1,4 @@
+import { viewAssemblyName } from '../ProteinView/util'
 import { resolveGeneNameLaunch } from './findGeneByName'
 import { spelledTranscriptKey } from './normalizeLaunch'
 import { resolveShortLaunch } from './resolveShortLaunch'
@@ -19,6 +20,40 @@ interface TranscriptLinkageSpec {
   userProvidedTranscriptSequence?: string
   connectedView?: ConnectedViewSpec
   connectedViewId?: string
+}
+
+function connectedViewAssembly(
+  session: { views: { id: string }[] },
+  viewId: string,
+) {
+  const view = session.views.find(v => v.id === viewId)
+  const launching: unknown =
+    view && 'launchAssemblyName' in view ? view.launchAssemblyName : undefined
+  return typeof launching === 'string'
+    ? launching
+    : viewAssemblyName(session, viewId)
+}
+
+/**
+ * The one assembly a launch looks its gene or transcript up on, places its
+ * variant on and connects through: the `connectedViewId` view's, which a view
+ * still navigating to its launch location already knows, else
+ * `connectedView.assembly`, else the session's first.
+ */
+export function launchAssemblyName(
+  session: { views: { id: string }[]; assemblyNames: readonly string[] },
+  {
+    connectedViewId,
+    connectedView,
+  }: { connectedViewId?: string; connectedView?: ConnectedViewSpec },
+) {
+  return (
+    (connectedViewId
+      ? connectedViewAssembly(session, connectedViewId)
+      : undefined) ??
+    connectedView?.assembly ??
+    session.assemblyNames[0]
+  )
 }
 
 /**
@@ -47,6 +82,14 @@ export async function resolveTranscriptLinkage(
     feature,
     userProvidedTranscriptSequence,
   })
+  const assemblyName = launchAssemblyName(session, {
+    connectedViewId,
+    connectedView: givenConnectedView,
+  })
+  const onAssembly = givenConnectedView && {
+    ...givenConnectedView,
+    assembly: assemblyName,
+  }
   const named =
     gene && !spelled
       ? await resolveGeneNameLaunch({
@@ -56,18 +99,22 @@ export async function resolveTranscriptLinkage(
           uniprotId,
           findStructure,
           connectedView: givenConnectedView,
-          connectedViewId,
+          assemblyName,
         })
       : undefined
   const connectedView = connectedViewId
     ? givenConnectedView
-    : (named?.connectedView ?? givenConnectedView)
+    : (named?.connectedView ?? onAssembly)
   const resolved: ResolvedShortLaunch | undefined =
     named ??
     (!spelled && transcriptId
-      ? await resolveShortLaunch({ session, transcriptId, connectedView })
+      ? await resolveShortLaunch({
+          session,
+          transcriptId,
+          connectedView: onAssembly,
+        })
       : undefined)
-  return { named, resolved, connectedView }
+  return { named, resolved, connectedView, assemblyName }
 }
 
 interface GenomeViewHost<V extends { id: string }> {
