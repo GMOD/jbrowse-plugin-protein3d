@@ -1,6 +1,6 @@
 import { getSession } from '@jbrowse/core/util'
 import { isAlive } from '@jbrowse/mobx-state-tree'
-import { untracked } from 'mobx'
+import { action, untracked } from 'mobx'
 import {
   alignTranscriptToEntity,
   chooseMappedEntity,
@@ -22,7 +22,7 @@ import type {
   ScoredAlignment,
 } from 'p2s_mapper'
 
-export type StructureAlignerHost = IAnyStateTreeNode &
+type StructureAlignerHost = IAnyStateTreeNode &
   AlignmentState & {
     readonly alignmentAlgorithm: AlignmentAlgorithm
     readonly aligning: boolean
@@ -43,7 +43,7 @@ export type StructureAlignerHost = IAnyStateTreeNode &
     switchEntity: (entityId: string) => void
   }
 
-export interface AlignmentRun<M extends AlignmentMethod> {
+interface AlignmentRun<M extends AlignmentMethod> {
   identical: boolean
   name: M
   args: RpcCallArgs<M>
@@ -79,9 +79,9 @@ export function makeStructureAligner(host: StructureAlignerHost) {
     decide()
   }
 
-  /** Applies an identical sequence's free alignment at once, superseding
-   * whatever is still running, and sends any other to the worker. */
-  function runAlignment<M extends AlignmentMethod>({
+  // an action, so what a run reads (the session's rpcManager) stays out of
+  // the decision autorun's dependencies, as it did as the model's action
+  const runAlignment = action(function runAlignment<M extends AlignmentMethod>({
     identical,
     name,
     args,
@@ -131,7 +131,7 @@ export function makeStructureAligner(host: StructureAlignerHost) {
         },
       )
     }
-  }
+  })
 
   function alignToEntity(entity: Entity, transcript: string) {
     const { entityId } = entity
