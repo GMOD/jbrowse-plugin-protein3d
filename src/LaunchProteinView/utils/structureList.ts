@@ -119,7 +119,10 @@ export function sentenceCase(title: string, keep: readonly string[] = []) {
         ),
   )
   return title === title.toUpperCase()
-    ? cased.charAt(0).toUpperCase() + cased.slice(1)
+    ? cased.replace(
+        /(^|\w{2}[.!?]\s+)([a-z])/g,
+        (_, before: string, letter: string) => before + letter.toUpperCase(),
+      )
     : title
 }
 
