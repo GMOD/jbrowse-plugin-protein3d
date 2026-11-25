@@ -455,8 +455,8 @@ function stateModelFactory() {
        * #action
        */
       setMolstarPluginContext(p?: PluginContext) {
-        // Reset loadedToMolstar for all structures when plugin context changes
-        // This ensures structures get reloaded when the view is moved/remounted
+        // The handles belong to the old plugin, so every structure is unloaded
+        // and the loader loads it again when the view is moved or remounted
         if (p !== self.molstarPluginContext) {
           for (const structure of self.structures) {
             structure.clearMolstarStructures()
@@ -628,7 +628,7 @@ function stateModelFactory() {
     .actions(self => ({
       afterAttach() {
         // Apply the chosen color theme whenever it changes, a structure
-        // finishes loading (entities is set after its molstar
+        // finishes loading (its Mol* structures arrive once their
         // representation is built, so the theme has something to recolor),
         // the mapped chain changes, or a placed-value source answers; the
         // surface is built first so it takes the same theme.
@@ -842,16 +842,15 @@ function stateModelFactory() {
           }),
         )
 
-        // The declared residue marks, once their structures have loaded
+        // The declared residue marks, on the structures that have loaded. An
+        // unloaded structure still syncs, so its notices clear with it
         addDisposer(
           self,
           autorun(() => {
             const plugin = self.molstarPluginContext
             const marks = self.marks ?? []
-            const structures = self.structures.map(s =>
-              s.loadedToMolstar ? s.molstarStructures : undefined,
-            )
-            if (plugin && structures.some(Boolean)) {
+            const structures = self.structures.map(s => s.molstarStructures)
+            if (plugin && structures.length > 0) {
               syncResidueMarks({ plugin, structures, marks })
                 .then(unmatched => {
                   reportFigureNotices(
@@ -1041,7 +1040,7 @@ function stateModelFactory() {
        */
       get colorLegend() {
         const plugin = self.molstarPluginContext
-        const loaded = self.structures.find(s => s.entities)
+        const loaded = self.structures.find(s => s.loadedToMolstar)
         const structure = loaded?.molstarStructures[0]
         return plugin && structure
           ? colorLegendOf({
