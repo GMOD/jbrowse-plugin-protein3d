@@ -8,13 +8,19 @@ import { STATIC_SWR_OPTIONS } from './swrOptions'
 
 // Only the model is built here, never a representation: the dialog wants the
 // sequences, and the format detection is the same one the view applies later.
+// A file's text is kept, so the launch stores what was read rather than
+// reading, and inflating, the file again.
 async function fetchSequences({ file, url }: { file?: File; url?: string }) {
   const data = file ? await readStructureFile(file) : undefined
-  return withTemporaryMolstarPlugin(async plugin => {
+  const sequences = await withTemporaryMolstarPlugin(async plugin => {
     const trajectory = await parseStructureTrajectory({ plugin, data, url })
     const model = await plugin.builders.structure.createModel(trajectory)
     return extractStructureSequences(model)
   })
+  if (!sequences?.length) {
+    throw new Error('No protein sequence found in this structure')
+  }
+  return { sequences, data }
 }
 
 // Extract protein sequences from a structure given either a local File or a
@@ -31,16 +37,10 @@ export default function useStructureFileSequence({
     : url
       ? (['structure-url', url] as const)
       : null
-  const { data, error, isLoading } = useSWR<string[] | undefined>(
+  const { data, error, isLoading } = useSWR(
     key,
-    async () => {
-      const seq = await fetchSequences({ file, url })
-      if (!seq?.length) {
-        throw new Error('No protein sequence found in this structure')
-      }
-      return seq
-    },
+    () => fetchSequences({ file, url }),
     STATIC_SWR_OPTIONS,
   )
-  return { error, isLoading, sequences: data }
+  return { error, isLoading, sequences: data?.sequences, text: data?.data }
 }

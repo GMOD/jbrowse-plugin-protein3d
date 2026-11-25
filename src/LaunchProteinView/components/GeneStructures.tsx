@@ -37,7 +37,7 @@ import TranscriptSelector from './TranscriptSelector'
 import UncodedTranscriptNotice from './UncodedTranscriptNotice'
 import UniProtSummaryBar from './UniProtSummaryBar'
 
-import type { LaunchStructure } from '../hooks/useStructureLaunch'
+import type { ListedStructure } from '../hooks/useStructureLaunch'
 import type { LaunchingGenomeView } from '../utils/genomeView'
 import type { Listing } from '../utils/launchHelpers'
 import type { StructureFilter, StructureRow } from '../utils/structureList'
@@ -95,7 +95,7 @@ const FILTERS: { filter: StructureFilter; label: string }[] = [
   { filter: 'predicted', label: 'Predicted' },
 ]
 
-function launchStructure(row: StructureRow): LaunchStructure {
+function launchStructure(row: StructureRow): ListedStructure {
   return row.kind === 'alphafold'
     ? { key: row.key, kind: 'alphafold', model: row.model }
     : row.kind === 'pdb'

@@ -99,7 +99,8 @@ A session spec opens a dataset's structure too, by `datasetId` beside a
 
 A picked file travels with the session: the plugin stores its text inline, so a
 saved or shared session reopens it without the original file, at the cost of a
-larger session. A URL keeps the session small but has to stay reachable.
+larger session. The tab shows the picked file's size and warns past 20 MB of
+text. A URL keeps the session small but has to stay reachable.
 
 Local files may be `.pdb`, `.cif`, `.mmcif` or `.ent`, optionally gzipped. The
 plugin reads the format from the content rather than the file name (a first line
