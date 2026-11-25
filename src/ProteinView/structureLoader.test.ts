@@ -24,6 +24,8 @@ const entity = (seq: string): Entity => ({
 })
 // stand-in for a molstar Structure — the loader only passes the handle through
 const molstarStructure = (id: string) => ({ id }) as unknown as Structure
+// a load builds at least one structure, or it throws
+const LOADED = { molstarStructures: [molstarStructure('loaded')] }
 
 vi.mock('./loadStructureData', () => ({ loadStructureData: vi.fn() }))
 const mockLoad = vi.mocked(loadStructureData)
@@ -45,7 +47,6 @@ const TestStructure = types
     assembly: types.maybe(types.string),
   })
   .volatile(() => ({
-    loadedToMolstar: false,
     loadedAssembly: undefined as string | undefined,
     entities: undefined as Entity[] | undefined,
     molstarStructures: new Array<Structure>(),
@@ -75,18 +76,19 @@ const TestStructure = types
       self.entities = d.entities
       self.molstarStructures = d.molstarStructures ?? []
       self.loadedAssembly = d.assembly
-      self.loadedToMolstar = true
     },
     setAssembly(assembly: string) {
       self.assembly = assembly
     },
     clearMolstarStructures() {
-      self.loadedToMolstar = false
       self.molstarStructures = []
     },
   }))
 
   .views(self => ({
+    get loadedToMolstar() {
+      return self.molstarStructures.length > 0
+    },
     get molstarStructure() {
       return self.molstarStructures[0]
     },
@@ -155,7 +157,7 @@ beforeEach(() => {
 })
 
 test('loads a pending structure and marks it loaded', async () => {
-  mockLoad.mockResolvedValue({ entities: [entity('ABC')] })
+  mockLoad.mockResolvedValue({ ...LOADED, entities: [entity('ABC')] })
   const { load, structure } = setup({})
   load()
   expect(mockLoad).toHaveBeenCalledTimes(1)
@@ -178,12 +180,12 @@ test('discards a stale-plugin result and reloads into the current plugin', async
   let resolveFirst: (v: { entities?: Entity[] }) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise(res => (resolveFirst = res)))
-    .mockResolvedValueOnce({ entities: [entity('B')] })
+    .mockResolvedValueOnce({ ...LOADED, entities: [entity('B')] })
 
   const { host, load, structure } = setup(pluginA)
   load() // starts loading into pluginA
   host.setPlugin(pluginB) // plugin swapped while loading
-  resolveFirst({ entities: [entity('A')] }) // pluginA result arrives, now stale
+  resolveFirst({ ...LOADED, entities: [entity('A')] }) // pluginA result arrives, now stale
   await tick()
 
   expect(structure.entities).toEqual([entity('B')])
@@ -197,7 +199,7 @@ test('a plugin swapped in mid-load loads at once, without waiting on the old loa
   let resolveFirst: (v: StructureData) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise(res => (resolveFirst = res)))
-    .mockResolvedValueOnce({ entities: [entity('B')] })
+    .mockResolvedValueOnce({ ...LOADED, entities: [entity('B')] })
 
   const { host, load, structure } = setup(pluginA)
   load()
@@ -210,7 +212,7 @@ test('a plugin swapped in mid-load loads at once, without waiting on the old loa
   expect(structure.entities).toEqual([entity('B')])
   expect(structure.loadedToMolstar).toBe(true)
 
-  resolveFirst({ entities: [entity('A')] })
+  resolveFirst({ ...LOADED, entities: [entity('A')] })
   await tick()
   expect(structure.entities).toEqual([entity('B')])
   expect(mockLoad).toHaveBeenCalledTimes(2)
@@ -229,13 +231,13 @@ test('an old load landing while the new one is in flight starts no third', async
   load()
   host.setPlugin(pluginB)
   load()
-  resolveFirst({ entities: [entity('A')] })
+  resolveFirst({ ...LOADED, entities: [entity('A')] })
   await tick()
   expect(mockLoad).toHaveBeenCalledTimes(2)
   load()
   expect(mockLoad).toHaveBeenCalledTimes(2)
 
-  resolveSecond({ entities: [entity('B')] })
+  resolveSecond({ ...LOADED, entities: [entity('B')] })
   await tick()
   expect(structure.entities).toEqual([entity('B')])
 })
@@ -300,7 +302,7 @@ test('a load that fails because its plugin was swapped away retries into the cur
   let rejectFirst: (e: unknown) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise((_, rej) => (rejectFirst = rej)))
-    .mockResolvedValueOnce({ entities: [entity('B')] })
+    .mockResolvedValueOnce({ ...LOADED, entities: [entity('B')] })
 
   const { host, load, structure } = setup(pluginA)
   load()
@@ -318,7 +320,7 @@ test('a load that fails because its plugin was swapped away retries into the cur
 // spelled AF-<acc>-F1-model_v6 404s for anything folded in fragments, and the
 // version moves under every config already published.
 test('a uniprotId structure opens the model AlphaFold DB names for the accession', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const fetchModels = vi.fn(() =>
     Promise.resolve([
       alphaFoldModel('P04637-2', 'MEEPQ'),
@@ -337,7 +339,7 @@ test('a uniprotId structure opens the model AlphaFold DB names for the accession
 })
 
 test('an isoform accession opens its isoform model, not the one its transcript matches', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const { load, structure } = setupAlphaFold(
     { uniprotId: 'P04637-2', transcript: 'MEEPQSDP*' },
     () =>
@@ -354,7 +356,7 @@ test('an isoform accession opens its isoform model, not the one its transcript m
 // Past the length cap AlphaFold DB folds isoforms alone, dystrophin's fourteen
 // and no canonical model
 test('an accession with only isoform models opens the one folded from the transcript', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const { load, structure } = setupAlphaFold(
     { uniprotId: 'P11532', transcript: 'MLWWEEV*' },
     () =>
@@ -369,7 +371,7 @@ test('an accession with only isoform models opens the one folded from the transc
 })
 
 test('with no transcript match the canonical model wins over an isoform', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
     Promise.resolve([
       alphaFoldModel('P04637-2', 'MEEPQ'),
@@ -384,7 +386,7 @@ test('with no transcript match the canonical model wins over an isoform', async 
 // An unreachable API has said nothing about the accession, so the spelled
 // filename is still worth trying.
 test('a failed prediction API falls back to the canonical filename', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const { load, structure } = setupAlphaFold({ uniprotId: 'P04637' }, () =>
     Promise.reject(new Error('HTTP 503')),
   )
@@ -396,7 +398,7 @@ test('a failed prediction API falls back to the canonical filename', async () =>
 
 test('a spelled filename that fails is not kept, so the next attempt asks the API again', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-  mockLoad.mockRejectedValueOnce(new Error('404')).mockResolvedValue({})
+  mockLoad.mockRejectedValueOnce(new Error('404')).mockResolvedValue(LOADED)
   const fetchModels = vi
     .fn<AlphaFoldModelFetcher>()
     .mockRejectedValueOnce(new Error('HTTP 503'))
@@ -429,7 +431,7 @@ test('a spelled filename that fails is not kept, so the next attempt asks the AP
 // "AlphaFold has not folded this protein" into a 404 to diagnose.
 test('an accession AlphaFold has no model for is reported, not guessed at', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const { load, structure } = setupAlphaFold({ uniprotId: 'P99999' }, () =>
     Promise.resolve([]),
   )
@@ -445,7 +447,7 @@ test('an accession AlphaFold has no model for is reported, not guessed at', asyn
 })
 
 test('a complex id opens the file AlphaFold DB names for it, ahead of an accession', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const fetchModels = vi.fn(() => Promise.resolve([]))
   const url =
     'https://alphafold.ebi.ac.uk/files/AF-0000000066211449-model_v1.cif'
@@ -468,7 +470,7 @@ test('a complex id opens the file AlphaFold DB names for it, ahead of an accessi
 
 test('a complex AlphaFold DB does not have is reported', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const host = TestHost.create({
     structures: [{ alphaFoldComplexId: 'AF-1' }],
   })
@@ -487,7 +489,7 @@ test('a complex AlphaFold DB does not have is reported', async () => {
 })
 
 test('a structure that already has a url never asks AlphaFold DB', async () => {
-  mockLoad.mockResolvedValue({})
+  mockLoad.mockResolvedValue(LOADED)
   const fetchModels = vi.fn(() => Promise.resolve([]))
   const { load, structure } = setupAlphaFold(
     { uniprotId: 'P04637', url: 'https://e.com/mine.cif' },
@@ -505,7 +507,7 @@ test('a structure that already has a url never asks AlphaFold DB', async () => {
 test('a failure in the current plugin is not retried by an unrelated rerun', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
   const err = new Error('404')
-  mockLoad.mockRejectedValueOnce(err).mockResolvedValue({})
+  mockLoad.mockRejectedValueOnce(err).mockResolvedValue(LOADED)
   const { load, structure } = setup({}, 2)
   load()
   await tick()
@@ -518,7 +520,7 @@ test('a failure in the current plugin is not retried by an unrelated rerun', asy
 
 test('a failed load loads again when the structure asks to retry', async () => {
   const logged = vi.spyOn(console, 'error').mockImplementation(() => {})
-  mockLoad.mockRejectedValueOnce(new Error('503')).mockResolvedValue({})
+  mockLoad.mockRejectedValueOnce(new Error('503')).mockResolvedValue(LOADED)
   const { load, structure } = setup({})
   const dispose = autorun(load)
   await tick()
@@ -540,7 +542,7 @@ test('a retry is heard after another structure landed during the failing load', 
   let failFirst: (e: unknown) => void = () => {}
   mockLoad
     .mockImplementationOnce(() => new Promise((_, rej) => (failFirst = rej)))
-    .mockResolvedValue({})
+    .mockResolvedValue(LOADED)
   const { host, load } = setup({}, 2)
   const [a, b] = host.structures
   const dispose = autorun(load)
@@ -615,7 +617,7 @@ test('a retry clears the failure it is retrying', async () => {
   load()
   expect(structure.error).toBeUndefined()
 
-  settleSecond({})
+  settleSecond(LOADED)
   await tick()
   expect(structure.loadedToMolstar).toBe(true)
   logged.mockRestore()

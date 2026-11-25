@@ -19,12 +19,15 @@ import type { Structure } from 'molstar/lib/mol-model/structure'
 vi.mock('./superposeStructures', () => ({ superposeStructures: vi.fn() }))
 const mockSuperpose = vi.mocked(superposeStructures)
 
+const LOADED = await parseStructure([
+  { asym: 'A', entity: '1', residues: ['MET'] },
+])
+
 // Minimal stand-ins matching only the surface makeStructureSuperposer touches.
 const TestStructure = types
   .model('TestStructure', {})
   .volatile(() => ({
     label: 'test',
-    loadedToMolstar: false,
     molstarStructures: new Array<Structure>(),
     error: undefined as unknown,
     alignmentPending: false,
@@ -41,10 +44,17 @@ const TestStructure = types
     chains: undefined as string[] | undefined,
     superposition: undefined as SuperpositionOutcome | undefined,
   }))
+  .views(self => ({
+    get loadedToMolstar() {
+      return self.molstarStructures.length > 0
+    },
+  }))
   .actions(self => ({
-    setLoadedToMolstar(v: boolean, molstarStructures: Structure[] = []) {
-      self.loadedToMolstar = v
+    setMolstarStructures(molstarStructures: Structure[] = [LOADED]) {
       self.molstarStructures = molstarStructures
+    },
+    clearMolstarStructures() {
+      self.molstarStructures = []
     },
     setAlignmentPending(pending: boolean) {
       self.alignmentPending = pending
@@ -106,7 +116,7 @@ function setup(plugin: object, loadedCount: number) {
   const host = TestHost.create({ structures: [{}, {}, {}] })
   host.setPlugin(plugin)
   for (let i = 0; i < loadedCount; i++) {
-    host.structures[i]!.setLoadedToMolstar(true)
+    host.structures[i]!.setMolstarStructures()
   }
   const run = makeStructureSuperposer(
     host as unknown as StructureSuperposerHost,
@@ -147,7 +157,7 @@ test('re-superposes when another structure loads', async () => {
   const { host, run } = setup({}, 2)
   run()
   await tick()
-  host.structures[2]!.setLoadedToMolstar(true)
+  host.structures[2]!.setMolstarStructures()
   run()
   expect(mockSuperpose).toHaveBeenCalledTimes(2)
 })
@@ -156,7 +166,7 @@ test('does not start a second run while one is in flight', () => {
   mockSuperpose.mockReturnValue(new Promise(() => {}))
   const { host, run } = setup({}, 2)
   run()
-  host.structures[2]!.setLoadedToMolstar(true)
+  host.structures[2]!.setMolstarStructures()
   run()
   expect(mockSuperpose).toHaveBeenCalledTimes(1)
 })
@@ -204,8 +214,8 @@ test('superposes the loaded structures of the view, each with all its models', a
   ])
   const host = TestHost.create({ structures: [{}, {}, {}] })
   host.setPlugin({})
-  host.structures[0]!.setLoadedToMolstar(true, [model1, model2])
-  host.structures[2]!.setLoadedToMolstar(true, [single])
+  host.structures[0]!.setMolstarStructures([model1, model2])
+  host.structures[2]!.setMolstarStructures([single])
   makeStructureSuperposer(host as unknown as StructureSuperposerHost)()
   expect(mockSuperpose).toHaveBeenCalledWith({}, [
     { label: 'test', structures: [model1, model2], mapping: undefined },
@@ -235,7 +245,7 @@ test('a reset during a run is not overwritten by the run finishing', async () =>
   await tick()
   expect(host.superposedCount).toBe(2)
   const finish = blockNextSuperpose()
-  host.structures[2]!.setLoadedToMolstar(true)
+  host.structures[2]!.setMolstarStructures()
   host.setSuperposedKeys([])
   finish()
   await tick()
@@ -249,8 +259,8 @@ test('a structure swapped for another during a run is superposed too', async () 
   const finish = blockNextSuperpose()
   const { host, run } = setup({}, 2)
   const dispose = autorun(run)
-  host.structures[1]!.setLoadedToMolstar(false)
-  host.structures[2]!.setLoadedToMolstar(true)
+  host.structures[1]!.clearMolstarStructures()
+  host.structures[2]!.setMolstarStructures()
   finish()
   await tick()
   await tick()
@@ -343,8 +353,8 @@ test('a structure swapped in during a run reads as not superposed until a run co
   const finishSecond = blockNextSuperpose()
   const { host, run } = setup({}, 2)
   const dispose = autorun(run)
-  host.structures[1]!.setLoadedToMolstar(false)
-  host.structures[2]!.setLoadedToMolstar(true)
+  host.structures[1]!.clearMolstarStructures()
+  host.structures[2]!.setMolstarStructures()
   finishFirst()
   await tick()
   expect(mockSuperpose).toHaveBeenCalledTimes(2)
@@ -361,7 +371,7 @@ test('a removal that leaves one structure mid-run reads as superposed once the r
   const finish = blockNextSuperpose()
   const { host, run } = setup({}, 2)
   const dispose = autorun(run)
-  host.structures[1]!.setLoadedToMolstar(false)
+  host.structures[1]!.clearMolstarStructures()
   expect(structuresSuperposed(host)).toBe(false)
   finish()
   await tick()
@@ -376,7 +386,7 @@ test('a plugin swapped in mid-run is not held back by the old run', () => {
   const { host, run } = setup({ id: 'A' }, 2)
   const dispose = autorun(run)
   expect(host.superposing).toBe(true)
-  host.structures[1]!.setLoadedToMolstar(false)
+  host.structures[1]!.clearMolstarStructures()
   host.setPlugin({ id: 'B' })
   expect(structuresSuperposed(host)).toBe(true)
   dispose()
@@ -395,7 +405,7 @@ test('each structure keeps its outcome until it is the only one', async () => {
   const dispose = autorun(run)
   await tick()
   expect(host.structures[1]!.superposition).toEqual(outcome)
-  host.structures[0]!.setLoadedToMolstar(false)
+  host.structures[0]!.clearMolstarStructures()
   expect(host.structures[1]!.superposition).toBeUndefined()
   dispose()
 })
