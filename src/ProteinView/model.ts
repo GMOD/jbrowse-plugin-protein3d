@@ -119,7 +119,7 @@ const DISPLAY_SETTINGS: readonly DisplaySetting[] = [
   },
   {
     key: 'showAllFeatureTracks',
-    label: 'Show all feature tracks',
+    label: 'Show minor UniProt features and hydrophobicity',
     requires: ['showAlignment', 'showProteinTracks'],
   },
   {
@@ -139,7 +139,10 @@ const DISPLAY_SETTINGS: readonly DisplaySetting[] = [
 // here rather than in storedSettings because the view deliberately does not
 // remember them for the next one.
 const BEHAVIOR_SETTINGS = [
-  ['showHighlight', 'Highlight aligned residues'],
+  [
+    'showHighlight',
+    'Highlight transcript-aligned residues in 3D and the panel',
+  ],
   ['zoomToBaseLevel', 'Zoom to base level on click'],
 ] as const
 
