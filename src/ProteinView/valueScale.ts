@@ -18,6 +18,11 @@ function stepBeside(value: number) {
     : Math.min(1, 10 ** Math.floor(Math.log10(Math.abs(value))))
 }
 
+function stepPast(value: number, direction: 1 | -1) {
+  const step = stepBeside(value)
+  return rounded(value + direction * step, step)
+}
+
 /**
  * The span a ramp over `values` covers: the 2nd to 98th percentile, so one
  * outlier (a phyloP of -20 beside a protein of 0 to 8) does not flatten the
@@ -63,12 +68,12 @@ export function paintedColor(
   const min =
     given.min ??
     (dataMin !== undefined && given.max !== undefined && dataMin >= given.max
-      ? given.max - stepBeside(given.max)
+      ? stepPast(given.max, -1)
       : dataMin)
   const max =
     given.max ??
     (dataMax !== undefined && min !== undefined && dataMax <= min
-      ? min + stepBeside(min)
+      ? stepPast(min, 1)
       : dataMax)
   const title = color.title ?? label
   return {

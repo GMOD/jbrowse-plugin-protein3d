@@ -46,6 +46,23 @@ test('an end from the data past a small given end moves a step its size', () => 
   ).toMatchObject({ domainMin: 0.005, domainMax: 0.006 })
 })
 
+test('an end nudged past a given end reads as the step, without a float tail', () => {
+  const high = [0.4, 0.5]
+  const low = [0.01, 0.02]
+  const domainMinOf = (domainMax: number) =>
+    paintedColor(
+      { field: 'values', values: high, domainMax },
+      { domain: valueDomain(high) },
+    ).domainMin
+  const domainMaxOf = (domainMin: number) =>
+    paintedColor(
+      { field: 'values', values: low, domainMin },
+      { domain: valueDomain(low) },
+    ).domainMax
+  expect([0.3, 0.15, 0.03].map(domainMinOf)).toEqual([0.2, 0.05, 0.02])
+  expect([0.7, 0.15, 0.03].map(domainMaxOf)).toEqual([0.8, 0.25, 0.04])
+})
+
 test('no scores have no domain', () => {
   expect(valueDomain([])).toBeUndefined()
   expect(valueDomain([Number.NaN])).toBeUndefined()
