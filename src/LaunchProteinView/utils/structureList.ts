@@ -46,7 +46,7 @@ export type StructureRow =
 
 /** Below this share of the protein a structure is a peptide or one small
  * domain, too short for TM-align to place beside the whole protein */
-export const FRAGMENT_COVERAGE = 0.5
+const FRAGMENT_COVERAGE = 0.5
 
 const LIGAND_NAMES: Record<string, string> = {
   ADP: 'ADP',
@@ -194,7 +194,7 @@ function pdbRow({
   }
 }
 
-export function alphaFoldEntryUrl(id: string) {
+function alphaFoldEntryUrl(id: string) {
   return `https://alphafold.ebi.ac.uk/entry/${id}`
 }
 

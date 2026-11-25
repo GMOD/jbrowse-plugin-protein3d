@@ -8,7 +8,7 @@ import { RESIDUE_COLORS } from '../../ProteinView/residueColors'
 
 import type { StructureRow, StructureTag } from '../utils/structureList'
 
-export const ROW_COLUMNS = '32px 150px minmax(0, 1fr) 170px 150px'
+const ROW_COLUMNS = '32px 150px minmax(0, 1fr) 170px 150px'
 
 const useStyles = makeStyles()(theme => {
   const dark = theme.palette.mode === 'dark'

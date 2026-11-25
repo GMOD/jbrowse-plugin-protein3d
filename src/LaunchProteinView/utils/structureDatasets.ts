@@ -226,7 +226,7 @@ export function datasetMatches({
 }
 
 /** Where the mapping file is, which its relative urls are read against */
-export function mappingUrl(location: FileLocation) {
+function mappingUrl(location: FileLocation) {
   return isUriLocation(location)
     ? new URL(location.uri, location.baseUri ?? window.location.href).href
     : window.location.href

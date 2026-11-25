@@ -24,7 +24,7 @@ export default function useAlphaFoldData({
   view?: { assemblyNames?: string[] }
   preferredTranscriptId?: string
 }) {
-  const { data, isLoading, isValidating, error } = useSWR(
+  const { data, isLoading, error } = useSWR(
     uniprotId ? (['alphafold-models', uniprotId] as const) : null,
     ([, id]) => fetchAlphaFoldModels(id),
     STATIC_SWR_OPTIONS,
@@ -46,7 +46,6 @@ export default function useAlphaFoldData({
   const entry = uniprotId?.replace(/-\d+$/, '')
   return {
     isLoading,
-    isValidating,
     modelsUnreachable,
     model,
     /** the length of the entry's own sequence, which PDB entries number on */

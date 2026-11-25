@@ -187,7 +187,6 @@ export default function useGeneStructures({
     rows,
     uniprotLength,
     sections,
-    alphaFold,
     // the default pick is a dataset's structure, else the AlphaFold model,
     // else the first row listed, so it is known once the datasets have loaded
     // and listed one, or AlphaFold DB has answered, or everything has
