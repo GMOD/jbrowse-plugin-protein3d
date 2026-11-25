@@ -32,7 +32,7 @@ export const useStyles = makeStyles()({
     border: '1px dashed rgba(50,50,0,0.5)',
   },
   selectionThin: {
-    border: '1px solid black',
+    border: `1px solid ${selectionRgba(1)}`,
   },
   hoverThin: {
     border: '1px dashed black',
