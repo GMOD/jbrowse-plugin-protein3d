@@ -1878,15 +1878,6 @@ const Structure = types
   .actions(self => ({
     /**
      * #action
-     * Report on the view's dismissable banner rather than on this structure:
-     * a navigation or a chain choice the user asked for and that failed, as
-     * opposed to a structure that cannot be shown at all.
-     */
-    addViewNotice(e: unknown) {
-      self.parentView.addNotice(e)
-    },
-    /**
-     * #action
      */
     resizeTracks(distance: number) {
       self.parentView.resizeTracks(distance)
@@ -2136,7 +2127,7 @@ const Structure = types
             void self.alignmentRedecisions
             const decision = decideAlignment(self)
             const reportStale = (problem: string) => {
-              self.addViewNotice(
+              self.parentView.addNotice(
                 new Error(
                   `The alignment stored for ${self.label} no longer matches its chain and was recomputed: ${problem}`,
                 ),
