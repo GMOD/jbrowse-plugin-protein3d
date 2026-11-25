@@ -129,6 +129,7 @@ export async function launchProteinView(args: LaunchArgs) {
       gene,
       transcriptId,
       uniprotId,
+      feature,
       userProvidedTranscriptSequence,
       connectedView: givenConnectedView,
       connectedViewId,
@@ -140,7 +141,7 @@ export async function launchProteinView(args: LaunchArgs) {
       `${describeMissingStructure(gene, named)}; name a ${named.uniprotId ? 'pdbId or url' : 'uniprotId or pdbId'}`,
     )
   }
-  const launchFeature = resolved?.feature ?? feature
+  const launchFeature = feature ?? resolved?.feature
   const withTranscripts = withGeneModel(normalized, named).map(s => ({
     ...s,
     userProvidedTranscriptSequence:

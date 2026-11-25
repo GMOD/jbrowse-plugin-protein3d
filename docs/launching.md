@@ -50,6 +50,13 @@ what the lookup would pick:
   and `connectedView.loc` and `tracks` replace the gene's span and the indexed
   track.
 
+A `feature` or `userProvidedTranscriptSequence` on the launch spells the
+transcript out, and the gene is then not looked up at all, since the model,
+translation and genome view the lookup picks all follow the transcript it finds.
+Name the structure and a `connectedView` beside them, as the
+[explicit form](#explicit-form-url--feature--userprovidedtranscriptsequence)
+does.
+
 ```
 https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","gene":"TP53","pdbId":"1TUP","initialResidues":{"start":248,"end":248}}]}
 ```
@@ -152,6 +159,9 @@ If any step fails (no structure for that id, transcript not found at that locus,
 transcript has no CDS, or it can't be translated), the plugin aborts the launch
 with an on-screen error rather than leaving a half-wired structure, so a typo in
 `transcriptId` is visible, not silent.
+
+A `feature` or `userProvidedTranscriptSequence` on the launch is the transcript
+itself, and `transcriptId` is then not looked up.
 
 > The matched transcript must be present in one of the feature tracks at `loc`.
 > If it isn't (a custom isoform, or a track that isn't loaded), use the explicit

@@ -1,16 +1,21 @@
 import { resolveGeneNameLaunch } from './findGeneByName'
+import { spelledTranscriptKey } from './normalizeLaunch'
 import { resolveShortLaunch } from './resolveShortLaunch'
 
 import type {
   ConnectedViewSpec,
   ResolvedShortLaunch,
 } from './resolveShortLaunch'
-import type { AbstractSessionModel } from '@jbrowse/core/util'
+import type {
+  AbstractSessionModel,
+  SimpleFeatureSerialized,
+} from '@jbrowse/core/util'
 
 interface TranscriptLinkageSpec {
   gene?: string
   transcriptId?: string
   uniprotId?: string
+  feature?: SimpleFeatureSerialized
   userProvidedTranscriptSequence?: string
   connectedView?: ConnectedViewSpec
   connectedViewId?: string
@@ -21,8 +26,9 @@ interface TranscriptLinkageSpec {
  * through, shared by every view a spec can link to the genome. A `gene` is
  * looked up through the text search index, which also supplies a genome view
  * on the gene; otherwise a `transcriptId` is found in the `connectedView`'s
- * tracks. A `connectedViewId` keeps the view spec the launch gave. Every
- * failure throws, so a launch never opens half-linked.
+ * tracks. A `connectedViewId` keeps the view spec the launch gave. A launch
+ * that spells its transcript out has neither looked up. Every failure throws,
+ * so a launch never opens half-linked.
  */
 export async function resolveTranscriptLinkage(
   session: AbstractSessionModel,
@@ -30,14 +36,19 @@ export async function resolveTranscriptLinkage(
     gene,
     transcriptId,
     uniprotId,
+    feature,
     userProvidedTranscriptSequence,
     connectedView: givenConnectedView,
     connectedViewId,
   }: TranscriptLinkageSpec,
   { findStructure }: { findStructure: boolean },
 ) {
+  const spelled = !!spelledTranscriptKey({
+    feature,
+    userProvidedTranscriptSequence,
+  })
   const named =
-    gene && !userProvidedTranscriptSequence
+    gene && !spelled
       ? await resolveGeneNameLaunch({
           session,
           gene,
@@ -53,7 +64,7 @@ export async function resolveTranscriptLinkage(
     : (named?.connectedView ?? givenConnectedView)
   const resolved: ResolvedShortLaunch | undefined =
     named ??
-    (!userProvidedTranscriptSequence && transcriptId
+    (!spelled && transcriptId
       ? await resolveShortLaunch({ session, transcriptId, connectedView })
       : undefined)
   return { named, resolved, connectedView }

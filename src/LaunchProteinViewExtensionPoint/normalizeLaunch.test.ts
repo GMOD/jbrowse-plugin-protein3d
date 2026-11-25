@@ -245,6 +245,19 @@ test('a gene supplies the model a launch does not name', () => {
   }
 })
 
+test('a feature the launch gives is its transcript, and no gene is looked up beside it', () => {
+  const feature = { uniqueId: 't1', refName: 'chr17', start: 0, end: 10 }
+  expect(rejected({ gene: 'TP53', feature }).error).toMatch(
+    /`gene` is not looked up beside `feature`/,
+  )
+  expect(
+    accepted({ gene: 'TP53', feature, uniprotId: 'P04637' }).geneModel,
+  ).toBeUndefined()
+  expect(
+    accepted({ gene: 'TP53', feature, pdbId: '1TUP' }).linkage.feature,
+  ).toEqual(feature)
+})
+
 test('two sources on one structure keep their precedence and say nothing', () => {
   const { requested, warnings } = accepted({
     structures: [

@@ -213,6 +213,22 @@ export interface LaunchLinkage {
   variant?: LaunchVariant
 }
 
+/**
+ * The key that spells the launch's transcript out. Neither `gene` nor
+ * `transcriptId` is looked up beside it, since the model, translation and
+ * genome view a lookup picks all follow the transcript it finds.
+ */
+export function spelledTranscriptKey({
+  feature,
+  userProvidedTranscriptSequence,
+}: Pick<LaunchLinkage, 'feature' | 'userProvidedTranscriptSequence'>) {
+  return feature
+    ? 'feature'
+    : userProvidedTranscriptSequence
+      ? 'userProvidedTranscriptSequence'
+      : undefined
+}
+
 const LAUNCH_KEYS = [
   'structures',
   'gene',
@@ -409,9 +425,10 @@ export function normalizeLaunch(
       warnings,
     }
   }
-  const looksUpGene = !!linkage.gene && !linkage.userProvidedTranscriptSequence
+  const spelledBy = spelledTranscriptKey(linkage)
+  const looksUpGene = !!linkage.gene && !spelledBy
   const noStructure = linkage.gene
-    ? 'the launch names no structure, and `gene` is not looked up beside `userProvidedTranscriptSequence`'
+    ? `the launch names no structure, and \`gene\` is not looked up beside \`${spelledBy}\``
     : 'No url, data, uniprotId, alphaFoldComplexId, pdbId or gene provided when launching protein view'
 
   const given = top.get('structures')
