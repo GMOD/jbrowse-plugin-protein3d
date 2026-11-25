@@ -132,7 +132,7 @@ const StructureRow = observer(function StructureRow({
         variant="caption"
         noWrap
         title={label}
-        sx={{ fontWeight: 'bold', flexShrink: 1, minWidth: 0 }}
+        sx={{ fontWeight: 'bold', flexShrink: 0, maxWidth: '50%' }}
       >
         {label}
       </Typography>

@@ -93,9 +93,10 @@ test('a failed structure is drawn as an error', () => {
   expect(statusColor()).toBe(rgb(palette.error.main))
 })
 
-// A long file name is cut short so the row's buttons stay on it, and only when
-// the row overflows: a cap of 40% cut "AlphaFold P04637" in a narrow view.
-test('a structure label shrinks only with its row and carries its full text as a title', () => {
+// A long file name is capped so the row's buttons stay on it. The label does
+// not shrink with the row: any fraction of a pixel taken from it turns "1TUP"
+// into "1T…" while the description beside it still has room to give.
+test('a structure label is capped, never shrunk, and carries its full text as a title', () => {
   const name = 'a_very_long_structure_file_name_from_a_lab_share.cif'
   const view = ProteinView.create({
     type: 'ProteinView',
@@ -105,6 +106,6 @@ test('a structure label shrinks only with its row and carries its full text as a
   const label = screen.getByText(name)
   expect(label.getAttribute('title')).toBe(name)
   const { flexShrink, maxWidth } = getComputedStyle(label)
-  expect(flexShrink).toBe('1')
-  expect(maxWidth).not.toMatch(/%$/)
+  expect(flexShrink).toBe('0')
+  expect(maxWidth).toBe('50%')
 })
