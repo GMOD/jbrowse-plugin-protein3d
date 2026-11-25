@@ -1,9 +1,66 @@
-import { expect, test } from 'vitest'
+import { expect, test, vi } from 'vitest'
 
 import {
   launchAssemblyName,
+  resolveTranscriptLinkage,
   withConnectedGenomeView,
 } from './transcriptLinkage'
+
+import type { AbstractSessionModel } from '@jbrowse/core/util'
+
+// the members a linkage reaches before its lookups, and the two a gene lookup
+// reaches first
+function isLinkageSession(value: object): value is AbstractSessionModel {
+  return (
+    'views' in value &&
+    'assemblyNames' in value &&
+    'assemblyManager' in value &&
+    'textSearchManager' in value
+  )
+}
+
+function searchRefusingSession() {
+  const search = vi.fn(() => {
+    throw new Error('the gene was looked up')
+  })
+  const session = {
+    views: [],
+    assemblyNames: ['hg38'],
+    assemblyManager: {
+      waitForAssembly: () =>
+        Promise.resolve({
+          isValidRefName: () => true,
+          getCanonicalRefName: (refName: string) => refName,
+        }),
+    },
+    textSearchManager: { search },
+  }
+  if (!isLinkageSession(session)) {
+    throw new Error('the fake session lacks a member the linkage reads')
+  }
+  return { session, search }
+}
+
+const transcript = { uniqueId: 't1', refName: 'chr17', start: 0, end: 10 }
+
+test('a launch-level feature skips the gene lookup', async () => {
+  const { session, search } = searchRefusingSession()
+  expect(
+    await resolveTranscriptLinkage(
+      session,
+      { gene: 'TP53', transcriptId: 'NM_000546.6', feature: transcript },
+      { findStructure: true },
+    ),
+  ).toMatchObject({ named: undefined, resolved: undefined })
+  expect(search).not.toHaveBeenCalled()
+  await expect(
+    resolveTranscriptLinkage(
+      session,
+      { gene: 'TP53' },
+      { findStructure: true },
+    ),
+  ).rejects.toThrow('the gene was looked up')
+})
 
 interface FakeView {
   id: string
