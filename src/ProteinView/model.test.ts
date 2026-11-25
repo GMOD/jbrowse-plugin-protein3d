@@ -518,6 +518,29 @@ test('a snapshot whose marks do not parse is refused with the reason', () => {
   ).toThrow('marks[0].site is a site such as')
 })
 
+// structures load after the snapshot is read, so an index is checked against
+// the structures the snapshot declares
+test('a snapshot whose mark or distance names a structure it lacks is refused', () => {
+  const structures = [{ url: 'a.cif' }, { url: 'b.cif' }]
+  expect(
+    ProteinView.create({
+      type: 'ProteinView',
+      structures,
+      marks: [{ site: 'A:1', structure: 1 }],
+      distances: [{ a: 'A:1', b: 'A:2', structure: 1 }],
+    }).marks,
+  ).toEqual([{ site: 'A:1', structure: 1 }])
+  expect(() =>
+    ProteinView.create({
+      type: 'ProteinView',
+      structures,
+      distances: [{ a: 'A:1', b: 'A:2', structure: 2 }],
+    }),
+  ).toThrow(
+    "distances[0].structure is the index of one of the view's 2 structures, not 2",
+  )
+})
+
 const FIGURE: ProteinFigure = {
   camera: {
     position: [10, 20, 30],

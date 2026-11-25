@@ -94,6 +94,34 @@ test('a distance needs both sites', () => {
   ])
 })
 
+test('a mark or distance on a structure the view does not have is refused', () => {
+  const structures = [{}, {}]
+  expect(
+    markProblems(
+      [
+        { site: 'A:1', structure: 1 },
+        { site: 'A:1', structure: 2 },
+        { site: 'A:1', structure: 0.5 },
+      ],
+      structures,
+    ),
+  ).toEqual([
+    "marks[1].structure is the index of one of the view's 2 structures, not 2",
+    "marks[2].structure is the index of one of the view's 2 structures, not 0.5",
+  ])
+  expect(
+    distanceProblems(
+      [
+        { a: 'A:1', b: 'A:2', structure: 1 },
+        { a: 'A:1', b: 'A:2', structure: '1' },
+      ],
+      structures,
+    ),
+  ).toEqual([
+    `distances[1].structure is the index of one of the view's 2 structures, not "1"`,
+  ])
+})
+
 test('a label is text to write', () => {
   expect(markProblems([{ site: 'A:*', label: 'VHL' }])).toEqual([])
   expect(markProblems([{ site: 'A:*', label: ' ' }])).toEqual([
