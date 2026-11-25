@@ -469,6 +469,12 @@ const Structure = types
     error: undefined as unknown,
     /**
      * #volatile
+     * Whether `error` is the load's, which Retry loads again, rather than an
+     * alignment's
+     */
+    loadFailed: false,
+    /**
+     * #volatile
      * Bumped by retryLoad; the loader leaves a failed load alone until it
      * changes or the plugin does
      */
@@ -483,7 +489,6 @@ const Structure = types
   .actions(self => ({
     /**
      * #action
-     * Loads again after a failed load.
      */
     retryLoad() {
       self.loadAttempt += 1
@@ -508,6 +513,14 @@ const Structure = types
      */
     setError(error: unknown) {
       self.error = error
+      self.loadFailed = false
+    },
+    /**
+     * #action
+     */
+    setLoadError(error: unknown) {
+      self.error = error
+      self.loadFailed = true
     },
     setUniProtMappings(mappings?: UniProtStructureMapping[], error?: unknown) {
       self.uniProtMappings = mappings
@@ -660,7 +673,7 @@ const Structure = types
       self.pairwiseAlignment = r
       self.alignmentImported = imported
       self.alignmentSkipped = undefined
-      if (r && self.loadedToMolstar) {
+      if (r && !self.loadFailed) {
         self.error = undefined
       }
     },
@@ -1625,13 +1638,6 @@ const Structure = types
      */
     get statusMessage() {
       return self.status?.message
-    },
-    /**
-     * #getter
-     * The error is the load's: an alignment fails only once loaded.
-     */
-    get loadFailed() {
-      return self.error !== undefined && !self.loadedToMolstar
     },
     /**
      * #getter

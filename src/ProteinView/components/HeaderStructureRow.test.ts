@@ -47,19 +47,20 @@ test('a failed load offers Retry, and Retry asks for another attempt', () => {
     structures: [{ url: 'a.cif' }],
   })
   const [structure] = view.structures
-  structure!.setError(new Error('404'))
+  structure!.setLoadError(new Error('404'))
   render(createElement(HeaderStructureRows, { model: view }))
   fireEvent.click(screen.getByRole('button', { name: 'Retry' }))
   expect(structure!.loadAttempt).toBe(1)
 })
 
-test('a failed alignment of a loaded structure offers no Retry', () => {
+test('a failed alignment offers no Retry, even once its structure is unloaded', () => {
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }],
   })
   view.structures[0]!.setLoadedToMolstar(true)
   view.structures[0]!.setError(new Error('worker died'))
+  view.structures[0]!.setLoadedToMolstar(false)
   render(createElement(HeaderStructureRows, { model: view }))
   expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
 })

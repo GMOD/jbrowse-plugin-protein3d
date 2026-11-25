@@ -1579,9 +1579,20 @@ test('an alignment that lands clears the failure of the alignment before it', ()
   expect(s.error).toBeUndefined()
 })
 
+// a minimized view unloads every structure, and an alignment's error then
+// read as the load's and offered Retry
+test('an alignment failure stays one when its structure is unloaded', () => {
+  const s = makeModel()
+  s.setStructureData({ entities: NUMBERED_FROM_94 })
+  s.setLoadedToMolstar(true)
+  s.setError(new Error('worker died'))
+  s.setLoadedToMolstar(false)
+  expect(s.loadFailed).toBe(false)
+})
+
 test('an alignment leaves a failed load failed', () => {
   const s = makeModel()
-  s.setError(new Error('404'))
+  s.setLoadError(new Error('404'))
   expect(s.loadFailed).toBe(true)
   s.setAlignment(pairwiseAlignment)
   expect(s.error).toEqual(new Error('404'))

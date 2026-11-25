@@ -68,6 +68,9 @@ const TestStructure = types
     setError(e: unknown) {
       self.error = e
     },
+    setLoadError(e: unknown) {
+      self.error = e
+    },
     setStructureData(d: StructureData) {
       self.entities = d.entities
       self.molstarStructures = d.molstarStructures ?? []

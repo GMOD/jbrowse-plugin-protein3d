@@ -231,7 +231,7 @@ export function makeStructureLoader(
           // the structure carries its own failure: a view-wide "Failed to
           // fetch" names neither which structure nor what it was fetching
           failedIn.set(structure, { plugin, attempt })
-          structure.setError(e)
+          structure.setLoadError(e)
           console.error(e)
         }
       })
