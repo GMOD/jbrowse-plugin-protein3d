@@ -19,7 +19,6 @@ import {
   getUniprotIdFromAlphaFoldTarget,
   locateStructureResidue,
   locateTranscriptResidue,
-  looksLikePlddt,
   makeCoordinateMapper,
   makeLabelSeqIdIndex,
   mappedStructureIdentity,
@@ -44,7 +43,6 @@ import {
   connectedAlignmentDomains,
   domainRows,
 } from './alignmentDomains'
-import { cssScaleOf, rampKeyOf } from './colorScale'
 import { connectedHoverTranscriptPos } from './connectedHover'
 import {
   CHAR_WIDTH,
@@ -62,14 +60,16 @@ import {
 import { complexMembersLabel, fileUniProtMappings } from './fileUniProt'
 import { frameResidues } from './frameSelection'
 import { codonLocus, hoverReadout } from './hoverReadout'
-import { resolvedColor } from './proteinColor'
 import {
   clickProteinToGenome,
   navigateToProteinPosition,
   structureRangesToGenomeRegions,
 } from './proteinToGenomeMapping'
-import { RESIDUE_COLORS } from './residueColors'
-import { kyteDoolittleScores, mapResidueValuesToColumns } from './residueTracks'
+import {
+  confidenceCells,
+  hydrophobicityCells,
+  hydrophobicityScale,
+} from './residueTracks'
 import { residueValuesStatus } from './residueValuesStatus'
 import {
   sessionHighlightResidues,
@@ -95,7 +95,6 @@ import type {
   ConnectedDomains,
   DomainRow,
 } from './alignmentDomains'
-import type { LinearColor } from './colorScale'
 import type { ExonStatus, ResidueExon, TranscriptExons } from './exons'
 import type {
   EntityConfidence,
@@ -865,43 +864,6 @@ const Structure = types
     },
     /**
      * #getter
-     * Per-residue pLDDT of the mapped entity, mapped to alignment columns and
-     * shown only when the B-factor column actually looks like AlphaFold
-     * confidence. Values are looked up by label_seq_id through the entity's own
-     * seqIds, so an unobserved residue leaves a gap instead of shifting the
-     * rest of the track.
-     */
-    get confidenceCells() {
-      const entity = this.mappedEntity
-      const confidence = self.structureConfidence?.find(
-        c => c.entityId === entity?.entityId,
-      )
-      if (!entity || !confidence) {
-        return []
-      }
-      const values = entity.seqIds.map(id => confidence.byLabelSeqId.get(id))
-      return looksLikePlddt(values.filter(v => v !== undefined))
-        ? mapResidueValuesToColumns(
-            values,
-            this.coordinateMapper?.structureToAlignment,
-          )
-        : []
-    },
-    /**
-     * #getter
-     * Per-residue Kyte-Doolittle hydrophobicity mapped to alignment columns.
-     */
-    get hydrophobicityCells() {
-      const seq = this.mappedStructureSeq
-      return seq && !this.mappedEntity?.nucleicAcid
-        ? mapResidueValuesToColumns(
-            kyteDoolittleScores(stripStopCodon(seq)),
-            this.coordinateMapper?.structureToAlignment,
-          )
-        : []
-    },
-    /**
-     * #getter
      * The hovered residue's codon as a 1-based locString, so the header can
      * name where in the genome a residue sits without a click.
      */
@@ -1270,20 +1232,32 @@ const Structure = types
   .views(self => ({
     /**
      * #getter
-     * The hydrophobicity row's color: the view's color object while the view
-     * colors by hydrophobicity, so a member it sets reaches the row too
+     * Per-residue pLDDT of the mapped entity on alignment columns; see
+     * confidenceCells
+     */
+    get confidenceCells() {
+      return confidenceCells(
+        self.mappedEntity,
+        self.structureConfidence,
+        self.coordinateMapper?.structureToAlignment,
+      )
+    },
+    /**
+     * #getter
+     * Per-residue Kyte-Doolittle hydrophobicity on alignment columns
+     */
+    get hydrophobicityCells() {
+      return hydrophobicityCells(
+        self.mappedEntity,
+        self.coordinateMapper?.structureToAlignment,
+      )
+    },
+    /**
+     * #getter
+     * The hydrophobicity row's color; see hydrophobicityScale
      */
     get hydrophobicityScale() {
-      const { color } = self.parentView
-      const scale =
-        (color.field === 'hydrophobicity'
-          ? (resolvedColor(color) as LinearColor | undefined)
-          : undefined) ?? RESIDUE_COLORS.hydrophobicity
-      return {
-        title: scale.title ?? '',
-        paint: cssScaleOf(scale),
-        key: rampKeyOf(scale),
-      }
+      return hydrophobicityScale(self.parentView.color)
     },
     /**
      * #getter
