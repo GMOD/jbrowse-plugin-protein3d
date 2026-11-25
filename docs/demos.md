@@ -278,7 +278,9 @@ plugin reads hovers from the first protein chain, p53's A/B/C, rather than from
 the DNA strands E and F that come first in the file, and the chain picker on the
 structure's row switches to any of the three entities. Hovers read only the
 chosen chain: a residue on another chain used to read out as the chosen chain's
-residue at the same index, so a DNA base named a p53 residue.
+residue at the same index, so a DNA base named a p53 residue. The sequence panel
+shows the chosen chain alone, with its author-numbered ruler and the UniProt
+tracks SIFTS places on it, and no GENOME row.
 
 [1TUP without a transcript](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22pdbId%22%3A%221TUP%22%7D%5D%7D)
 

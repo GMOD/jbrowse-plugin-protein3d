@@ -31,10 +31,11 @@ The plugin resolves both from the entry's UniProt alignment, the
 [SIFTS](https://www.ebi.ac.uk/pdbe/docs/sifts/) correspondence as RCSB's data
 API republishes it (p2s_mapper's `fetchPdbEntry`, read here by
 `structureUniProt.ts`), which gives a per-segment correspondence. It uses only
-the segments for the entity it mapped to the transcript: a heteromer maps each
-chain to a different accession, so the wrong one would annotate the wrong
-protein. `entity_beg_seq_id` in that API is the 1-based SEQRES/`label_seq_id`
-index, i.e. this plugin's structure position + 1.
+the segments for the entity it mapped to the transcript (with no transcript, the
+chain picked on the structure's row): a heteromer maps each chain to a different
+accession, so the wrong one would annotate the wrong protein.
+`entity_beg_seq_id` in that API is the 1-based SEQRES/`label_seq_id` index, i.e.
+this plugin's structure position + 1.
 
 The plugin infers a PDB id only from URLs on the PDB archive hosts, so a
 user-supplied model named `1abc.cif` can't inherit that entry's annotations.
