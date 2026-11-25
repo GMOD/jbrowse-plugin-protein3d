@@ -81,6 +81,9 @@ export function colorChannel({
   }
 }
 
+/** The grey a placed-value theme paints a residue that has no value. */
+export const NO_VALUE_CSS = '#cccccc'
+
 export type Rgb = readonly [number, number, number]
 
 /** A CSS color as RGB. */

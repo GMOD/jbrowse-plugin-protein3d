@@ -188,6 +188,7 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
     showAlignment,
     colorLegend,
     colorLegendTitle,
+    colorLegendNoValue,
     domainLegend,
   } = model
   return (
@@ -221,7 +222,11 @@ const ProteinViewHeader = observer(function ProteinViewHeader({
           />
         ))
       ) : colorLegend ? (
-        <MolstarLegendKey title={colorLegendTitle} legend={colorLegend} />
+        <MolstarLegendKey
+          title={colorLegendTitle}
+          legend={colorLegend}
+          noValue={colorLegendNoValue}
+        />
       ) : null}
       {showAlignment && alignmentStructure?.pairwiseAlignment ? (
         <ProteinAlignment model={alignmentStructure} />

@@ -12,7 +12,11 @@ import {
 
 import { domainLegend } from './alignmentDomains'
 import { syncSiteSticks } from './alignmentSites'
-import { applyColorTheme, colorLegendOf } from './applyColorTheme'
+import {
+  applyColorTheme,
+  colorLegendOf,
+  rampNoValueEntry,
+} from './applyColorTheme'
 import {
   MAX_TRACK_HEIGHT,
   MIN_TRACK_HEIGHT,
@@ -1053,6 +1057,22 @@ function stateModelFactory() {
               exonColor: loaded.exonStatus?.color,
             })
           : undefined
+      },
+      /**
+       * #getter
+       * The grey entry a ramp legend shows beside its gradient while a loaded
+       * structure has a residue the theme paints grey
+       */
+      get colorLegendNoValue() {
+        return rampNoValueEntry(
+          self.paintColor,
+          self.structures
+            .filter(s => s.loadedToMolstar)
+            .map(s => ({
+              placedValues: s.placedValues,
+              entity: s.mappedEntity,
+            })),
+        )
       },
       /**
        * #getter

@@ -34,7 +34,10 @@ follow the live model: a new track, stat or scale recolors the structure.
 - The track is any session or config track on the genome view's assembly: a
   bigWig or bedGraph, a feature track, or a variant track. Where features
   overlap a base, the highest score counts.
-- A residue none of whose bases has a score stays grey.
+- A residue none of whose bases has a score stays grey. The legend then ends in
+  a grey "No value" swatch: after the gradient's ends under a linear scale,
+  while some residue of the mapped chain is grey, and as the last row of a
+  threshold scale's key always.
 - `scoreField` names what to read in place of `score`, spelled as
   jbrowse-components' variant displays name a record field: `INFO.AF`, `QUAL`,
   or `INFO.AF.1` for one allele. A VCF record has no `score`, so a variant track
