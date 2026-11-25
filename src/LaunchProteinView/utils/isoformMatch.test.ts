@@ -20,10 +20,10 @@ describe('isoformMatch', () => {
     expect(isoformMatch({ ...ranked(190), selectedId: 'same' })).toBeUndefined()
   })
 
-  it('counts identical residues against the structure, stop codon aside', () => {
+  it('counts identical residues against the ranked chain, stop codon aside', () => {
     expect(isoformMatch({ ...ranked(190), selectedId: 'other' })).toEqual({
       identical: 190,
-      structureLength: 200,
+      chainLength: 200,
       lowIdentity: false,
     })
   })

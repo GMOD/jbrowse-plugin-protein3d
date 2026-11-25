@@ -35,7 +35,7 @@ const IsoformMatchNotice = observer(function IsoformMatchNotice({
       data-testid="isoform-match-notice"
       sx={{ mr: 2 }}
     >
-      {match.identical} of {match.structureLength} structure residues match{' '}
+      {match.identical} of {match.chainLength} chain residues match{' '}
       {transcriptName};{' '}
       {match.lowIdentity
         ? `this structure may not be ${geneName}'s protein`

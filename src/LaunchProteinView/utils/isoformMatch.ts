@@ -35,18 +35,18 @@ export function isoformMatch({
   structureSequence?: string
 }) {
   const ranked = ranking?.nonMatches.find(i => i.id === selectedId)
-  const structureLength = structureSequence
+  const chainLength = structureSequence
     ? stripStopCodon(structureSequence).length
     : 0
   return ranked?.identical !== undefined &&
-    structureLength > 0 &&
-    !alignmentTooLarge(ranked.length, structureLength)
+    chainLength > 0 &&
+    !alignmentTooLarge(ranked.length, chainLength)
     ? {
         identical: ranked.identical,
-        structureLength,
+        chainLength,
         lowIdentity: isLowIdentity(
           ranked.identical,
-          Math.min(ranked.length, structureLength),
+          Math.min(ranked.length, chainLength),
         ),
       }
     : undefined
