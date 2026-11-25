@@ -1635,6 +1635,7 @@ const STANDALONE_1TUP = [
 
 async function standalone1tup() {
   const parent = TestParent.create({ structures: [{ pdbId: '1TUP' }] })
+  const opened = getSnapshot(parent)
   const s = parent.structures[0]!
   s.setStructureData({
     entities: STANDALONE_1TUP,
@@ -1643,12 +1644,11 @@ async function standalone1tup() {
   await vi.waitFor(() => {
     expect(s.uniProtMappings).toBeDefined()
   })
-  return { parent, s }
+  return { parent, opened, s }
 }
 
 test('a structure with no transcript draws its chain against itself, and nothing else reads it as aligned', async () => {
-  const { parent, s } = await standalone1tup()
-  const snapshot = getSnapshot(parent)
+  const { s } = await standalone1tup()
   expect(s.mappedEntity?.entityId).toBe('3')
   expect(s.panelAlignment && alignmentLength(s.panelAlignment)).toBe(
     P53_CORE.length,
@@ -1664,7 +1664,6 @@ test('a structure with no transcript draws its chain against itself, and nothing
   expect(s.alignmentMatchSet).toBeUndefined()
   expect(s.report.mapping).toBeUndefined()
   expect(s.clickGenomeHighlights).toEqual([])
-  expect(getSnapshot(parent)).toEqual(snapshot)
 })
 
 test("the ruler numbers a transcript-less chain by its authors' numbering", async () => {
@@ -1682,8 +1681,8 @@ test("the ruler numbers a transcript-less chain by its authors' numbering", asyn
   expect(ticks.at(-1)).toEqual({ col: 216, label: '310' })
 })
 
-test('a hover and a click in a transcript-less panel light the residue in Mol*', async () => {
-  const { s } = await standalone1tup()
+test('a hover and a click in a transcript-less panel light the residue in Mol*, and save nothing', async () => {
+  const { parent, opened, s } = await standalone1tup()
   s.hoverAlignmentPosition(6)
   expect(s.structureSeqHoverPos).toBe(6)
   expect(s.alignmentHoverPos).toBe(6)
@@ -1699,6 +1698,9 @@ test('a hover and a click in a transcript-less panel light the residue in Mol*',
   expect(s.clickedStructureRanges).toEqual([{ start: 10, end: 11 }])
   expect(s.clickAlignmentRanges).toEqual([{ start: 10, end: 10 }])
   expect(s.selectLabelSeqIds).toEqual([11])
+
+  s.hoverAlignmentPosition(6)
+  expect(getSnapshot(parent)).toEqual(opened)
 })
 
 // SEQRES-less, with residue 97 unobserved: Mol* numbers by author residue and
@@ -1773,6 +1775,13 @@ test('the chain picker switches a transcript-less panel to the picked entity', a
   expect(s.panelAlignment && structureAlignedSeq(s.panelAlignment)).toBe('MKAA')
   expect(s.clickedStructureRanges).toEqual([])
   expect(s.alignment).toBeUndefined()
+
+  // a DNA strand is not drawn as a protein
+  s.chooseEntity('1')
+  expect(s.mappedEntity?.nucleicAcid).toBe(true)
+  expect(s.panelAlignment).toBeUndefined()
+  expect(s.panelMapper).toBeUndefined()
+  expect(s.confidenceCells).toEqual([])
 })
 
 test('a transcript-less pLDDT model draws its confidence on its own columns', () => {

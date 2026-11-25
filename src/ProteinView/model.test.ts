@@ -476,13 +476,33 @@ test('a toggle is disabled while a setting it needs is off', () => {
   expect(new Set(disabledKeys(noTracks))).toEqual(new Set(TRACK_TOGGLES))
 })
 
-// A structure with no transcript and no chain yet has no sequence panel, so
-// the toggles for it changed nothing on screen.
-test('the panel toggles are disabled, with why, while no structure has a transcript or a chain', () => {
+const DNA = {
+  entityId: '1',
+  seq: 'ACGT',
+  seqIds: [1, 2, 3, 4],
+  chains: ['E'],
+  nucleicAcid: true,
+}
+const PROTEIN = {
+  entityId: '2',
+  seq: 'MKAA',
+  seqIds: [1, 2, 3, 4],
+  chains: ['A'],
+}
+
+// A structure with no transcript and no protein chain to show has no sequence
+// panel, so the toggles for it changed nothing on screen. One still loading
+// may yet have one.
+test('the panel toggles are disabled, with why, once no structure has a transcript or a protein chain', () => {
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }],
   })
+  const structure = view.structures[0]!
+  expect(view.noPanelReason).toBeUndefined()
+  expect(disabledKeys(view)).toEqual([])
+
+  structure.setStructureData({ entities: [] })
   expect(new Set(disabledKeys(view))).toEqual(
     new Set(['showAlignment', ...PANEL_TOGGLES, ...TRACK_TOGGLES]),
   )
@@ -490,13 +510,30 @@ test('the panel toggles are disabled, with why, while no structure has a transcr
     'No structure in this view has a chain to show',
   )
 
-  view.structures[0]!.setStructureData({
-    entities: [
-      { entityId: '1', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['A'] },
-    ],
-  })
+  structure.setStructureData({ entities: [DNA] })
+  expect(structure.panelAlignment).toBeUndefined()
+  expect(view.noPanelReason).toBe(
+    'The sequence panel draws protein chains, and the chain shown is DNA or RNA',
+  )
+
+  structure.setStructureData({ entities: [DNA, PROTEIN] })
   expect(view.noPanelReason).toBeUndefined()
   expect(disabledKeys(view)).toEqual([])
+
+  structure.chooseEntity('1')
+  expect(structure.panelAlignment).toBeUndefined()
+  expect(view.noPanelReason).toMatch(/DNA or RNA/)
+})
+
+test('a failed structure with no transcript leaves no panel to draw', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  view.structures[0]!.setLoadError(new Error('404'))
+  expect(view.noPanelReason).toBe(
+    'No structure in this view has a chain to show',
+  )
 })
 
 // The panel opens on the first structure, but the second's header row offers

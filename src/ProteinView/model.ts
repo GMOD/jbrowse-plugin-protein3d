@@ -1088,16 +1088,22 @@ function stateModelFactory() {
       },
       /**
        * #getter
-       * Why the view can draw no sequence panel, while no structure in it has a
-       * transcript or a chain of its own to draw; one with either can open its
-       * panel from its header row.
+       * Why the view can draw no sequence panel, once every structure has
+       * loaded or failed and none has a transcript or a protein chain of its
+       * own to draw; one with either can open its panel from its header row.
        */
       get noPanelReason() {
-        return self.structures.some(
-          s => s.panelAlignment || s.userProvidedTranscriptSequence,
+        const { structures } = self
+        return structures.some(
+          s =>
+            s.panelAlignment ||
+            s.userProvidedTranscriptSequence ||
+            (s.entities === undefined && s.error === undefined),
         )
           ? undefined
-          : 'No structure in this view has a chain to show'
+          : structures.some(s => s.mappedEntity?.nucleicAcid)
+            ? 'The sequence panel draws protein chains, and the chain shown is DNA or RNA'
+            : 'No structure in this view has a chain to show'
       },
     }))
     .views(self => ({

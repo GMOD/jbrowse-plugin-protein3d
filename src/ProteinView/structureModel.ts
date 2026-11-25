@@ -878,16 +878,18 @@ const Structure = types
     /**
      * #getter
      * The columns the sequence panel draws: the transcript alignment, or for
-     * a structure with no transcript its mapped chain against itself, so the
-     * chain's sequence, ruler and tracks still show. Only the panel reads it;
-     * whatever means the transcript reads `alignment`.
+     * a structure with no transcript its mapped protein chain against itself,
+     * so the chain's sequence, ruler and tracks still show. Only the panel
+     * reads it; whatever means the transcript reads `alignment`.
      */
     get panelAlignment(): MaybePairwiseAlignment {
-      const seq = this.mappedEntity?.seq
+      const entity = this.mappedEntity
       return (
         this.alignment ??
-        (!self.userProvidedTranscriptSequence && seq
-          ? chainAgainstItself(seq)
+        (!self.userProvidedTranscriptSequence &&
+        entity?.seq &&
+        !entity.nucleicAcid
+          ? chainAgainstItself(entity.seq)
           : undefined)
       )
     },
