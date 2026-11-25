@@ -65,9 +65,11 @@ const useStyles = makeStyles()(theme => ({
  * one. Anything else opens the chooser by itself.
  */
 function needsChoice(lookup: UniProtIdLookup) {
+  // a failed search keeps its error while a Retry runs, so the chooser
+  // holding its Retry stays open through it
   return lookup.isAutoMode
-    ? !lookup.isLookupLoading &&
-        (!!lookup.lookupError || !unambiguousEntry(lookup.uniprotEntries))
+    ? !!lookup.lookupError ||
+        (!lookup.isLookupLoading && !unambiguousEntry(lookup.uniprotEntries))
     : !lookup.uniprotId
 }
 
