@@ -99,6 +99,7 @@ const AddStructureDialog = lazy(() => import('./components/AddStructureDialog'))
 const ManualAlignmentDialog = lazy(
   () => import('./components/ManualAlignmentDialog'),
 )
+const GoToResidueDialog = lazy(() => import('./components/GoToResidueDialog'))
 
 interface DisplaySetting {
   key: PersistedSetting
@@ -1160,6 +1161,16 @@ function stateModelFactory() {
               ]
             : []),
           ...assemblyMenu(self.structures),
+          {
+            label: 'Go to residue...',
+            disabled: !self.alignmentStructure?.entities,
+            onClick: () => {
+              getSession(self).queueDialog(handleClose => [
+                GoToResidueDialog,
+                { model: self, handleClose },
+              ])
+            },
+          },
           {
             label: 'Clear selection',
             disabled: !self.structures.some(

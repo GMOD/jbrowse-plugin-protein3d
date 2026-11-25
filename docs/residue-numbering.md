@@ -131,10 +131,13 @@ the transcript's chain chosen, the alignment made and, with several structures,
 superposition done. It resolves to the position runs it selected, and rejects if
 the view has not settled within `{ timeout }` ms (two minutes by default). A
 target naming no residue of the structure selects nothing and leaves the camera
-alone. A click is still the user's: a click in the alignment or on a feature bar
-selects without moving the camera, and a click in Mol\* gets Mol\*'s own focus.
-Once the user has set or cleared a selection, a seed that resolves later is
-dropped.
+alone. The view menu's **Go to residue...** does the same for a reader: it takes
+`248`, `R248`, `A:248` or `245-250` in the author numbering of the structure
+whose alignment is open, and says so when the structure has no such residue or a
+different letter there. A click is still the user's: a click in the alignment or
+on a feature bar selects without moving the camera, and a click in Mol\* gets
+Mol\*'s own focus. Once the user has set or cleared a selection, a seed that
+resolves later is dropped.
 
 ## Placing UniProt features on a fragment
 

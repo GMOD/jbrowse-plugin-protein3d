@@ -161,6 +161,7 @@ test('the view menu carries actions and the Tune menu carries toggles', () => {
   expect(labels).toEqual([
     'Add structure...',
     'Remove structure',
+    'Go to residue...',
     'Clear selection',
     'Import manual alignment...',
     'Re-superpose structures (TM-align)',
@@ -190,11 +191,15 @@ function disabledMenuItems(view: View) {
 test('a view-menu action is disabled until there is something for it to do', () => {
   const view = makeView()
   expect(disabledMenuItems(view)).toEqual([
+    'Go to residue...',
     'Clear selection',
     'Restore hidden feature tracks',
   ])
 
   const [first, second] = view.structures
+  first!.setStructureData({
+    entities: [{ entityId: '1', seq: 'MEEPQ', seqIds: [], chains: ['A'] }],
+  })
   second!.setClickedStructureRanges([{ start: 3, end: 7 }])
   first!.hideFeatureType('Helix')
   expect(disabledMenuItems(view)).toEqual([])
