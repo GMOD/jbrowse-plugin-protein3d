@@ -52,12 +52,14 @@ const FeatureBar = observer(function FeatureBar({
   top,
   height,
   selected,
+  tabStop,
   model,
 }: {
   layout: FeatureLayout
   top: string
   height: string
   selected: boolean
+  tabStop: boolean
   model: JBrowsePluginProteinStructureModel
 }) {
   const { feature } = layout
@@ -69,6 +71,7 @@ const FeatureBar = observer(function FeatureBar({
       height={height}
       color={featureTypeColor(feature.type)}
       selected={selected}
+      tabStop={tabStop}
       tooltip={
         <FeatureTooltipContent
           feature={feature}
