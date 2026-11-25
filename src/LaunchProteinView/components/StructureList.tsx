@@ -169,6 +169,7 @@ const StructureList = observer(function StructureList({
   rows,
   sections,
   geneName,
+  empty,
   checked,
   uniprotLength,
   onToggle,
@@ -176,6 +177,8 @@ const StructureList = observer(function StructureList({
   rows: readonly StructureRow[]
   sections?: Record<StructureSection, SectionStatus>
   geneName: string
+  /** every source has answered and none listed a structure */
+  empty: boolean
   checked: readonly string[]
   uniprotLength: number
   onToggle: (row: StructureRow) => void
@@ -183,6 +186,17 @@ const StructureList = observer(function StructureList({
   const { classes } = useStyles()
   return (
     <div className={classes.list} data-testid="structure-list">
+      {empty ? (
+        <Typography
+          className={classes.line}
+          variant="body2"
+          data-testid="structure-list-empty"
+        >
+          No structures listed for {geneName}. Pick a UniProt entry above, open
+          one by PDB ID, or use the Similar structures (Foldseek) or Your file
+          or URL tab.
+        </Typography>
+      ) : null}
       {SECTIONS.map(section => (
         <Section
           key={section}
