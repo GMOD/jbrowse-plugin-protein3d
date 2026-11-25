@@ -28,6 +28,16 @@ test('an AlphaFold model is named without its file version, linked to its entry'
   })
 })
 
+test("a long protein's later fragment is named but not linked", () => {
+  expect(
+    foldseekTarget('AF-Q8WZ42-F7-model_v6 Titin', 'afdb-proteome'),
+  ).toEqual({
+    label: 'AF-Q8WZ42-F7',
+    href: undefined,
+    description: 'Titin',
+  })
+})
+
 test("another database's id is shown as Foldseek spells it, unlinked", () => {
   expect(foldseekTarget('MGYP000123', 'mgnify_esm30')).toEqual({
     label: 'MGYP000123',
