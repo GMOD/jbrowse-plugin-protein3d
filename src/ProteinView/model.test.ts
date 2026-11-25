@@ -478,18 +478,32 @@ test('a toggle is disabled while a setting it needs is off', () => {
 
 // A structure with no transcript has no sequence panel, so the toggles for it
 // changed nothing on screen.
-test('the panel toggles are disabled, with why, for a structure with no transcript', () => {
+test('the panel toggles are disabled, with why, while no structure has a transcript', () => {
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }],
   })
-  const disabled = view.displayToggles.filter(t => t.disabled)
-  expect(new Set(disabled.map(t => t.key))).toEqual(
+  expect(new Set(disabledKeys(view))).toEqual(
     new Set(['showAlignment', ...PANEL_TOGGLES, ...TRACK_TOGGLES]),
   )
-  expect(new Set(disabled.map(t => t.reason))).toEqual(
-    new Set(['No transcript to align this structure to']),
+  expect(view.noPanelReason).toBe(
+    'No structure in this view has a transcript to align to',
   )
+})
+
+// The panel opens on the first structure, but the second's header row offers
+// its own once the panel is shown, which a disabled toggle prevented.
+test('a panel toggle stays enabled while any structure has a transcript', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    showAlignment: false,
+    structures: [
+      { url: 'a.cif' },
+      { url: 'b.cif', userProvidedTranscriptSequence: 'MEEPQ' },
+    ],
+  })
+  expect(view.noPanelReason).toBeUndefined()
+  expect(disabledKeys(view)).not.toContain('showAlignment')
 })
 
 test('a disabled toggle changes nothing and stores nothing', () => {

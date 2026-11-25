@@ -1069,6 +1069,19 @@ function stateModelFactory() {
             : undefined
         return domains ? domainLegend(domains) : undefined
       },
+      /**
+       * #getter
+       * Why the view can draw no sequence panel, while no structure in it has a
+       * transcript or an alignment; one with either can open its panel from
+       * its header row.
+       */
+      get noPanelReason() {
+        return self.structures.some(
+          s => s.pairwiseAlignment || s.userProvidedTranscriptSequence,
+        )
+          ? undefined
+          : 'No structure in this view has a transcript to align to'
+      },
     }))
     .views(self => ({
       /**
@@ -1077,30 +1090,21 @@ function stateModelFactory() {
        * views opened later. The view menu carries actions instead, so a reader
        * looking for a toggle has one place to look. A toggle is disabled while
        * a setting it requires is off, when it would change nothing on screen,
-       * and a panel toggle, with its reason, while the shown structure has no
-       * transcript and so no panel.
+       * and a panel toggle while the view has no panel to draw (see
+       * noPanelReason).
        */
       get displayToggles() {
-        const shown = self.alignmentStructure
-        const noPanelReason =
-          shown &&
-          !shown.pairwiseAlignment &&
-          !shown.userProvidedTranscriptSequence
-            ? 'No transcript to align this structure to'
-            : undefined
         return DISPLAY_SETTINGS.map(({ key, label, requires = [] }) => {
-          const reason =
-            key === 'showAlignment' || requires.includes('showAlignment')
-              ? noPanelReason
-              : undefined
           const disabled =
-            !!reason || requires.some(required => !self[required])
+            (!!self.noPanelReason &&
+              (key === 'showAlignment' ||
+                requires.includes('showAlignment'))) ||
+            requires.some(required => !self[required])
           return {
             key,
             label,
             checked: key === 'compactTracks' ? self.tracksCompact : self[key],
             disabled,
-            reason,
             toggle: () => {
               if (!disabled) {
                 self.toggleSetting(key)

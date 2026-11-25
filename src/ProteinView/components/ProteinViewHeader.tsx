@@ -9,6 +9,7 @@ import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import ListItemText from '@mui/material/ListItemText'
+import ListSubheader from '@mui/material/ListSubheader'
 import Menu from '@mui/material/Menu'
 import MenuItem from '@mui/material/MenuItem'
 import Tooltip from '@mui/material/Tooltip'
@@ -98,13 +99,11 @@ const ToggleMenuItem = observer(function ToggleMenuItem({
   checked,
   label,
   disabled,
-  reason,
   onToggle,
 }: {
   checked: boolean
   label: string
   disabled?: boolean
-  reason?: string
   onToggle: () => void
 }) {
   return (
@@ -118,7 +117,7 @@ const ToggleMenuItem = observer(function ToggleMenuItem({
       <ListItemIcon>
         <Checkbox checked={checked} size="small" edge="start" disableRipple />
       </ListItemIcon>
-      <ListItemText primary={label} secondary={reason} />
+      <ListItemText>{label}</ListItemText>
     </MenuItem>
   )
 })
@@ -151,13 +150,17 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
           setAnchorEl(null)
         }}
       >
+        {model.noPanelReason ? (
+          <ListSubheader disableSticky sx={{ lineHeight: 2 }}>
+            {model.noPanelReason}
+          </ListSubheader>
+        ) : null}
         {model.displayToggles.map(toggle => (
           <ToggleMenuItem
             key={toggle.key}
             checked={toggle.checked}
             label={toggle.label}
             disabled={toggle.disabled}
-            reason={toggle.reason}
             onToggle={toggle.toggle}
           />
         ))}
