@@ -1179,6 +1179,25 @@ test('focusResidues settles on a structure with a transcript and no chain', asyn
   ).toEqual([])
 })
 
+// the maps kept reading the stored alignment beside "no chain to align"
+test('a stored alignment goes when its file yields no chain', () => {
+  const parent = TestParent.create({
+    structures: [
+      {
+        url: 'x.cif',
+        userProvidedTranscriptSequence: 'MKAA',
+        pairwiseAlignment,
+      },
+    ],
+  })
+  const [s] = parent.structures
+  s!.setStructureData({ entities: [] })
+  s!.setLoadedToMolstar(true)
+  expect(s!.alignmentSkipped).toBe('This structure has no chain to align')
+  expect(s!.alignment).toBeUndefined()
+  expect(s!.coordinateMapper).toBeUndefined()
+})
+
 // nothing will ever align such a structure, and a transcript range used to
 // wait for a mapper until the timeout
 test('focusResidues names no residue for a transcript range on a structure without a transcript', async () => {
