@@ -101,11 +101,20 @@ export default function useGeneStructures({
     experimental.entries?.map(e => e.pdbId),
   )
 
+  // A request asked again after it failed keeps its failure line, which reads
+  // Retrying…, and leaves the rows as they are until it answers, so only a
+  // first ask counts as loading
+  const alphaFoldLoading =
+    alphaFold.isLoading && alphaFold.modelsUnreachable === undefined
+  const experimentalLoading =
+    experimental.isLoading && experimental.error === undefined
+  const summariesLoading = summaries.isLoading && summaries.error === undefined
+  const complexesLoading = complexes.isLoading && complexes.error === undefined
+
   const entries = experimental.entries
   // A row's section waits on its partners, so entries are listed once RCSB has
   // described them, or failed to, rather than jumping between sections
-  const entriesReady =
-    !!entries && (entries.length === 0 || !summaries.isLoading)
+  const entriesReady = !!entries && (entries.length === 0 || !summariesLoading)
   const uniprotLength =
     alphaFold.entryLength ??
     alphaFold.model?.sequence?.length ??
@@ -122,7 +131,7 @@ export default function useGeneStructures({
               geneName,
               uniprotId,
               uniprotLength,
-              alphaFold: alphaFold.isLoading ? undefined : alphaFold.model,
+              alphaFold: alphaFoldLoading ? undefined : alphaFold.model,
               entries: entriesReady ? entries : undefined,
               summaries: summaries.summaries,
               complexes: complexes.complexes,
@@ -134,7 +143,7 @@ export default function useGeneStructures({
       uniprotId,
       geneName,
       uniprotLength,
-      alphaFold.isLoading,
+      alphaFoldLoading,
       alphaFold.model,
       entriesReady,
       entries,
@@ -156,38 +165,41 @@ export default function useGeneStructures({
       retrying: datasets.retrying,
     })),
   ]
-  // a request asked again is loading, and its old failure stops being news
-  const modelsUnreachable =
-    !alphaFold.isLoading && alphaFold.modelsUnreachable !== undefined
+  const modelsUnreachable = alphaFold.modelsUnreachable !== undefined
   const uniprotLines: StatusLine[] = uniprotId
     ? [
         {
           sections: ['alone'],
-          loading: alphaFold.isLoading && 'Asking AlphaFold DB for models',
+          loading: alphaFoldLoading && 'Asking AlphaFold DB for models',
           notice: alphaFold.noModel
             ? `AlphaFold DB has no model for ${uniprotId}`
             : modelsUnreachable &&
               `AlphaFold DB's model list did not answer, so its row opens the canonical model file for ${uniprotId}, without comparing its sequence to the isoforms`,
           retry: modelsUnreachable ? alphaFold.retry : undefined,
+          retrying: alphaFold.isLoading,
         },
         {
           sections: pdb,
           loading:
-            (experimental.isLoading || summaries.isLoading) &&
+            (experimentalLoading || summariesLoading) &&
             'Listing PDB entries from RCSB',
+        },
+        // once, in the first section, rather than a Retry in each
+        {
+          sections: ['alone'],
           notice:
-            !experimental.isLoading &&
             experimental.error !== undefined &&
             `RCSB did not list the PDB entries: ${errorMessage(experimental.error)}`,
           retry: experimental.retry,
+          retrying: experimental.isLoading,
         },
         {
-          sections: ['alone', 'partner'],
+          sections: ['alone'],
           notice:
-            !summaries.isLoading &&
             summaries.error !== undefined &&
             `RCSB did not describe the PDB entries, so they are placed by coverage alone: ${errorMessage(summaries.error)}`,
           retry: summaries.retry,
+          retrying: summaries.isLoading,
         },
         {
           sections: ['alone'],
@@ -198,13 +210,12 @@ export default function useGeneStructures({
         {
           sections: ['partner'],
           loading:
-            complexes.isLoading &&
-            'Asking AlphaFold DB for predicted complexes',
+            complexesLoading && 'Asking AlphaFold DB for predicted complexes',
           notice:
-            !complexes.isLoading &&
             complexes.error !== undefined &&
             `AlphaFold DB's complex list did not answer: ${errorMessage(complexes.error)}`,
           retry: complexes.retry,
+          retrying: complexes.isLoading,
         },
       ]
     : []
@@ -225,12 +236,8 @@ export default function useGeneStructures({
       !datasets.isLoading &&
       (hasDatasetRow ||
         (!uniprotPending &&
-          !alphaFold.isLoading &&
+          !alphaFoldLoading &&
           (!!alphaFold.model ||
-            !(
-              experimental.isLoading ||
-              summaries.isLoading ||
-              complexes.isLoading
-            )))),
+            !(experimentalLoading || summariesLoading || complexesLoading)))),
   }
 }
