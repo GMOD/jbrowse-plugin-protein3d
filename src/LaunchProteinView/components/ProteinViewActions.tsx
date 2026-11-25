@@ -6,6 +6,7 @@ import { Button, ButtonGroup } from '@mui/material'
 import { observer } from 'mobx-react'
 
 import { useSafeLaunch } from '../hooks/useSafeLaunch'
+import { launchControls } from '../utils/launchHelpers'
 import {
   PROTEIN_LAUNCH_LABELS,
   getConditionalProteinLaunches,
@@ -55,9 +56,6 @@ const ProteinViewActions = observer(function ProteinViewActions({
     handleClose,
     closeMenu,
   )
-  const canLaunch = ready && !launching
-  const canLaunch1D = ready1D && !launching
-
   const handleLaunch3DView = runLaunch(() =>
     launch3DProteinView({
       session,
@@ -79,6 +77,12 @@ const ProteinViewActions = observer(function ProteinViewActions({
     uniprotId,
     confidenceUrl,
   })
+  const { can3D, can1D, canOpenOptions } = launchControls({
+    ready,
+    ready1D,
+    launching,
+    offers1D: !!launch1D,
+  })
 
   const launchOptions = [
     {
@@ -86,7 +90,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
       title: PROTEIN_LAUNCH_LABELS['3d'],
       description:
         'View protein structure with genome-to-structure coordinate mapping',
-      disabled: !canLaunch,
+      disabled: !can3D,
       onClick: handleLaunch3DView,
     },
     ...(launch1D
@@ -96,7 +100,7 @@ const ProteinViewActions = observer(function ProteinViewActions({
             title: PROTEIN_LAUNCH_LABELS['1d'],
             description:
               'View protein features and annotations as a linear track',
-            disabled: !canLaunch1D,
+            disabled: !can1D,
             onClick: runLaunch(launch1D),
           },
         ]
@@ -122,14 +126,14 @@ const ProteinViewActions = observer(function ProteinViewActions({
             should be free to change without breaking callers. */}
         <Button
           data-testid="protein-launch-button"
-          disabled={!canLaunch}
+          disabled={!can3D}
           onClick={handleLaunch3DView}
         >
           Launch
         </Button>
         <Button
           data-testid="protein-launch-options-button"
-          disabled={launchOptions.every(o => o.disabled)}
+          disabled={!canOpenOptions}
           onClick={event => {
             setMenuAnchor(event.currentTarget)
           }}

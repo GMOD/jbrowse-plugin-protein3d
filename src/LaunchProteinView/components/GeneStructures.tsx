@@ -19,7 +19,7 @@ import useStructureLaunch, {
   structureSource,
 } from '../hooks/useStructureLaunch'
 import useUniProtIdLookup from '../hooks/useUniProtIdLookup'
-import { getLaunchMissingReasons } from '../utils/launchHelpers'
+import { launchReadiness } from '../utils/launchHelpers'
 import { getLaunchSideBySide, setLaunchSideBySide } from '../utils/sideBySide'
 import {
   defaultChecked,
@@ -37,6 +37,7 @@ import UniProtSummaryBar from './UniProtSummaryBar'
 
 import type { LaunchStructure } from '../hooks/useStructureLaunch'
 import type { LaunchingGenomeView } from '../utils/genomeView'
+import type { Listing } from '../utils/launchHelpers'
 import type { StructureFilter, StructureRow } from '../utils/structureList'
 import type { AbstractSessionModel, Feature } from '@jbrowse/core/util'
 
@@ -107,8 +108,6 @@ function launchStructure(row: StructureRow): LaunchStructure {
         : { key: row.key, kind: 'complex', entity: row.complex.entity }
 }
 
-type Listing = 'finding' | 'empty' | 'listed'
-
 function describeLaunch(
   rows: readonly StructureRow[],
   typedPdbId: string | undefined,
@@ -171,12 +170,6 @@ const GeneStructures = observer(function GeneStructures({
   // arrive would be ranked against and fetched for nothing
   const defaultPending = !structures.defaultSettled
   const checked = userPick ?? (defaultPending ? [] : defaultChecked(rows))
-  const listing: Listing =
-    !userPick && defaultPending
-      ? 'finding'
-      : rows.length === 0
-        ? 'empty'
-        : 'listed'
   const checkedRows = rows.filter(r => checked.includes(r.key))
 
   const [sideBySide, setSideBySide] = useState(() => getLaunchSideBySide())
@@ -224,22 +217,6 @@ const GeneStructures = observer(function GeneStructures({
     (!typedId && !userPick && defaultPending)
   const error =
     launch.error ?? (typedIdUnknown ? launch.pdbEntryError : undefined)
-  const noStructureChecked = launchStructures.length === 0
-  const transcriptReasons = getLaunchMissingReasons({
-    userSelectedProteinSequence: launch.selectedIsoform,
-    selectedTranscript: launch.selectedTranscript,
-  })
-  // with nothing listed the summary and the list already say so
-  const missingReasons =
-    noStructureChecked && listing !== 'empty'
-      ? ['No structure checked', ...transcriptReasons]
-      : transcriptReasons
-  const ready =
-    !isLoading &&
-    !error &&
-    !typedPdbIdInvalid &&
-    !noStructureChecked &&
-    transcriptReasons.length === 0
   const alphaFoldChecked = launchStructures.find(s => s.kind === 'alphafold')
   // Loading or failed, the lookup can still hold the previous query's
   // accession, which would name the view and its 1D entry
@@ -251,8 +228,19 @@ const GeneStructures = observer(function GeneStructures({
         : launchStructures[0]?.kind === 'url'
           ? (launchStructures[0].uniprotId ?? uniprotId)
           : uniprotId
-  const ready1D =
-    !!launchUniprotId && !!launch.selectedTranscript && !lookup.isLookupLoading
+  const { listing, missingReasons, ready, ready1D } = launchReadiness({
+    rowCount: rows.length,
+    userPicked: !!userPick,
+    defaultPending,
+    typed: !!typedId,
+    structureCount: launchStructures.length,
+    loading: launch.isLoading || typedPending,
+    failed: !!error || typedPdbIdInvalid,
+    userSelectedProteinSequence: launch.selectedIsoform,
+    selectedTranscript: launch.selectedTranscript,
+    uniprotId: launchUniprotId,
+    lookupLoading: lookup.isLookupLoading,
+  })
 
   const toggle = (row: StructureRow) => {
     setPicked({ uniprotId, keys: toggleStructure(checked, row, rows) })

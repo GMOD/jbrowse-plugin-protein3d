@@ -41,3 +41,86 @@ export function getLaunchMissingReasons({
     !selectedTranscript && 'No transcript selected',
   ].filter((s): s is string => typeof s === 'string')
 }
+
+/** Where the gene's structure list stands: still choosing its default rows,
+ * listing none, or listing some */
+export type Listing = 'finding' | 'empty' | 'listed'
+
+/**
+ * What the structures tab can launch. The 3D view needs a structure and a
+ * translated transcript; the 1D view needs only the accession and the
+ * transcript, but waits for the default structure, which picks the isoform it
+ * links to.
+ */
+export function launchReadiness({
+  rowCount,
+  userPicked,
+  defaultPending,
+  typed,
+  structureCount,
+  loading,
+  failed,
+  userSelectedProteinSequence,
+  selectedTranscript,
+  uniprotId,
+  lookupLoading,
+}: LaunchRequirements & {
+  rowCount: number
+  /** the checked rows are the user's, not the default */
+  userPicked: boolean
+  defaultPending: boolean
+  /** a typed PDB id stands in for the checked rows */
+  typed: boolean
+  structureCount: number
+  loading: boolean
+  failed: boolean
+  uniprotId?: string
+  lookupLoading: boolean
+}) {
+  const listing: Listing =
+    !userPicked && defaultPending
+      ? 'finding'
+      : rowCount === 0
+        ? 'empty'
+        : 'listed'
+  const awaitingDefault = !typed && listing === 'finding'
+  const transcriptReasons = getLaunchMissingReasons({
+    userSelectedProteinSequence,
+    selectedTranscript,
+  })
+  const noStructure = structureCount === 0
+  return {
+    listing,
+    // with nothing listed the summary and the list already say so
+    missingReasons:
+      noStructure && listing !== 'empty'
+        ? ['No structure checked', ...transcriptReasons]
+        : transcriptReasons,
+    ready:
+      !loading &&
+      !awaitingDefault &&
+      !failed &&
+      !noStructure &&
+      transcriptReasons.length === 0,
+    ready1D:
+      !!uniprotId && !!selectedTranscript && !lookupLoading && !awaitingDefault,
+  }
+}
+
+/** Which launch controls are enabled: the 1D row is offered only to a session
+ * that takes a temporary assembly, and nothing launches twice at once */
+export function launchControls({
+  ready,
+  ready1D,
+  launching,
+  offers1D,
+}: {
+  ready: boolean
+  ready1D: boolean
+  launching: boolean
+  offers1D: boolean
+}) {
+  const can3D = ready && !launching
+  const can1D = offers1D && ready1D && !launching
+  return { can3D, can1D, canOpenOptions: can3D || can1D }
+}
