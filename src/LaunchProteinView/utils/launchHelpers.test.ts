@@ -29,6 +29,7 @@ const settled = {
   rowCount: 3,
   userPicked: false,
   defaultPending: false,
+  addedPending: false,
   structureCount: 1,
   loading: false,
   failed: false,
@@ -98,6 +99,14 @@ describe('launch gating', () => {
     expect(gate({ defaultPending: true, userPicked: true })).toMatchObject({
       listing: 'listed',
       can3D: true,
+      can1D: true,
+    })
+  })
+
+  it('holds the 3D view until RCSB says a checked added entry exists', () => {
+    expect(gate({ addedPending: true })).toMatchObject({
+      missingReasons: [],
+      can3D: false,
       can1D: true,
     })
   })

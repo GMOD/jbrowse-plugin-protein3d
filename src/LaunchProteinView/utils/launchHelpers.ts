@@ -56,6 +56,7 @@ export function launchReadiness({
   rowCount,
   userPicked,
   defaultPending,
+  addedPending,
   structureCount,
   loading,
   failed,
@@ -68,6 +69,8 @@ export function launchReadiness({
   /** the checked rows are the user's, not the default */
   userPicked: boolean
   defaultPending: boolean
+  /** RCSB has not yet said whether a checked entry added by id exists */
+  addedPending: boolean
   structureCount: number
   loading: boolean
   failed: boolean
@@ -96,6 +99,7 @@ export function launchReadiness({
     ready:
       !loading &&
       !awaitingDefault &&
+      !addedPending &&
       !failed &&
       !noStructure &&
       transcriptReasons.length === 0,

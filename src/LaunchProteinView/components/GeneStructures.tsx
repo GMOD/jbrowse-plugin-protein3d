@@ -13,6 +13,7 @@ import { observer } from 'mobx-react'
 import { isPdbId, stripStopCodon } from 'p2s_mapper'
 import { makeStyles } from 'tss-react/mui'
 
+import { errorMessage } from '../../ProteinView/util'
 import useGeneStructures from '../hooks/useGeneStructures'
 import usePdbEntrySummaries from '../hooks/usePdbEntrySummaries'
 import useStructureLaunch, {
@@ -167,7 +168,10 @@ const GeneStructures = observer(function GeneStructures({
   // an id adds entries the accession's listing never offers: a structure of a
   // complex filed under a partner, anything a paper names
   const [addedEntries, setAddedEntries] = useState<AddedEntry[]>([])
-  const addedIds = addedEntries.map(a => a.pdbId)
+  // an added entry the listing holds is described there already
+  const addedIds = addedEntries
+    .map(a => a.pdbId)
+    .filter(id => !structures.rows.some(r => r.key === `pdb:${id}`))
   const addedSummaries = usePdbEntrySummaries(addedIds)
   const added = addedRows({
     pdbIds: addedIds,
@@ -226,6 +230,8 @@ const GeneStructures = observer(function GeneStructures({
     rowCount: rows.length,
     userPicked: !!userPick,
     defaultPending,
+    addedPending:
+      addedSummaries.isLoading && checkedRows.some(r => r.kind === 'added'),
     structureCount: launchStructures.length,
     loading: launch.isLoading,
     failed: !!error,
@@ -327,7 +333,25 @@ const GeneStructures = observer(function GeneStructures({
       </div>
       <StructureList
         rows={rows.filter(r => matchesFilter(r, filter))}
-        sections={structures.sections}
+        sections={{
+          ...structures.sections,
+          added: {
+            loading:
+              addedSummaries.isLoading && addedSummaries.error === undefined
+                ? ['Asking RCSB for the added entries']
+                : [],
+            notices:
+              addedSummaries.error === undefined
+                ? []
+                : [
+                    {
+                      message: `RCSB did not describe the added entries, so their ids are unconfirmed:${errorMessage(addedSummaries.error)}`,
+                      retry: addedSummaries.retry,
+                      retrying: addedSummaries.isLoading,
+                    },
+                  ],
+          },
+        }}
         geneName={geneName}
         empty={listing === 'empty'}
         sourceFailed={structures.sourceFailed}
