@@ -36,8 +36,8 @@ const feature = new SimpleFeature({
   end: 10,
 })
 
-// SWR's keepPreviousData returns the last key's data after the key turns
-// null, and the tab's Launch read it as this accession's structure
+// a model left over from the last accession would be what the tab's Launch
+// opens
 test('clearing the accession clears the model', async () => {
   const initialProps: { uniprotId?: string } = { uniprotId: 'P04637' }
   const { result, rerender } = renderHook(
