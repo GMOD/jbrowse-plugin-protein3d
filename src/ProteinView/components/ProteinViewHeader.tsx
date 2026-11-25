@@ -98,11 +98,13 @@ const ToggleMenuItem = observer(function ToggleMenuItem({
   checked,
   label,
   disabled,
+  reason,
   onToggle,
 }: {
   checked: boolean
   label: string
   disabled?: boolean
+  reason?: string
   onToggle: () => void
 }) {
   return (
@@ -116,7 +118,7 @@ const ToggleMenuItem = observer(function ToggleMenuItem({
       <ListItemIcon>
         <Checkbox checked={checked} size="small" edge="start" disableRipple />
       </ListItemIcon>
-      <ListItemText>{label}</ListItemText>
+      <ListItemText primary={label} secondary={reason} />
     </MenuItem>
   )
 })
@@ -155,6 +157,7 @@ const DisplaySettingsMenu = observer(function DisplaySettingsMenu({
             checked={toggle.checked}
             label={toggle.label}
             disabled={toggle.disabled}
+            reason={toggle.reason}
             onToggle={toggle.toggle}
           />
         ))}

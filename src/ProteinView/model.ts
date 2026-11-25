@@ -1065,21 +1065,38 @@ function stateModelFactory() {
             : undefined
         return domains ? domainLegend(domains) : undefined
       },
+    }))
+    .views(self => ({
       /**
        * #getter
        * What the header's Tune menu offers: the layout choices, remembered for
        * views opened later. The view menu carries actions instead, so a reader
        * looking for a toggle has one place to look. A toggle is disabled while
-       * a setting it requires is off, when it would change nothing on screen.
+       * a setting it requires is off, when it would change nothing on screen,
+       * and a panel toggle, with its reason, while the shown structure has no
+       * transcript and so no panel.
        */
       get displayToggles() {
+        const shown = self.alignmentStructure
+        const noPanelReason =
+          shown &&
+          !shown.pairwiseAlignment &&
+          !shown.userProvidedTranscriptSequence
+            ? 'No transcript to align this structure to'
+            : undefined
         return DISPLAY_SETTINGS.map(({ key, label, requires = [] }) => {
-          const disabled = requires.some(required => !self[required])
+          const reason =
+            key === 'showAlignment' || requires.includes('showAlignment')
+              ? noPanelReason
+              : undefined
+          const disabled =
+            !!reason || requires.some(required => !self[required])
           return {
             key,
             label,
             checked: key === 'compactTracks' ? self.tracksCompact : self[key],
             disabled,
+            reason,
             toggle: () => {
               if (!disabled) {
                 self.toggleSetting(key)

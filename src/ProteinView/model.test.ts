@@ -29,7 +29,10 @@ const plugin = {} as unknown as PluginContext
 function makeView(settings: PersistedSettings = {}) {
   return ProteinView.create({
     type: 'ProteinView',
-    structures: [{ url: 'a.cif' }, { url: 'b.cif' }],
+    structures: [
+      { url: 'a.cif', userProvidedTranscriptSequence: 'MEEPQ' },
+      { url: 'b.cif', userProvidedTranscriptSequence: 'MEEPQ' },
+    ],
     ...settings,
   })
 }
@@ -188,29 +191,27 @@ test('a view-menu action is disabled until there is something for it to do', () 
   const view = makeView()
   expect(disabledMenuItems(view)).toEqual([
     'Clear selection',
-    'Import manual alignment...',
     'Restore hidden feature tracks',
   ])
 
   const [first, second] = view.structures
   second!.setClickedStructureRanges([{ start: 3, end: 7 }])
   first!.hideFeatureType('Helix')
-  expect(disabledMenuItems(view)).toEqual(['Import manual alignment...'])
+  expect(disabledMenuItems(view)).toEqual([])
 
   view.removeStructure(second!)
   expect(disabledMenuItems(view)).toEqual([
     'Clear selection',
-    'Import manual alignment...',
     'Re-superpose structures (TM-align)',
   ])
 })
 
-test('importing an alignment is offered for a structure with a transcript', () => {
+test('importing an alignment needs a structure with a transcript', () => {
   const view = ProteinView.create({
     type: 'ProteinView',
-    structures: [{ url: 'a.cif', userProvidedTranscriptSequence: 'MEEPQ' }],
+    structures: [{ url: 'a.cif' }],
   })
-  expect(disabledMenuItems(view)).not.toContain('Import manual alignment...')
+  expect(disabledMenuItems(view)).toContain('Import manual alignment...')
 })
 
 // the only structure carries the transcript and genome link an added one copies
@@ -438,7 +439,7 @@ test('the compact toggle reads the lane height, not the flag under it', () => {
 
   const declared = ProteinView.create({
     type: 'ProteinView',
-    structures: [{ url: 'a.cif' }],
+    structures: [{ url: 'a.cif', userProvidedTranscriptSequence: 'MEEPQ' }],
     trackHeight: 5,
     compactTracks: false,
   })
@@ -468,6 +469,22 @@ test('a toggle is disabled while a setting it needs is off', () => {
 
   const noTracks = makeView({ showProteinTracks: false })
   expect(new Set(disabledKeys(noTracks))).toEqual(new Set(TRACK_TOGGLES))
+})
+
+// A structure with no transcript has no sequence panel, so the toggles for it
+// changed nothing on screen.
+test('the panel toggles are disabled, with why, for a structure with no transcript', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  const disabled = view.displayToggles.filter(t => t.disabled)
+  expect(new Set(disabled.map(t => t.key))).toEqual(
+    new Set(['showAlignment', ...PANEL_TOGGLES, ...TRACK_TOGGLES]),
+  )
+  expect(new Set(disabled.map(t => t.reason))).toEqual(
+    new Set(['No transcript to align this structure to']),
+  )
 })
 
 test('a disabled toggle changes nothing and stores nothing', () => {
