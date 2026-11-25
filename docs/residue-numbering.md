@@ -134,10 +134,13 @@ target naming no residue of the structure selects nothing and leaves the camera
 alone. The view menu's **Go to residue...** does the same for a reader: it takes
 `248`, `R248`, `A:248` or `245-250` in the author numbering of the structure
 whose alignment is open, and says so when the structure has no such residue or a
-different letter there. A click is still the user's: a click in the alignment or
-on a feature bar selects without moving the camera, and a click in Mol\* gets
-Mol\*'s own focus. Once the user has set or cleared a selection, a seed that
-resolves later is dropped.
+different letter there. A chain prefix only names the protein: the residue is
+lit on every copy of the mapped chain, so `B:248` in 1TUP lights 248 on A, B and
+C. Insertion codes (`82A`) are refused, and a residue the file numbers but has
+no atoms for lights nothing in 3D. A click is still the user's: a click in the
+alignment or on a feature bar selects without moving the camera, and a click in
+Mol\* gets Mol\*'s own focus. Once the user has set or cleared a selection, a
+seed that resolves later is dropped.
 
 ## Placing UniProt features on a fragment
 

@@ -10,7 +10,7 @@ import {
 } from '@mui/material'
 import { observer } from 'mobx-react'
 
-import { parseResidueQuery, residueQueryProblem } from '../residueQuery'
+import { checkResidueQuery } from '../residueQuery'
 
 import type { JBrowsePluginProteinViewModel } from '../model'
 
@@ -26,14 +26,14 @@ const GoToResidueDialog = observer(function GoToResidueDialog({
   const structure = model.alignmentStructure
 
   const handleGo = () => {
-    const found = residueQueryProblem(text, structure?.mappedEntity)
-    const query = parseResidueQuery(text)
-    if (found !== undefined || !query || !structure) {
-      setProblem(found)
-    } else {
+    const checked = checkResidueQuery(text, structure?.mappedEntity)
+    if ('problem' in checked) {
+      setProblem(checked.problem)
+    } else if (structure) {
+      const { start, end } = checked.query
       structure
         .focusResidues({
-          residues: { start: query.start.number, end: query.end.number },
+          residues: { start: start.number, end: end.number },
         })
         .catch((e: unknown) => {
           model.addNotice(e)
@@ -63,7 +63,7 @@ const GoToResidueDialog = observer(function GoToResidueDialog({
             error={problem !== undefined}
             helperText={
               problem ??
-              "A number, a range such as 245-250, or A:248 for a chain, in the structure's own numbering"
+              "A number or a range such as 245-250, in the structure's own numbering. A:248 names the protein by a chain, and every copy of it is lit. A residue the file numbers but has no atoms for lights nothing in 3D."
             }
             onChange={event => {
               setText(event.target.value)
