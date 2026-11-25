@@ -201,7 +201,12 @@ const GeneStructures = observer(function GeneStructures({
   const [typedPdbId, setTypedPdbId] = useState('')
   const trimmedTypedPdbId = typedPdbId.trim()
   const typedPdbIdValid = isPdbId(trimmedTypedPdbId)
-  const typedPdbIdInvalid = trimmedTypedPdbId.length >= 4 && !typedPdbIdValid
+  // a short id is not wrong until Enter is pressed on it
+  const [enteredInvalid, setEnteredInvalid] = useState(false)
+  const typedPdbIdInvalid =
+    trimmedTypedPdbId !== '' &&
+    !typedPdbIdValid &&
+    (trimmedTypedPdbId.length >= 4 || enteredInvalid)
 
   const launchStructures = checkedRows.map(launchStructure)
   // a site's structure is mapped through the transcript it is listed under
@@ -262,6 +267,7 @@ const GeneStructures = observer(function GeneStructures({
   }
 
   const addTypedPdbId = () => {
+    setEnteredInvalid(!typedPdbIdValid)
     if (typedPdbIdValid) {
       applyChecked(
         addPdbId({
@@ -301,7 +307,7 @@ const GeneStructures = observer(function GeneStructures({
         <TextField
           size="small"
           label="Add PDB ID"
-          placeholder="e.g. 1TUP"
+          placeholder="1TUP, then Enter"
           data-testid="pdb-id-input"
           error={typedPdbIdInvalid || added.unknown.length > 0}
           helperText={
@@ -309,13 +315,12 @@ const GeneStructures = observer(function GeneStructures({
               ? 'Four characters beginning with a digit'
               : added.unknown.length > 0
                 ? `RCSB has no entry ${added.unknown.map(id => id.toUpperCase()).join(', ')}`
-                : typedPdbIdValid
-                  ? 'Press Enter to add it'
-                  : undefined
+                : undefined
           }
           value={typedPdbId}
           onChange={event => {
             setTypedPdbId(event.target.value)
+            setEnteredInvalid(false)
             if (added.unknown.length > 0) {
               setAddedEntries(
                 addedEntries.filter(a => !added.unknown.includes(a.pdbId)),
