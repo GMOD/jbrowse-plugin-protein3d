@@ -1,11 +1,7 @@
 {
-  // `tsconfig.json` builds `src` and drops `*.test.ts`; this checks the tests
+  // `tsconfig.json` checks `src` and drops `*.test.ts`; this checks the tests
   // and the e2e harness that drives every host gate.
   "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "rootDir": ".",
-    "noEmit": true
-  },
   "include": ["src", "test"],
   "exclude": ["**/dist/"]
 }
