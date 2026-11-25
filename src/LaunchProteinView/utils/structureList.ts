@@ -230,7 +230,7 @@ export function addedRow({
   }
 }
 
-function alphaFoldEntryUrl(id: string) {
+export function alphaFoldEntryUrl(id: string) {
   return `https://alphafold.ebi.ac.uk/entry/${id}`
 }
 
