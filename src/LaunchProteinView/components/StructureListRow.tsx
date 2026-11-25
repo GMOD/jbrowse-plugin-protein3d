@@ -226,7 +226,10 @@ const Tags = observer(function Tags({
             key={tag.label}
             title={<span style={{ whiteSpace: 'pre-line' }}>{tag.title}</span>}
           >
-            <span className={cx(classes.tag, className)} tabIndex={0}>
+            <span
+              className={cx(classes.tag, className)}
+              aria-label={`${tag.label}: ${tag.title}`}
+            >
               {tag.label}
             </span>
           </Tooltip>
