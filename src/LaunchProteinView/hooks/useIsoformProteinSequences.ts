@@ -46,10 +46,7 @@ export default function useIsoformProteinSequences({
         total: results.length,
       }
     },
-    {
-      ...STATIC_SWR_OPTIONS,
-      keepPreviousData: true,
-    },
+    STATIC_SWR_OPTIONS,
   )
 
   // A transcript without a sequence is reported rather than dropped: silently

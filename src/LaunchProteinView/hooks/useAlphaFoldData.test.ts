@@ -51,6 +51,26 @@ test('clearing the accession clears the model', async () => {
   expect(result.current.model).toBeUndefined()
 })
 
+test("a failed list after a good one reads none of the last accession's models", async () => {
+  const initialProps = { uniprotId: 'P38398' }
+  const { result, rerender } = renderHook(
+    ({ uniprotId }) => useAlphaFoldData({ uniprotId, feature }),
+    { initialProps },
+  )
+  await waitFor(() => {
+    expect(result.current.entryLength).toBe(4)
+  })
+  rerender({ uniprotId: 'UNREACHABLE' })
+  await waitFor(() => {
+    expect(result.current.model?.url).toBe(
+      getAlphaFoldStructureUrl('UNREACHABLE'),
+    )
+  })
+  expect(result.current.model?.sequence).toBeUndefined()
+  expect(result.current.entryLength).toBeUndefined()
+  expect(result.current.noModel).toBe(false)
+})
+
 test('an unreachable API falls back to the canonical file, as the quick launch does', async () => {
   const { result } = renderHook(() =>
     useAlphaFoldData({ uniprotId: 'UNREACHABLE', feature }),
