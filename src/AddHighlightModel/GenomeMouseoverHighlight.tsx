@@ -33,6 +33,7 @@ const GenomeMouseoverHighlight = observer(function GenomeMouseoverHighlight({
     return (
       <Highlight
         model={model}
+        kind="hover"
         region={{
           start: coord - 1,
           end: coord,

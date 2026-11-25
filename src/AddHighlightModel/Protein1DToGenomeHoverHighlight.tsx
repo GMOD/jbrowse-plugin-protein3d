@@ -51,6 +51,7 @@ const Protein1DToGenomeHoverHighlight = observer(
           <Highlight
             key={`${r.start}-${r.end}`}
             model={model}
+            kind="hover"
             region={{ ...r, assemblyName }}
           />
         ))}

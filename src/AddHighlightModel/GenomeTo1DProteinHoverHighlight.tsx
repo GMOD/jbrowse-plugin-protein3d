@@ -27,6 +27,7 @@ const GenomeTo1DProteinHoverHighlight = observer(
     return (
       <Highlight
         model={model}
+        kind="hover"
         region={{
           start: proteinPos,
           end: proteinPos + 1,
