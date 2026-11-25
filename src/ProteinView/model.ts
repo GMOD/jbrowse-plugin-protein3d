@@ -1130,7 +1130,7 @@ function stateModelFactory() {
               ])
             },
           },
-          ...(self.structures.length > 0
+          ...(self.structures.length > 1
             ? [
                 {
                   label: 'Remove structure',

@@ -174,6 +174,19 @@ test('the view menu carries actions and the Tune menu carries toggles', () => {
   ).toBe(false)
 })
 
+// the only structure carries the transcript and genome link an added one copies
+// from it, and the view's own close button already takes the whole view away
+test('a view of one structure offers no Remove structure', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif' }],
+  })
+  const labels = view
+    .menuItems()
+    .map(item => ('label' in item ? item.label : undefined))
+  expect(labels).not.toContain('Remove structure')
+})
+
 // Each structure with a choice gets a radio list under its own name
 test('the Assembly menu lists only the structures with a choice', async () => {
   const view = makeView()

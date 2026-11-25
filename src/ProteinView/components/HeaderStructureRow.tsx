@@ -224,18 +224,20 @@ const StructureRow = observer(function StructureRow({
           </IconButton>
         </Tooltip>
       ) : null}
-      <Tooltip title={`Remove ${label}`}>
-        <IconButton
-          size="small"
-          aria-label={`Remove ${label}`}
-          onClick={() => {
-            model.removeStructure(structure)
-          }}
-          sx={{ p: 0.25 }}
-        >
-          <CloseIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
+      {several ? (
+        <Tooltip title={`Remove ${label}`}>
+          <IconButton
+            size="small"
+            aria-label={`Remove ${label}`}
+            onClick={() => {
+              model.removeStructure(structure)
+            }}
+            sx={{ p: 0.25 }}
+          >
+            <CloseIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      ) : null}
     </div>
   )
 })
