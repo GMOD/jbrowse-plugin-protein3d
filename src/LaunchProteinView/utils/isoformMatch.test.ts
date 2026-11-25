@@ -61,4 +61,20 @@ describe('isoformMatch', () => {
       }),
     ).toBeUndefined()
   })
+
+  it('says nothing for a pair too large to align, which ranks with no identical residues', () => {
+    expect(
+      isoformMatch({
+        ...ranked(0, 7000),
+        structureSequence: 'M'.repeat(6000),
+        selectedId: 'other',
+      }),
+    ).toBeUndefined()
+  })
+
+  it('still warns about an aligned pair with no identical residues', () => {
+    expect(
+      isoformMatch({ ...ranked(0), selectedId: 'other' })?.lowIdentity,
+    ).toBe(true)
+  })
 })

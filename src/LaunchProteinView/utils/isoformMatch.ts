@@ -3,6 +3,7 @@ import {
   MIN_IDENTICAL_RESIDUES,
   SHORT_ALIGNMENT_IDENTITY,
   SHORT_ALIGNMENT_RESIDUES,
+  alignmentTooLarge,
   stripStopCodon,
 } from 'p2s_mapper'
 
@@ -19,9 +20,10 @@ function isLowIdentity(identical: number, shorterLength: number) {
 }
 
 /**
- * How far the selected isoform's protein is from the structure's, by the
- * ranking's alignment. Undefined when the two are the same protein, or when
- * there was no structure to rank against.
+ * How far the selected isoform's protein is from the chain it was ranked
+ * against, by the ranking's alignment. Undefined when the two are the same
+ * protein, when there was no chain to rank against, and when the pair was too
+ * large to align, which the ranking reports as no identical residues.
  */
 export function isoformMatch({
   ranking,
@@ -36,7 +38,9 @@ export function isoformMatch({
   const structureLength = structureSequence
     ? stripStopCodon(structureSequence).length
     : 0
-  return ranked?.identical !== undefined && structureLength > 0
+  return ranked?.identical !== undefined &&
+    structureLength > 0 &&
+    !alignmentTooLarge(ranked.length, structureLength)
     ? {
         identical: ranked.identical,
         structureLength,
