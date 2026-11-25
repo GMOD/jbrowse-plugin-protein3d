@@ -106,6 +106,14 @@ entry. Reading only the alignment, which is not pending before a structure has a
 sequence, flipped the marker 3–6 s before the structure loaded, and the e2e's
 multi-structure leg passed only because of that.
 
+With several structures loaded the marker, and the view's `settled` that framing
+and `focusResidues` wait on, also wait for superposition: no run under way
+(`superposing`), and the loads the last run covered (`superposedKeys`) are the
+loads Mol\* holds now, by identity. A count of covered loads read as done while
+a chain pick, an imported alignment or an assembly switch re-superposed the same
+number, and the run's camera reset then undid a framing. A structure that failed
+to load is in neither set.
+
 ## Superposition
 
 Mol\*'s `tmAlign` flattens every chain it is given into one with no breaks, so a
@@ -113,8 +121,10 @@ partner, a second copy or DNA steered the fit: 7OW4's MHC heavy chain landed on
 the NRAS model with the NRAS peptide 15 Å from its own residues, 1TUP put copy C
 rather than A on the p53 model, and the logged RMSD (38 Å for a 0.9 Å fit) meant
 nothing. `superposeStructures` aligns one copy of each load's mapped chain, the
-first drawn (also the copy highlight labels sit on), waits for every alignment,
-and re-runs when the chain picker changes.
+first drawn (also the copy highlight labels sit on), waits for every alignment
+and, for a PDB entry with one, for the SIFTS answer that unmaps a fusion
+partner, and re-runs when a load's Mol\* structures, mapped chain or
+SIFTS-trimmed alignment change.
 
 Measured thresholds:
 
