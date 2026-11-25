@@ -67,11 +67,11 @@ row calls that a missing feature.
 
 `model.ts` instantiates under vitest with `getSession` mocked (`model.test.ts`).
 Test the pure pieces first: each is a factory over a narrow host interface
-(`structureLoader`, `structureSuperposer`, `lociChannel`, `frameSelection`,
-`connectedHover`, `viewInteractions`, `storedSettings`) that takes observables
-or a small MST stand-in. `structureModel` instantiates inside a `types.array`
-under a stub parent (`structureModel.test.ts`), with real Mol\* structures from
-`test_data/molstarStructure.ts` rather than cast fakes.
+(`structureLoader`, `structureSuperposer`, `structureAligner`, `lociChannel`,
+`frameSelection`, `connectedHover`, `viewInteractions`, `storedSettings`) that
+takes observables or a small MST stand-in. `structureModel` instantiates inside
+a `types.array` under a stub parent (`structureModel.test.ts`), with real Mol\*
+structures from `test_data/molstarStructure.ts` rather than cast fakes.
 
 AlphaFold's `/api/sequence/summary` nests hits under `structures[].summary` and
 its first p53 hit is another species, which is why sequence search gave way to

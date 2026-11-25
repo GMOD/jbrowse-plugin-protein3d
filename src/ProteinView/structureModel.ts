@@ -359,7 +359,9 @@ const Structure = types
     entityChosen: false,
     /**
      * #volatile
-     * An alignment is running in the RPC worker
+     * An alignment is running in the RPC worker. Not one state with
+     * entityChosen and alignmentSkipped: a chain pick aligns after the entity
+     * is chosen, and a skipped structure keeps its reason until a pick lands.
      */
     aligning: false,
     /**
@@ -1556,7 +1558,8 @@ const Structure = types
      * #getter
      * What the view's placed-value field colors this structure's mapped
      * entity by, by label_seq_id: for the alignment domains, layer 1's
-     * cartoon
+     * cartoon. One getter switching on the field for all four statuses came
+     * out 14 lines longer, with a projection per status still read by name.
      */
     get placedValues(): PlacedValues | undefined {
       return (
