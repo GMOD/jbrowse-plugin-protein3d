@@ -807,7 +807,7 @@ function stateModelFactory() {
             const plugin = self.molstarPluginContext
             const marks = self.marks ?? []
             const structures = self.structures.map(s =>
-              s.entities ? s.molstarStructures[0] : undefined,
+              s.entities ? s.molstarStructures : undefined,
             )
             if (plugin && structures.some(Boolean)) {
               syncResidueMarks({ plugin, structures, marks })

@@ -320,7 +320,7 @@ test("the fade leaves a spec's residue mark opaque, whichever was drawn first", 
     const molstarStructure = await helix(plugin)
     await syncResidueMarks({
       plugin,
-      structures: [molstarStructure],
+      structures: [[molstarStructure]],
       marks: [{ site: 'A:7', mark: 'sticks' }],
     })
     await syncSessionHighlightMarks({
