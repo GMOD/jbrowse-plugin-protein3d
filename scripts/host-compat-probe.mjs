@@ -23,9 +23,9 @@ import { parseArgs } from 'node:util'
 import puppeteer from 'puppeteer'
 
 import { collectPageComplaints } from './browserConsole.mjs'
+import { OLDEST_SUPPORTED_HOST } from './hostFloor.mjs'
 
-const OLDEST_SUPPORTED = 'v5.0.0-beta.12'
-const DEFAULT_VERSIONS = [OLDEST_SUPPORTED, 'latest', 'main']
+const DEFAULT_VERSIONS = [OLDEST_SUPPORTED_HOST, 'latest', 'main']
 
 // Every host loads the store's `latest/` build, which --bundle replaces, rather
 // than the release the store's range would pick for it

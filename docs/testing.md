@@ -110,8 +110,9 @@ pnpm host-compat:candidate   # dist/
 
 Both fail when any probed host fails. `host-compat:candidate` runs in
 `preversion` and CI, so a build that breaks a host fails before the tag rather
-than after. A change to the oldest supported host changes the probe's
-`OLDEST_SUPPORTED` too.
+than after. The oldest supported host is `OLDEST_SUPPORTED_HOST` in
+`scripts/hostFloor.mjs`, which both the probe and `check-host-floor` read, so
+raising it moves both.
 
 For what a session does on jbrowse.org, which neither probe sees,
 [live checks](#live-checks) has the recipe for serving `dist/` to a hosted
