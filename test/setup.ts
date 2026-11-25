@@ -52,6 +52,9 @@ interface ProteinViewStructure {
   variantEffectsPending?: boolean
   statusMessage?: string
   report?: {
+    label?: string
+    loading?: boolean
+    error?: string
     mapping?: {
       entityId: string
       chains: string[]
@@ -829,6 +832,17 @@ export async function clickLaunch(page: Page): Promise<void> {
     throw new Error(`no element matching ${LAUNCH_BUTTON} in the dialog`)
   }
   await button.click()
+}
+
+// What a text field says under itself, read through the input's
+// aria-describedby rather than a library class name; empty when it says nothing
+export async function fieldHelperText(page: Page, input: string) {
+  return page.$eval(
+    input,
+    el =>
+      document.getElementById(el.getAttribute('aria-describedby') ?? '')
+        ?.textContent ?? '',
+  )
 }
 
 export async function getProteinViewState(page: Page) {

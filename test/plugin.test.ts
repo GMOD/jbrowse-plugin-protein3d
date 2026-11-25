@@ -19,6 +19,7 @@ import {
   closeProteinViews,
   createJBrowsePage,
   expandStructureSection,
+  fieldHelperText,
   flushScreenshots,
   getProteinViewState,
   hoverGenomeUntilStructureResponds,
@@ -61,6 +62,11 @@ const STRUCTURE_RESIDUES = 189
 const NRAS_LOC = 'chr1:114,704,469-114,716,894'
 // example_data/folds/mapping.tsv lists NRAS.pdb under NRAS's one transcript
 const SITE_ROW = `dataset:${DATASET_ID}:ENST00000369535.5:NRAS.pdb`
+const PDB_ID_INPUT = `${LAUNCH_DIALOG} [data-testid="pdb-id-input"] input`
+
+function inputValue(el: Element) {
+  return el instanceof HTMLInputElement ? el.value : undefined
+}
 
 function allHidden(hidden: boolean[]) {
   return hidden.length > 1 && hidden.every(Boolean)
@@ -1279,6 +1285,93 @@ describe('Protein3d Plugin E2E', () => {
     ])
     expect(state.hasAlignment).toBe(true)
     expect(state.mappedGenomePositions).toBe(state.transcriptLength * 3)
+    expect(pageComplaintsSince()).toEqual([])
+  }, 300_000)
+
+  // An id typed into the dialog adds an entry the gene's listing never offers,
+  // checked beside the default rather than in its place. 1CRN is crambin,
+  // which RCSB files under no NRAS accession, so it can only land in the added
+  // section. 9XXX is no entry (data.rcsb.org answered 404 on 2026-11-25; 9ZZZ
+  // is a real one).
+  it('adds an entry by PDB ID beside the default, and launches both', async () => {
+    await openConfig(page, 'config.json')
+    await waitForJBrowseLoad(page)
+    await waitForTrackLoad(page)
+    await openFeatureContextMenu(page)
+    await clickLaunchMenuItem(page, 'Protein view...')
+    await page.waitForSelector(LAUNCH_DIALOG, { timeout: 30_000 })
+    await waitForStructureListPainted(page)
+    await waitForLaunchEnabled(page)
+    expect(await checkedStructureRows(page)).toEqual(['alphafold'])
+
+    await page.type(PDB_ID_INPUT, '1CRN')
+    await page.keyboard.press('Enter')
+    await page.waitForSelector(
+      `${LAUNCH_DIALOG} [data-testid="structure-section-added"] [data-testid="structure-row-pdb:1crn"]`,
+      { timeout: 30_000 },
+    )
+    expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:1crn'])
+    expect(await page.$eval(PDB_ID_INPUT, inputValue)).toBe('')
+    await waitForLaunchEnabled(page)
+
+    await page.type(PDB_ID_INPUT, '9XXX')
+    await page.keyboard.press('Enter')
+    await expect
+      .poll(() => fieldHelperText(page, PDB_ID_INPUT), { timeout: 30_000 })
+      .toBe('RCSB has no entry 9XXX')
+    expect(
+      await page.$(`${LAUNCH_DIALOG} [data-testid="structure-row-pdb:9xxx"]`),
+    ).toBeNull()
+    expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:1crn'])
+    const summary = () =>
+      page.$eval(
+        `${LAUNCH_DIALOG} [data-testid="launch-summary"]`,
+        el => el.textContent,
+      )
+    expect(await summary()).toBe(
+      'AF-P01111-F1 + 1CRN, superposed onto AF-P01111-F1',
+    )
+    await waitForLaunchEnabled(page)
+    // the added section is last, below the fold of a gene with dozens of rows
+    await page.$eval(
+      `${LAUNCH_DIALOG} [data-testid="structure-section-added"]`,
+      el => {
+        el.scrollIntoView({ block: 'end' })
+      },
+    )
+    await captureScreenshot(page, screenshot('18-add-pdb-id'))
+
+    await page.type(PDB_ID_INPUT, '1tu')
+    await page.keyboard.press('Enter')
+    expect(await fieldHelperText(page, PDB_ID_INPUT)).toBe(
+      'Four characters beginning with a digit',
+    )
+    expect(await page.$eval(PDB_ID_INPUT, inputValue)).toBe('1tu')
+    expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:1crn'])
+
+    await clickLaunch(page)
+    await page.waitForSelector('[data-testid="protein-view-ready"]', {
+      timeout: 180_000,
+    })
+    await waitForStructureRendered(page)
+    const state = await getProteinViewState(page)
+    expect(state.structures.map(s => s.url)).toEqual([
+      expect.stringMatching(/AF-P01111-F1/),
+      expect.stringMatching(/files\.rcsb\.org.*1crn/i),
+    ])
+    const report = await page.evaluate(() =>
+      window
+        .JBrowseSession!.views!.find(v => v.type === 'ProteinView')!
+        .report!.structures.map(s => ({
+          label: s?.label,
+          loading: s?.loading,
+          error: s?.error,
+        })),
+    )
+    expect(report).toEqual([
+      { label: 'AlphaFold P01111', loading: false, error: undefined },
+      { label: '1CRN', loading: false, error: undefined },
+    ])
     expect(pageComplaintsSince()).toEqual([])
   }, 300_000)
 })
