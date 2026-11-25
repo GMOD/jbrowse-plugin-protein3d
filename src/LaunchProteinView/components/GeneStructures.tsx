@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import { ErrorMessage, LoadingEllipses } from '@jbrowse/core/ui'
 import {
@@ -266,12 +266,14 @@ const GeneStructures = observer(function GeneStructures({
     )
   }
 
+  const rootRef = useRef<HTMLDivElement>(null)
   const addTypedPdbId = () => {
     setEnteredInvalid(!typedPdbIdValid)
     if (typedPdbIdValid) {
+      const pdbId = trimmedTypedPdbId.toLowerCase()
       applyChecked(
         addPdbId({
-          pdbId: trimmedTypedPdbId.toLowerCase(),
+          pdbId,
           added: addedEntries,
           unknown: added.unknown,
           checked,
@@ -282,11 +284,17 @@ const GeneStructures = observer(function GeneStructures({
         setFilter('all')
       }
       setTypedPdbId('')
+      // the added group sits last, below the fold of a long list
+      requestAnimationFrame(() => {
+        rootRef.current
+          ?.querySelector(`[data-testid="structure-row-pdb:${pdbId}"]`)
+          ?.scrollIntoView({ block: 'nearest' })
+      })
     }
   }
 
   return (
-    <div className={classes.root}>
+    <div className={classes.root} ref={rootRef}>
       <UniProtSummaryBar lookup={lookup} />
       <div className={classes.toolbar}>
         <div className={classes.chips} role="group" aria-label="Source">

@@ -1316,6 +1316,24 @@ describe('Protein3d Plugin E2E', () => {
     )
     expect(await checkedStructureRows(page)).toEqual(['alphafold', 'pdb:1crn'])
     expect(await page.$eval(PDB_ID_INPUT, inputValue)).toBe('')
+    // the added group is last in a long list, so the row is scrolled to
+    await expect
+      .poll(
+        () =>
+          page.$eval(
+            `${LAUNCH_DIALOG} [data-testid="structure-row-pdb:1crn"]`,
+            row => {
+              const { left, top, width, height } = row.getBoundingClientRect()
+              const hit = document.elementFromPoint(
+                left + width / 2,
+                top + height / 2,
+              )
+              return !!hit && row.contains(hit)
+            },
+          ),
+        { timeout: 10_000 },
+      )
+      .toBe(true)
     await waitForLaunchEnabled(page)
 
     await page.type(PDB_ID_INPUT, '9XXX')
