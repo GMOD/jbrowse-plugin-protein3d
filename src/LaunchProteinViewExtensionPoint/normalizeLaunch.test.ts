@@ -180,7 +180,10 @@ test('a uniprotId beside structures is reported unless it steers a gene lookup',
       gene: 'TP53',
       userProvidedTranscriptSequence: 'MEE',
     }).warnings,
-  ).toHaveLength(1)
+  ).toEqual([
+    '`uniprotId` beside `structures` names no structure; add it as an entry of `structures`',
+    '`gene` is not looked up beside `userProvidedTranscriptSequence`; give `feature` (the transcript that maps the structure to the genome) and a `connectedView` or `connectedViewId` (the genome view it links to)',
+  ])
 })
 
 test('an unknown key of a structure is reported and dropped', () => {
@@ -253,9 +256,20 @@ test('a feature the launch gives is its transcript, and no gene is looked up bes
   expect(
     accepted({ gene: 'TP53', feature, uniprotId: 'P04637' }).geneModel,
   ).toBeUndefined()
+  const withPdb = accepted({ gene: 'TP53', feature, pdbId: '1TUP' })
+  expect(withPdb.linkage.feature).toEqual(feature)
+  expect(withPdb.warnings).toEqual([
+    '`gene` is not looked up beside `feature`; give `userProvidedTranscriptSequence` (the translation the structure is aligned to) and a `connectedView` or `connectedViewId` (the genome view it links to)',
+  ])
   expect(
-    accepted({ gene: 'TP53', feature, pdbId: '1TUP' }).linkage.feature,
-  ).toEqual(feature)
+    accepted({
+      gene: 'TP53',
+      feature,
+      userProvidedTranscriptSequence: 'MEE',
+      connectedViewId: 'lgv',
+      pdbId: '1TUP',
+    }).warnings,
+  ).toEqual(['`gene` is not looked up beside `feature`'])
 })
 
 test('two sources on one structure keep their precedence and say nothing', () => {
@@ -372,7 +386,11 @@ test('an unknown key of the launch is reported', () => {
       feature: {},
       connectedViewId: 'genome',
     }).warnings,
-  ).toEqual(['ignored unknown key(s): hieght'])
+  ).toEqual([
+    'ignored unknown key(s): hieght',
+    '`gene` is not looked up beside `feature`; give `userProvidedTranscriptSequence` (the translation the structure is aligned to)',
+    '`transcriptId` is not looked up beside `feature`; give `userProvidedTranscriptSequence` (the translation the structure is aligned to)',
+  ])
   expect(rejected({ colour: 'red' }).warnings).toEqual([
     'ignored unknown key(s): colour',
   ])

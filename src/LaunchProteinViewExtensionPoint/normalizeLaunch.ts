@@ -219,6 +219,32 @@ export function spelledTranscriptKey({
       : undefined
 }
 
+const TRANSCRIPT_LOOKUPS = [
+  'gene',
+  'transcriptId',
+] satisfies (keyof LaunchLinkage)[]
+
+function skippedLookups(linkage: LaunchLinkage) {
+  const spelledBy = spelledTranscriptKey(linkage)
+  const missing = [
+    linkage.feature
+      ? undefined
+      : '`feature` (the transcript that maps the structure to the genome)',
+    linkage.userProvidedTranscriptSequence
+      ? undefined
+      : '`userProvidedTranscriptSequence` (the translation the structure is aligned to)',
+    linkage.connectedView || linkage.connectedViewId
+      ? undefined
+      : 'a `connectedView` or `connectedViewId` (the genome view it links to)',
+  ].filter(need => need !== undefined)
+  const advice = missing.length > 0 ? `; give ${missing.join(' and ')}` : ''
+  return spelledBy
+    ? TRANSCRIPT_LOOKUPS.filter(key => linkage[key]).map(
+        key => `\`${key}\` is not looked up beside \`${spelledBy}\`${advice}`,
+      )
+    : []
+}
+
 const LAUNCH_KEYS = [
   'structures',
   'gene',
@@ -443,7 +469,7 @@ export function normalizeLaunch(
         requested: [withUrl(structure)],
         settings,
         linkage,
-        warnings,
+        warnings: [...warnings, ...skippedLookups(linkage)],
         geneModel:
           looksUpGene &&
           !!structure.uniprotId &&
@@ -505,7 +531,12 @@ export function normalizeLaunch(
     return [withUrl(structure)]
   })
   if (requested.length > 0) {
-    return { requested, settings, linkage, warnings }
+    return {
+      requested,
+      settings,
+      linkage,
+      warnings: [...warnings, ...skippedLookups(linkage)],
+    }
   }
   return looksUpGene
     ? {

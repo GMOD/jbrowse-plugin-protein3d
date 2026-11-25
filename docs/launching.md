@@ -57,7 +57,8 @@ transcript out, and the gene is then not looked up at all, since the model,
 translation and genome view the lookup picks all follow the transcript it finds.
 Name the structure and a `connectedView` beside them, as the
 [explicit form](#explicit-form-url--feature--userprovidedtranscriptsequence)
-does.
+does. The launch warns that the `gene` was not looked up and names whichever of
+`feature`, `userProvidedTranscriptSequence` and a genome view it still lacks.
 
 ```
 https://jbrowse.org/code/jb2/main/?config=/ucsc/hg38/config.json&session=spec-{"views":[{"type":"ProteinView","gene":"TP53","pdbId":"1TUP","initialResidues":{"start":248,"end":248}}]}
