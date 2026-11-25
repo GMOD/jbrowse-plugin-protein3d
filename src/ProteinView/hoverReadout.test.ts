@@ -28,12 +28,24 @@ test('a codon split by an intron spans it', () => {
   expect(codonLocus(minus, 1)).toBe('chr17:14-22')
 })
 
-test('writes the locus with thousands separators', () => {
+test('keeps the locus in plain digits, for whatever parses it', () => {
   expect(
     codonLocus(
       { refName: 'chr17', p2gCodon: { 0: [7674221, 7674220, 7674219] } },
       0,
     ),
+  ).toBe('chr17:7674220-7674222')
+})
+
+test("writes the readout's locus with thousands separators", () => {
+  expect(
+    hoverReadout({
+      hover: {},
+      entity: undefined,
+      structureToTranscript: undefined,
+      transcript: '',
+      locus: 'chr17:7674220-7674222',
+    }),
   ).toBe('chr17:7,674,220-7,674,222')
 })
 

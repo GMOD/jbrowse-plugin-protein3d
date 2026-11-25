@@ -2,14 +2,18 @@ import { codonGenomeSpan, residueNumber, structurePos } from 'p2s_mapper'
 
 import type { CoordinateMapper, Entity } from 'p2s_mapper'
 
-function withSeparators(n: number) {
-  return n.toLocaleString('en-US')
+function withSeparators(locus: string) {
+  const coords = locus.lastIndexOf(':') + 1
+  return (
+    locus.slice(0, coords) +
+    locus.slice(coords).replace(/\d+/g, n => Number(n).toLocaleString('en-US'))
+  )
 }
 
 /**
  * A transcript residue's codon as a 1-based locString on the transcript's own
- * refName, outer bounds included when an intron splits it, with thousands
- * separators as the genome view writes one.
+ * refName, outer bounds included when an intron splits it. Plain digits: scripts
+ * and the e2e parse it off the model's `hoverGenomeLocus`.
  */
 export function codonLocus(
   mapping: { refName: string; p2gCodon: Record<number, number[]> } | undefined,
@@ -19,9 +23,7 @@ export function codonLocus(
     return undefined
   }
   const span = codonGenomeSpan(mapping.p2gCodon, transcriptPos)
-  return span
-    ? `${mapping.refName}:${withSeparators(span[0] + 1)}-${withSeparators(span[1])}`
-    : undefined
+  return span ? `${mapping.refName}:${span[0] + 1}-${span[1]}` : undefined
 }
 
 /**
@@ -65,7 +67,7 @@ export function hoverReadout({
       ? undefined
       : `${structureLetter ?? ''}${residue}${transcriptResidue}`,
     hover.chain ? `chain ${hover.chain}` : undefined,
-    locus,
+    locus === undefined ? undefined : withSeparators(locus),
     exon,
   ]
     .filter(part => !!part)
