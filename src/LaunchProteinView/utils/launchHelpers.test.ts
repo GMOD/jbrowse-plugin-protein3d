@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  errorHoldsLaunch,
   getLaunchMissingReasons,
   launchControls,
   launchReadiness,
@@ -21,6 +22,44 @@ describe('getLaunchMissingReasons', () => {
       'Could not compute protein sequence (feature may be missing CDS subfeatures)',
       'No transcript selected',
     ])
+  })
+})
+
+describe('errorHoldsLaunch', () => {
+  const ranking = new Error('alignment failed')
+  it('holds the launch on any error but a ranking the selection needs not', () => {
+    const preferred = { preferredTranscriptId: 'ENST1' }
+    expect(
+      errorHoldsLaunch({
+        ...preferred,
+        error: ranking,
+        rankingError: ranking,
+        selectedTranscriptId: 'ENST1',
+      }),
+    ).toBe(false)
+    expect(
+      errorHoldsLaunch({
+        ...preferred,
+        error: ranking,
+        rankingError: ranking,
+        selectedTranscriptId: 'ENST2',
+      }),
+    ).toBe(true)
+    expect(
+      errorHoldsLaunch({
+        ...preferred,
+        error: new Error('no chains'),
+        rankingError: ranking,
+        selectedTranscriptId: 'ENST1',
+      }),
+    ).toBe(true)
+    expect(
+      errorHoldsLaunch({
+        ...preferred,
+        error: undefined,
+        rankingError: undefined,
+      }),
+    ).toBe(false)
   })
 })
 

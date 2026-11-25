@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 
 import { getPdbStructureUrl } from 'p2s_mapper'
 
+import { errorHoldsLaunch } from '../utils/launchHelpers'
 import { useAlphaFoldComplexModel } from './useAlphaFoldComplexes'
 import usePdbEntry from './usePdbEntry'
 import useStructureFileSequence from './useStructureFileSequence'
@@ -123,15 +124,22 @@ export default function useStructureLaunch({
           : 'Asking AlphaFold DB for the complex'),
   ].filter(s => typeof s === 'string')
   const isLoading = loadingStatuses.length > 0
+  // errors wait for loading to finish, so a lookup in flight doesn't flash one
+  const error = isLoading
+    ? undefined
+    : (selection.error ?? complex.error ?? file.error)
 
   return {
     ...selection,
     loadingStatuses,
     isLoading,
-    // errors wait for loading to finish, so a lookup in flight doesn't flash one
-    error: isLoading
-      ? undefined
-      : (selection.error ?? complex.error ?? file.error),
+    error,
+    failed: errorHoldsLaunch({
+      error,
+      rankingError: selection.rankingError,
+      selectedTranscriptId: selection.selectedTranscriptId,
+      preferredTranscriptId,
+    }),
     /** characters of the picked file's text, once read for its chains */
     fileTextLength: file.textLength,
     /** the picked file's text, as read for its chains */

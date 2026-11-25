@@ -66,6 +66,7 @@ export default function useTranscriptIsoformSelection({
     isRanking:
       !!isoformSequences && !ranking && !rankingError && !userSelection,
     error: error ?? rankingError,
+    rankingError,
     partialFailure,
     retryIsoforms,
     isoformsRetrying,

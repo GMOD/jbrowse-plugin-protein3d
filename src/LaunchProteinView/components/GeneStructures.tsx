@@ -239,7 +239,7 @@ const GeneStructures = observer(function GeneStructures({
       addedSummaries.isLoading && checkedRows.some(r => r.kind === 'added'),
     structureCount: launchStructures.length,
     loading: launch.isLoading,
-    failed: !!error,
+    failed: launch.failed,
     userSelectedProteinSequence: launch.selectedIsoform,
     selectedTranscript: launch.selectedTranscript,
     uniprotId: launchUniprotId,

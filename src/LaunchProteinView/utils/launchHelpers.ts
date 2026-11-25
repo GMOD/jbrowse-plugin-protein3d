@@ -42,6 +42,26 @@ export function getLaunchMissingReasons({
   ].filter((s): s is string => typeof s === 'string')
 }
 
+/** Whether an error shown in the dialog holds the 3D launch. A failed isoform
+ * ranking is shown but holds no launch of the right-clicked isoform, which
+ * needs no ranking. */
+export function errorHoldsLaunch({
+  error,
+  rankingError,
+  selectedTranscriptId,
+  preferredTranscriptId,
+}: {
+  error: unknown
+  rankingError: unknown
+  selectedTranscriptId?: string
+  preferredTranscriptId?: string
+}) {
+  return (
+    error !== undefined &&
+    !(error === rankingError && selectedTranscriptId === preferredTranscriptId)
+  )
+}
+
 /** Where the gene's structure list stands: still choosing its default rows,
  * listing none, or listing some */
 export type Listing = 'finding' | 'empty' | 'listed'

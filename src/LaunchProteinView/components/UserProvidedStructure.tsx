@@ -105,7 +105,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
     !!selectedTranscript &&
     !launch.isLoading &&
     !typing &&
-    !launch.error &&
+    !launch.failed &&
     (!activeFile || launch.fileTextLength !== undefined) &&
     !launching
   const textSize = launch.fileTextLength ?? activeFile?.size ?? 0
