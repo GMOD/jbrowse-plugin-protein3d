@@ -250,9 +250,9 @@ the same transcript. The DNA strands and the other two p53 copies take no part
 in the fit: until 2026-11-05 TM-align read all of them as one chain and put copy
 C on the model instead, at a logged RMSD of 38 Å for a 0.9 Å fit. Each
 structure's row in the view header has an eye button: hide 1TUP to see the
-model's full chain underneath it, then use **Re-align structures (TM-align)** in
-the view menu; the superposition runs again and 1TUP stays hidden until you show
-it.
+model's full chain underneath it, then use **Re-superpose structures
+(TM-align)** in the view menu; the superposition runs again and 1TUP stays
+hidden until you show it.
 
 [TP53 on AlphaFold and 1TUP](https://jbrowse.org/code/jb2/main/?config=%2Fucsc%2Fhg38%2Fconfig.json&session=spec-%7B%22views%22%3A%5B%7B%22type%22%3A%22ProteinView%22%2C%22structures%22%3A%5B%7B%22uniprotId%22%3A%22P04637%22%7D%2C%7B%22pdbId%22%3A%221TUP%22%7D%5D%2C%22transcriptId%22%3A%22NM_000546.6%22%2C%22connectedView%22%3A%7B%22assembly%22%3A%22hg38%22%2C%22loc%22%3A%22chr17%3A7%2C668%2C421-7%2C687%2C550%22%2C%22tracks%22%3A%5B%22hg38-ncbiRefSeqCurated%22%5D%7D%7D%5D%7D)
 

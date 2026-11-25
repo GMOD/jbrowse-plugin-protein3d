@@ -480,7 +480,7 @@ describe('Protein3d Plugin E2E', () => {
         v => v.type === 'ProteinView',
       )!
       view.menuItems!().find(
-        item => item.label === 'Re-align structures (TM-align)',
+        item => item.label === 'Re-superpose structures (TM-align)',
       )!.onClick!()
       return view.superposedCount
     })

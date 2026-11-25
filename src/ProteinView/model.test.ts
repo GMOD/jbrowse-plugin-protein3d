@@ -160,7 +160,7 @@ test('the view menu carries actions and the Tune menu carries toggles', () => {
     'Remove structure',
     'Clear selection',
     'Import manual alignment...',
-    'Re-align structures (TM-align)',
+    'Re-superpose structures (TM-align)',
     'Restore hidden feature tracks',
   ])
 
@@ -172,6 +172,45 @@ test('the view menu carries actions and the Tune menu carries toggles', () => {
   expect(
     labels.some(label => typeof label === 'string' && toggles.includes(label)),
   ).toBe(false)
+})
+
+function disabledMenuItems(view: View) {
+  return view
+    .menuItems()
+    .flatMap(item =>
+      'label' in item && 'disabled' in item && item.disabled
+        ? [item.label]
+        : [],
+    )
+}
+
+test('a view-menu action is disabled until there is something for it to do', () => {
+  const view = makeView()
+  expect(disabledMenuItems(view)).toEqual([
+    'Clear selection',
+    'Import manual alignment...',
+    'Restore hidden feature tracks',
+  ])
+
+  const [first, second] = view.structures
+  second!.setClickedStructureRanges([{ start: 3, end: 7 }])
+  first!.hideFeatureType('Helix')
+  expect(disabledMenuItems(view)).toEqual(['Import manual alignment...'])
+
+  view.removeStructure(second!)
+  expect(disabledMenuItems(view)).toEqual([
+    'Clear selection',
+    'Import manual alignment...',
+    'Re-superpose structures (TM-align)',
+  ])
+})
+
+test('importing an alignment is offered for a structure with a transcript', () => {
+  const view = ProteinView.create({
+    type: 'ProteinView',
+    structures: [{ url: 'a.cif', userProvidedTranscriptSequence: 'MEEPQ' }],
+  })
+  expect(disabledMenuItems(view)).not.toContain('Import manual alignment...')
 })
 
 // the only structure carries the transcript and genome link an added one copies

@@ -1145,12 +1145,18 @@ function stateModelFactory() {
           ...assemblyMenu(self.structures),
           {
             label: 'Clear selection',
+            disabled: !self.structures.some(
+              s =>
+                s.clickedStructureRanges.length > 0 ||
+                s.selectedFeatureId !== undefined,
+            ),
             onClick: () => {
               self.clearSelection()
             },
           },
           {
             label: 'Import manual alignment...',
+            disabled: !self.alignmentStructure?.userProvidedTranscriptSequence,
             onClick: () => {
               getSession(self).queueDialog(handleClose => [
                 ManualAlignmentDialog,
@@ -1159,13 +1165,15 @@ function stateModelFactory() {
             },
           },
           {
-            label: 'Re-align structures (TM-align)',
+            label: 'Re-superpose structures (TM-align)',
+            disabled: self.structures.length < 2,
             onClick: () => {
               self.setSuperposedKeys([])
             },
           },
           {
             label: 'Restore hidden feature tracks',
+            disabled: !self.structures.some(s => s.hiddenFeatureTypes.size > 0),
             onClick: () => {
               for (const structure of self.structures) {
                 structure.showAllFeatureTypes()
