@@ -8,7 +8,7 @@ import type {
   ProteinStructureSpec,
   ProteinViewSpec,
 } from '../ProteinView/proteinViewSpec'
-import type { StructureFilter } from '../ProteinView/residueFilter'
+import type { FilterPredicate } from '../ProteinView/residueFilter'
 import type { ResidueMark } from '../ProteinView/residueMarks'
 import type { SavedCamera } from '../ProteinView/savedCamera'
 import type { ProteinSurface } from '../ProteinView/surface'
@@ -87,19 +87,9 @@ function isFeature(value: unknown): value is SimpleFeatureSerialized {
   return isRecord(value)
 }
 
-// the shape only: the view model refuses a predicate that does not read, with
-// the reason, as it does a color
-function isPredicateList(value: unknown): value is StructureFilter {
-  return Array.isArray(value) && value.every(isRecord)
-}
-
-// the shape only, as for a filter: the view model refuses a site that does
-// not parse, with the reason
-function isMarkList(value: unknown): value is ResidueMark[] {
-  return Array.isArray(value) && value.every(isRecord)
-}
-
-function isDistanceList(value: unknown): value is DistanceMeasurement[] {
+// the shape only: the view model refuses, with the reason, a filter predicate,
+// mark or distance that does not read, as it does a color
+function isRecordList<T extends object>(value: unknown): value is T[] {
   return Array.isArray(value) && value.every(isRecord)
 }
 
@@ -148,7 +138,7 @@ const RANGES = '{ start, end } numbers or an array of them'
  * property, so the reader reports a value of the wrong type under the name
  * `at` gives it and leaves it out.
  */
-function fieldReader<K extends string>(
+export function fieldReader<K extends string>(
   fields: ReadonlyMap<string, unknown>,
   at: (key: K) => string,
   warnings: string[],
@@ -308,12 +298,12 @@ function readViewSettings(
     surface: readLayer('surface', isSurface, surfaceProblems),
     distances: read(
       'distances',
-      isDistanceList,
+      isRecordList<DistanceMeasurement>,
       "a list such as [{ a: 'A:46@NZ', b: 'A:80@NZ' }]",
     ),
     marks: read(
       'marks',
-      isMarkList,
+      isRecordList<ResidueMark>,
       "a list such as [{ site: 'A:248', mark: 'spheres' }]",
     ),
     silhouettes: flag('silhouettes'),
@@ -352,7 +342,7 @@ function readStructure(
     chains: read('chains', isStringArray, 'a list of chain ids'),
     filter: read(
       'filter',
-      isPredicateList,
+      isRecordList<FilterPredicate>,
       "a list of predicates such as [{ field: 'residue', lte: 184 }]",
     ),
     feature: read('feature', isFeature, 'a feature object'),
