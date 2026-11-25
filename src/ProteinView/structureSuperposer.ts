@@ -35,13 +35,22 @@ export type SuperposedStructure = IAnyStateTreeNode & {
   setSuperposition: (outcome: SuperpositionOutcome | undefined) => void
 }
 
+export type SuperpositionKey = readonly unknown[]
+
+export interface KeyedStructure {
+  readonly loadedToMolstar: boolean
+  readonly molstarStructures: readonly unknown[]
+  readonly mappedEntity: { readonly entityId: string } | undefined
+  readonly pairwiseAlignment: unknown
+}
+
 export type StructureSuperposerHost = IAnyStateTreeNode & {
   readonly molstarPluginContext: PluginContext | undefined
   readonly structures: readonly SuperposedStructure[]
-  /** How many loaded structures the last superposition covered; observable,
-   * so the camera framing can wait for the reset that ends a superposition. */
-  readonly superposedCount: number
-  setSuperposedCount: (count: number) => void
+  /** The keys of the loads the last superposition covered; observable, so
+   * the camera framing can wait for the reset that ends a superposition. */
+  readonly superposedKeys: readonly SuperpositionKey[]
+  setSuperposedKeys: (keys: readonly SuperpositionKey[]) => void
   addNotice: (notice: unknown) => void
 }
 
@@ -73,15 +82,33 @@ function superposedLoad(s: SuperposedStructure): SuperposedLoad {
 
 // what a superposition of `s` depends on: its Mol* structures, and the chain
 // and alignment that pick the copy it aligns by
-function loadKey(s: SuperposedStructure) {
+function loadKey(s: KeyedStructure): SuperpositionKey {
   return [s.molstarStructures, s.mappedEntity?.entityId, s.pairwiseAlignment]
 }
 
-function sameKeys(a: readonly unknown[][], b: readonly unknown[][]) {
+function sameKeys(
+  a: readonly SuperpositionKey[],
+  b: readonly SuperpositionKey[],
+) {
   return (
     a.length === b.length &&
     a.every((key, i) => key.every((part, j) => part === b[i]?.[j]))
   )
+}
+
+export function superpositionKeys(structures: readonly KeyedStructure[]) {
+  return structures.filter(s => s.loadedToMolstar).map(loadKey)
+}
+
+/** Whether the structures loaded now are the ones the last superposition
+ * covered, by identity, so a run still under way for a chain pick, an
+ * imported alignment or an assembly switch reads as not superposed. */
+export function structuresSuperposed(host: {
+  readonly structures: readonly KeyedStructure[]
+  readonly superposedKeys: readonly SuperpositionKey[]
+}) {
+  const keys = superpositionKeys(host.structures)
+  return keys.length < 2 || sameKeys(keys, host.superposedKeys)
 }
 
 /**
@@ -99,7 +126,7 @@ function sameKeys(a: readonly unknown[][], b: readonly unknown[][]) {
  *     rather than by its whole contents and again by its chain;
  *   - a non-observable in-flight flag serializes runs so overlapping molstar
  *     state mutations can't interleave;
- *   - `superposedCount`, the keys of the loads it covered and
+ *   - the host's `superposedKeys`, the keys of the loads it covered, and
  *     `superposedPlugin` remember the last alignment, so a run only happens
  *     when the loaded set, a mapped chain or the plugin changes, not on every
  *     reaction. The loads are compared by identity, since a removal and a
@@ -108,12 +135,11 @@ function sameKeys(a: readonly unknown[][], b: readonly unknown[][]) {
  *     (or the plugin been swapped) while it was aligning;
  *   - every observable is read before the in-flight check, so a reset that
  *     lands mid-run (Re-align, a removal) is still tracked, and the run leaves
- *     a reset count alone rather than overwriting it.
+ *     a reset alone rather than overwriting it.
  */
 export function makeStructureSuperposer(host: StructureSuperposerHost) {
   let superposing = false
   let superposedPlugin: PluginContext | undefined
-  let superposedKeys: unknown[][] = []
 
   function run() {
     const { molstarPluginContext: plugin, structures } = host
@@ -126,11 +152,10 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
     const loadedCount = loaded.length
     if (plugin !== superposedPlugin) {
       superposedPlugin = plugin
-      host.setSuperposedCount(0)
+      host.setSuperposedKeys([])
     }
-    const startCount = host.superposedCount
-    const changed =
-      loadedCount !== startCount || !sameKeys(keys, superposedKeys)
+    const startKeys = host.superposedKeys
+    const changed = !sameKeys(keys, startKeys)
     if (loadedCount < 2) {
       for (const s of loaded) {
         s.setSuperposition(undefined)
@@ -155,10 +180,9 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
             // a run into a plugin swapped away mid-flight covered nothing
             if (
               host.molstarPluginContext === plugin &&
-              host.superposedCount === startCount
+              host.superposedKeys === startKeys
             ) {
-              superposedKeys = keys
-              host.setSuperposedCount(loadedCount)
+              host.setSuperposedKeys(keys)
             }
             run()
           }

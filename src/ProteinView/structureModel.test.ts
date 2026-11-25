@@ -7,9 +7,11 @@ import { beforeEach, expect, test, vi } from 'vitest'
 import { parseStructure } from '../test_data/molstarStructure'
 import { structuresSettled } from './frameSelection'
 import Structure from './structureModel'
+import { superpositionKeys } from './structureSuperposer'
 
 import type { StructureAssembly } from './loadStructureData'
 import type { ProteinColor } from './proteinColor'
+import type { SuperpositionKey } from './structureSuperposer'
 import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 import type { AlignmentAlgorithm, PairwiseAlignment } from 'p2s_mapper'
 
@@ -68,7 +70,10 @@ const TestParent = types
       return undefined
     },
   }))
-  .volatile(() => ({ viewNotices: new Array<unknown>(), superposedCount: 0 }))
+  .volatile(() => ({
+    viewNotices: new Array<unknown>(),
+    superposedKeys: new Array<SuperpositionKey>(),
+  }))
   .views(self => ({
     get settled() {
       return structuresSettled(self)
@@ -78,8 +83,8 @@ const TestParent = types
     addNotice(e: unknown) {
       self.viewNotices.push(e)
     },
-    setSuperposedCount(n: number) {
-      self.superposedCount = n
+    markSuperposed() {
+      self.superposedKeys = superpositionKeys(self.structures)
     },
     clearSelection() {
       for (const structure of self.structures) {
@@ -1044,7 +1049,7 @@ function settle(parent: ReturnType<typeof twoNumberedStructures>) {
     s.setStructureData({ entities: NUMBERED_FROM_94 })
     s.setLoadedToMolstar(true)
   }
-  parent.setSuperposedCount(parent.structures.length)
+  parent.markSuperposed()
 }
 
 test('focusResidues waits for the view to settle, superposition included', async () => {
@@ -1060,9 +1065,29 @@ test('focusResidues waits for the view to settle, superposition included', async
   await Promise.resolve()
   expect(runs).toBeUndefined()
   expect(a!.clickedStructureRanges).toEqual([])
-  parent.setSuperposedCount(2)
+  parent.markSuperposed()
   expect(await pending).toEqual([{ start: 1, end: 2 }])
   expect(b!.clickedStructureRanges).toEqual([])
+})
+
+// an imported alignment re-superposes, and the camera reset that ends the run
+// undid a framing done while the count of loads still matched
+test('focusResidues waits for a re-superposition an imported alignment started', async () => {
+  const parent = twoNumberedStructures()
+  const [a, b] = parent.structures
+  settle(parent)
+  b!.setAlignment({ ...pairwiseAlignment }, true)
+  let runs: unknown
+  a!
+    .focusResidues({ residues: { start: 95, end: 95 } })
+    .then(r => (runs = r))
+    .catch(() => {})
+  await new Promise(resolve => setTimeout(resolve, 0))
+  expect(runs).toBeUndefined()
+  parent.markSuperposed()
+  await vi.waitFor(() => {
+    expect(runs).toEqual([{ start: 1, end: 2 }])
+  })
 })
 
 test('focusResidues rejects when the structure never settles', async () => {

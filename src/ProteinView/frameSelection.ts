@@ -1,12 +1,16 @@
 import { residueLoci } from './applyLociInteractivity'
 import loadMolstar from './loadMolstar'
+import { structuresSuperposed } from './structureSuperposer'
 
+import type { KeyedStructure, SuperpositionKey } from './structureSuperposer'
 import type { Loci } from 'molstar/lib/mol-model/loci'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
-interface FramedStructure {
+interface SettlingStructure extends KeyedStructure {
   readonly loading: boolean
-  readonly loadedToMolstar: boolean
+}
+
+interface FramedStructure extends SettlingStructure {
   readonly seedLit: boolean
   readonly hidden: boolean
   readonly molstarStructure: Structure | undefined
@@ -24,28 +28,24 @@ export interface FramingPlugin {
 export interface SelectionFramerHost {
   readonly molstarPluginContext: FramingPlugin | undefined
   readonly structures: readonly FramedStructure[]
-  readonly superposedCount: number
+  readonly superposedKeys: readonly SuperpositionKey[]
 }
 
 /**
  * Every structure loaded and aligned or failed and, with several loaded,
- * superposed: the reset that ends a superposition would undo any framing done
- * before it. The superposer counts only what reached Mol*, so a failed
- * structure is left out of the comparison.
+ * superposed as they are now: the reset that ends a superposition would undo
+ * any framing done before it. The superposer keys only what reached Mol*, so a
+ * failed structure is left out of the comparison.
  */
 export function structuresSettled(host: {
-  readonly structures: readonly {
-    readonly loading: boolean
-    readonly loadedToMolstar: boolean
-  }[]
-  readonly superposedCount: number
+  readonly structures: readonly SettlingStructure[]
+  readonly superposedKeys: readonly SuperpositionKey[]
 }) {
-  const { structures, superposedCount } = host
-  const loadedCount = structures.filter(s => s.loadedToMolstar).length
+  const { structures } = host
   return (
     structures.length > 0 &&
     structures.every(s => !s.loading) &&
-    (loadedCount < 2 || superposedCount === loadedCount)
+    structuresSuperposed(host)
   )
 }
 

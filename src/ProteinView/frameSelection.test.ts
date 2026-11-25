@@ -3,7 +3,9 @@ import { expect, test, vi } from 'vitest'
 
 import { parseStructure } from '../test_data/molstarStructure'
 import { frameResidues, makeSelectionFramer } from './frameSelection'
+import { superpositionKeys } from './structureSuperposer'
 
+import type { SuperpositionKey } from './structureSuperposer'
 import type { Loci } from 'molstar/lib/mol-model/loci'
 
 vi.mock('./loadMolstar', async () => {
@@ -51,10 +53,14 @@ async function structure(
     seedLit: seeded,
     hidden,
     molstarStructure,
+    molstarStructures: [molstarStructure],
     mappedEntity: { entityId: '1' },
+    pairwiseAlignment: undefined,
     clickedLabelSeqIds,
   })
 }
+
+const noKeys: readonly SuperpositionKey[] = []
 
 const tick = () => new Promise(r => setTimeout(r, 0))
 
@@ -65,7 +71,7 @@ test('frames a seeded selection once every structure has settled and superposed'
   const host = observable({
     molstarPluginContext: plugin,
     structures: [human, mouse],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
 
@@ -77,7 +83,7 @@ test('frames a seeded selection once every structure has settled and superposed'
   expect(focused).toHaveLength(0)
 
   runInAction(() => {
-    host.superposedCount = 2
+    host.superposedKeys = superpositionKeys(host.structures)
   })
   await vi.waitFor(() => {
     expect(focused).toHaveLength(1)
@@ -100,7 +106,7 @@ test('a structure that failed to load does not hold the others back', async () =
   const host = observable({
     molstarPluginContext: plugin,
     structures: [human, missing],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -122,7 +128,7 @@ test('a seed that resolves after the structure settles is still framed', async (
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -145,7 +151,7 @@ test('a clicked selection with no seed leaves the camera alone', async () => {
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -163,7 +169,7 @@ test('a seed on a hidden structure leaves the camera alone', async () => {
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -181,7 +187,7 @@ test('a remount frames again in the new plugin', async () => {
   const host = observable({
     molstarPluginContext: first.plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -206,7 +212,7 @@ test('a one-residue seed is focused like a click on it', async () => {
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -225,7 +231,7 @@ test('a seeded range is framed but not focused', async () => {
   const host = observable({
     molstarPluginContext: plugin,
     structures: [only],
-    superposedCount: 0,
+    superposedKeys: noKeys,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {

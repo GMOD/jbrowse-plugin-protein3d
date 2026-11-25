@@ -3,10 +3,16 @@ import { autorun } from 'mobx'
 import { beforeEach, expect, test, vi } from 'vitest'
 
 import { parseStructure } from '../test_data/molstarStructure'
-import { makeStructureSuperposer } from './structureSuperposer'
+import {
+  makeStructureSuperposer,
+  structuresSuperposed,
+} from './structureSuperposer'
 import { superposeStructures } from './superposeStructures'
 
-import type { StructureSuperposerHost } from './structureSuperposer'
+import type {
+  StructureSuperposerHost,
+  SuperpositionKey,
+} from './structureSuperposer'
 import type { SuperpositionOutcome } from './superpositionOutcome'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
@@ -60,15 +66,20 @@ const TestHost = types
   .model('TestHost', { structures: types.array(TestStructure) })
   .volatile(() => ({
     molstarPluginContext: undefined as object | undefined,
-    superposedCount: 0,
+    superposedKeys: [] as readonly SuperpositionKey[],
     errors: [] as unknown[],
+  }))
+  .views(self => ({
+    get superposedCount() {
+      return self.superposedKeys.length
+    },
   }))
   .actions(self => ({
     setPlugin(p?: object) {
       self.molstarPluginContext = p
     },
-    setSuperposedCount(n: number) {
-      self.superposedCount = n
+    setSuperposedKeys(keys: readonly SuperpositionKey[]) {
+      self.superposedKeys = keys
     },
     addNotice(e: unknown) {
       self.errors.push(e)
@@ -209,7 +220,7 @@ test('a reset during a run is not overwritten by the run finishing', async () =>
   expect(host.superposedCount).toBe(2)
   const finish = blockNextSuperpose()
   host.structures[2]!.setLoadedToMolstar(true)
-  host.setSuperposedCount(0)
+  host.setSuperposedKeys([])
   finish()
   await tick()
   await tick()
@@ -264,6 +275,42 @@ test('re-superposes when the chain picker maps another chain', async () => {
   host.structures[1]!.setMapping('2', [1], { 0: 0 })
   await tick()
   expect(mockSuperpose).toHaveBeenCalledTimes(2)
+  dispose()
+})
+
+// the run a chain pick starts ends in a camera reset, so whatever frames the
+// camera has to wait for it, though the count of loads never moved
+test('a re-superposition still running reads as not superposed', async () => {
+  const { host, run } = setup({}, 2)
+  const dispose = autorun(run)
+  await tick()
+  expect(structuresSuperposed(host)).toBe(true)
+  const finish = blockNextSuperpose()
+  host.structures[1]!.setMapping('2', [1], { 0: 0 })
+  expect(host.superposedCount).toBe(2)
+  expect(structuresSuperposed(host)).toBe(false)
+  finish()
+  await tick()
+  expect(structuresSuperposed(host)).toBe(true)
+  dispose()
+})
+
+// the count the swap leaves behind equals the count loaded
+test('a structure swapped in during a run reads as not superposed until a run covers it', async () => {
+  const finishFirst = blockNextSuperpose()
+  const finishSecond = blockNextSuperpose()
+  const { host, run } = setup({}, 2)
+  const dispose = autorun(run)
+  host.structures[1]!.setLoadedToMolstar(false)
+  host.structures[2]!.setLoadedToMolstar(true)
+  finishFirst()
+  await tick()
+  expect(mockSuperpose).toHaveBeenCalledTimes(2)
+  expect(host.superposedCount).toBe(2)
+  expect(structuresSuperposed(host)).toBe(false)
+  finishSecond()
+  await tick()
+  expect(structuresSuperposed(host)).toBe(true)
   dispose()
 })
 

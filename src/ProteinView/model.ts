@@ -365,9 +365,10 @@ function stateModelFactory() {
       molstarPluginContext: undefined as PluginContext | undefined,
       /**
        * #volatile
-       * how many loaded structures the last TM-align superposition covered
+       * the loads the last TM-align superposition covered, see
+       * makeStructureSuperposer
        */
-      superposedCount: 0,
+      superposedKeys: [] as readonly (readonly unknown[])[],
       /**
        * #volatile
        * color and surface runs queued or in flight; the ready marker waits
@@ -457,8 +458,8 @@ function stateModelFactory() {
         }
         self.molstarPluginContext = p
       },
-      setSuperposedCount(count: number) {
-        self.superposedCount = count
+      setSuperposedKeys(keys: readonly (readonly unknown[])[]) {
+        self.superposedKeys = keys
       },
       /**
        * #action
@@ -508,7 +509,7 @@ function stateModelFactory() {
         self.distances =
           self.distances && withoutStructure(self.distances, removed)
         self.structures.remove(structure)
-        self.setSuperposedCount(0)
+        self.setSuperposedKeys([])
         if (plugin) {
           removeMolstarStructure({ plugin, molstarStructure }).catch(
             reportPluginFailure(self, plugin),
@@ -944,6 +945,13 @@ function stateModelFactory() {
       },
       /**
        * #getter
+       * How many loaded structures the last TM-align superposition covered.
+       */
+      get superposedCount() {
+        return self.superposedKeys.length
+      },
+      /**
+       * #getter
        * What the view resolved, as plain data: whether it is still loading,
        * what failed, the notices its banner lists, and each structure's
        * report. The header shows the same things to a reader.
@@ -1154,7 +1162,7 @@ function stateModelFactory() {
           {
             label: 'Re-align structures (TM-align)',
             onClick: () => {
-              self.setSuperposedCount(0)
+              self.setSuperposedKeys([])
             },
           },
           {
