@@ -17,6 +17,35 @@ test('equal scores still span a ramp', () => {
   expect(valueDomain([2, 2])).toEqual({ min: 2, max: 3 })
 })
 
+test('small scores keep a domain as fine as their spread', () => {
+  expect(valueDomain([0.00002, 0.001, 0.004])).toEqual({ min: 0, max: 0.004 })
+  expect(valueDomain([0.991, 0.992, 0.994])).toEqual({
+    min: 0.991,
+    max: 0.994,
+  })
+})
+
+test('equal small scores widen by their own magnitude', () => {
+  expect(valueDomain([0.003, 0.003])).toEqual({ min: 0.003, max: 0.004 })
+  expect(valueDomain([0, 0])).toEqual({ min: 0, max: 1 })
+})
+
+test('an end from the data past a small given end moves a step its size', () => {
+  const values = [0.002, 0.003]
+  expect(
+    paintedColor(
+      { field: 'values', values, domainMax: 0.001 },
+      { domain: valueDomain(values) },
+    ),
+  ).toMatchObject({ domainMin: 0, domainMax: 0.001 })
+  expect(
+    paintedColor(
+      { field: 'values', values, domainMin: 0.005 },
+      { domain: valueDomain(values) },
+    ),
+  ).toMatchObject({ domainMin: 0.005, domainMax: 0.006 })
+})
+
 test('no scores have no domain', () => {
   expect(valueDomain([])).toBeUndefined()
   expect(valueDomain([Number.NaN])).toBeUndefined()
