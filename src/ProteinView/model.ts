@@ -1072,6 +1072,7 @@ function stateModelFactory() {
             .map(s => ({
               placedValues: s.placedValues,
               entity: s.mappedEntity,
+              entities: s.entities,
             })),
         )
       },
