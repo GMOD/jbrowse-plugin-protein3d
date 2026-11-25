@@ -157,7 +157,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
         {isLoadingIsoforms ? (
           <LoadingEllipses
             variant="subtitle2"
-            message="Loading transcript sequences"
+            message="Loading protein sequences from transcript isoforms"
           />
         ) : null}
 
@@ -260,7 +260,7 @@ const FoldseekSearch = observer(function FoldseekSearch({
             handleClose()
           }}
         >
-          Close
+          Cancel
         </Button>
         {isBusy ? (
           <Button

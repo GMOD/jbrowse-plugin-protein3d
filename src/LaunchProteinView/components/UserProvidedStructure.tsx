@@ -181,7 +181,10 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
               </>
             ) : null
           ) : (
-            <LoadingEllipses title="Loading protein sequences" variant="h6" />
+            <LoadingEllipses
+              message="Loading protein sequences from transcript isoforms"
+              variant="h6"
+            />
           )}
         </div>
       </DialogContent>

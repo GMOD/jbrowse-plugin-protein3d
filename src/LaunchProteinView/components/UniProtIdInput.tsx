@@ -84,7 +84,7 @@ const UniProtIdInput = observer(function UniProtIdInput({
         <div>
           <TextField
             autoFocus
-            label="UniProt ID"
+            label="UniProt accession"
             variant="outlined"
             placeholder="e.g. P68871"
             size="small"
