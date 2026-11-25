@@ -179,6 +179,7 @@ const StructureList = observer(function StructureList({
   sections,
   geneName,
   empty,
+  sourceFailed,
   checked,
   uniprotLength,
   onToggle,
@@ -188,6 +189,8 @@ const StructureList = observer(function StructureList({
   geneName: string
   /** every source has answered and none listed a structure */
   empty: boolean
+  /** a source failed, and says so in its section */
+  sourceFailed: boolean
   checked: readonly string[]
   uniprotLength: number
   onToggle: (row: StructureRow) => void
@@ -201,9 +204,11 @@ const StructureList = observer(function StructureList({
           variant="body2"
           data-testid="structure-list-empty"
         >
-          No structures listed for {geneName}. Pick a UniProt entry above, add
-          one by PDB ID, or use the Similar structures (Foldseek) or Your file
-          or URL tab.
+          {sourceFailed
+            ? `No structures found for ${geneName} so far: a source below did not answer.`
+            : `No structures listed for ${geneName}.`}{' '}
+          Pick a UniProt entry above, add one by PDB ID, or use the Similar
+          structures (Foldseek) or Your file or URL tab.
         </Typography>
       ) : null}
       {SECTIONS.map(section => (

@@ -208,13 +208,16 @@ export default function useGeneStructures({
         },
       ]
     : []
-  const sections = sectionStatus([...datasetLines, ...uniprotLines])
+  const lines = [...datasetLines, ...uniprotLines]
+  const sections = sectionStatus(lines)
 
   const hasDatasetRow = datasets.matches.length > 0
   return {
     rows,
     uniprotLength,
     sections,
+    /** a source failed, so an empty list is not the whole answer */
+    sourceFailed: lines.some(l => !!l.retry && typeof l.notice === 'string'),
     // the default pick is a dataset's structure, else the AlphaFold model,
     // else the first row listed, so it is known once the datasets have loaded
     // and listed one, or AlphaFold DB has answered, or everything has

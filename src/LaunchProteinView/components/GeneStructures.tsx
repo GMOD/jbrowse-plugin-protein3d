@@ -308,6 +308,7 @@ const GeneStructures = observer(function GeneStructures({
         sections={structures.sections}
         geneName={geneName}
         empty={listing === 'empty'}
+        sourceFailed={structures.sourceFailed}
         checked={checked}
         uniprotLength={structures.uniprotLength}
         onToggle={toggle}

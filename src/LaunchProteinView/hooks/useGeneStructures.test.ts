@@ -182,6 +182,7 @@ test('lists the model, then an entry once RCSB has named its partners', async ()
     loading: [],
     notices: [],
   })
+  expect(result.current.sourceFailed).toBe(false)
 })
 
 test('a failed partner lookup places entries by coverage and says so', async () => {
@@ -208,6 +209,7 @@ test('RCSB failing leaves the AlphaFold model listed and a line in each section'
   expect(result.current.rows.map(r => r.key)).toEqual(['alphafold'])
   expect(result.current.sections.alone.notices).toHaveLength(1)
   expect(result.current.sections.partner.notices).toHaveLength(1)
+  expect(result.current.sourceFailed).toBe(true)
 })
 
 test('Retry asks RCSB again and lists what it answers', async () => {
