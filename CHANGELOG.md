@@ -1,3 +1,20 @@
+## [1.36.2](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.36.1...v1.36.2) (2026-11-25)
+
+### Bug Fixes
+
+- A spec's chains or filter keep the polymer of a structure Mol* draws in atomic detail ([6e92afb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/6e92afb112cc6ecbfb5c9ab13bafabdf1c005b97))
+- The No value swatch shows while a shown structure draws something grey ([73d32fe](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/73d32fe51f693c5f3cb1ea85795488e403d79eb6))
+- A selection is magenta in 3D, in the panel and on the genome ([24ac36c](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/24ac36c27ea6bddb0cbbbc4891cb410a8b7a3e30))
+- A codon-wide selection on the genome is magenta too, and the panel help says so ([157bff5](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/157bff5420813fda79315fb4f188668327214d67))
+
+### Documentation
+
+- Note the measured case against canvas panel rows and a Foldseek hook collapse ([0f761bb](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/0f761bb50232650812102c2390881b0e016153ec))
+
+### Tests
+
+- A Ctrl-C'd e2e run stops its server ([20f4575](https://github.com/GMOD/jbrowse-plugin-protein3d/commit/20f4575773ab6397f5c2dfee10db8d3637c78799))
+
 ## [1.36.1](https://github.com/GMOD/jbrowse-plugin-protein3d/compare/v1.36.0...v1.36.1) (2026-11-25)
 
 ### Bug Fixes
