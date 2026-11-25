@@ -121,6 +121,7 @@ const UserProvidedStructure = observer(function UserProvidedStructure({
           {
             url: activeURL ? activeURL : undefined,
             data: activeFile ? await launch.readFileText?.() : undefined,
+            fileName: activeFile?.name,
           },
         ],
         userProvidedTranscriptSequence: protein.seq,

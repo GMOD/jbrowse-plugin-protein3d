@@ -23,7 +23,7 @@ interface LaunchViewParams {
  * structure from a url is a model of, when its source says */
 export type StructureSource = Pick<
   ProteinStructureSpec,
-  'url' | 'data' | 'alphaFoldComplexId' | 'uniprotId'
+  'url' | 'data' | 'fileName' | 'alphaFoldComplexId' | 'uniprotId'
 >
 
 interface Launch3DExtraParams {
