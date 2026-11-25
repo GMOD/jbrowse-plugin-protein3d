@@ -73,6 +73,7 @@ const TestParent = types
   .volatile(() => ({
     viewNotices: new Array<unknown>(),
     superposedKeys: new Array<SuperpositionKey>(),
+    superposing: false,
   }))
   .views(self => ({
     get settled() {

@@ -2,7 +2,7 @@ import { residueLoci } from './applyLociInteractivity'
 import loadMolstar from './loadMolstar'
 import { structuresSuperposed } from './structureSuperposer'
 
-import type { KeyedStructure, SuperpositionKey } from './structureSuperposer'
+import type { KeyedStructure, SuperpositionState } from './structureSuperposer'
 import type { Loci } from 'molstar/lib/mol-model/loci'
 import type { Structure } from 'molstar/lib/mol-model/structure'
 
@@ -25,10 +25,9 @@ export interface FramingPlugin {
   }
 }
 
-export interface SelectionFramerHost {
+export interface SelectionFramerHost extends SuperpositionState {
   readonly molstarPluginContext: FramingPlugin | undefined
   readonly structures: readonly FramedStructure[]
-  readonly superposedKeys: readonly SuperpositionKey[]
 }
 
 /**
@@ -37,10 +36,11 @@ export interface SelectionFramerHost {
  * any framing done before it. The superposer keys only what reached Mol*, so a
  * failed structure is left out of the comparison.
  */
-export function structuresSettled(host: {
-  readonly structures: readonly SettlingStructure[]
-  readonly superposedKeys: readonly SuperpositionKey[]
-}) {
+export function structuresSettled(
+  host: SuperpositionState & {
+    readonly structures: readonly SettlingStructure[]
+  },
+) {
   const { structures } = host
   return (
     structures.length > 0 &&

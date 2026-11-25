@@ -33,6 +33,7 @@ const base = {
   error: undefined,
   paintsPending: 0,
   superposedKeys: noKeys,
+  superposing: false,
 }
 
 function superposed(structures: ReturnType<typeof structure>[]) {

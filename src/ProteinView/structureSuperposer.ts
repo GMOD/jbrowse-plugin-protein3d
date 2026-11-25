@@ -43,15 +43,23 @@ export interface KeyedStructure {
   readonly alignment: unknown
 }
 
-export type StructureSuperposerHost = IAnyStateTreeNode & {
-  readonly molstarPluginContext: PluginContext | undefined
-  readonly structures: readonly SuperposedStructure[]
+export interface SuperpositionState {
   /** The keys of the loads the last superposition covered; observable, so
    * the camera framing can wait for the reset that ends a superposition. */
   readonly superposedKeys: readonly SuperpositionKey[]
-  setSuperposedKeys: (keys: readonly SuperpositionKey[]) => void
-  addNotice: (notice: unknown) => void
+  /** Whether a run is under way in the current plugin; it ends in a camera
+   * reset whatever is loaded by then. */
+  readonly superposing: boolean
 }
+
+export type StructureSuperposerHost = IAnyStateTreeNode &
+  SuperpositionState & {
+    readonly molstarPluginContext: PluginContext | undefined
+    readonly structures: readonly SuperposedStructure[]
+    setSuperposedKeys: (keys: readonly SuperpositionKey[]) => void
+    setSuperposing: (superposing: boolean) => void
+    addNotice: (notice: unknown) => void
+  }
 
 function superposedLoad(s: SuperposedStructure): SuperposedLoad {
   const entity = s.mappedEntity
@@ -102,15 +110,18 @@ export function superpositionKeys(structures: readonly KeyedStructure[]) {
   return structures.filter(s => s.loadedToMolstar).map(loadKey)
 }
 
-/** Whether the structures loaded now are the ones the last superposition
- * covered, by identity, so a run still under way for a chain pick, an
- * imported alignment or an assembly switch reads as not superposed. */
-export function structuresSuperposed(host: {
-  readonly structures: readonly KeyedStructure[]
-  readonly superposedKeys: readonly SuperpositionKey[]
-}) {
+/** No run is under way, and the structures loaded now are the ones the last
+ * superposition covered, by identity, so a run for a chain pick, an imported
+ * alignment or an assembly switch reads as not superposed, and so does one a
+ * removal left a single structure behind. */
+export function structuresSuperposed(
+  host: SuperpositionState & { readonly structures: readonly KeyedStructure[] },
+) {
   const keys = superpositionKeys(host.structures)
-  return keys.length < 2 || sameKeys(keys, host.superposedKeys)
+  return (
+    !host.superposing &&
+    (keys.length < 2 || sameKeys(keys, host.superposedKeys))
+  )
 }
 
 /**
@@ -129,12 +140,15 @@ export function structuresSuperposed(host: {
  *     contents and again by its chain, and a fusion partner's chance pairs
  *     never steer it;
  *   - a non-observable in-flight flag serializes runs so overlapping molstar
- *     state mutations can't interleave;
+ *     state mutations can't interleave. The host's `superposing` mirrors it
+ *     for the current plugin, so settling waits for the camera reset a run
+ *     ends in, and a plugin swap clears it, so a run stuck in a torn-down
+ *     plugin holds nothing back;
  *   - the host's `superposedKeys`, the keys of the loads it covered, and
  *     `superposedPlugin` remember the last alignment, so a run only happens
  *     when the loaded set, a mapped chain or the plugin changes, not on every
  *     reaction. The loads are compared by identity, since a removal and a
- *     load during a run leave the count where it was;
+ *     load during a run can leave as many loaded as it covered;
  *   - after a run finishes it re-checks, because the loaded set may have grown
  *     (or the plugin been swapped) while it was aligning;
  *   - every observable is read before the in-flight check, so a reset that
@@ -155,6 +169,7 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
     if (plugin !== superposedPlugin) {
       superposedPlugin = plugin
       host.setSuperposedKeys([])
+      host.setSuperposing(false)
     }
     const startKeys = host.superposedKeys
     const changed = !sameKeys(keys, startKeys)
@@ -165,6 +180,7 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
     }
     if (plugin && !superposing && mapped && loadedCount >= 2 && changed) {
       superposing = true
+      host.setSuperposing(true)
       superposeStructures(plugin, loads)
         .then(outcomes => {
           if (host.molstarPluginContext === plugin) {
@@ -180,11 +196,11 @@ export function makeStructureSuperposer(host: StructureSuperposerHost) {
           superposing = false
           if (isAlive(host)) {
             // a run into a plugin swapped away mid-flight covered nothing
-            if (
-              host.molstarPluginContext === plugin &&
-              host.superposedKeys === startKeys
-            ) {
-              host.setSuperposedKeys(keys)
+            if (host.molstarPluginContext === plugin) {
+              if (host.superposedKeys === startKeys) {
+                host.setSuperposedKeys(keys)
+              }
+              host.setSuperposing(false)
             }
             run()
           }

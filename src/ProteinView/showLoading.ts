@@ -1,6 +1,6 @@
 import { structuresSuperposed } from './structureSuperposer'
 
-import type { KeyedStructure, SuperpositionKey } from './structureSuperposer'
+import type { KeyedStructure, SuperpositionState } from './structureSuperposer'
 
 // JBrowse's per-view readiness hook: while a view's `showLoading` is true the
 // app-level ready marker, the capture tools and jb.waitReady all report
@@ -16,16 +16,17 @@ import type { KeyedStructure, SuperpositionKey } from './structureSuperposer'
 // failed, which the superposition leaves out — settled is not the same as
 // shown, so a check that a session really came up reads each structure's
 // `error` alongside this.
-export function showLoading(view: {
-  minimized: boolean
-  error: unknown
-  paintsPending: number
-  structures: (KeyedStructure & {
-    loading: boolean
-    variantEffectsPending: boolean
-  })[]
-  superposedKeys: readonly SuperpositionKey[]
-}) {
+export function showLoading(
+  view: SuperpositionState & {
+    minimized: boolean
+    error: unknown
+    paintsPending: number
+    structures: (KeyedStructure & {
+      loading: boolean
+      variantEffectsPending: boolean
+    })[]
+  },
+) {
   return (
     !view.minimized &&
     !view.error &&

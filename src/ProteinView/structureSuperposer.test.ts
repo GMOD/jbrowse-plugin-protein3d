@@ -72,6 +72,7 @@ const TestHost = types
   .volatile(() => ({
     molstarPluginContext: undefined as object | undefined,
     superposedKeys: [] as readonly SuperpositionKey[],
+    superposing: false,
     errors: [] as unknown[],
   }))
   .views(self => ({
@@ -85,6 +86,9 @@ const TestHost = types
     },
     setSuperposedKeys(keys: readonly SuperpositionKey[]) {
       self.superposedKeys = keys
+    },
+    setSuperposing(superposing: boolean) {
+      self.superposing = superposing
     },
     addNotice(e: unknown) {
       self.errors.push(e)
@@ -331,6 +335,32 @@ test('a structure swapped in during a run reads as not superposed until a run co
   expect(structuresSuperposed(host)).toBe(false)
   finishSecond()
   await tick()
+  expect(structuresSuperposed(host)).toBe(true)
+  dispose()
+})
+
+// the run still ends in a camera reset, which undid a framing of the one left
+test('a removal that leaves one structure mid-run reads as superposed once the run ends', async () => {
+  const finish = blockNextSuperpose()
+  const { host, run } = setup({}, 2)
+  const dispose = autorun(run)
+  host.structures[1]!.setLoadedToMolstar(false)
+  expect(structuresSuperposed(host)).toBe(false)
+  finish()
+  await tick()
+  expect(structuresSuperposed(host)).toBe(true)
+  dispose()
+})
+
+// a run into a torn-down plugin may never end, and must not hold a view of
+// one structure in the new plugin back
+test('a plugin swapped in mid-run is not held back by the old run', () => {
+  blockNextSuperpose()
+  const { host, run } = setup({ id: 'A' }, 2)
+  const dispose = autorun(run)
+  expect(host.superposing).toBe(true)
+  host.structures[1]!.setLoadedToMolstar(false)
+  host.setPlugin({ id: 'B' })
   expect(structuresSuperposed(host)).toBe(true)
   dispose()
 })

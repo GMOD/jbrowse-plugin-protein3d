@@ -69,6 +69,7 @@ import type { FigureNoticeKind } from './reportPluginFailure'
 import type { ResidueMark } from './residueMarks'
 import type { SavedCamera } from './savedCamera'
 import type { JBrowsePluginProteinStructureModel } from './structureModel'
+import type { SuperpositionKey } from './structureSuperposer'
 import type { ProteinSurface } from './surface'
 import type { Instance } from '@jbrowse/mobx-state-tree'
 import type { PluginContext } from 'molstar/lib/mol-plugin/context'
@@ -368,7 +369,12 @@ function stateModelFactory() {
        * the loads the last TM-align superposition covered, see
        * makeStructureSuperposer
        */
-      superposedKeys: [] as readonly (readonly unknown[])[],
+      superposedKeys: [] as readonly SuperpositionKey[],
+      /**
+       * #volatile
+       * a TM-align superposition is under way in the current plugin
+       */
+      superposing: false,
       /**
        * #volatile
        * color and surface runs queued or in flight; the ready marker waits
@@ -458,8 +464,11 @@ function stateModelFactory() {
         }
         self.molstarPluginContext = p
       },
-      setSuperposedKeys(keys: readonly (readonly unknown[])[]) {
+      setSuperposedKeys(keys: readonly SuperpositionKey[]) {
         self.superposedKeys = keys
+      },
+      setSuperposing(superposing: boolean) {
+        self.superposing = superposing
       },
       /**
        * #action
@@ -492,7 +501,7 @@ function stateModelFactory() {
       /**
        * #action
        * Takes a structure out of the view and out of Mol*. The superposed
-       * count resets so the remaining structures are re-aligned against a
+       * keys reset so the remaining structures are re-aligned against a
        * pivot that still exists, and every derived highlight follows the
        * structures array, so nothing is left pointing at a removed model.
        */
@@ -945,7 +954,6 @@ function stateModelFactory() {
       },
       /**
        * #getter
-       * How many loaded structures the last TM-align superposition covered.
        */
       get superposedCount() {
         return self.superposedKeys.length

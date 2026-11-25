@@ -72,6 +72,7 @@ test('frames a seeded selection once every structure has settled and superposed'
     molstarPluginContext: plugin,
     structures: [human, mouse],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
 
@@ -107,6 +108,7 @@ test('a structure that failed to load does not hold the others back', async () =
     molstarPluginContext: plugin,
     structures: [human, missing],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -129,6 +131,7 @@ test('a seed that resolves after the structure settles is still framed', async (
     molstarPluginContext: plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -152,6 +155,7 @@ test('a clicked selection with no seed leaves the camera alone', async () => {
     molstarPluginContext: plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -170,6 +174,7 @@ test('a seed on a hidden structure leaves the camera alone', async () => {
     molstarPluginContext: plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -188,6 +193,7 @@ test('a remount frames again in the new plugin', async () => {
     molstarPluginContext: first.plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -213,6 +219,7 @@ test('a one-residue seed is focused like a click on it', async () => {
     molstarPluginContext: plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
@@ -232,6 +239,7 @@ test('a seeded range is framed but not focused', async () => {
     molstarPluginContext: plugin,
     structures: [only],
     superposedKeys: noKeys,
+    superposing: false,
   })
   const dispose = autorun(makeSelectionFramer(host))
   runInAction(() => {
