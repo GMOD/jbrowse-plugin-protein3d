@@ -341,6 +341,14 @@ function killProcessOnPort(port: number): void {
   }
 }
 
+function signalServer(proc: ChildProcess, signal: NodeJS.Signals) {
+  if (proc.pid !== undefined) {
+    try {
+      process.kill(-proc.pid, signal)
+    } catch {}
+  }
+}
+
 export async function startJBrowseServer(): Promise<ChildProcess> {
   // Kill any existing process on the port
   killProcessOnPort(JBROWSE_PORT)
@@ -349,13 +357,12 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
     const proc = spawn(
       'npx',
       ['serve', '-p', String(JBROWSE_PORT), '-s', TEST_JBROWSE_DIR],
-      {
-        stdio: ['ignore', 'pipe', 'pipe'],
-      },
+      // npx starts serve as its own child, so the server is signalled as a group
+      { stdio: ['ignore', 'pipe', 'pipe'], detached: true },
     )
 
     const timeout = setTimeout(() => {
-      proc.kill()
+      signalServer(proc, 'SIGTERM')
       reject(new Error(`Server did not start within 30000ms`))
     }, 30_000)
 
@@ -370,7 +377,7 @@ export async function startJBrowseServer(): Promise<ChildProcess> {
         const actualPort = Number.parseInt(match[1]!, 10)
         if (actualPort !== JBROWSE_PORT) {
           clearTimeout(timeout)
-          proc.kill()
+          signalServer(proc, 'SIGTERM')
           reject(
             new Error(
               `Server started on wrong port ${actualPort}, expected ${JBROWSE_PORT}`,
@@ -415,16 +422,14 @@ export async function stopServer(proc: ChildProcess): Promise<void> {
       return
     }
     const escalate = setTimeout(() => {
-      if (!exited()) {
-        proc.kill('SIGKILL')
-      }
+      signalServer(proc, 'SIGKILL')
       resolve()
     }, 5000)
     proc.on('close', () => {
       clearTimeout(escalate)
       resolve()
     })
-    proc.kill('SIGTERM')
+    signalServer(proc, 'SIGTERM')
   })
 }
 
