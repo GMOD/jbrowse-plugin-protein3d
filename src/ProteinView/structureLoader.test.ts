@@ -75,15 +75,14 @@ const TestStructure = types
       self.entities = d.entities
       self.molstarStructures = d.molstarStructures ?? []
       self.loadedAssembly = d.assembly
+      self.loadedToMolstar = true
     },
     setAssembly(assembly: string) {
       self.assembly = assembly
     },
-    setLoadedToMolstar(v: boolean) {
-      self.loadedToMolstar = v
-      if (!v) {
-        self.molstarStructures = []
-      }
+    clearMolstarStructures() {
+      self.loadedToMolstar = false
+      self.molstarStructures = []
     },
   }))
 
@@ -276,7 +275,7 @@ test('unloading drops the handle so highlights never target a dead plugin', asyn
   await tick()
   expect(structure.molstarStructures).toHaveLength(1)
 
-  structure.setLoadedToMolstar(false)
+  structure.clearMolstarStructures()
   expect(structure.molstarStructures).toEqual([])
 })
 

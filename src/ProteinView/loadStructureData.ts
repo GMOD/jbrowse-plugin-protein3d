@@ -28,9 +28,6 @@ export interface StructureData {
    * arbitrary order, so a position in `hierarchy.current.structures`
    * identifies nothing stable. */
   molstarStructures?: Structure[]
-  /** Ids of every Mol* model this load created, which is how an interaction
-   * on the shared plugin is told apart from one on another structure. */
-  modelIds?: string[]
   assemblies?: StructureAssembly[]
   /** The `assembly` this load was built with, so a change to it reloads. */
   assembly?: string
@@ -133,11 +130,7 @@ export async function loadStructureData({
   url?: string
 }): Promise<StructureData> {
   const { data, assembly, chains, filter } = structure
-  const {
-    model,
-    structures: molstarStructures,
-    modelIds,
-  } = await loadStructure({
+  const { model, structures: molstarStructures } = await loadStructure({
     plugin,
     data: data || undefined,
     url,
@@ -157,7 +150,6 @@ export async function loadStructureData({
     confidence:
       model && !experimental ? extractPerResidueConfidence(model) : undefined,
     molstarStructures,
-    modelIds,
     assemblies: model?.obj ? structureAssemblies(model.obj.data, molstar) : [],
     assembly,
   }

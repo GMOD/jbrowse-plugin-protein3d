@@ -95,6 +95,10 @@ const TestParent = types
     },
   }))
 
+const LOADED_STRUCTURES = [
+  await parseStructure([{ asym: 'A', entity: '1', residues: ['MET'] }]),
+]
+
 const pairwiseAlignment: PairwiseAlignment = {
   consensus: '||||',
   alns: [
@@ -193,7 +197,7 @@ test('names the step it is on while it settles', () => {
 
   // an RCSB entry is still settling until SIFTS answers: that is what unmaps a
   // fusion partner and places the UniProt tracks
-  pdb!.setLoadedToMolstar(true)
+  pdb!.setStructureData({ molstarStructures: LOADED_STRUCTURES })
   expect(pdb!.loadingMessage).toBe('Mapping 1TUP to UniProt')
   pdb!.setUniProtMappings([])
   expect(pdb!.loading).toBe(false)
@@ -298,8 +302,10 @@ test('only an aligned PDB entry has an alignment awaiting SIFTS', () => {
   })
   const [standalone, aligned] = parent.structures
   for (const s of parent.structures) {
-    s.setStructureData({ entities: NUMBERED_FROM_94 })
-    s.setLoadedToMolstar(true)
+    s.setStructureData({
+      entities: NUMBERED_FROM_94,
+      molstarStructures: LOADED_STRUCTURES,
+    })
   }
   expect(standalone!.loading).toBe(true)
   expect(standalone!.alignmentAwaitingSifts).toBe(false)
@@ -802,8 +808,7 @@ test('a structure is loading until it is in Mol*, aligned, and SIFTS has answere
     { entityId: '1', seq: 'MKAA', seqIds: [1, 2, 3, 4], chains: ['A'] },
   ]
   for (const s of [model!, entry!]) {
-    s.setStructureData({ entities })
-    s.setLoadedToMolstar(true)
+    s.setStructureData({ entities, molstarStructures: LOADED_STRUCTURES })
   }
   expect(model!.pairwiseAlignment).toBeDefined()
   expect(model!.loading).toBe(false)
@@ -832,16 +837,15 @@ test('a Mol* interaction on another structure of the view names no position here
   const [human, mouse] = parent.structures
   const humanStructure = await parseStructure([chain])
   const mouseStructure = await parseStructure([chain])
+  const humanSecondModel = await parseStructure([chain])
   // the human entry as an NMR ensemble: a hover on its second model is its own
   human!.setStructureData({
     entities,
-    molstarStructures: [humanStructure],
-    modelIds: [humanStructure.model.id, 'human-model-2'],
+    molstarStructures: [humanStructure, humanSecondModel],
   })
   mouse!.setStructureData({
     entities,
     molstarStructures: [mouseStructure],
-    modelIds: [mouseStructure.model.id],
   })
 
   const hover = (s: typeof humanStructure) => ({
@@ -855,7 +859,7 @@ test('a Mol* interaction on another structure of the view names no position here
   expect(
     human!.interactionPosition({
       ...hover(humanStructure),
-      modelId: 'human-model-2',
+      modelId: humanSecondModel.model.id,
     }),
   ).toBe(2)
   expect(human!.interactionPosition(hover(mouseStructure))).toBeUndefined()
@@ -880,7 +884,6 @@ test('an unmapped structure answers hovers on its first chain only', async () =>
       { entityId: '2', seq: 'GGG', seqIds: [1, 2, 3], chains: ['B'] },
     ],
     molstarStructures: [molstarStructure],
-    modelIds: [molstarStructure.model.id],
   })
   const hover = (entityId: string, chain: string) => ({
     labelSeqId: 3,
@@ -1005,7 +1008,10 @@ test('initialTranscriptResidues seeds the selection through the alignment once t
     expect(model.alignment).toBeDefined()
   })
   expect(model.clickedStructureRanges).toEqual([])
-  model.setLoadedToMolstar(true)
+  model.setStructureData({
+    entities: model.entities,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   // L and A are positions 1 and 2; the V between them is not modeled
   expect(model.clickedStructureRanges).toEqual([{ start: 1, end: 3 }])
   model.setClickedStructureRanges([])
@@ -1019,7 +1025,10 @@ test('initialTranscriptResidues across a fusion selects the receptor either side
     alignmentImported: false,
     initialTranscriptResidues: { start: 3, end: 10 },
   })
-  model.setLoadedToMolstar(true)
+  model.setStructureData({
+    entities: model.entities,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   expect(model.clickedStructureRanges).toEqual([
     { start: 2, end: 4 },
     { start: 8, end: 10 },
@@ -1086,8 +1095,10 @@ function twoNumberedStructures() {
 
 function settle(parent: ReturnType<typeof twoNumberedStructures>) {
   for (const s of parent.structures) {
-    s.setStructureData({ entities: NUMBERED_FROM_94 })
-    s.setLoadedToMolstar(true)
+    s.setStructureData({
+      entities: NUMBERED_FROM_94,
+      molstarStructures: LOADED_STRUCTURES,
+    })
   }
   parent.markSuperposed()
 }
@@ -1099,8 +1110,10 @@ test('focusResidues waits for the view to settle, superposition included', async
   const pending = a!.focusResidues({ residues: { start: 95, end: 95 } })
   pending.then(r => (runs = r)).catch(() => {})
   for (const s of parent.structures) {
-    s.setStructureData({ entities: NUMBERED_FROM_94 })
-    s.setLoadedToMolstar(true)
+    s.setStructureData({
+      entities: NUMBERED_FROM_94,
+      molstarStructures: LOADED_STRUCTURES,
+    })
   }
   await Promise.resolve()
   expect(runs).toBeUndefined()
@@ -1156,8 +1169,10 @@ test('focusResidues stops waiting as soon as its structure is destroyed', async 
 test('focusResidues works on a structure opened without a transcript', async () => {
   const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
   const [s] = parent.structures
-  s!.setStructureData({ entities: NUMBERED_FROM_94 })
-  s!.setLoadedToMolstar(true)
+  s!.setStructureData({
+    entities: NUMBERED_FROM_94,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   expect(await s!.focusResidues({ residues: { start: 95, end: 95 } })).toEqual([
     { start: 1, end: 2 },
   ])
@@ -1168,8 +1183,7 @@ test('focusResidues settles on a structure with a transcript and no chain', asyn
     structures: [{ url: 'x.cif', userProvidedTranscriptSequence: 'MKAA' }],
   })
   const [s] = parent.structures
-  s!.setStructureData({ entities: [] })
-  s!.setLoadedToMolstar(true)
+  s!.setStructureData({ entities: [], molstarStructures: LOADED_STRUCTURES })
   expect(s!.statusMessage).toBe('This structure has no chain to align')
   expect(
     await s!.focusResidues(
@@ -1191,8 +1205,7 @@ test('a stored alignment goes when its file yields no chain', () => {
     ],
   })
   const [s] = parent.structures
-  s!.setStructureData({ entities: [] })
-  s!.setLoadedToMolstar(true)
+  s!.setStructureData({ entities: [], molstarStructures: LOADED_STRUCTURES })
   expect(s!.alignmentSkipped).toBe('This structure has no chain to align')
   expect(s!.alignment).toBeUndefined()
   expect(s!.coordinateMapper).toBeUndefined()
@@ -1203,8 +1216,10 @@ test('a stored alignment goes when its file yields no chain', () => {
 test('focusResidues names no residue for a transcript range on a structure without a transcript', async () => {
   const parent = TestParent.create({ structures: [{ url: 'x.cif' }] })
   const [s] = parent.structures
-  s!.setStructureData({ entities: NUMBERED_FROM_94 })
-  s!.setLoadedToMolstar(true)
+  s!.setStructureData({
+    entities: NUMBERED_FROM_94,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   expect(
     await s!.focusResidues(
       { transcriptResidues: { start: 1, end: 2 } },
@@ -1222,8 +1237,8 @@ test('focusResidues resolves author numbers when no chain could be aligned', asy
   const [s] = parent.structures
   s!.setStructureData({
     entities: NUMBERED_FROM_94.map(e => ({ ...e, nucleicAcid: true })),
+    molstarStructures: LOADED_STRUCTURES,
   })
-  s!.setLoadedToMolstar(true)
   expect(
     await s!.focusResidues(
       { residues: { start: 95, end: 95 } },
@@ -1571,8 +1586,10 @@ test('a pLDDT color on an experimental structure says it shows no confidence', (
 
 test('an alignment that lands clears the failure of the alignment before it', () => {
   const s = makeModel()
-  s.setStructureData({ entities: NUMBERED_FROM_94 })
-  s.setLoadedToMolstar(true)
+  s.setStructureData({
+    entities: NUMBERED_FROM_94,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   s.setError(new Error('worker died'))
   expect(s.loadFailed).toBe(false)
   s.setAlignment(pairwiseAlignment)
@@ -1583,10 +1600,12 @@ test('an alignment that lands clears the failure of the alignment before it', ()
 // read as the load's and offered Retry
 test('an alignment failure stays one when its structure is unloaded', () => {
   const s = makeModel()
-  s.setStructureData({ entities: NUMBERED_FROM_94 })
-  s.setLoadedToMolstar(true)
+  s.setStructureData({
+    entities: NUMBERED_FROM_94,
+    molstarStructures: LOADED_STRUCTURES,
+  })
   s.setError(new Error('worker died'))
-  s.setLoadedToMolstar(false)
+  s.clearMolstarStructures()
   expect(s.loadFailed).toBe(false)
 })
 

@@ -5,6 +5,7 @@ import { createTheme } from '@mui/material/styles'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, test, vi } from 'vitest'
 
+import { parseStructure } from '../../test_data/molstarStructure'
 import stateModelFactory from '../model'
 import HeaderStructureRows from './HeaderStructureRow'
 
@@ -53,14 +54,18 @@ test('a failed load offers Retry, and Retry asks for another attempt', () => {
   expect(structure!.loadAttempt).toBe(1)
 })
 
-test('a failed alignment offers no Retry, even once its structure is unloaded', () => {
+test('a failed alignment offers no Retry, even once its structure is unloaded', async () => {
   const view = ProteinView.create({
     type: 'ProteinView',
     structures: [{ url: 'a.cif' }],
   })
-  view.structures[0]!.setLoadedToMolstar(true)
+  view.structures[0]!.setStructureData({
+    molstarStructures: [
+      await parseStructure([{ asym: 'A', entity: '1', residues: ['MET'] }]),
+    ],
+  })
   view.structures[0]!.setError(new Error('worker died'))
-  view.structures[0]!.setLoadedToMolstar(false)
+  view.structures[0]!.clearMolstarStructures()
   render(createElement(HeaderStructureRows, { model: view }))
   expect(screen.queryByRole('button', { name: 'Retry' })).toBeNull()
 })

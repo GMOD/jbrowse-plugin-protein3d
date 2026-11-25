@@ -382,24 +382,14 @@ const Structure = types
     alignmentRedecisions: 0,
     /**
      * #volatile
-     * Tracks whether this structure has been loaded into Molstar
-     */
-    loadedToMolstar: false,
-    /**
-     * #volatile
      * The Mol* structures this model's load produced, one per model of the
      * file, captured from the loader rather than looked up by position in
      * `hierarchy.current.structures` — that array is ordered by load
      * completion, so with two structures in flight index N can be another
-     * model's geometry.
+     * model's geometry. Empty until the load lands in the current plugin: a
+     * load that builds none throws.
      */
     molstarStructures: new Array<MolstarStructure>(),
-    /**
-     * #volatile
-     * Ids of every Mol* model that load produced, all of an ensemble's models
-     * included; see interactionPosition.
-     */
-    molstarModelIds: new Array<string>(),
     /**
      * #volatile
      * The biological assemblies the loaded entry lists
@@ -533,7 +523,6 @@ const Structure = types
       self.entities = data.entities
       self.structureConfidence = data.confidence
       self.molstarStructures = data.molstarStructures ?? []
-      self.molstarModelIds = data.modelIds ?? new Array<string>()
       self.assemblies = data.assemblies ?? []
       self.loadedAssembly = data.assembly
     },
@@ -563,17 +552,30 @@ const Structure = types
     },
     /**
      * #action
+     * Drops the handles, which belong to the plugin the structure was
+     * unloaded from, so the loader loads it again.
      */
-    setLoadedToMolstar(val: boolean) {
-      self.loadedToMolstar = val
-      if (!val) {
-        // the handles belong to the plugin we were unloaded from
-        self.molstarStructures = []
-        self.molstarModelIds = new Array<string>()
-      }
+    clearMolstarStructures() {
+      self.molstarStructures = []
     },
   }))
   .views(self => ({
+    /**
+     * #getter
+     */
+    get loadedToMolstar() {
+      return self.molstarStructures.length > 0
+    },
+    /**
+     * #getter
+     * Ids of every Mol* model the load produced, all of an ensemble's models
+     * included; see interactionPosition.
+     */
+    get molstarModelIds() {
+      return self.molstarStructures.flatMap(s =>
+        s.models.map((m): string => m.id),
+      )
+    },
     /**
      * #getter
      * The load's first model, which stands for the whole load where Mol*

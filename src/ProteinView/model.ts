@@ -459,7 +459,7 @@ function stateModelFactory() {
         // This ensures structures get reloaded when the view is moved/remounted
         if (p !== self.molstarPluginContext) {
           for (const structure of self.structures) {
-            structure.setLoadedToMolstar(false)
+            structure.clearMolstarStructures()
           }
         }
         self.molstarPluginContext = p
@@ -641,16 +641,14 @@ function stateModelFactory() {
           autorun(() => {
             const { molstarPluginContext, paintColor: color, surface } = self
             const structures = self.structures.flatMap(s =>
-              s.entities
-                ? s.molstarStructures.map(molstarStructure => ({
-                    molstarStructure,
-                    entityId: s.mappedEntity?.entityId,
-                    placedValues: s.placedValues,
-                    placedSites: s.alignmentDomainStatus?.placedSites,
-                    domainColor: s.alignmentDomainStatus?.domains?.color,
-                    exonColor: s.exonStatus?.color,
-                  }))
-                : [],
+              s.molstarStructures.map(molstarStructure => ({
+                molstarStructure,
+                entityId: s.mappedEntity?.entityId,
+                placedValues: s.placedValues,
+                placedSites: s.alignmentDomainStatus?.placedSites,
+                domainColor: s.alignmentDomainStatus?.domains?.color,
+                exonColor: s.exonStatus?.color,
+              })),
             )
             if (molstarPluginContext && structures.length > 0) {
               const run = ++colorRun
@@ -687,15 +685,13 @@ function stateModelFactory() {
           autorun(() => {
             const plugin = self.molstarPluginContext
             const structures = self.structures.flatMap(s =>
-              s.entities
-                ? s.molstarStructures.map(molstarStructure => ({
-                    molstarStructure,
-                    sites: s.alignmentDomainStatus?.placedSites,
-                    color: s.alignmentDomainStatus?.domains?.color,
-                    chains: s.chains,
-                    filter: s.filter,
-                  }))
-                : [],
+              s.molstarStructures.map(molstarStructure => ({
+                molstarStructure,
+                sites: s.alignmentDomainStatus?.placedSites,
+                color: s.alignmentDomainStatus?.domains?.color,
+                chains: s.chains,
+                filter: s.filter,
+              })),
             )
             if (plugin && structures.length > 0) {
               syncSiteSticks({ plugin, structures }).catch(
@@ -714,14 +710,12 @@ function stateModelFactory() {
           autorun(() => {
             const plugin = self.molstarPluginContext
             const structures = self.structures.flatMap(s =>
-              s.entities
-                ? s.molstarStructures.map(molstarStructure => ({
-                    molstarStructure,
-                    marks: s.sessionHighlightMarks,
-                    chains: s.chains,
-                    filter: s.filter,
-                  }))
-                : [],
+              s.molstarStructures.map(molstarStructure => ({
+                molstarStructure,
+                marks: s.sessionHighlightMarks,
+                chains: s.chains,
+                filter: s.filter,
+              })),
             )
             const seeded = self.structures.some(s => s.seededSelection)
             if (plugin && structures.length > 0) {
@@ -829,9 +823,7 @@ function stateModelFactory() {
           autorun(() => {
             const plugin = self.molstarPluginContext
             const distances = self.distances ?? []
-            const structures = self.structures.map(s =>
-              s.entities ? s.molstarStructures[0] : undefined,
-            )
+            const structures = self.structures.map(s => s.molstarStructure)
             if (plugin && structures.some(Boolean)) {
               syncMeasurements({
                 plugin,
@@ -857,7 +849,7 @@ function stateModelFactory() {
             const plugin = self.molstarPluginContext
             const marks = self.marks ?? []
             const structures = self.structures.map(s =>
-              s.entities ? s.molstarStructures : undefined,
+              s.loadedToMolstar ? s.molstarStructures : undefined,
             )
             if (plugin && structures.some(Boolean)) {
               syncResidueMarks({ plugin, structures, marks })

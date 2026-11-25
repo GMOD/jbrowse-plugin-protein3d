@@ -210,7 +210,6 @@ export function makeStructureLoader(
         const current = host.molstarPluginContext
         if (current === plugin) {
           structure.setStructureData(data)
-          structure.setLoadedToMolstar(true)
         }
         settle(structure, plugin)
         if (current && current !== plugin && !structure.loadedToMolstar) {
@@ -242,7 +241,7 @@ export function makeStructureLoader(
     plugin: PluginContext,
   ) {
     const { molstarStructure } = structure
-    structure.setLoadedToMolstar(false)
+    structure.clearMolstarStructures()
     removeMolstarStructure({ plugin, molstarStructure }).catch((e: unknown) => {
       console.error(e)
     })
