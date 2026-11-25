@@ -973,19 +973,43 @@ export async function closeProteinViews(page: Page) {
 async function molstarInk(page: Page): Promise<number> {
   // Scrolled into view and clipped to the viewport: alignment panels above the
   // viewer push it below the fold, and pixels outside the viewport come back
-  // blank.
-  const clip = await page.$eval('[class*="msp-plugin"] canvas', el => {
+  // blank. The scroll is put back afterwards: a poll that lands after the
+  // header grew a row left the panel scrolled past it, and the next capture
+  // recorded a view with its first structure row cut off.
+  const canvas = '[class*="msp-plugin"] canvas'
+  const { clip, scrollTops } = await page.$eval(canvas, el => {
+    const ancestors = []
+    for (let a = el.parentElement; a; a = a.parentElement) {
+      ancestors.push(a)
+    }
+    const scrollTops = ancestors.map(a => a.scrollTop)
     el.scrollIntoView({ block: 'nearest' })
     const { x, y, width, height } = el.getBoundingClientRect()
     return {
-      x,
-      y,
-      width: Math.min(width, window.innerWidth - x),
-      height: Math.min(height, window.innerHeight - y),
+      scrollTops,
+      clip: {
+        x,
+        y,
+        width: Math.min(width, window.innerWidth - x),
+        height: Math.min(height, window.innerHeight - y),
+      },
     }
   })
   const { data, width, height } = PNG.sync.read(
     Buffer.from(await page.screenshot({ clip })),
+  )
+  await page.$eval(
+    canvas,
+    (el, tops) => {
+      let a = el.parentElement
+      for (const top of tops) {
+        if (a) {
+          a.scrollTop = top
+          a = a.parentElement
+        }
+      }
+    },
+    scrollTops,
   )
   let inked = 0
   for (let i = 0; i < data.length; i += 4) {
