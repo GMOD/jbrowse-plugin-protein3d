@@ -85,9 +85,14 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
   const [cutsText, setCutsText] = useState(
     color.field === 'track' && color.domain ? color.domain.join(', ') : '',
   )
+  const storedScoreField = (picked: string) =>
+    color.field === 'track' && color.trackId === picked
+      ? (color.scoreField ?? '')
+      : ''
   const [scoreFieldText, setScoreFieldText] = useState(
-    color.field === 'track' ? (color.scoreField ?? '') : '',
+    storedScoreField(trackId),
   )
+  const [scoreFieldTouched, setScoreFieldTouched] = useState(false)
   const cuts = parseCuts(cutsText)
   const cutsInvalid = scale === 'threshold' && !cuts
   const asksScoreField =
@@ -95,6 +100,12 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
     tracks.find(t => t.trackId === trackId)?.type === 'VariantTrack'
   const scoreFieldInvalid =
     asksScoreField && !isFeatureFieldName(scoreFieldText.trim())
+  const scoreFieldProblem =
+    scoreFieldInvalid && scoreFieldTouched
+      ? scoreFieldText.trim() === ''
+        ? "Name the field holding each variant's number, such as INFO.AF"
+        : 'A field name such as INFO.AF, not a jexl: expression'
+      : undefined
   return (
     <Dialog open onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>Color by a genome track</DialogTitle>
@@ -114,6 +125,8 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
           value={trackId}
           onChange={e => {
             setTrackId(e.target.value)
+            setScoreFieldText(storedScoreField(e.target.value))
+            setScoreFieldTouched(false)
           }}
           helperText={
             tracks.length === 0
@@ -152,14 +165,14 @@ const GenomeTrackColorDialog = observer(function GenomeTrackColorDialog({
             label="Score field"
             placeholder="INFO.AF"
             value={scoreFieldText}
-            error={scoreFieldInvalid && scoreFieldText !== ''}
+            error={scoreFieldProblem !== undefined}
             helperText={
-              scoreFieldInvalid && scoreFieldText !== ''
-                ? 'A field name such as INFO.AF, not a jexl: expression'
-                : "The field holding each variant's number, such as INFO.AF"
+              scoreFieldProblem ??
+              "The field holding each variant's number, such as INFO.AF"
             }
             onChange={e => {
               setScoreFieldText(e.target.value)
+              setScoreFieldTouched(true)
             }}
             sx={{ mt: 2 }}
           />

@@ -12,6 +12,7 @@ import type * as JBrowseCoreUtil from '@jbrowse/core/util'
 
 const TRACKS = [
   { trackId: 'vcf', type: 'VariantTrack', name: 'gnomAD' },
+  { trackId: 'clinvar', type: 'VariantTrack', name: 'ClinVar' },
   { trackId: 'bw', type: 'QuantitativeTrack', name: 'phyloP' },
 ]
 
@@ -73,6 +74,35 @@ test('a variant track asks for the field its score is read from', () => {
     stat: 'max',
     scoreField: 'INFO.AF',
   })
+})
+
+test('a blank field says what it needs once it has been typed in', () => {
+  renderDialog({ field: 'track', trackId: 'vcf', stat: 'max' })
+  const input = screen.getByLabelText('Score field')
+  expect(screen.queryByText(/^Name the field/)).toBeNull()
+  fireEvent.change(input, { target: { value: '  ' } })
+  expect(
+    screen.getByText(
+      "Name the field holding each variant's number, such as INFO.AF",
+    ),
+  ).toBeTruthy()
+})
+
+// a field one VCF's INFO carries need not exist in another's
+test('a stored score field stays with its track', () => {
+  renderDialog({
+    field: 'track',
+    trackId: 'vcf',
+    stat: 'max',
+    scoreField: 'INFO.AF',
+  })
+  expect(screen.getByLabelText('Score field')).toHaveProperty(
+    'value',
+    'INFO.AF',
+  )
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Track' }))
+  fireEvent.click(screen.getByRole('option', { name: 'ClinVar' }))
+  expect(screen.getByLabelText('Score field')).toHaveProperty('value', '')
 })
 
 test('a count, or a track scored by its own number, asks for no field', () => {
